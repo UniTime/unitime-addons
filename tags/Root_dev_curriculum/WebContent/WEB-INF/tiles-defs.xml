@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ * UniTime 3.1 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ -->
+<tiles-definitions>
+	
+	<!-- Custom tiles definitions -->
+
+   	<definition	name="rollForwardBannerSessionTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Roll Forward Banner Session"/>
+		<put name="body" value="/banner/rollForwardBannerSession.jsp" />
+  	</definition>
+   	<definition	name="bannerMessageResponsesTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Banner Message Responses"/>
+		<put name="body" value="/banner/bannerMessageResponses.jsp" />
+  	</definition>
+  	<definition	name="bannerOfferingSearchTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Banner Offerings"/>
+		<put name="body" value="/banner/bannerOfferingSearch.jsp" />
+		<put name="action" value="bannerOfferingSearch" />
+		<put name="showNavigation" value="true" />
+  	</definition> 	
+  	<definition	name="bannerOfferingListTile" extends="bannerOfferingSearchTile">
+		<put name="body2" value="/banner/bannerOfferingList.jsp" />
+		<put name="action2" value="bannerOfferingChange" />
+  	</definition>
+  	<definition	name="bannerOfferingDetailTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Banner Offering Detail"/>
+		<put name="body" value="/banner/bannerOfferingDetail.jsp" />
+  	</definition>
+   	<definition	name="bannerOfferingModifyTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Banner Offering Edit"/>
+		<put name="body" value="/banner/bannerOfferingModify.jsp" />
+  	</definition>
+	<definition	name="bannerSessionListTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Banner Academic Sessions"/>
+		<put name="body" value="/banner/bannerSessionList.jsp" />
+  	</definition>
+  	<definition	name="bannerSessionEditTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Edit Banner Session"/>
+		<put name="body" value="/banner/bannerSessionEdit.jsp" />
+  	</definition>
+
+	<definition	name="bannerSessionAddTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Add Banner Session"/>
+		<put name="body" value="/banner/bannerSessionEdit.jsp" />
+  	</definition>
+	<definition	name="bannerTermCrnPropertiesListTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Banner Term Crn Properties"/>
+		<put name="body" value="/banner/bannerTermCrnPropertiesList.jsp" />
+  	</definition>
+  	<definition	name="bannerTermCrnPropertiesEditTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Edit Banner Term Crn Properties"/>
+		<put name="body" value="/banner/bannerTermCrnPropertiesEdit.jsp" />
+  	</definition>
+
+	<definition	name="bannerTermCrnPropertiesAddTile" extends="pageLayoutDef">
+		<put name="title" type="string" value="Add Banner Term Crn Properties"/>
+		<put name="body" value="/banner/bannerTermCrnPropertiesEdit.jsp" />
+  	</definition>
+  	
+
+	<!-- End of custom tiles definitions -->
+
+</tiles-definitions>

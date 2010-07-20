@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="PurdueUniTimeCustomizations"
+  id="myeclipse.1234657984953"
+  context-root="/PurdueUniTimeCustomizations"
+  j2ee-spec="5.0"
+  archive="PurdueUniTimeCustomizations.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebContent" />
+  </attributes>
+</project-module>
+
