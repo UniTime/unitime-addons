@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ * UniTime 3.1 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ -->
+ <struts-config>
+
+   <form-beans>
+   		<!-- Custom forms -->
+      <form-bean name="rollForwardBannerSessionForm" type="org.unitime.banner.form.RollForwardBannerSessionForm" />
+      <form-bean name="bannerMessageResponsesForm" type="org.unitime.banner.form.BannerMessageResponsesForm" />
+	  <form-bean name="bannerOfferingListForm" type="org.unitime.banner.form.BannerCourseListForm" />
+	  <form-bean name="bannerOfferingDetailForm" type="org.unitime.banner.form.BannerOfferingDetailForm" />
+	  <form-bean name="bannerOfferingModifyForm" type="org.unitime.banner.form.BannerOfferingModifyForm" />
+	  <form-bean name="bannerSessionListForm" type="org.unitime.banner.form.BannerSessionListForm" />
+	  <form-bean name="bannerSessionEditForm" type="org.unitime.banner.form.BannerSessionEditForm" />
+	  <form-bean name="bannerTermCrnPropertiesListForm" type="org.unitime.banner.form.BannerTermCrnPropertiesListForm" />
+	  <form-bean name="bannerTermCrnPropertiesEditForm" type="org.unitime.banner.form.BannerTermCrnPropertiesEditForm" />
+
+   		<!-- End of custom forms -->
+   </form-beans>
+
+   <action-mappings>
+   	<!-- Custom actions -->
+	  <action
+      attribute="rollForwardBannerSessionForm"
+      input="rollForwardBannerSessionTile"
+      name="rollForwardBannerSessionForm"
+      path="/rollForwardBannerSession"
+      scope="request"
+      validate="false"
+      type="org.unitime.banner.action.RollForwardBannerSessionAction" >
+       <forward 
+       		name="displayRollForwardBannerSessionForm" 
+       		path="rollForwardBannerSessionTile" />
+       <forward 
+       		name="submit" 
+       		path="/rollForwardBannerSession.do" />
+      </action>
+
+	  <action
+      attribute="bannerMessageResponsesForm"
+      input="bannerMessageResponsesTile"
+      name="bannerMessageResponsesForm"
+      path="/bannerMessageResponses"
+      scope="request"
+      validate="false"
+      type="org.unitime.banner.action.BannerMessageResponsesAction" >
+       <forward 
+       		name="displayBannerMessageResponsesForm" 
+       		path="bannerMessageResponsesTile" />
+       <forward 
+       		name="submit" 
+       		path="/bannerMessageResponses.do" />
+      </action>
+
+      <action
+         path="/bannerOfferingSearch"
+         attribute="bannerOfferingListForm"
+         input="bannerOfferingSearchTile"
+         name="bannerOfferingListForm"
+         parameter="doit"
+         scope="request"
+         type="org.unitime.banner.action.BannerCourseSearchAction"
+         validate="false">
+        <forward 
+        	name="showBannerOfferingList" 
+        	path="bannerOfferingListTile" />
+        <forward 
+        	name="showBannerOfferingSearch" 
+        	path="bannerOfferingSearchTile" />
+        <forward 
+        	name="showBannerOfferingDetail" 
+        	path="/bannerOfferingDetail.do" />
+        <forward 
+        	name="editBannerOffering" 
+        	path="bannerOfferingEditTile" />
+      </action>
+      
+      <action
+         path="/bannerOfferingShowSearch"
+         type="org.unitime.banner.action.BannerOfferingShowSearchAction"
+         attribute="bannerOfferingListForm"
+         input="bannerOfferingSearchTile"
+         name="bannerOfferingListForm"
+         scope="request"
+         validate="false">
+        <forward 
+        	name="showBannerOfferingList" 
+        	path="bannerOfferingListTile" />
+        <forward 
+        	name="showBannerOfferingSearch" 
+        	path="bannerOfferingSearchTile" />
+      </action>
+
+      <action
+         path="/bannerOfferingChange"
+         attribute="bannerOfferingListForm"
+         input="bannerOfferingListTile"
+         name="bannerOfferingListForm"
+         parameter="doit"
+         scope="request"
+         type="org.unitime.banner.action.BannerCourseSearchAction"
+         validate="false">
+        <forward 
+        	name="showBannerOfferingList" 
+        	path="bannerOfferingListTile" />
+        <forward 
+        	name="showBannerOfferingSearch" 
+        	path="bannerOfferingSearchTile" />
+      </action>
+
+     <action
+         path="/bannerOfferingList"
+         attribute="bannerOfferingListForm"
+         input="bannerOfferingListTile"
+         name="bannerOfferingListForm"
+         scope="request"
+         type="org.unitime.banner.action.BannerOfferingListAction"
+         validate="false">
+         <forward 
+         	name="showBannerOfferingList" 
+         	path="bannerOfferingListTile" />
+      </action>
+
+      	<action
+          path="/bannerOfferingDetail"
+          type="org.unitime.banner.action.BannerOfferingDetailAction"
+          attribute="bannerOfferingDetailForm"
+          input="bannerOfferingDetailTile"
+          name="bannerOfferingDetailForm"
+          scope="request"
+          validate="false">
+	      <forward
+	        name="showBannerOfferings" 
+	        path="/bannerOfferingShowSearch.do" />
+	      <forward
+	        name="showBannerConfigDetail" 
+	        path="bannerOfferingDetailTile" />
+	    </action>
+
+      <action
+         path="/bannerOfferingModify"
+         type="org.unitime.banner.action.BannerOfferingModifyAction"
+         attribute="bannerOfferingModifyForm"
+         input="bannerOfferingModifyTile"
+         name="bannerOfferingModifyForm"
+         scope="request"
+         validate="false">
+        <forward 
+        	name="bannerOfferingModify" 
+        	path="bannerOfferingModifyTile" />
+        <forward 
+        	name="bannerOfferingDetail" 
+        	path="/bannerOfferingDetail.do" />
+      </action>
+      <action
+         path="/bannerSessionList"
+         attribute="bannerSessionListForm"
+         input="bannerSessionListTile"
+         name="bannerSessionListForm"
+         scope="request"
+         type="org.unitime.banner.action.BannerSessionListAction"
+         validate="false">
+         <forward name="showBannerSessionList" path="bannerSessionListTile" />
+      </action>
+      <action
+         path="/bannerSessionEdit"
+         attribute="bannerSessionEditForm"
+         name="bannerSessionEditForm"
+         parameter="doit"
+         scope="request"
+         type="org.unitime.banner.action.BannerSessionEditAction"
+         validate="false">
+         <forward name="showEdit" path="bannerSessionEditTile" />
+         <forward name="showAdd" path="bannerSessionAddTile" />
+         <forward
+            name="showBannerSessionList"
+            path="/bannerSessionList.do"
+            redirect="true" />
+      </action>
+      <action
+         path="/bannerTermCrnPropertiesList"
+         attribute="bannerTermCrnPropertiesListForm"
+         input="bannerTermCrnPropertiesListTile"
+         name="bannerTermCrnPropertiesListForm"
+         scope="request"
+         type="org.unitime.banner.action.BannerTermCrnPropertiesListAction"
+         validate="false">
+         <forward name="showBannerTermCrnPropertiesList" path="bannerTermCrnPropertiesListTile" />
+      </action>
+      <action
+         path="/bannerTermCrnPropertiesEdit"
+         attribute="bannerTermCrnPropertiesEditForm"
+         name="bannerTermCrnPropertiesEditForm"
+         parameter="doit"
+         scope="request"
+         type="org.unitime.banner.action.BannerTermCrnPropertiesEditAction"
+         validate="false">
+         <forward name="showEdit" path="bannerTermCrnPropertiesEditTile" />
+         <forward name="showAdd" path="bannerTermCrnPropertiesAddTile" />
+         <forward
+            name="showBannerTermCrnPropertiesList"
+            path="/bannerTermCrnPropertiesList.do"
+            redirect="true" />
+      </action>
+
+	
+    <!-- End of custom actions -->
+   </action-mappings>
+
+</struts-config>
