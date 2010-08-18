@@ -20,9 +20,7 @@
 
 package org.unitime.banner.queueprocessor.util;
 
-import java.io.IOException;
 import java.util.Properties;
-import java.util.Vector;
 
 import org.hibernate.Query;
 import org.unitime.banner.queueprocessor.oracle.OracleConnector;
@@ -66,8 +64,9 @@ public class QueueProcessorCheck {
 		if (ct > 0) {
 			// See if Banner is up
 		
+			OracleConnector jdbc = null;
 			try {
-				OracleConnector jdbc = new OracleConnector(
+				jdbc = new OracleConnector(
 						ApplicationProperties.getProperty("banner.host"), 
 						ApplicationProperties.getProperty("banner.database"),
 						ApplicationProperties.getProperty("banner.port"),
@@ -77,26 +76,20 @@ public class QueueProcessorCheck {
 				System.exit(33);
 			} catch (Exception e) {
 				// do nothing - Banner is down; messages are supposed to be queueing
+			} finally {
+				if (jdbc != null) jdbc.cleanup();
 			}
 		}
 	}
 	
 	static void mailMessage(String msg){
-       	Email email = new Email();
-       	
-       	String subject = "UniTime Queue Processor has unprocessed transactions";
-    	
     	try {
-			email.sendMail(
-					(String)ApplicationProperties.getProperty("tmtbl.smtp.host"), 
-					(String)ApplicationProperties.getProperty("tmtbl.smtp.domain"), 
-					(String)ApplicationProperties.getProperty("tmtbl.local.support.email", (String)ApplicationProperties.getProperty("tmtbl.inquiry.sender")), 
-					(String)ApplicationProperties.getProperty("tmtbl.local.support.email", (String)ApplicationProperties.getProperty("tmtbl.inquiry.sender")), 
-					(String)ApplicationProperties.getProperty("tmtbl.local.support.email", (String)ApplicationProperties.getProperty("tmtbl.inquiry.email")), 
-					subject, 
-					msg, 
-					new Vector<Object>());
-		} catch (IOException e) {
+           	Email email = new Email();
+           	email.setSubject("UniTime Queue Processor has unprocessed transactions");
+           	email.addNotify();
+           	email.setText(msg);
+           	email.send();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
