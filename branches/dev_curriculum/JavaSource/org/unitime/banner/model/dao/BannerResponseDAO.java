@@ -20,6 +20,9 @@
 
 package org.unitime.banner.model.dao;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -62,55 +65,48 @@ public class BannerResponseDAO extends BaseBannerResponseDAO {
 			boolean typeWarning) throws LoggableException {
 		
 		
-		String subjectCode = null;
-		if(searchSubject != null && searchSubject > 0) {
-			subjectCode = SubjectAreaDAO.getInstance().get(searchSubject).getSubjectAreaAbbreviation();
+		try {
+			String subjectCode = null;
+			if(searchSubject != null && searchSubject > 0) {
+				subjectCode = SubjectAreaDAO.getInstance().get(searchSubject).getSubjectAreaAbbreviation();
+			}
+			
+			DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+			
+			Date startDateDte = null;
+			if (startDate != null && !startDate.equals("")) {
+				startDateDte = df.parse(startDate);
+				System.out.println("Start date: " + startDateDte);
+			}
+			
+			Date stopDateDte = null;
+			if(stopDate != null && !stopDate.equals("")) {
+				stopDateDte = df.parse(stopDate);
+			}
+			
+			return find(sessionId,
+					startDateDte,
+					stopDateDte,
+					subjectCode,
+					subjects,
+					searchManager,
+					searchDepartment,
+					searchCourseNumber,
+					searchCrn,
+					searchXlst,
+					searchMessage,
+					maxResults,
+					showHistory,
+					actionAudit,
+					actionUpdate,
+					actionDelete,
+					typeSuccess,
+					typeError,
+					typeWarning);
+			
+		} catch (ParseException e) {
+			throw new LoggableException(e);
 		}
-		
-		
-		Date startDateDte;
-		if(startDate != null && !startDate.equals("")) {
-
-			startDateDte = new Date(Date.parse(startDate));
-			startDateDte.setHours(0);
-			startDateDte.setMinutes(0);
-			startDateDte.setSeconds(0);
-		} else {
-			startDateDte = null;
-		}
-		
-		Date stopDateDte;
-		if(stopDate != null && !stopDate.equals("")) {
-			stopDateDte = new Date(Date.parse(stopDate));
-			stopDateDte.setDate(stopDateDte.getDate() + 1);
-			stopDateDte.setHours(23);
-			stopDateDte.setMinutes(59);
-			stopDateDte.setSeconds(59);
-		} else {
-			stopDateDte = null;
-		}
-		
-		
-		
-		return find(sessionId,
-				startDateDte,
-				stopDateDte,
-				subjectCode,
-				subjects,
-				searchManager,
-				searchDepartment,
-				searchCourseNumber,
-				searchCrn,
-				searchXlst,
-				searchMessage,
-				maxResults,
-				showHistory,
-				actionAudit,
-				actionUpdate,
-				actionDelete,
-				typeSuccess,
-				typeError,
-				typeWarning);
 		
 	}
 	
