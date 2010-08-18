@@ -76,7 +76,6 @@ public class BannerResponseDAO extends BaseBannerResponseDAO {
 			Date startDateDte = null;
 			if (startDate != null && !startDate.equals("")) {
 				startDateDte = df.parse(startDate);
-				System.out.println("Start date: " + startDateDte);
 			}
 			
 			Date stopDateDte = null;
