@@ -7,8 +7,13 @@
 		</menu>
 	</menu>
 	<menu name="Administration">
-		<menu name="Custom" position="3">
-			<item name="Users" page="userEdit.do"/>
+		<menu name="Other">
+			<item name="Users" page="userEdit.do">
+				<!-- Only when LDAP is not configured -->
+				<condition>
+					<propertyEquals name="tmtbl.authenticate.ldap.provider" value="" defaultValue=""/>
+				</condition>
+			</item>
 		</menu>
 		<menu name="Banner">
 			<item name="Manage Banner Sessions" page="bannerSessionList.do"/>
