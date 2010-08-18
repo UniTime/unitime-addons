@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<unitime-menu>
+	<menu name="Courses">
+		<menu name="Banner">
+			<item name="Message Responses" page="bannerMessageResponses.do"/>
+			<item name="Banner Offerings" page="bannerOfferingShowSearch.do"/>
+		</menu>
+	</menu>
+	<menu name="Administration">
+		<menu name="Custom" position="3">
+			<item name="Users" page="userEdit.do"/>
+		</menu>
+		<menu name="Banner">
+			<item name="Manage Banner Sessions" page="bannerSessionList.do"/>
+			<item name="Banner Term Crn Properties" page="bannerTermCrnPropertiesList.do"/>
+			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.do"/>
+		</menu>
+	</menu>
+</unitime-menu>
