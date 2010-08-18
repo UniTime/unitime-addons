@@ -91,6 +91,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 	
 	private List classHasErrors;
 	
+	/*
 	private static String BANNER_SECTION_IDS_TOKEN = "bannerSectionIds";
 	private static String BANNER_SECTION_SECTION_IDS_TOKEN = "bannerSectionSectionIds";
 	private static String BANNER_SECTION_ORIGINAL_SECTION_IDS_TOKEN = "bannerSectionOriginalSectionIds";
@@ -103,7 +104,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 	private static String TIMES_TOKEN = "times";
 	private static String ROOMS_TOKEN = "rooms";
 	private static String INSTRUCTORS_TOKEN = "instructors";
-	
+	*/
 
     // --------------------------------------------------------- Classes
 
@@ -274,35 +275,6 @@ public class BannerOfferingModifyForm extends ActionForm {
        	courseCreditOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
     }
      
-    private boolean determineBooleanValueAtIndex(List l, int index){
-    	if (l == null){
-    		return(false);
-    	}
-    	if (l.size() == 0){
-    		return(false);
-    	}
-    	if (l.size() < (index + 1)){
-    		return(false);
-    	}
-    	if (l.get(index) == null){
-    		return(false);
-    	}
-    	if (l.get(index) instanceof Boolean) {
-			Boolean value = (Boolean) l.get(index);
-			return(value.booleanValue());
-		}
-    	if (l.get(index) instanceof String) {
-			String str_value = (String) l.get(index);
-			if (str_value.equals("on")){
-				return(true);
-			} else if (str_value.equals("yes")){
-				return(true);
-			} else {
-				return(Boolean.parseBoolean(str_value));
-			}
-		}
-    	return(false);
-    }
 	public List getBannerSectionIds() {
 		return bannerSectionIds;
 	}
@@ -399,25 +371,6 @@ public class BannerOfferingModifyForm extends ActionForm {
 		this.courseCreditOverrides.add(bs.getOverrideCourseCredit()==null?"":bs.getOverrideCourseCredit());
 		this.courseCredits.add(bs.courseCreditStringBasedOnClass(cls));
 	}
-	
-	private int indexOfLastChildClass(String classId){
-		
-		int clsIndex = this.getBannerSectionIds().indexOf(classId);
-		int index = clsIndex + 1;
-		while (index < (this.getBannerSectionIds().size())){
-			if (this.getBannerSectionLabelIndents().get(index).toString().equals(this.getBannerSectionLabelIndents().get(clsIndex).toString())){
-					break;
-			} else {
-				if (this.getBannerSectionLabelIndents().get(index).toString().length() < this.getBannerSectionLabelIndents().get(clsIndex).toString().length()){
-					break;
-				}
-			}
-			index++;
-		}
-		index--;
-		return index;
-	}
-		
 	
 	public Integer getSubjectAreaId() {
 		return subjectAreaId;

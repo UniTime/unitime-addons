@@ -23,6 +23,7 @@ package org.unitime.banner.util;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
@@ -165,7 +166,6 @@ public class MeetingElement implements Comparable<MeetingElement> {
     }
 
 
-	@SuppressWarnings({ "unchecked", "unchecked" })
 	public static Vector<MeetingElement> createMeetingElementsFor(BannerSection bannerSection, Class_ clazz, org.hibernate.Session hibSession){
 		Vector<MeetingElement> elements = new Vector<MeetingElement>();
 		
@@ -310,12 +310,12 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		}
 	}
 
-	private void setDaysOfWeek(IntEnumeration e){
+	private void setDaysOfWeek(Enumeration<Integer> e){
 		if (e == null){
 			return;
 		}
 		while (e.hasMoreElements()){
-			int day = (int)e.nextInt();
+			int day = e.nextElement();
 			if (day == Constants.DAY_MON){
 				monday = true;
 			} else if (day == Constants.DAY_TUE){

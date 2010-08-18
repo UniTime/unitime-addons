@@ -50,8 +50,6 @@ public class ProcessQueue {
 
 	public static void main(String[] args) {
 
-		String curDir = System.getProperty("user.dir");
-		
 		ProcessQueue pq = new ProcessQueue();
 
 		Date lastRunTime = new Date();

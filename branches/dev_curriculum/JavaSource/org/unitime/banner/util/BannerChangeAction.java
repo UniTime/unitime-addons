@@ -81,7 +81,6 @@ public class BannerChangeAction implements ExternalClassEditAction,
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassEditAction#performExternalExternalClassEditAction(org.unitime.timetable.model.Class_, org.hibernate.Session)
 	 */
-	@SuppressWarnings("unchecked")
 	public void performExternalClassEditAction(Class_ clazz,
 			Session hibSession) {
 		SendBannerMessage.sendBannerMessage(BannerSection.findBannerSectionsForClass(clazz, hibSession), BannerMessageAction.UPDATE, hibSession);
@@ -197,7 +196,6 @@ public class BannerChangeAction implements ExternalClassEditAction,
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalSolutionCommitAction#performExternalSolutionCommitAction(org.unitime.timetable.model.Solution, org.hibernate.Session)
 	 */
-	@SuppressWarnings("unchecked")
 	public void performExternalSolutionCommitAction(Set<Solution> solutions,
 			Session hibSession) {
 		HashSet<BannerSection> sections = new HashSet<BannerSection>();
