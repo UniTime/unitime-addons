@@ -38,23 +38,12 @@ public class QueueError extends BaseQueueError {
 	public QueueError () {
 		super();
 	}
-
-	/**
-	 * Constructor for primary key
-	 */
-	public QueueError (org.unitime.banner.model.QueueErrorId id) {
-		super(id);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 
 	public void setId(Queue queueEntry) {
-		QueueErrorId eid = new QueueErrorId();
-		eid.setQueueId(queueEntry.getUniqueId());
-		eid.setErrorType(queueEntry.getQueueType());
-		eid.setErrorDate(new Date());
-		
-		setId(eid);
+		setQueueId(queueEntry.getUniqueId());
+		setErrorType(queueEntry.getQueueType());
+		setErrorDate(new Date());
 	}
 
 }

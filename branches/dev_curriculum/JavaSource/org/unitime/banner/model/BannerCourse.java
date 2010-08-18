@@ -63,19 +63,6 @@ public class BannerCourse extends BaseBannerCourse {
 	public BannerCourse (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public BannerCourse (
-		java.lang.Long uniqueId,
-		java.lang.Long courseOfferingId) {
-
-		super (
-			uniqueId,
-			courseOfferingId);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 	
 	private CourseOffering courseOffering;

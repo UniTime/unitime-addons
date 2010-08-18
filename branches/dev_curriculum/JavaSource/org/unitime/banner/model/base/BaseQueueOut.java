@@ -1,8 +1,8 @@
 /*
- * UniTime 3.1 (University Timetabling Application)
+ * UniTime 3.2 (University Timetabling Application)
  * Copyright (C) 2010, UniTime LLC, and individual contributors
  * as indicated by the @authors tag.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -17,96 +17,59 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-
 package org.unitime.banner.model.base;
 
 import java.io.Serializable;
+import java.util.Date;
+
+import org.unitime.banner.model.Queue;
+import org.unitime.banner.model.QueueOut;
+
+public abstract class BaseQueueOut extends Queue implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	private Date iPickupDate;
 
 
-/**
- * This is an object that contains data related to the integrationqueueout table.
- * Do not modify this class because it will be overwritten if the configuration file
- * related to this class is modified.
- *
- * @hibernate.class
- *  table="integrationqueueout"
- */
+	public static String PROP_PICKUPDATE = "pickupDate";
 
-public abstract class BaseQueueOut extends org.unitime.banner.model.Queue  implements Serializable {
-
-	public static String REF = "QueueOut";
-	public static String PROP_PICKUP_DATE = "pickupDate";
-
-
-	// constructors
-	public BaseQueueOut () {
+	public BaseQueueOut() {
 		initialize();
 	}
 
-	/**
-	 * Constructor for primary key
-	 */
-	public BaseQueueOut (java.lang.Long uniqueId) {
-		super(uniqueId);
+	public BaseQueueOut(Long uniqueId) {
+		setUniqueId(uniqueId);
+		initialize();
 	}
 
+	protected void initialize() {}
 
+	public Date getPickupDate() { return iPickupDate; }
+	public void setPickupDate(Date pickupDate) { iPickupDate = pickupDate; }
 
-	private int hashCode = Integer.MIN_VALUE;
-
-
-	// fields
-	private java.util.Date pickupDate;
-
-
-
-
-
-
-	/**
-	 * Return the value associated with the column: pickupdate
-	 */
-	public java.util.Date getPickupDate () {
-		return pickupDate;
+	public boolean equals(Object o) {
+		if (o == null || !(o instanceof QueueOut)) return false;
+		if (getUniqueId() == null || ((QueueOut)o).getUniqueId() == null) return false;
+		return getUniqueId().equals(((QueueOut)o).getUniqueId());
 	}
 
-	/**
-	 * Set the value related to the column: pickupdate
-	 * @param pickupDate the pickupdate value
-	 */
-	public void setPickupDate (java.util.Date pickupDate) {
-		this.pickupDate = pickupDate;
+	public int hashCode() {
+		if (getUniqueId() == null) return super.hashCode();
+		return getUniqueId().hashCode();
 	}
 
-
-
-
-
-	public boolean equals (Object obj) {
-		if (null == obj) return false;
-		if (!(obj instanceof org.unitime.banner.model.QueueOut)) return false;
-		else {
-			org.unitime.banner.model.QueueOut queueOut = (org.unitime.banner.model.QueueOut) obj;
-			if (null == this.getUniqueId() || null == queueOut.getUniqueId()) return false;
-			else return (this.getUniqueId().equals(queueOut.getUniqueId()));
-		}
+	public String toString() {
+		return "QueueOut["+getUniqueId()+"]";
 	}
 
-	public int hashCode () {
-		if (Integer.MIN_VALUE == this.hashCode) {
-			if (null == this.getUniqueId()) return super.hashCode();
-			else {
-				String hashStr = this.getClass().getName() + ":" + this.getUniqueId().hashCode();
-				this.hashCode = hashStr.hashCode();
-			}
-		}
-		return this.hashCode;
+	public String toDebugString() {
+		return "QueueOut[" +
+			"\n	PickupDate: " + getPickupDate() +
+			"\n	PostDate: " + getPostDate() +
+			"\n	ProcessDate: " + getProcessDate() +
+			"\n	Status: " + getStatus() +
+			"\n	UniqueId: " + getUniqueId() +
+			"\n	Xml: " + getXml() +
+			"]";
 	}
-
-
-	public String toString () {
-		return super.toString();
-	}
-
-
 }
