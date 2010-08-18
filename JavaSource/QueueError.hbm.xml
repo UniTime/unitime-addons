@@ -24,11 +24,7 @@
 	<class  name="QueueError"
 	       table="integrationqueueerror">
 
-      <composite-id
-             class="org.unitime.banner.model.QueueErrorId"
-             mapped="false"
-             name="id" 
-             unsaved-value="undefined">
+      <composite-id>
          <key-property name="queueId" type="java.lang.Long">
                <column name="queueid" precision="22" scale="0"/>
           </key-property>

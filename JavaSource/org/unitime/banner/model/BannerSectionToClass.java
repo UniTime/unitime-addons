@@ -42,21 +42,6 @@ public class BannerSectionToClass extends BaseBannerSectionToClass {
 	public BannerSectionToClass (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public BannerSectionToClass (
-		java.lang.Long uniqueId,
-		org.unitime.banner.model.BannerSection bannerSection,
-		java.lang.Long classId) {
-
-		super (
-			uniqueId,
-			bannerSection,
-			classId);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 
 

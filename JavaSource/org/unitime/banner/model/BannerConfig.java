@@ -49,22 +49,6 @@ public class BannerConfig extends BaseBannerConfig {
 	public BannerConfig (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public BannerConfig (
-		java.lang.Long uniqueId,
-		org.unitime.banner.model.BannerCourse bannerCourse,
-		java.lang.Long instrOfferingConfigId) {
-
-		super (
-			uniqueId,
-			bannerCourse,
-			instrOfferingConfigId);
-	}
-
-
 /*[CONSTRUCTOR MARKER END]*/
 
 	public static BannerConfig findBannerConfigForInstrOffrConfigAndCourseOffering(
