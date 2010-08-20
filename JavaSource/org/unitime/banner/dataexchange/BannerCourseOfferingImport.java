@@ -30,6 +30,8 @@ import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.banner.model.dao.BannerConfigDAO;
+import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.commons.Debug;
 import org.unitime.timetable.dataexchange.BaseCourseOfferingImport;
 import org.unitime.timetable.model.Class_;
@@ -98,6 +100,8 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 	protected boolean handleCustomInstrOffrConfigChildElements(InstrOfferingConfig instrOfferingConfig,
 		Element instrOfferingConfigElement) throws Exception {
 		boolean changed = ensureBannerConfigsExistForInstrOfferingConfig(instrOfferingConfig);
+		boolean usedNewSessionAsWorkingSession = false;
+		Session workingSession = getHibSession();
 		Element bannerConfigElement = instrOfferingConfigElement.element("bannerConfig");
         if (bannerConfigElement == null){
 			addNote("Course offering: " + courseOfferingLabelString(instrOfferingConfig.getControllingCourseOffering()) + " no 'bannerConfig' element.");
@@ -115,6 +119,11 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 		for (Iterator coIt = instrOfferingConfig.getInstructionalOffering().getCourseOfferings().iterator(); coIt.hasNext();){
 			CourseOffering co = (CourseOffering) coIt.next();
 			BannerConfig bc = BannerConfig.findBannerConfigForInstrOffrConfigAndCourseOffering(instrOfferingConfig, co, getHibSession());
+			if (bc == null) {
+				workingSession = BannerConfigDAO.getInstance().createNewSession();
+				usedNewSessionAsWorkingSession = true;
+				bc = BannerConfig.findBannerConfigForInstrOffrConfigAndCourseOffering(instrOfferingConfig, co, workingSession);
+			}
 			if (bc.getGradableItype() == null && itype != null){
 				bc.setGradableItype(itype);
 				addNote(courseOfferingLabelString(instrOfferingConfig.getControllingCourseOffering()) + ":  Gradable itype set in Banner Course");
@@ -131,7 +140,11 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 				}
 			}
 			if (changed){
-				getHibSession().saveOrUpdate(bc);
+				workingSession.saveOrUpdate(bc);
+				if (usedNewSessionAsWorkingSession){
+					workingSession.flush();
+					workingSession.close();
+				}
 			}
 		} 
 		
@@ -236,6 +249,8 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 	protected boolean handleCustomClassChildElements(Element classElement,
 			InstrOfferingConfig ioc, Class_ clazz) throws Exception {
 		boolean changed = ensureBannerSectionsExistForClass(clazz);
+		Session workingSession = getHibSession();
+		boolean usedNewSessionAsWorkingSession = false;
 		String elementName = "section";
 		if(classElement.element(elementName) != null) {
 			for (Iterator<?> it = classElement.elementIterator(elementName); it.hasNext();){
@@ -247,6 +262,12 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 				String linkId = getOptionalStringAttribute(sectionElement, "linkIdent");
 				String linkConnector = getOptionalStringAttribute(sectionElement, "linkConn");
 				BannerSection bs = BannerSection.findBannerSectionForClassAndCourseExternalId(clazz, courseExternalId, getHibSession(), session);
+				if (bs == null) {
+					workingSession = BannerSectionDAO.getInstance().createNewSession();
+					usedNewSessionAsWorkingSession = true;
+					CourseOffering co = CourseOffering.findByExternalId(session.getUniqueId(), courseExternalId);
+					bs = BannerSection.findBannerSectionForClassAndCourseOffering(clazz, co, workingSession);
+				}
 				if (bs == null){
 						throw new Exception("Class: " + classLabelString(clazz) + " matching Banner Section for course external id: " + courseExternalId + " does not exist.");
 				}
@@ -284,7 +305,11 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 				if (elementSectionConsent(sectionElement, bs)){
 					changed = true;
 				}
-				getHibSession().update(bs);
+				workingSession.update(bs);
+				if (usedNewSessionAsWorkingSession){
+					workingSession.flush();
+					workingSession.close();
+				}
 			}
 		}
 		return(changed);
