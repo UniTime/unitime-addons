@@ -20,14 +20,19 @@
 
 package org.unitime.banner.dataexchange;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
+import java.util.Set;
 
 import org.dom4j.Element;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
+import org.unitime.timetable.gwt.server.SectioningServer;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
@@ -36,6 +41,7 @@ import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.TimetableManager;
+import org.unitime.timetable.model.dao.StudentDAO;
 import org.unitime.timetable.test.UpdateExamConflicts;
 
 /**
@@ -44,96 +50,165 @@ import org.unitime.timetable.test.UpdateExamConflicts;
  *
  */
 public class BannerStudentEnrollmentImport extends BaseImport {
-	TimetableManager manager = null;
-	HashMap<Integer, Vector<Class_>> classes = new HashMap<Integer, Vector<Class_>>();
-	HashMap<Integer, CourseOffering> courseOfferings = new HashMap<Integer, CourseOffering>();
-	boolean trimLeadingZerosFromExternalId = false;
 	public BannerStudentEnrollmentImport() {
 		super();
 	}
 
 	@Override
 	public void loadXml(Element rootElement) throws Exception {
-		String rootElementName = "bannerStudentEnrollments";
-		String trimLeadingZeros =
-	        ApplicationProperties.getProperty("tmtbl.data.exchange.trim.externalId","false");
-		if (trimLeadingZeros.equals("true")){
-			trimLeadingZerosFromExternalId = true;
-		}
+		boolean trimLeadingZerosFromExternalId = "true".equals(ApplicationProperties.getProperty("tmtbl.data.exchange.trim.externalId","false"));
 
-        if (!rootElement.getName().equalsIgnoreCase(rootElementName)) {
+        if (!rootElement.getName().equalsIgnoreCase("bannerStudentEnrollments"))
         	throw new Exception("Given XML file is not a Student Enrollments load file.");
-        }
-        
+
         Session session = null;
+        
+        Set<Long> updatedStudents = new HashSet<Long>(); 
+        
 		try {
 	        String campus = rootElement.attributeValue("campus");
 	        String year   = rootElement.attributeValue("year");
 	        String term   = rootElement.attributeValue("term");
 	        String created = rootElement.attributeValue("created");
-			beginTransaction();
+			
+	        beginTransaction();
+
 	        session = Session.getSessionUsingInitiativeYearTerm(campus, year, term);
-	        if(session == null) {
+	        
+	        if(session == null)
 	           	throw new Exception("No session found for the given campus, year, and term.");
-	        }
-	        loadClasses(session.getUniqueId());
+	        
+	    	HashMap<Integer, List<Class_>> crn2classes = new HashMap<Integer, List<Class_>>();
+	    	HashMap<Integer, CourseOffering> crn2course = new HashMap<Integer, CourseOffering>();
+			HashMap<Long, CourseOffering> courses = new HashMap<Long, CourseOffering>();
+			for (Iterator<?> it = CourseOffering.findAll(session.getUniqueId()).iterator(); it.hasNext();){
+				CourseOffering co = (CourseOffering) it.next();
+				courses.put(co.getUniqueId(), co);
+			}
+	 		for (Iterator<?> it = BannerSection.findAll(session.getUniqueId()).iterator(); it.hasNext();) {
+				BannerSection bs = (BannerSection) it.next();
+				if (bs.getCrn() == null) continue;
+				Set<Class_> bsClasses = bs.getClasses(getHibSession());
+				if (bsClasses != null && !bsClasses.isEmpty()) {
+					crn2classes.put(bs.getCrn(), new ArrayList<Class_>(bsClasses));
+					crn2course.put(bs.getCrn(), courses.get(bs.getBannerConfig().getBannerCourse().getCourseOfferingId()));
+				}
+			}
 	        info("classes loaded");
-	        if (manager == null){
-	        	manager = findDefaultManager();
-	        }
-	        if (created != null) {
-				ChangeLog.addChange(getHibSession(), manager, session, session, created, ChangeLog.Source.DATA_IMPORT_STUDENT_ENROLLMENTS, ChangeLog.Operation.UPDATE, null, null);
-	        }
+
+	        TimetableManager manger = getManager();
+	        if (manger == null)
+	        	manger = findDefaultManager();
+
+	        if (created != null)
+				ChangeLog.addChange(getHibSession(), manger, session, session, created, ChangeLog.Source.DATA_IMPORT_STUDENT_ENROLLMENTS, ChangeLog.Operation.UPDATE, null, null);
          
-            /* 
-             * If some records of a table related to students need to be explicitly deleted, 
-             * hibernate can also be used to delete them. For instance, the following query 
-             * deletes all student class enrollments for given academic session:
-             *   
-             * delete StudentClassEnrollment sce where sce.student.uniqueId in
-             *      (select s.uniqueId from Student s where s.session.uniqueId=:sessionId)
-             */
-            
-            getHibSession().createQuery("delete StudentClassEnrollment sce where sce.student.uniqueId in (select s.uniqueId from Student s where s.session.uniqueId=:sessionId)").setLong("sessionId", session.getUniqueId().longValue()).executeUpdate();
-            
-            flush(true);
-            String elementName = "student";
- 	        for ( Iterator<?> it = rootElement.elementIterator(); it.hasNext(); ) {
-	            Element studentElement = (Element) it.next();
-	            String externalId = getRequiredStringAttribute(studentElement, "externalId", elementName);
-	            if (trimLeadingZerosFromExternalId){
-	            	while (externalId.startsWith("0")) externalId = externalId.substring(1);
-	            }
-            	Student student = fetchStudent(externalId, session.getUniqueId());
-                String firstName = getOptionalStringAttribute(studentElement, "firstName");
-	            String lastName = getOptionalStringAttribute(studentElement, "lastName");
-            	if (student == null){
+	        Hashtable<String, Student> students = new Hashtable<String, Student>();
+	        for (Student student: StudentDAO.getInstance().findBySession(getHibSession(), session.getUniqueId())) {
+	        	if (student.getExternalUniqueId() != null)
+	        		students.put(student.getExternalUniqueId(), student);
+	        }
+
+ 	        for (Iterator i = rootElement.elementIterator("student"); i.hasNext(); ) {
+	            Element studentElement = (Element) i.next();
+	            
+	            String externalId = studentElement.attributeValue("externalId");
+	            if (externalId == null) continue;
+	            while (trimLeadingZerosFromExternalId && externalId.startsWith("0")) externalId = externalId.substring(1);
+
+            	Student student = students.remove(externalId);
+            	if (student == null) {
             		student = new Student();
 	                student.setSession(session);
-		            student.setFirstName(firstName==null?"Name":firstName);
-		            student.setMiddleName(getOptionalStringAttribute(studentElement, "middleName"));
-		            student.setLastName(lastName==null?"Unknown":lastName);
-		            student.setEmail(getOptionalStringAttribute(studentElement, "email"));
+		            student.setFirstName(studentElement.attributeValue("firstName", "Name"));
+		            student.setMiddleName(studentElement.attributeValue("middleName"));
+		            student.setLastName(studentElement.attributeValue("lastName", "Unknown"));
+		            student.setEmail(studentElement.attributeValue("email"));
 		            student.setExternalUniqueId(externalId);
-		            student.setFreeTimeCategory(new Integer(0));
-		            student.setSchedulePreference(new Integer(0));
+		            student.setFreeTimeCategory(0);
+		            student.setSchedulePreference(0);
+		            student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
             	} else {
-		            student.setFirstName(firstName==null?"Name":firstName);
-		            student.setMiddleName(getOptionalStringAttribute(studentElement, "middleName"));
-		            student.setLastName(lastName==null?"Unknown":lastName);
+		            student.setFirstName(studentElement.attributeValue("firstName", student.getFirstName()));
+		            student.setMiddleName(studentElement.attributeValue("middleName", student.getMiddleName()));
+		            student.setLastName(studentElement.attributeValue("lastName", student.getLastName()));
             	}
-            	elementSection(studentElement, student);
-                getHibSession().save(student);
+            	
+            	Hashtable<Long, StudentClassEnrollment> enrollments = new Hashtable<Long, StudentClassEnrollment>();
+            	for (StudentClassEnrollment enrollment: student.getClassEnrollments()) {
+            		enrollments.put(enrollment.getClazz().getUniqueId(), enrollment);
+            	}
+
+            	for (Iterator j = studentElement.elementIterator("section"); j.hasNext(); ) {
+            		Element classElement = (Element) j.next();
+            		
+            		Integer crn = null;
+            		try {
+            			crn = Integer.valueOf(classElement.attributeValue("crn"));
+            		} catch (NullPointerException e) {
+            		} catch (NumberFormatException e) {
+            		}
+
+            		List<Class_> classes = (crn == null ? null : crn2classes.get(crn));
+            		if (classes == null) {
+            			warn("No classes for CRN " + crn + " found.");
+            			continue;
+            		}
+            		
+            		for (Class_ clazz: classes) {
+                		StudentClassEnrollment enrollment = enrollments.remove(clazz.getUniqueId());
+                		if (enrollment != null) continue; // enrollment already exists
+                		
+                		enrollment = new StudentClassEnrollment();
+                		enrollment.setStudent(student);
+                		enrollment.setClazz(clazz);
+                		enrollment.setCourseOffering(crn2course.get(crn));
+                		enrollment.setTimestamp(new java.util.Date());
+                		student.getClassEnrollments().add(enrollment);
+                		
+                		if (student.getUniqueId() != null) updatedStudents.add(student.getUniqueId());
+            		}
+            	}
+            	
+            	if (!enrollments.isEmpty()) {
+            		for (StudentClassEnrollment enrollment: enrollments.values()) {
+            			student.getClassEnrollments().remove(enrollment);
+            			getHibSession().delete(enrollment);
+                		updatedStudents.add(student.getUniqueId());
+            		}
+            	}
+            	
+            	if (student.getUniqueId() == null) {
+            		updatedStudents.add((Long)getHibSession().save(student));
+            	} else {
+            		getHibSession().update(student);
+            	}
 
 	            flushIfNeeded(true);
 	        }
             
+ 	        for (Student student: students.values()) {
+        		for (Iterator<StudentClassEnrollment> i = student.getClassEnrollments().iterator(); i.hasNext(); ) {
+        			StudentClassEnrollment enrollment = i.next();
+        			getHibSession().delete(enrollment);
+        			i.remove();
+     	        	updatedStudents.add(student.getUniqueId());
+        		}
+        		getHibSession().update(student);
+ 	        }
+            
             commitTransaction();
+            
+            debug(updatedStudents.size() + " students changed");
 		} catch (Exception e) {
 			fatal("Exception: " + e.getMessage(), e);
 			rollbackTransaction();
 			throw e;
 		}
+		
+		if (session != null && !updatedStudents.isEmpty())
+            SectioningServer.studentChanged(session.getUniqueId(), updatedStudents);
+
         if (session!=null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.finalExam.updateConflicts","false"))) {
             try {
                 beginTransaction();
@@ -144,7 +219,8 @@ public class BannerStudentEnrollmentImport extends BaseImport {
                 rollbackTransaction();
             }
         }
-         if (session!=null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.midtermExam.updateConflicts","false"))) {
+        
+        if (session!=null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.midtermExam.updateConflicts","false"))) {
             try {
                 beginTransaction();
                 new UpdateExamConflicts(this).update(session.getUniqueId(), Exam.sExamTypeMidterm, getHibSession());
@@ -154,10 +230,9 @@ public class BannerStudentEnrollmentImport extends BaseImport {
                 rollbackTransaction();
             }
         }
-        info("Application property: tmtbl.data.import.studentEnrl.class.updateEnrollments = " + ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.class.updateEnrollments","false"));
+
         if (session != null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.class.updateEnrollments","false"))){
             try {
-                beginTransaction();
                 info("  Updating class enrollments...");
                 Class_.updateClassEnrollmentForSession(session, getHibSession());
                 info("  Updating course offering enrollments...");
@@ -166,58 +241,8 @@ public class BannerStudentEnrollmentImport extends BaseImport {
                 fatal("Exception: " + e.getMessage(), e);
             }      	
         }
+        
         info("  Banner Student Enrollment Load Complete");
-	}
-	
-	private void elementSection(Element studentElement, Student student) throws Exception{
-		String elementName = "section";
-		
-        for ( Iterator<?> it = studentElement.elementIterator(); it.hasNext(); ) {
-            Element classElement = (Element) it.next();
-            Integer crn = getRequiredIntegerAttribute(classElement, "crn", elementName);
-            Vector<Class_> clazzes = classes.get(crn);
-            if (clazzes != null){
-            	for(Iterator<?> cIt = clazzes.iterator(); cIt.hasNext();){
-            		Class_ clazz = (Class_) cIt.next();
-					StudentClassEnrollment sce = new StudentClassEnrollment();
-			    	sce.setStudent(student);
-			    	sce.setClazz(clazz);
-			    	sce.setCourseOffering(courseOfferings.get(crn));
-			    	sce.setTimestamp(new java.util.Date());
-			    	student.addToclassEnrollments(sce);
-            	}
-            }
-        }
-	}
-
-	Student fetchStudent(String externalId, Long sessionId) {
-		return (Student) this.
-		getHibSession().
-		createQuery("select distinct a from Student as a where a.externalUniqueId=:externalId and a.session.uniqueId=:sessionId").
-		setLong("sessionId", sessionId.longValue()).
-		setString("externalId", externalId).
-		setCacheable(true).
-		uniqueResult();
-	}
-	
-	private void loadClasses(Long sessionId) throws Exception {
-		HashMap<Long, CourseOffering> baseCourseOfferings = new HashMap<Long, CourseOffering>();
-		for (Iterator<?> it = CourseOffering.findAll(sessionId).iterator(); it.hasNext();){
-			CourseOffering co = (CourseOffering) it.next();
-			baseCourseOfferings.put(co.getUniqueId(), co);
-		}
- 		for (Iterator<?> it = BannerSection.findAll(sessionId).iterator(); it.hasNext();) {
-			BannerSection bs = (BannerSection) it.next();
-			if (bs.getCrn() != null && bs.getClasses(getHibSession()) != null && !bs.getClasses(getHibSession()).isEmpty()) {
-				Vector<Class_> cls = new Vector<Class_>();
-				for (Iterator<?> cIt = bs.getClasses(getHibSession()).iterator(); cIt.hasNext();) {
-					Class_ c = (Class_) cIt.next();
-					cls.add(c);
-				}
-				classes.put(bs.getCrn(), cls);
-				courseOfferings.put(bs.getCrn(), baseCourseOfferings.get(bs.getBannerConfig().getBannerCourse().getCourseOfferingId()));
-			} 
-		}
 	}
 
 }
