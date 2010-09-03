@@ -32,12 +32,12 @@ import org.dom4j.Element;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
-import org.unitime.timetable.gwt.server.SectioningServer;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
+import org.unitime.timetable.model.StudentSectioningQueue;
 
 /**
  * @author says
@@ -60,13 +60,15 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	        	throw new Exception("Given XML is not a banner enterprise message.");
 	        }
 	        beginTransaction();
-			propertiesElement(rootElement.element(propertiesElementName));
-			membershipElements(rootElement);
-	        commitTransaction();
 	        
-			for (Map.Entry<Long, Set<Long>> entry: iUpdatedStudents.entrySet())
-				SectioningServer.studentChanged(entry.getKey(), entry.getValue());
+			propertiesElement(rootElement.element(propertiesElementName));
 			
+			membershipElements(rootElement);
+
+			for (Map.Entry<Long, Set<Long>> entry: iUpdatedStudents.entrySet())
+	 	        StudentSectioningQueue.studentChanged(getHibSession(), entry.getKey(), entry.getValue());
+
+			commitTransaction();
 		} catch (Exception e) {
 			fatal("Exception: " + e.getMessage(), e);
 			rollbackTransaction();
