@@ -22,6 +22,25 @@
 	<dialect type="mysql">org.hibernate.dialect.MySQLInnoDBDialect</dialect>
 	<dialect type="plsql">org.hibernate.dialect.OracleDialect</dialect>
  
- 
+ 	<update version="2" date="21-Sep-2010" comment="Banner Response Indexes">
+		<plsql>
+			create index %SCHEMA%.idx_response_term_code on %SCHEMA%.banner_response(term_code)
+		</plsql>
+		<mysql>
+			create index idx_response_term_code on %SCHEMA%.banner_response(term_code)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_response_crn on %SCHEMA%.banner_response(crn)
+		</plsql>
+		<mysql>
+			create index idx_response_crn on %SCHEMA%.banner_response(crn)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_response_xlst_group on %SCHEMA%.banner_response(xlst_group)
+		</plsql>
+		<mysql>
+			create index idx_response_xlst_group on %SCHEMA%.banner_response(xlst_group)
+		</mysql>
+	</update>
  
  </dbupdate>
