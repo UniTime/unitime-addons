@@ -240,9 +240,8 @@ public class BannerResponseDAO extends BaseBannerResponseDAO {
             if(searchMessage != null && searchMessage != "") {
             	whereHql += " and upper(rp.message) like upper(:searchMessage) ";
             }
-            
             if (!showHistory) {
-            	whereHql += " and rp.queueId = (select max(queueId) from BannerResponse rp2 where concat(concat(rp2.termCode,rp2.crn) ,rp2.xlstGroup)= concat(concat(rp.termCode,rp.crn),rp.xlstGroup))";
+            	whereHql += " and rp.queueId = (select max(queueId) from BannerResponse rp3 where rp3.termCode = rp.termCode and rp3.crn = rp.crn and ((rp3.xlstGroup is null and rp.xlstGroup is null) or (rp3.xlstGroup = rp.xlstGroup))) ";
             }
             			
             String hql = "select rp " +
