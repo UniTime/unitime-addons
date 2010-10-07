@@ -50,14 +50,14 @@ public class SendBannerAuditXml {
 	public static void main(String[] args) throws Exception {
 		ToolBox.configureLogging();
 
-		Properties properties = new Properties();
-		properties.put("connection.url", ApplicationProperties
-				.getProperty("connection.url"));
-		properties.put("connection.username", ApplicationProperties
-				.getProperty("connection.username"));
-		properties.put("connection.password", ApplicationProperties
-				.getProperty("connection.password"));
-		HibernateUtil.configureHibernate(properties);
+//		Properties properties = new Properties();
+//		properties.put("connection.url", ApplicationProperties
+//				.getProperty("connection.url"));
+//		properties.put("connection.username", ApplicationProperties
+//				.getProperty("connection.username"));
+//		properties.put("connection.password", ApplicationProperties
+//				.getProperty("connection.password"));
+		HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
 		BannerSectionAuditExport bsea = new BannerSectionAuditExport();
 		Session session = Session.getSessionUsingInitiativeYearTerm(args[0],
