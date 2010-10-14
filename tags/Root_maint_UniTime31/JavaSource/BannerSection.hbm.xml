@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<!-- 
+ * UniTime 3.1 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ -->
+
+<hibernate-mapping package="org.unitime.banner.model">
+	<class
+		name="BannerSection"
+		table="banner_section">
+
+ 		<cache include="non-lazy" usage="read-write"/>
+ 		
+        <id
+            name="uniqueId"
+            column="UNIQUEID"
+            type="java.lang.Long"
+        >
+            <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">
+                <param name="sequence">pref_group_seq</param>
+            </generator>
+        </id>
+        
+		<property
+			name="crn"
+			column="crn"
+			type="java.lang.Integer"
+			not-null="false"
+			length="5"
+		/>
+
+		<property
+			name="sectionIndex"
+			column="section_index"
+			type="java.lang.String"
+			not-null="false"
+			length="3"
+		/>
+		
+		<property
+			name="crossListIdentifier"
+			column="cross_list_identifier"
+			type="java.lang.String"
+			not-null="false"
+			length="2"
+		/>
+
+		<property
+			name="linkIdentifier"
+			column="link_identifier"
+			type="java.lang.String"
+			not-null="false"
+			length="2"
+		/>
+
+		<property
+			name="linkConnector"
+			column="link_connector"
+			type="java.lang.String"
+			not-null="false"
+			length="2"
+		/>
+		
+		<property
+			name="uniqueIdRolledForwardFrom"
+			column="uid_rolled_fwd_from"
+			type="java.lang.Long"
+			not-null="false"
+			length="20"
+		/>
+
+		<set
+			name="bannerSectionToClasses"
+			lazy="false"
+			cascade="all-delete-orphan" 
+			inverse="true"
+			>
+			<cache include="non-lazy" usage="read-write"/>
+			<key column="banner_section_id" foreign-key="fk_bsc_banner_section"/>
+			<one-to-many class="org.unitime.banner.model.BannerSectionToClass"/>
+		</set>			
+
+		
+		<many-to-one 
+			name="bannerConfig" 
+			class="org.unitime.banner.model.BannerConfig" 
+			column="banner_config_id" 
+			not-null="true"
+			insert="true"
+			update="true"
+			lazy="false"
+			foreign-key="fk_banner_sec_banner_cfg"
+		/>
+
+		<many-to-one 
+			name="consentType" 
+			class="org.unitime.timetable.model.OfferingConsentType" 
+			column="consent_type_id" 
+			not-null="false"
+			insert="true"
+			update="true"
+			foreign-key="fk_banner_sec_consent_type"
+		/>
+		
+		<many-to-one 
+			name="session" 
+			class="org.unitime.timetable.model.Session" 
+			column="session_id" 
+			not-null="true"
+			insert="true"
+			update="true"
+			lazy="false"
+			foreign-key="fk_banner_sec_session"
+		/>
+		
+		<many-to-one 
+			name="parentBannerSection" 
+			class="org.unitime.banner.model.BannerSection" 
+			column="parent_banner_section_id" 
+			not-null="false"
+			insert="true"
+			update="true"
+			lazy="false"
+			foreign-key="fk_banner_sec_parent_sec"
+		/>
+		
+		<set
+			name="bannerSectionToChildSections"
+			lazy="false"
+			inverse="true"
+			>
+			<cache include="non-lazy" usage="read-write"/>
+			<key column="parent_banner_section_id" foreign-key="fk_banner_sec_to_parent_sec"/>
+			<one-to-many class="org.unitime.banner.model.BannerSection"/>
+		</set>			
+
+		<property
+			name="overrideLimit"
+			column="override_limit"
+			type="java.lang.Integer"
+			not-null="false"
+			length="4"
+		/>
+
+		<property
+			name="overrideCourseCredit"
+			column="override_course_credit"
+			type="java.lang.Float"
+			not-null="false"
+		/>
+
+	</class>
+
+</hibernate-mapping>
