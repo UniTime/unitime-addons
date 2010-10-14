@@ -23,7 +23,6 @@ package org.unitime.banner.util;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -31,6 +30,7 @@ import java.util.Vector;
 import net.sf.cpsolver.coursett.model.TimeLocation.IntEnumeration;
 
 import org.dom4j.Element;
+import org.unitime.banner.dataexchange.BannerMessage;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.model.Assignment;
 import org.unitime.timetable.model.Class_;
@@ -40,8 +40,6 @@ import org.unitime.timetable.model.NonUniversityLocation;
 import org.unitime.timetable.model.PreferenceLevel;
 import org.unitime.timetable.model.Room;
 import org.unitime.timetable.model.RoomPref;
-import org.unitime.timetable.model.Session;
-import org.unitime.timetable.model.dao.DatePatternDAO;
 import org.unitime.timetable.util.Constants;
 import org.unitime.timetable.util.DateUtils;
 
@@ -68,53 +66,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 	private String hoursToArrange;
 	private String meetingId;
     private static SimpleDateFormat sDateFormat = new SimpleDateFormat("MM/dd/yyyy");
-	private static HashMap<Long, TreeMap<Date, Date>> datePatternMap;
-	private static HashMap<Long, Long> sessionDefaultDatePatternMap;
 	
-	private static TreeMap<Date, Date> findDatesFor(DatePattern datePattern){
-		if(datePatternMap == null){
-			datePatternMap = new HashMap<Long, TreeMap<Date,Date>>();
-		}
-		if (!datePatternMap.containsKey(datePattern.getUniqueId())){
-			datePatternMap.put(datePattern.getUniqueId(), datePatternDates(datePattern));
-		}
-		return(datePatternMap.get(datePattern.getUniqueId()));
-	}
-	
-	private static TreeMap<Date, Date> findDatesFor(Long datePatternId){
-		if(datePatternMap == null){
-			datePatternMap = new HashMap<Long, TreeMap<Date,Date>>();
-		}
-		return(datePatternMap.get(datePatternId));
-	}
-	
-	
-	public static void updateDatesForDatePattern(DatePattern datePattern){
-		if(datePatternMap == null){
-			datePatternMap = new HashMap<Long, TreeMap<Date,Date>>();
-		}
-		if (!datePatternMap.containsKey(datePattern.getUniqueId())){
-			datePatternMap.put(datePattern.getUniqueId(), datePatternDates(datePattern));
-		}	
-	}
-
-	private static Long findDefaultDatePatternFor(Session acadSession){
-		if(sessionDefaultDatePatternMap == null){
-			sessionDefaultDatePatternMap = new HashMap<Long, Long>();
-		}
-		if (!sessionDefaultDatePatternMap.containsKey(acadSession.getUniqueId())){
-			DatePattern defaultDatePattern = (DatePattern)DatePatternDAO.getInstance().createNewSession().createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
-			sessionDefaultDatePatternMap.put(acadSession.getUniqueId(), defaultDatePattern.getUniqueId());
-			updateDatesForDatePattern(defaultDatePattern);
-		}
-		return(sessionDefaultDatePatternMap.get(acadSession.getUniqueId()));
-	}
-	public static void updateDefaultDatePatternForSession(DatePattern datePattern){
-		if(sessionDefaultDatePatternMap == null){
-			sessionDefaultDatePatternMap = new HashMap<Long, Long>();
-		}
-		sessionDefaultDatePatternMap.put(datePattern.getSession().getUniqueId(), datePattern.getUniqueId());
-	}
 
 	/**
 	 * 
@@ -166,12 +118,12 @@ public class MeetingElement implements Comparable<MeetingElement> {
 
 
 	@SuppressWarnings({ "unchecked", "unchecked" })
-	public static Vector<MeetingElement> createMeetingElementsFor(BannerSection bannerSection, Class_ clazz, org.hibernate.Session hibSession){
+	public static Vector<MeetingElement> createMeetingElementsFor(BannerSection bannerSection, Class_ clazz, org.hibernate.Session hibSession, BannerMessage bannerMessage){
 		Vector<MeetingElement> elements = new Vector<MeetingElement>();
 		
 		Assignment a = clazz.getCommittedAssignment();
 		if (a != null){
-			TreeMap<Date, Date> dates = findDatesFor(a.getDatePattern());
+			TreeMap<Date, Date> dates = bannerMessage.findDatesFor(a.getDatePattern());
 			String beginTime = getStartTimeForAssignment(a);
 			String endTime = getEndTimeForAssignment(a);
 			String bldgAbbv = null;
@@ -215,9 +167,9 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				}
 				
 				if (dp != null) {
-					dates = findDatesFor(dp);
+					dates = bannerMessage.findDatesFor(dp);
 				} else {
-					dates = findDatesFor(findDefaultDatePatternFor(bannerSection.getSession()));
+					dates = bannerMessage.findDatesFor(bannerMessage.findDefaultDatePatternFor(bannerSection.getSession()));
 				}
 				boolean createdMeetingElement = false;				
 				
@@ -334,7 +286,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		}	
 	}
 	
-	private static TreeMap<Date, Date> datePatternDates(DatePattern datePattern){
+	public static TreeMap<Date, Date> datePatternDates(DatePattern datePattern){
 		TreeMap<Date, Date> tm = new TreeMap<Date, Date>();
 		Calendar aCalendarDate = Calendar.getInstance();
 		aCalendarDate.setTime(datePattern.getSession().getSessionBeginDateTime());

@@ -25,9 +25,7 @@ import java.io.Serializable;
 import org.hibernate.event.PostUpdateEvent;
 import org.hibernate.event.PostUpdateEventListener;
 import org.unitime.banner.dataexchange.BannerSectionAuditExport;
-import org.unitime.banner.util.MeetingElement;
 import org.unitime.timetable.dataexchange.DataExchangeHelper;
-import org.unitime.timetable.model.DatePattern;
 
 
 /**
@@ -60,12 +58,6 @@ public class BannerUpdateListener implements PostUpdateEventListener, Serializab
 	 * @see org.hibernate.event.PostInsertEventListener#onPostInsert(org.hibernate.event.PostInsertEvent)
 	 */
 	public void onPostUpdate(PostUpdateEvent event) {
-		if (event.getEntity() instanceof DatePattern) {
-			DatePattern dp = (DatePattern) event.getEntity();
-			MeetingElement.updateDatesForDatePattern(dp);
-			if (dp.isDefault()){
-				MeetingElement.updateDefaultDatePatternForSession(dp);
-			}
-		}
+		// Add post update actions here if needed.  Currently not needed.
 	}
 }
