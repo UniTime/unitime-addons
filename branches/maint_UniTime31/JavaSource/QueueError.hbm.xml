@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<!-- 
+ * UniTime 3.1 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ -->
+
+<hibernate-mapping package="org.unitime.banner.model">
+	<class  name="QueueError"
+	       table="integrationqueueerror">
+
+      <composite-id
+             class="org.unitime.banner.model.QueueErrorId"
+             mapped="false"
+             name="id" 
+             unsaved-value="undefined">
+         <key-property name="queueId" type="java.lang.Long">
+               <column name="queueid" precision="22" scale="0"/>
+          </key-property>
+           <key-property name="errorType" type="java.lang.String">
+                <column length="2" name="ERRORTYPE"/>
+            </key-property>
+            <key-property name="errorDate" type="java.sql.Timestamp">
+                <column  name="errordate"/>
+             </key-property>
+     </composite-id>
+
+     <property lazy="false" 
+          name="errorText"
+          type="string"
+          column="errortext"/>
+   		   
+    </class>
+</hibernate-mapping>

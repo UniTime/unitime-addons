@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+
+<!-- 
+ * UniTime 3.1 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ -->
+
+<hibernate-mapping package="org.unitime.banner.model">
+	<class  abstract="true"
+		name="Queue">
+
+ 		<cache include="non-lazy" usage="read-write"/>
+ 		
+        <id
+            name="uniqueId"
+            column="UNIQUEID"
+            type="java.lang.Long"
+        >
+           <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">
+                <param name="sequence">queue_seq</param>
+            </generator>
+        </id>
+        
+	  <property 
+	     lazy="false" 
+	     name="xml"
+	     column="xml"
+	     type="org.unitime.banner.commons.hibernate.clob.XmlClobType"
+	     not-null="true"/>
+		
+		<property
+			name="status"
+			column="status"
+			type="java.lang.String"
+			not-null="false"
+			lazy="false"
+			length="10"
+		/>
+
+  		<property
+  		   name="postDate"
+  		  column="postdate"
+           lazy="false"
+   		   type="java.sql.Timestamp"/>
+ 
+   		<property
+  		   name="processDate"
+  		  column="processdate"
+           lazy="false"
+   		   type="java.sql.Timestamp"/>
+   	
+   	     <union-subclass
+		 	name="QueueIn"
+		 	table="integrationqueuein"
+		 	abstract="false">
+		 	
+			<property
+			   name="matchId"
+			   column="matchid"
+			   type="java.lang.Long"
+			   lazy="false"
+     		/>	 	
+		 	
+   	     </union-subclass>	   
+   	
+   	     <union-subclass
+		 	name="QueueOut"
+		 	table="integrationqueueout"
+		 	abstract="false">
+		 	
+   		  <property
+  		     name="pickupDate"
+  	 	     column="pickupdate"
+             lazy="false"
+   		     type="java.sql.Timestamp"/>
+		 	
+   	     </union-subclass>	   
+   		   
+    </class>
+</hibernate-mapping>
