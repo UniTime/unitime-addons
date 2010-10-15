@@ -20,6 +20,8 @@
 package org.unitime.banner.dataexchange;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -43,11 +45,13 @@ import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseCreditUnitConfig;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.DatePattern;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.dao.Class_DAO;
+import org.unitime.timetable.model.dao.DatePatternDAO;
 
 
 /**
@@ -67,6 +71,65 @@ public class BannerMessage {
 	private static ExternalBannerSessionElementHelperInterface externalSessionElementHelper;
 	private static ExternalBannerCampusCodeElementHelperInterface externalCampusCodeElementHelper;
 
+	private HashMap<Long, TreeMap<Date, Date>> datePatternMap;
+	private static HashMap<Long, Long> sessionDefaultDatePatternMap;
+
+	
+	private void manageDatePatternMapCache(){
+		if(datePatternMap == null){
+			datePatternMap = new HashMap<Long, TreeMap<Date,Date>>();
+		}
+	}
+	
+	private static void manageDefaultDatePatternMapCache(){
+		if(sessionDefaultDatePatternMap == null){
+			sessionDefaultDatePatternMap = new HashMap<Long, Long>();
+		}
+	}
+
+	
+	public TreeMap<Date, Date> findDatesFor(DatePattern datePattern){
+		manageDatePatternMapCache();
+		if (!datePatternMap.containsKey(datePattern.getUniqueId())){
+			datePatternMap.put(datePattern.getUniqueId(), MeetingElement.datePatternDates(datePattern));
+		}
+		return(datePatternMap.get(datePattern.getUniqueId()));
+	}
+	
+	public TreeMap<Date, Date> findDatesFor(Long datePatternId){
+		manageDatePatternMapCache();
+		if (!datePatternMap.containsKey(datePatternId)){
+			DatePattern dp = DatePatternDAO.getInstance().get(datePatternId);
+			datePatternMap.put(datePatternId, MeetingElement.datePatternDates(dp));
+		}
+		return(datePatternMap.get(datePatternId));
+	}
+	
+	
+	public void updateDatesForDatePattern(DatePattern datePattern){
+		manageDatePatternMapCache();
+		if (!datePatternMap.containsKey(datePattern.getUniqueId())){
+			datePatternMap.put(datePattern.getUniqueId(), MeetingElement.datePatternDates(datePattern));
+		}	
+	}
+
+	public Long findDefaultDatePatternFor(org.unitime.timetable.model.Session acadSession){		
+		manageDefaultDatePatternMapCache();
+		if (!sessionDefaultDatePatternMap.containsKey(acadSession.getUniqueId())){
+			DatePattern defaultDatePattern = (DatePattern)DatePatternDAO.getInstance().createNewSession().createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
+			sessionDefaultDatePatternMap.put(acadSession.getUniqueId(), defaultDatePattern.getUniqueId());
+			updateDatesForDatePattern(defaultDatePattern);
+		}
+		return(sessionDefaultDatePatternMap.get(acadSession.getUniqueId()));
+	}
+	
+	public static void updateDefaultDatePatternForSession(DatePattern datePattern){
+		manageDefaultDatePatternMapCache();
+		sessionDefaultDatePatternMap.put(datePattern.getSession().getUniqueId(), datePattern.getUniqueId());
+	}
+
+	
+	
 	/**
 	 * 
 	 */
@@ -157,7 +220,7 @@ public class BannerMessage {
 		HashSet<MeetingElement> hs = new HashSet<MeetingElement>();
 		for(Iterator<Class_> classIt = bannerSection.getClasses(hibSession).iterator(); classIt.hasNext();){
 			Class_ c = classIt.next();
-			hs.addAll(MeetingElement.createMeetingElementsFor(bannerSection, c, hibSession));
+			hs.addAll(MeetingElement.createMeetingElementsFor(bannerSection, c, hibSession, this));
 		}
 		return(hs);
 	}
