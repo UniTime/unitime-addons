@@ -21,7 +21,6 @@
 package org.unitime.banner.util;
 
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -54,14 +53,7 @@ public class UpdateLinksForAllOfferings {
 	 */
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
-		Properties properties = new Properties();
-		properties.put("connection.url", ApplicationProperties
-				.getProperty("connection.url"));
-		properties.put("connection.username", ApplicationProperties
-				.getProperty("connection.username"));
-		properties.put("connection.password", ApplicationProperties
-				.getProperty("connection.password"));
-		HibernateUtil.configureHibernate(properties);
+		HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
 		Session session = Session.getSessionUsingInitiativeYearTerm(args[0],
 				args[1], args[2]);
