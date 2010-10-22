@@ -50,6 +50,13 @@ public class QueuedItem {
 
 	QueueOut item;
 
+	private static String  bannerHost;
+	private static String  bannerDatabase;
+	private static String  bannerPort;
+	private static String  bannerUser;
+	private static String  bannerPassword;
+
+
 	public QueuedItem(QueueOut item) {
 		this.item = item;
 		qod = new QueueOutDAO();
@@ -122,12 +129,22 @@ public class QueuedItem {
 		Clob clob;
 		Document outDoc = null;
 		
-		OracleConnector jdbc = new OracleConnector(
-				ApplicationProperties.getProperty("banner.host"), 
-				ApplicationProperties.getProperty("banner.database"),
-				ApplicationProperties.getProperty("banner.port"),
-				ApplicationProperties.getProperty("banner.user"),
-				ApplicationProperties.getProperty("banner.password"));
+		OracleConnector jdbc = null;
+		try {
+			jdbc = new OracleConnector(
+					getBannerHost(), 
+					getBannerDatabase(),
+					getBannerPort(),
+					getBannerUser(),
+					getBannerPassword());
+		} catch (Exception e) {
+			Debug.info("*********************************************************************");
+			Debug.info("** Error setting up OracleConnector in in callOracleProcess *********");
+			Debug.info("*********************************************************************");
+			Debug.info(e.getMessage());
+			e.printStackTrace();
+			Debug.info("*********************************************************************");
+		}
 
 		Debug.info("\t" + item.getUniqueId()
 				+ ": Sending request to Banner...");
@@ -150,6 +167,56 @@ public class QueuedItem {
 
 		return outDoc;
 
+	}
+
+	public static String getBannerHost() throws Exception{
+		if (bannerHost == null){
+            bannerHost = ApplicationProperties.getProperty("banner.host");
+            if (bannerHost == null || bannerHost.trim().length() == 0){
+            	throw new Exception("Missing required custom application property:  'banner.host', this property must be set to the host machine for the banner database.");
+            }
+		}
+		return bannerHost;
+	}
+
+	public static String getBannerPort() throws Exception{
+		if (bannerPort == null){
+			bannerPort = ApplicationProperties.getProperty("banner.port");
+            if (bannerPort == null || bannerPort.trim().length() == 0){
+            	throw new Exception("Missing required custom application property:  'bannerPort', this property must be set to the port number used to connect to the banner database.");
+            }
+		}
+		return bannerPort;
+	}
+
+	public static String getBannerDatabase() throws Exception{
+		if (bannerDatabase == null){
+			bannerDatabase = ApplicationProperties.getProperty("banner.database");
+            if (bannerDatabase == null || bannerDatabase.trim().length() == 0){
+            	throw new Exception("Missing required custom application property:  'bannerDatabase', this property must be set to the name of the database that hosts the banner schema.");
+            }
+		}
+		return bannerDatabase;
+	}
+
+	public static String getBannerUser() throws Exception{
+		if (bannerUser == null){
+			bannerUser = ApplicationProperties.getProperty("banner.user");
+            if (bannerUser == null || bannerUser.trim().length() == 0){
+            	throw new Exception("Missing required custom application property:  'bannerUser', this property must be set to the name of the user used to access the banner schema.");
+            }
+		}
+		return bannerUser;
+	}
+
+	public static String getBannerPassword() throws Exception{
+		if (bannerPassword == null){
+			bannerPassword = ApplicationProperties.getProperty("banner.password");
+            if (bannerPassword == null || bannerPassword.trim().length() == 0){
+            	throw new Exception("Missing required custom application property:  'bannerPassword', this property must be set to the password of the user used to access the banner schema.");
+            }
+		}
+		return bannerPassword;
 	}
 
 	// public void run() {

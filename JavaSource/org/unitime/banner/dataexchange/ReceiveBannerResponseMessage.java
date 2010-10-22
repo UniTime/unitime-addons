@@ -102,8 +102,8 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 				resp.setExternalId(getOptionalStringAttribute(bannerResponseElement, "EXTERNAL_ID"));
 				resp.setAction(getOptionalStringAttribute(bannerResponseElement, "ACTION"));
 				resp.setType(getOptionalStringAttribute(bannerResponseElement, "TYPE"));
-				resp.setMessage(getOptionalStringAttribute(bannerResponseElement, "MESSAGE"));
-				resp.setPacketId(getOptionalStringAttribute(bannerResponseElement, "PACKET_ID"));
+				resp.setMessage(getRequiredStringAttribute(bannerResponseElement, "MESSAGE", bannerResponseName));
+				resp.setPacketId(getRequiredStringAttribute(bannerResponseElement, "PACKET_ID", bannerResponseName));
 				resp.setQueueId(queueId);
 				getHibSession().save(resp);
 			}

@@ -20,9 +20,8 @@
 
 package org.unitime.banner.queueprocessor.util;
 
-import java.util.Properties;
-
 import org.hibernate.Query;
+import org.unitime.banner.queueprocessor.QueuedItem;
 import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Email;
 import org.unitime.commons.hibernate.util.HibernateUtil;
@@ -41,14 +40,7 @@ public class QueueProcessorCheck {
 	 */
 	public static void main(String[] args) throws Exception {
 		// UniTime connection
-		Properties properties = new Properties();
-		properties.put("connection.url", ApplicationProperties
-				.getProperty("connection.url"));
-		properties.put("connection.username", ApplicationProperties
-				.getProperty("connection.username"));
-		properties.put("connection.password", ApplicationProperties
-				.getProperty("connection.password"));
-		HibernateUtil.configureHibernate(properties);
+		HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
 		// See if there are unprocessed items in the queue
 		String qs = 
@@ -67,15 +59,20 @@ public class QueueProcessorCheck {
 			OracleConnector jdbc = null;
 			try {
 				jdbc = new OracleConnector(
-						ApplicationProperties.getProperty("banner.host"), 
-						ApplicationProperties.getProperty("banner.database"),
-						ApplicationProperties.getProperty("banner.port"),
-						ApplicationProperties.getProperty("banner.user"),
-						ApplicationProperties.getProperty("banner.password"));
+						QueuedItem.getBannerHost(),
+						QueuedItem.getBannerDatabase(),
+						QueuedItem.getBannerPort(),
+						QueuedItem.getBannerUser(),
+						QueuedItem.getBannerPassword());
 				mailMessage("UniTime Queue Processor for database " + HibernateUtil.getDatabaseName() + " has " + ct + " unprocessed transactions that are more than "+minutes+" minutes old");
 				System.exit(33);
 			} catch (Exception e) {
+				if (e.getMessage() != null && e.getMessage().contains("Missing required custom application property")){
+					mailMessage("UniTime Queue Processor for database " + HibernateUtil.getDatabaseName() + " is not configured to connect to Banner. " + e.getMessage());
+					throw(e);
+				} else {
 				// do nothing - Banner is down; messages are supposed to be queueing
+				}
 			} finally {
 				if (jdbc != null) jdbc.cleanup();
 			}
