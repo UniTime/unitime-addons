@@ -48,6 +48,19 @@ public class SendBannerAuditXml {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		if (args.length != 4){
+			Debug.error("The following arguments are required:");
+			Debug.error("	<Academic Initiative> <Year> <Term> <Syncronize>");
+			Debug.error("");
+			Debug.error("		Academic Initiative - The value set as the academic initiative for the session.");
+			Debug.error("		Year - The value set as the academic year for the session.");
+			Debug.error("		Term - The value set as the academic term for the session.");
+			Debug.error("		Syncronize - Either TRUE or FALSE.  ");
+			Debug.error("    		If the audit should send a message to syncronize banner to match the values in UniTime set this to TRUE.");
+			Debug.error("");
+			throw(new Exception("Missing arguments."));			
+		}
+		
 		ToolBox.configureLogging();
 
 		HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
@@ -56,9 +69,21 @@ public class SendBannerAuditXml {
 		Session session = Session.getSessionUsingInitiativeYearTerm(args[0],
 				args[1], args[2]);
 
+		if (session == null){
+			Debug.error("Session not found for:");
+			Debug.error("    Academic Initiative = " + (args[0] == null?"<no value>":args[0]));
+			Debug.error("    Year = " + (args[1] == null?"<no value>":args[1]));
+			Debug.error("    Term = " + (args[2] == null?"<no value>":args[2]));
+			throw(new Exception("ERROR:  No Session Found."));
+		}
+		if (!"TRUE".equalsIgnoreCase(args[3]) && !"FALSE".equalsIgnoreCase(args[3])){
+			Debug.error("Invalid value for Syncronize parameter:  " + args[3]);
+			Debug.error("   valid values are:  TRUE, FALSE");
+			throw(new Exception("ERROR:  Invalid value for Syncronize."));
+		}
 		Document document = bsea.saveXml(session, new Properties());
 		Element root = document.getRootElement();
-		root.addAttribute("SYNC", args[3]);
+		root.addAttribute("SYNC", args[3].toUpperCase());
 		
 		// Delete existing AUDIT messages for term
 	    Transaction tx = null;
