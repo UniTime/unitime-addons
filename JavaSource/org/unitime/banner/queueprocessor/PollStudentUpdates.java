@@ -27,41 +27,32 @@ import java.util.Date;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.unitime.banner.dataexchange.ReceiveBannerResponseMessage;
+import org.unitime.banner.dataexchange.BannerStudentDataUpdate;
 import org.unitime.banner.model.QueueIn;
-import org.unitime.banner.model.QueueOut;
 import org.unitime.banner.model.dao.QueueInDAO;
-import org.unitime.banner.model.dao.QueueOutDAO;
 import org.unitime.banner.queueprocessor.exception.LoggableException;
 import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Debug;
+import org.unitime.timetable.ApplicationProperties;
 
-/*
- * based on code contributed by Aaron Tyler and Dagmar Murray
- */
-public class QueuedItem extends BannerCaller {
+public class PollStudentUpdates extends BannerCaller {
 
-	QueueOutDAO qod;
 	QueueInDAO qid;
 
-	QueueOut item;
+
+	private boolean pollForStudentUpdates = false;
 
 
-	public QueuedItem(QueueOut item) {
-		this.item = item;
-		qod = new QueueOutDAO();
+	public PollStudentUpdates() {
+		super();
+		pollForStudentUpdates = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.studentUpdates.pollBannerForUpdates", "false"));
 	}
 
-	public void processItem() throws SQLException, Exception {
-
+	public void poll() {
+		if (!pollForStudentUpdates) return;
 		try {
 
-			item.setPickupDate(new Date());
-			item.setStatus(QueueOut.STATUS_POSTED);
-
-			qod.update(item);
-
-			Document result = callOracleProcess(item.getXml());
+			Document result = callOracleProcess();
 
 			QueueIn qi = new QueueIn();
 			try {
@@ -69,14 +60,14 @@ public class QueuedItem extends BannerCaller {
 
 				QueueInDAO qid = new QueueInDAO();
 
-				qi.setMatchId(item.getUniqueId());
+				qi.setMatchId(null);
 				qi.setStatus(QueueIn.STATUS_POSTED);
 				qi.setXml(result);
 
 				qid.save(qi);
 				
 				// Process in UniTime
-				ReceiveBannerResponseMessage.receiveResponseDocument(qi);
+				BannerStudentDataUpdate.receiveResponseDocument(qi);
 				
 			} catch (Exception ex) {
 				LoggableException le = new LoggableException(ex, qi);
@@ -84,44 +75,32 @@ public class QueuedItem extends BannerCaller {
 				throw le;
 			}
 
-			item.setProcessDate(new Date());
-			item.setStatus(QueueOut.STATUS_PROCESSED);
-
-			qod.update(item);
 
 		} catch(SQLException sqlEx) {
-			throw sqlEx;				
-		} catch (LoggableException le) {
-			le.setQueuedItem(item);
+			LoggableException le = new LoggableException(sqlEx);
 			le.logError();
-		} catch (Exception ex) {
-			
-			if(ex.getCause().getClass() == SQLException.class) {
-				throw ex;
-			}
-			
-			LoggableException le = new LoggableException(ex, item);
+		} catch (Exception ex) {			
+			LoggableException le = new LoggableException(ex);
 			le.logError();
 		}
 
 	}
 
-	private Document callOracleProcess(Document xml)
+	private Document callOracleProcess()
 			throws ClassNotFoundException, SQLException, IOException,
 			DocumentException {
 
 		OracleConnector jdbc = getJDBCconnection();
 
-		Debug.info("\t" + item.getUniqueId() + ": Sending request to Banner...");
-		Clob clob = jdbc.processUnitimePacket(xml);
-		Debug.info("\t" + item.getUniqueId() + ": Response received from Banner.");
+		Debug.info("\tSending student update request to Banner...");
+		Clob clob = jdbc.requestEnrollmentChanges();
+		Debug.info("\tResponse received from Banner.");
 
 		Document outDoc = convertClobToDocument(clob);
-		
+
 		jdbc.cleanup();
 
 		return outDoc;
 
 	}
-
 }
