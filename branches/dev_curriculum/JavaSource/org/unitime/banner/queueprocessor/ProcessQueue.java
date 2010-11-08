@@ -49,7 +49,8 @@ public class ProcessQueue {
 
 	public static void main(String[] args) {
 
-		ProcessQueue pq = new ProcessQueue();
+		ProcessQueue processQueue = new ProcessQueue();
+		PollStudentUpdates pollStudentUpdates = new PollStudentUpdates();
 
 		Date lastRunTime = new Date();
 
@@ -106,7 +107,8 @@ public class ProcessQueue {
 			if (count == 1
 					|| (new Date()).getTime() - lastRunTime.getTime() >= sleep_interval) {
 				lastRunTime = new Date();
-				pq.process();
+				processQueue.process();
+				pollStudentUpdates.poll();
 			} else {
 				try {
 					Thread.sleep(sleep_interval);

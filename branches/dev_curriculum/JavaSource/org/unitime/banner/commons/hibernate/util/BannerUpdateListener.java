@@ -45,6 +45,7 @@ public class BannerUpdateListener implements PostUpdateEventListener, Serializab
         DataExchangeHelper.sImportRegister.put("bannerStudentEnrollments", org.unitime.banner.dataexchange.BannerStudentEnrollmentImport.class);
         DataExchangeHelper.sExportRegister.put("schedule", BannerSectionAuditExport.class);
         DataExchangeHelper.sImportRegister.put("enterprise", org.unitime.banner.dataexchange.BannerStudentEnrollmentMessage.class);
+        DataExchangeHelper.sImportRegister.put("studentUpdates", org.unitime.banner.dataexchange.BannerStudentDataUpdate.class);
     }
 
 	/**

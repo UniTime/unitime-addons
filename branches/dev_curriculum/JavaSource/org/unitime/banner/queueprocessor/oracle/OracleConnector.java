@@ -42,8 +42,6 @@ public class OracleConnector {
 	private String url = "jdbc:oracle:thin:@";
 	private Connection conn = null;
 
-	private static String bannerStoredProcedureCall;
-
 	public OracleConnector(String host, String db, String port, String user,
 			String password) throws ClassNotFoundException, SQLException {
 
@@ -87,6 +85,32 @@ public class OracleConnector {
 		Debug.info("******************************************************************************************************");
 	
 	}
+
+	private void outputStandardStudentUpdateDebugInfo(Exception e){
+		Debug.info("******************************************************************************************************");
+		Debug.info("**  Make sure the stored procedure that is to request student updates for banner exists.  The call to ");
+		Debug.info("**  the stored procedure is defined by the property: 'banner.studentUpdates.storedProcedure.call'.");
+		Debug.info("**  The required format of the parameters for the Banner Stored procedure must be: ");
+		Debug.info("**");
+		Debug.info("**    out_response => ?");
+		Debug.info("**");
+		Debug.info("**  The names of the parameters may change but the first parameter must be a CLOB input,");
+		Debug.info("**    the second parameter must be a CLOB output, and the third parameter must be a CLOB output");
+		Debug.info("**");
+		Debug.info("**  An example of how to define a banner stored procedure call in the properties file is as follows:");
+		Debug.info("**");
+		Debug.info("**    banner.storedProcedure.call=begin sz_unitime.p_request_student_updates(out_response => ?); end;");
+		Debug.info("**");			
+		Debug.info("**  If you change the value of the 'banner.studentUpdates.storedProcedure.call' the queue processor must be");
+		Debug.info("**    restarted to begin using the new procedure call.");
+		Debug.info("**");
+		Debug.info("**  If you have the parameters defined correctly then possbile he error is in documentToCLOB ");
+		Debug.info("******************************************************************************************************");
+		e.printStackTrace();
+		Debug.info("******************************************************************************************************");
+	
+	}
+
 	public Clob processUnitimePacket(Document in_clob) throws SQLException,
 			IOException {
 
@@ -137,6 +161,37 @@ public class OracleConnector {
 
 	}
 
+	
+	public Clob requestEnrollmentChanges() throws SQLException,
+	IOException {
+
+		CallableStatement stmt = null;
+		try {
+			stmt = conn.prepareCall(getBannerStudentUpdatesStoredProcedureCall());
+		} catch (Exception e1) {
+			outputStandardStudentUpdateDebugInfo(e1);
+		}
+		
+		try {
+			stmt.registerOutParameter(1, java.sql.Types.CLOB);
+		} catch (Exception e) {
+			outputStandardStudentUpdateDebugInfo(e);
+		}
+		
+		try {
+			stmt.execute();			
+		} catch (Exception e) {
+			outputStandardStudentUpdateDebugInfo(e);
+		}
+		
+		Clob out_clob = stmt.getClob(1);
+		
+		stmt.close();
+				
+		return out_clob;
+		
+	}
+
 	public void cleanup() throws SQLException {
 
 		if (conn != null)
@@ -144,13 +199,19 @@ public class OracleConnector {
 	}
 	
 	private static String getBannerStoredProcedureCall() throws Exception{
-		if (bannerStoredProcedureCall == null){
-			bannerStoredProcedureCall = ApplicationProperties.getProperty("banner.storedProcedure.call");
-            if (bannerStoredProcedureCall == null || bannerStoredProcedureCall.trim().length() == 0){
-            	bannerStoredProcedureCall = "begin sz_unitime.p_process_packet(in_packet => ?,out_response => ?,out_sync => ?); end;";
-            }
-		}
+		String bannerStoredProcedureCall  = ApplicationProperties.getProperty("banner.storedProcedure.call");
+        if (bannerStoredProcedureCall == null || bannerStoredProcedureCall.trim().length() == 0){
+        	bannerStoredProcedureCall = "begin sz_unitime.p_process_packet(in_packet => ?,out_response => ?,out_sync => ?); end;";
+        }
 		return bannerStoredProcedureCall;
+	}
+
+	private static String getBannerStudentUpdatesStoredProcedureCall() throws Exception{
+		String bannerStudentUpdatesStoredProcedureCall = ApplicationProperties.getProperty("banner.studentUpdates.storedProcedure.call");
+        if (bannerStudentUpdatesStoredProcedureCall == null || bannerStudentUpdatesStoredProcedureCall.trim().length() == 0){
+        	bannerStudentUpdatesStoredProcedureCall = "begin sz_unitime.p_request_student_updates(out_response => ?); end;";
+        }
+		return bannerStudentUpdatesStoredProcedureCall;
 	}
 
 }

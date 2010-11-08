@@ -21,7 +21,7 @@
 package org.unitime.banner.queueprocessor.util;
 
 import org.hibernate.Query;
-import org.unitime.banner.queueprocessor.QueuedItem;
+import org.unitime.banner.queueprocessor.BannerCaller;
 import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Email;
 import org.unitime.commons.hibernate.util.HibernateUtil;
@@ -59,11 +59,11 @@ public class QueueProcessorCheck {
 			OracleConnector jdbc = null;
 			try {
 				jdbc = new OracleConnector(
-						QueuedItem.getBannerHost(),
-						QueuedItem.getBannerDatabase(),
-						QueuedItem.getBannerPort(),
-						QueuedItem.getBannerUser(),
-						QueuedItem.getBannerPassword());
+						BannerCaller.getBannerHost(),
+						BannerCaller.getBannerDatabase(),
+						BannerCaller.getBannerPort(),
+						BannerCaller.getBannerUser(),
+						BannerCaller.getBannerPassword());
 				mailMessage("UniTime Queue Processor for database " + HibernateUtil.getDatabaseName() + " has " + ct + " unprocessed transactions that are more than "+minutes+" minutes old");
 				System.exit(33);
 			} catch (Exception e) {
