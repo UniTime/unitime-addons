@@ -20,11 +20,14 @@
 
 package org.unitime.banner.dataexchange;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 import org.dom4j.Element;
@@ -61,6 +64,8 @@ public class BannerStudentDataUpdate extends BaseImport {
 	private HashSet<String> studentIdsNotProcessed = new HashSet<String>();
 	private HashSet<String> studentIdsSucessfullyProcessedWithProblems = new HashSet<String>();
 	
+	private HashSet<Long> classIdsTouched = new HashSet<Long>();
+	private HashSet<Long> courseIdsTouched = new HashSet<Long>();
 	
 	private boolean trimLeadingZerosFromExternalId;
 	private HashMap<String, Vector<Long>> bannerSessionIdMap = new HashMap<String, Vector<Long>>();
@@ -105,6 +110,13 @@ public class BannerStudentDataUpdate extends BaseImport {
 				elementCount++;
 			}
 			beginTransaction();
+			info("Updating class enrollments.");
+			updateEnrollmentForClassIds();
+			info("Updating course offering enrollments.");
+			updateCourseOfferingEnrollmentCounts();
+			info("Done updating enrollments.");
+			commitTransaction();
+			beginTransaction();
 			int studentCount = 0;
 			for(Session session : studentIdsSucessfullyProcessed.keySet()){
 				HashSet<Long> updatedStudents = studentIdsSucessfullyProcessed.get(session);
@@ -140,6 +152,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 			}
 		}
 	}
+
 
 	private void processStudentElement(Element studentElement) {
 		String externalId = null;
@@ -244,6 +257,12 @@ public class BannerStudentDataUpdate extends BaseImport {
 			//  If the student has no enrollments remove the student records found
 			for(Student student : studentRecords){
 				addSessionRecordToList(recordsProcessed, student.getSession(), student.getUniqueId());
+				if (student.getClassEnrollments() != null && student.getClassEnrollments().size() > 0){
+					for(StudentClassEnrollment sce : student.getClassEnrollments()){
+						classIdsTouched.add(sce.getClazz().getUniqueId());
+						courseIdsTouched.add(sce.getCourseOffering().getUniqueId());
+					}
+				}
 				getHibSession().delete(student);
 			}
 		} else {
@@ -380,10 +399,14 @@ public class BannerStudentDataUpdate extends BaseImport {
 	            		enrollment.setTimestamp(new java.util.Date());
 	            		record.getClassEnrollments().add(enrollment);    
 	            		changed = true;
+	            		classIdsTouched.add(clazz.getUniqueId());
+	            		courseIdsTouched.add(co.getUniqueId());
 	        		}
             	}         	
             	if (!enrollments.isEmpty()) {
             		for (StudentClassEnrollment enrollment: enrollments.values()) {
+            			classIdsTouched.add(enrollment.getClazz().getUniqueId());
+            			courseIdsTouched.add(enrollment.getCourseOffering().getUniqueId());
             			record.getClassEnrollments().remove(enrollment);
             			getHibSession().delete(enrollment);
             		}
@@ -401,6 +424,10 @@ public class BannerStudentDataUpdate extends BaseImport {
 			if (!records.isEmpty()){
 				for(Student student : records){
 					addSessionRecordToList(recordsProcessed, student.getSession(), student.getUniqueId());
+					for(StudentClassEnrollment sce : student.getClassEnrollments()){
+						classIdsTouched.add(sce.getClazz().getUniqueId());
+						courseIdsTouched.add(sce.getCourseOffering().getUniqueId());
+					}
 					getHibSession().delete(student);
 				}
 			}
@@ -474,5 +501,60 @@ public class BannerStudentDataUpdate extends BaseImport {
 			}
 		} 	
 	}
+
+   private void updateEnrollmentForClassIds(){
+    	String ids = "";
+    	int count = 0;
+    	for (Long id: classIdsTouched) {
+    		if (count > 0) ids += ",";
+    		ids += id;
+    		count ++;
+    		if (count == 1000) {
+    			getHibSession().createQuery("update Class_  c " +
+    	        		"set c.enrollment=(select count(distinct d.student) " +
+    	                " from StudentClassEnrollment d " +
+    	                " where d.clazz.uniqueId =c.uniqueId) " + 
+    	                " where c.uniqueId in (" + ids + ")").executeUpdate();
+    			ids = ""; count = 0;
+    		}
+    	}
+    	if (count > 0) {
+			getHibSession().createQuery("update Class_  c " +
+	        		"set c.enrollment=(select count(distinct d.student) " +
+	                " from StudentClassEnrollment d " +
+	                " where d.clazz.uniqueId =c.uniqueId) " + 
+	                " where c.uniqueId in (" + ids + ")").executeUpdate();
+    	}
+	
+    }
+   
+	private void updateCourseOfferingEnrollmentCounts() {
+
+    	String ids = "";
+    	int count = 0;
+    	for (Long id: courseIdsTouched) {
+    		if (count > 0) ids += ",";
+    		ids += id;
+    		count ++;
+    		if (count == 1000) {
+    			getHibSession().createQuery("update CourseOffering  c " +
+    	        		"set c.enrollment=(select count(distinct d.student) " +
+    	                " from StudentClassEnrollment d " +
+    	                " where d.courseOffering.uniqueId =c.uniqueId) " + 
+    	                " where c.uniqueId in (" + ids + ")").executeUpdate();
+    			ids = ""; count = 0;
+    		}
+    	}
+    	if (count > 0) {
+			getHibSession().createQuery("update CourseOffering  c " +
+	        		"set c.enrollment=(select count(distinct d.student) " +
+	                " from StudentClassEnrollment d " +
+	                " where d.courseOffering.uniqueId =c.uniqueId) " + 
+	                " where c.uniqueId in (" + ids + ")").executeUpdate();
+    	}
+	
+    		
+	}
+
 
 }
