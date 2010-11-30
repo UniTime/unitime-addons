@@ -19,14 +19,13 @@
 */
 package org.unitime.banner.dataexchange;
 
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
-
-import net.sf.cpsolver.ifs.util.HashSet;
 
 import org.dom4j.Element;
 import org.unitime.banner.model.BannerSection;
