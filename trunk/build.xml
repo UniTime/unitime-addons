@@ -52,14 +52,14 @@
     
     <target name="prepare" depends="init">
         <buildnumber/>
-        <echo message="Build number: ${build.number} (Banner Add On)"/>
+        <echo message="Build number: ${build.number}${build.tag}"/>
         <tstamp>
             <format property="build.date" pattern="EEE, d MMM yyyy" locale="en"/>
         </tstamp>
         <echo message="Build date: ${build.date}"/>
         <propertyfile file="build.date" comment="Build info">
             <entry  key="build.date" value="${build.date}"/>
-        	<entry  key="build.number" value="${build.number} (Banner Add On)"/>
+        	<entry  key="build.number" value="${build.number}${build.tag}"/>
         </propertyfile>
         <copy todir="${build.dir}" overwrite="Yes" preservelastmodified="Yes">
         	<fileset dir="${unitime.src.dir}" includes="**/*.*" excludes="**/menu-custom.xml"/>
@@ -82,7 +82,7 @@
     </target>
 	
 	<target name="compile-java" depends="prepare">
-		<javac debug="${java.debug}" optimize="${java.optimize}" source="1.5" target="1.5" destdir="${build.dir}">
+		<javac debug="${java.debug}" optimize="${java.optimize}" source="1.5" target="1.5" destdir="${build.dir}" includeantruntime="false">
 			<src path="${build.dir}" />
 			<classpath refid="build.classpath" />
 		</javac>
@@ -128,8 +128,8 @@
 			</fileset>
 			<manifest>
 				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.Startup" />
-				<attribute name="Class-Path" value="antlr-2.7.6.jar backport-util-concurrent.jar commons-collections-3.2.1.jar commons-dbcp-1.4.jar commons-logging-1.1.1.jar commons-pool-1.5.4.jar cpsolver-all-1.2.jar dom4j-1.6.1.jar ehcache-1.5.0.jar hibernate3.jar javassist-3.9.0.GA.jar jta-1.1.jar log4j-1.2.15.jar mysql-connector-java-5.1.11-bin.jar ojdbc6.jar slf4j-api-1.5.8.jar slf4j-log4j12-1.5.8.jar jsp-api.jar servlet-api.jar" />
-				<attribute name="Timetabling-Version" value="3.2_bld${build.number} (Banner Add On)"/>
+				<attribute name="Class-Path" value="antlr-2.7.6.jar backport-util-concurrent.jar commons-collections-3.2.1.jar commons-dbcp-1.4.jar commons-logging-1.1.1.jar commons-pool-1.5.4.jar cpsolver-all-1.2.jar dom4j-1.6.1.jar ehcache-1.5.0.jar hibernate3.jar javassist-3.9.0.GA.jar jta-1.1.jar log4j-1.2.15.jar mysql-connector-java-5.1.11-bin.jar ojdbc6.jar ojdbc5.jar ojdbc14.jar slf4j-api-1.5.8.jar slf4j-log4j12-1.5.8.jar jsp-api.jar servlet-api.jar" />
+				<attribute name="Timetabling-Version" value="3.2_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 	</target>
@@ -148,7 +148,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.StartupMinimal" />
 				<attribute name="Class-Path" value="tray-win32.jar" />
-				<attribute name="Timetabling-Version" value="3.2_bld${build.number} (Banner Add On)"/>
+				<attribute name="Timetabling-Version" value="3.2_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 		<signjar jar="${dist.dir}/solver.jar" alias="solver" storepass="Fh3g1H03e95kf54xZ" keystore="${unitime.src.dir}/solver.key"/>
@@ -204,7 +204,7 @@
 			</fileset>
 		</copy>
 		<replace file="${war.dir}/help/Release-Notes.xml" token="@release.date@" value="${build.date}" />
-		<replace file="${war.dir}/help/Release-Notes.xml" token="@build.number@" value="${build.number} (Banner Add On)" />
+		<replace file="${war.dir}/help/Release-Notes.xml" token="@build.number@" value="${build.number}${build.tag}" />
 		<copy todir="${war.dir}/solver" file="${dist.dir}/solver.jar"/>
 	</target>
 	
@@ -224,7 +224,7 @@
 				<include name="**/*.*" />
 			</fileset>
 			<manifest>
-				<attribute name="Timetabling-Version" value="3.2_bld${build.number} (Banner Add On)"/>
+				<attribute name="Timetabling-Version" value="3.2_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 	</target>
@@ -252,7 +252,7 @@
 				<include name="*.jar" />
 			</fileset>
         </path>
-		<javac source="1.5" target="1.5" destdir="${build.dir}" includes="org/unitime/commons/ant/CreateBaseModelFromXml.java" debug="true">
+		<javac source="1.5" target="1.5" destdir="${build.dir}" includes="org/unitime/commons/ant/CreateBaseModelFromXml.java" debug="true" includeantruntime="false">
 			<src path="${unitime.src.dir}"/>
 			<classpath refid="build.classpath"/>
 		</javac>
