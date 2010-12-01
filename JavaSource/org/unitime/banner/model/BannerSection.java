@@ -22,14 +22,13 @@ package org.unitime.banner.model;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
-
-import net.sf.cpsolver.coursett.model.TimeLocation.IntEnumeration;
 
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
@@ -59,7 +58,6 @@ import org.unitime.timetable.model.Solution;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
-import org.unitime.timetable.solver.ui.AssignmentPreferenceInfo;
 import org.unitime.timetable.util.Constants;
 
 /**
@@ -86,21 +84,6 @@ public class BannerSection extends BaseBannerSection {
 	public BannerSection (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public BannerSection (
-		java.lang.Long uniqueId,
-		org.unitime.banner.model.BannerConfig bannerConfig,
-		org.unitime.timetable.model.Session session) {
-
-		super (
-			uniqueId,
-			bannerConfig,
-			session);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 
 	private HashSet<Class_> classes;
@@ -715,15 +698,12 @@ public class BannerSection extends BaseBannerSection {
     		}
 	    	if (classAssignment!=null) {
 	    		Assignment a = null;
-	    		AssignmentPreferenceInfo info = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
-	    			info = classAssignment.getAssignmentInfo(aClass);
 	    		} catch (Exception e) {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-	   				IntEnumeration e = a.getTimeLocation().getDays();
 	   				if (a.getRoomLocations().size() > 1){
 	   					for (int i = 1; i < a.getRoomLocations().size() ; i++){
 	   						sb.append("<BR>");
@@ -766,15 +746,12 @@ public class BannerSection extends BaseBannerSection {
     		sb.append(aClass.getClassLabel());
 	    	if (classAssignment!=null) {
 	    		Assignment a = null;
-	    		AssignmentPreferenceInfo info = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
-	    			info = classAssignment.getAssignmentInfo(aClass);
 	    		} catch (Exception e) {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-	   				IntEnumeration e = a.getTimeLocation().getDays();
 	   				if (a.getRoomLocations().size() > 1){
 	   					for (int i = 1; i < a.getRoomLocations().size() ; i++){
 	   						sb.append("<BR>");
@@ -821,17 +798,15 @@ public class BannerSection extends BaseBannerSection {
     		}
 	    	if (classAssignment!=null) {
 	    		Assignment a = null;
-	    		AssignmentPreferenceInfo info = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
-	    			info = classAssignment.getAssignmentInfo(aClass);
 	    		} catch (Exception e) {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-	   				IntEnumeration e = a.getTimeLocation().getDays();
+	   				Enumeration<Integer> e = a.getTimeLocation().getDays();
 	   				while (e.hasMoreElements()){
-	   					sb.append(Constants.DAY_NAMES_SHORT[(int)e.nextInt()]);
+	   					sb.append(Constants.DAY_NAMES_SHORT[e.nextElement()]);
 	   				}
 	   				sb.append(" ");
 	   				sb.append(a.getTimeLocation().getStartTimeHeader());
@@ -877,10 +852,8 @@ public class BannerSection extends BaseBannerSection {
     		}
 	    	if (classAssignment!=null){
 	    		Assignment a = null;
-	    		AssignmentPreferenceInfo info = null;
 	    		try {
 	    			a= classAssignment.getAssignment(aClass);
-	    			info = classAssignment.getAssignmentInfo(aClass);
 	    		} catch (Exception e) {
 	    			Debug.error(e);
 	    		}
@@ -929,10 +902,8 @@ public class BannerSection extends BaseBannerSection {
     		}
 	    	if (classAssignment!=null){
 	    		Assignment a = null;
-	    		AssignmentPreferenceInfo info = null;
 	    		try {
 	    			a= classAssignment.getAssignment(aClass);
-	    			info = classAssignment.getAssignmentInfo(aClass);
 	    		} catch (Exception e) {
 	    			Debug.error(e);
 	    		}

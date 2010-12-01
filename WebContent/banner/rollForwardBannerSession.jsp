@@ -18,8 +18,8 @@
  --%>
 <%@ page language="java" pageEncoding="ISO-8859-1"%>
 <%@ page import="org.unitime.banner.form.RollForwardBannerSessionForm"%>
-<%@ taglib uri="http://jakarta.apache.org/struts/tags-bean" prefix="bean"%> 
-<%@ taglib uri="http://jakarta.apache.org/struts/tags-html" prefix="html"%>
+<%@ taglib uri="/WEB-INF/tld/struts-bean.tld"	prefix="bean"%>
+<%@ taglib uri="/WEB-INF/tld/struts-html.tld"	prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
  
 <html> 

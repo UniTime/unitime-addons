@@ -1,7 +1,6 @@
-/*
+<!-- 
  * UniTime 3.1 (University Timetabling Application)
- * Copyright (C) 2010, UniTime LLC, and individual contributors
- * as indicated by the @authors tag.
+ * Copyright (C) 2010, UniTime LLC
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,34 +15,20 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ -->
+ 
+<!ELEMENT enrollment EMPTY >
+<!ATTLIST enrollment crn NMTOKEN #REQUIRED >
 
-package org.unitime.banner.model;
+<!ELEMENT student ( enrollment* ) >
+<!ATTLIST student academicArea NMTOKEN #REQUIRED >
+<!ATTLIST student classification NMTOKEN #REQUIRED >
+<!ATTLIST student email CDATA #IMPLIED >
+<!ATTLIST student externalId NMTOKEN #REQUIRED >
+<!ATTLIST student firstName NMTOKEN #REQUIRED >
+<!ATTLIST student lastName NMTOKEN #REQUIRED >
+<!ATTLIST student major NMTOKEN #REQUIRED >
+<!ATTLIST student middleName NMTOKEN #IMPLIED >
+<!ATTLIST student session NMTOKEN #REQUIRED >
 
-import java.util.Date;
-
-import org.unitime.banner.model.base.BaseQueueError;
-
-
-
-/**
- * 
- * @author says
- *
- */
-public class QueueError extends BaseQueueError {
-	private static final long serialVersionUID = 1L;
-
-/*[CONSTRUCTOR MARKER BEGIN]*/
-	public QueueError () {
-		super();
-	}
-/*[CONSTRUCTOR MARKER END]*/
-
-	public void setId(Queue queueEntry) {
-		setQueueId(queueEntry.getUniqueId());
-		setErrorType(queueEntry.getQueueType());
-		setErrorDate(new Date());
-	}
-
-}
+<!ELEMENT studentUpdates ( student+ ) >

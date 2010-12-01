@@ -41,7 +41,7 @@
 	     lazy="false" 
 	     name="xml"
 	     column="xml"
-	     type="org.unitime.banner.commons.hibernate.clob.XmlClobType"
+	     type="org.unitime.commons.hibernate.blob.XmlClobType"
 	     not-null="true"/>
 		
 		<property

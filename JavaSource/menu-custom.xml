@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<unitime-menu>
+	<menu name="Courses">
+		<menu name="Banner">
+			<item name="Message Responses" page="bannerMessageResponses.do"/>
+			<item name="Banner Offerings" page="bannerOfferingShowSearch.do"/>
+		</menu>
+	</menu>
+	<menu name="Administration">
+		<menu name="Other">
+			<item name="Users" page="userEdit.do">
+				<!-- Only when LDAP is not configured -->
+				<condition>
+					<propertyEquals name="tmtbl.authenticate.ldap.provider" value="" defaultValue=""/>
+				</condition>
+			</item>
+		</menu>
+		<menu name="Banner">
+			<item name="Manage Banner Sessions" page="bannerSessionList.do"/>
+			<item name="Banner Term Crn Properties" page="bannerTermCrnPropertiesList.do"/>
+			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.do"/>
+		</menu>
+	</menu>
+</unitime-menu>

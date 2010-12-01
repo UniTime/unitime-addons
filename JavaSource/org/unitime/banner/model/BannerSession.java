@@ -50,29 +50,6 @@ public class BannerSession extends BaseBannerSession {
 	public BannerSession (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public BannerSession (
-		java.lang.Long uniqueId,
-		org.unitime.timetable.model.Session session,
-		java.lang.String bannerCampus,
-		java.lang.String bannerTermCode,
-		java.lang.Boolean storeDataForBanner,
-		java.lang.Boolean sendDataToBanner,
-		java.lang.Boolean loadingOfferingsFile) {
-
-		super (
-			uniqueId,
-			session,
-			bannerCampus,
-			bannerTermCode,
-			storeDataForBanner,
-			sendDataToBanner,
-			loadingOfferingsFile);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 
 

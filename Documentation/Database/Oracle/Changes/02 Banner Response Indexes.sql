@@ -1,7 +1,6 @@
 /*
  * UniTime 3.1 (University Timetabling Application)
- * Copyright (C) 2010, UniTime LLC, and individual contributors
- * as indicated by the @authors tag.
+ * Copyright (C) 2010, UniTime LLC
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,33 +16,23 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-
-package org.unitime.banner.model;
-
-import java.util.Date;
-
-import org.unitime.banner.model.base.BaseQueueError;
-
-
-
-/**
- * 
- * @author says
- *
+/*
+ * Author:  Stephanie Schluttenhofer
  */
-public class QueueError extends BaseQueueError {
-	private static final long serialVersionUID = 1L;
+ 
+/*
+ * Add indexes to the Banner Response table
+ */
 
-/*[CONSTRUCTOR MARKER BEGIN]*/
-	public QueueError () {
-		super();
-	}
-/*[CONSTRUCTOR MARKER END]*/
+create index idx_response_term_code on banner_response(term_code);
+create index idx_response_crn on banner_response(crn);
+create index idx_response_xlst_group on banner_response(xlst_group);
+ 
+/*
+ * Update database version
+ */
 
-	public void setId(Queue queueEntry) {
-		setQueueId(queueEntry.getUniqueId());
-		setErrorType(queueEntry.getQueueType());
-		setErrorDate(new Date());
-	}
+update application_config set value='2' where name='tmtbl.db.banner.version';
 
-}
+commit;
+ 

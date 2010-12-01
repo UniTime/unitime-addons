@@ -19,8 +19,12 @@
 */
 package org.unitime.banner.dataexchange;
 
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import org.dom4j.Element;
@@ -32,6 +36,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
+import org.unitime.timetable.model.StudentSectioningQueue;
 
 /**
  * @author says
@@ -44,7 +49,9 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	private static String expectedDataSource;
 	private static String expectedSource;
 	private String messageDateTime;
-
+	
+	private Hashtable<Long, Set<Long>> iUpdatedStudents = new Hashtable<Long, Set<Long>>();
+	
 	@Override
 	public void loadXml(Element rootElement) throws Exception {
 		try {
@@ -52,10 +59,15 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	        	throw new Exception("Given XML is not a banner enterprise message.");
 	        }
 	        beginTransaction();
-			propertiesElement(rootElement.element(propertiesElementName));
-			membershipElements(rootElement);
-	        commitTransaction();
 	        
+			propertiesElement(rootElement.element(propertiesElementName));
+			
+			membershipElements(rootElement);
+
+			for (Map.Entry<Long, Set<Long>> entry: iUpdatedStudents.entrySet())
+	 	        StudentSectioningQueue.studentChanged(getHibSession(), entry.getKey(), entry.getValue());
+
+			commitTransaction();
 		} catch (Exception e) {
 			fatal("Exception: " + e.getMessage(), e);
 			rollbackTransaction();
@@ -114,13 +126,18 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 			}
 			List classes = BannerSection.findAllClassesForCrnAndTermCode(crn, termCode);
 			Session acadSession = courseOffering.getSubjectArea().getSession();
-			memberElements(membershipElement, acadSession, courseOffering, classes);
+			Set<Long> updatedStudents = iUpdatedStudents.get(acadSession.getUniqueId());
+			if (updatedStudents == null) {
+				updatedStudents = new HashSet<Long>();
+				iUpdatedStudents.put(acadSession.getUniqueId(), updatedStudents);
+			}
+			memberElements(membershipElement, acadSession, courseOffering, classes, updatedStudents);
 			flushIfNeeded(true);
 		}
 	}
 
 	private void memberElements(Element membershipElement, Session acadSession,
-			CourseOffering courseOffering, List classes) throws Exception {
+			CourseOffering courseOffering, List classes, Set<Long> updatedStudents) throws Exception {
 		for (Element memberElement : (List<Element>)membershipElement.elements("member")){
 			String id = sourceIdElement(memberElement.element("sourceid"));
 			if (id == null || id.length() == 0){
@@ -131,6 +148,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 				throw new Exception("Received invalid id type:  " + id + " expected:  1.");
 			}
 			Student student = Student.findByExternalId(acadSession.getUniqueId(), id);
+			Long studentId = null;
 			if (student == null){
 				student = new Student();
         		student = new Student();
@@ -140,7 +158,9 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	            student.setExternalUniqueId(id);
 	            student.setFreeTimeCategory(new Integer(0));
 	            student.setSchedulePreference(new Integer(0));
-				getHibSession().save(student);
+	            studentId = (Long)getHibSession().save(student);
+			} else {
+				studentId = student.getUniqueId();
 			}
 			Element roleElement = memberElement.element("role");
 			if (roleElement == null){
@@ -148,9 +168,13 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 			}
 			String recStatus = getOptionalStringAttribute(roleElement, "recstatus");
 			if (recStatus != null && recStatus.equals("3")){
-				deleteEnrollment(student, courseOffering, classes);
+				if (deleteEnrollment(student, courseOffering, classes)) {
+					updatedStudents.add(studentId);
+				}
 			} else {
-				addUpdateEnrollment(student, courseOffering, classes);
+				if (addUpdateEnrollment(student, courseOffering, classes)) {
+					updatedStudents.add(studentId);
+				}
 			}
 		}		
 	}
@@ -183,7 +207,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 		return(studentClassEnrollment);
 	}
 
-	private void addUpdateEnrollment(Student student,
+	private boolean addUpdateEnrollment(Student student,
 			CourseOffering courseOffering, List classes) {
 		boolean changed = false;
 		for (Iterator it = classes.iterator(); it.hasNext(); ){
@@ -205,9 +229,10 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 			getHibSession().saveOrUpdate(student);
 			updateOfferingEnrollment(courseOffering);
 		}
+		return changed;
 	}
 
-	private void deleteEnrollment(Student student, CourseOffering courseOffering, List classes) {
+	private boolean deleteEnrollment(Student student, CourseOffering courseOffering, List classes) {
 		boolean changed = false;
 		Vector<StudentClassEnrollment> enrollments = findStudentClassEnrollments(student, classes);
 		for (StudentClassEnrollment sce : enrollments){
@@ -221,6 +246,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 			getHibSession().update(student);
 			updateOfferingEnrollment(courseOffering);
 		}
+		return changed;
 	}
 
 	private void updateOfferingEnrollment(CourseOffering courseOffering) {

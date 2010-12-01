@@ -1,8 +1,8 @@
 /*
- * UniTime 3.1 (University Timetabling Application)
+ * UniTime 3.2 (University Timetabling Application)
  * Copyright (C) 2010, UniTime LLC, and individual contributors
  * as indicated by the @authors tag.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -17,118 +17,66 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-
 package org.unitime.banner.model.base;
 
 import java.io.Serializable;
+import java.util.Date;
+
+import org.unitime.banner.model.QueueError;
+
+public abstract class BaseQueueError implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	private Long iQueueId;
+	private String iErrorType;
+	private Date iErrorDate;
+	private String iErrorText;
 
 
-/**
- * This is an object that contains data related to the integrationqueueerror table.
- * Do not modify this class because it will be overwritten if the configuration file
- * related to this class is modified.
- *
- * @hibernate.class
- *  table="integrationqueueerror"
- */
+	public static String PROP_ERRORTEXT = "errorText";
 
-public abstract class BaseQueueError  implements Serializable {
-
-	public static String REF = "QueueError";
-	public static String PROP_ERROR_TEXT = "errorText";
-
-
-	// constructors
-	public BaseQueueError () {
+	public BaseQueueError() {
 		initialize();
 	}
 
-	/**
-	 * Constructor for primary key
-	 */
-	public BaseQueueError (org.unitime.banner.model.QueueErrorId id) {
-		this.setId(id);
-		initialize();
+	protected void initialize() {}
+
+	public Long getQueueId() { return iQueueId; }
+	public void setQueueId(Long queueId) { iQueueId = queueId; }
+
+	public String getErrorType() { return iErrorType; }
+	public void setErrorType(String errorType) { iErrorType = errorType; }
+
+	public Date getErrorDate() { return iErrorDate; }
+	public void setErrorDate(Date errorDate) { iErrorDate = errorDate; }
+
+	public String getErrorText() { return iErrorText; }
+	public void setErrorText(String errorText) { iErrorText = errorText; }
+
+	public boolean equals(Object o) {
+		if (o == null || !(o instanceof QueueError)) return false;
+		QueueError queueError = (QueueError)o;
+		if (getQueueId() == null || queueError.getQueueId() == null || !getQueueId().equals(queueError.getQueueId())) return false;
+		if (getErrorType() == null || queueError.getErrorType() == null || !getErrorType().equals(queueError.getErrorType())) return false;
+		if (getErrorDate() == null || queueError.getErrorDate() == null || !getErrorDate().equals(queueError.getErrorDate())) return false;
+		return true;
 	}
 
-	protected void initialize () {}
-
-
-
-	private int hashCode = Integer.MIN_VALUE;
-
-	// primary key
-	private org.unitime.banner.model.QueueErrorId id;
-
-	// fields
-	private java.lang.String errorText;
-
-
-
-	/**
-	 * Return the unique identifier of this class
-     * @hibernate.id
-     */
-	public org.unitime.banner.model.QueueErrorId getId () {
-		return id;
+	public int hashCode() {
+		if (getQueueId() == null || getErrorType() == null || getErrorDate() == null) return super.hashCode();
+		return getQueueId().hashCode() ^ getErrorType().hashCode() ^ getErrorDate().hashCode();
 	}
 
-	/**
-	 * Set the unique identifier of this class
-	 * @param id the new ID
-	 */
-	public void setId (org.unitime.banner.model.QueueErrorId id) {
-		this.id = id;
-		this.hashCode = Integer.MIN_VALUE;
+	public String toString() {
+		return "QueueError[" + getQueueId() + ", " + getErrorType() + ", " + getErrorDate() + "]";
 	}
 
-
-
-
-	/**
-	 * Return the value associated with the column: errortext
-	 */
-	public java.lang.String getErrorText () {
-		return errorText;
+	public String toDebugString() {
+		return "QueueError[" +
+			"\n	ErrorDate: " + getErrorDate() +
+			"\n	ErrorText: " + getErrorText() +
+			"\n	ErrorType: " + getErrorType() +
+			"\n	QueueId: " + getQueueId() +
+			"]";
 	}
-
-	/**
-	 * Set the value related to the column: errortext
-	 * @param errorText the errortext value
-	 */
-	public void setErrorText (java.lang.String errorText) {
-		this.errorText = errorText;
-	}
-
-
-
-
-
-	public boolean equals (Object obj) {
-		if (null == obj) return false;
-		if (!(obj instanceof org.unitime.banner.model.QueueError)) return false;
-		else {
-			org.unitime.banner.model.QueueError queueError = (org.unitime.banner.model.QueueError) obj;
-			if (null == this.getId() || null == queueError.getId()) return false;
-			else return (this.getId().equals(queueError.getId()));
-		}
-	}
-
-	public int hashCode () {
-		if (Integer.MIN_VALUE == this.hashCode) {
-			if (null == this.getId()) return super.hashCode();
-			else {
-				String hashStr = this.getClass().getName() + ":" + this.getId().hashCode();
-				this.hashCode = hashStr.hashCode();
-			}
-		}
-		return this.hashCode;
-	}
-
-
-	public String toString () {
-		return super.toString();
-	}
-
-
 }
