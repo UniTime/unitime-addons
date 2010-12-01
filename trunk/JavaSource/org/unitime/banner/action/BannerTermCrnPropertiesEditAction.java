@@ -28,7 +28,6 @@ import java.util.TreeMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -167,7 +166,6 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
                     return mapping.findForward("showEdit");
                 }
                 else {
-                    ActionErrors errors2 = new ActionErrors();
                     setAvailableSessionsInForm(bannerTermCrnPropertiesEditForm);
                     return mapping.findForward("showAdd");
                 }

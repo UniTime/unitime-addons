@@ -149,7 +149,6 @@ public class BannerMessageResponsesAction extends Action {
         }
         
         if ("Export CSV".equals(op) && responses!=null) {
-        	String messageIds = "";
         	CSVFile csvFile = webTable.toCSVFile(0);
 
         	File file = ApplicationProperties.getTempFile("bannerResponses", "csv");

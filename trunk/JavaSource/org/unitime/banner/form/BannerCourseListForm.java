@@ -62,8 +62,6 @@ public class BannerCourseListForm extends ActionForm {
 
 	private String buttonAction;
 
-	private InstructionalOffering instructionalOffering;
-
 	private String subjectAreaAbbv;
 
 	private Boolean isControl;
@@ -73,14 +71,6 @@ public class BannerCourseListForm extends ActionForm {
 	private Collection controlCourseOfferings;
 
 		
-	/**
-	 * @param instructionalOffering
-	 *            The instructionalOffering to set.
-	 */
-	public void setInstructionalOffering(InstructionalOffering instructionalOffering) {
-		this.instructionalOffering = instructionalOffering;
-	}
-
 	/**
 	 * @return Returns the controlCourseOfferings.
 	 */
@@ -283,7 +273,6 @@ public class BannerCourseListForm extends ActionForm {
         courseNbr=null;
         showNotOffered=null;
         buttonAction=null;
-        instructionalOffering=null;
         subjectAreaAbbv=null;
         isControl=null;
         ctrlInstrOfferingId=null;

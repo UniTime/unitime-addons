@@ -1,8 +1,8 @@
 /*
- * UniTime 3.1 (University Timetabling Application)
+ * UniTime 3.2 (University Timetabling Application)
  * Copyright (C) 2010, UniTime LLC, and individual contributors
  * as indicated by the @authors tag.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -17,176 +17,75 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-
 package org.unitime.banner.model.base;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.unitime.banner.model.BannerConfig;
+import org.unitime.banner.model.BannerCourse;
 
-/**
- * This is an object that contains data related to the banner_course table.
- * Do not modify this class because it will be overwritten if the configuration file
- * related to this class is modified.
- *
- * @hibernate.class
- *  table="banner_course"
- */
+public abstract class BaseBannerCourse implements Serializable {
+	private static final long serialVersionUID = 1L;
 
-public abstract class BaseBannerCourse  implements Serializable {
+	private Long iUniqueId;
+	private Long iCourseOfferingId;
+	private Long iUniqueIdRolledForwardFrom;
 
-	public static String REF = "BannerCourse";
+	private Set<BannerConfig> iBannerConfigs;
+
+	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_COURSE_OFFERING_ID = "courseOfferingId";
-	public static String PROP_UNIQUE_ID_ROLLED_FORWARD_FROM = "uniqueIdRolledForwardFrom";
+	public static String PROP_UID_ROLLED_FWD_FROM = "uniqueIdRolledForwardFrom";
 
-
-	// constructors
-	public BaseBannerCourse () {
+	public BaseBannerCourse() {
 		initialize();
 	}
 
-	/**
-	 * Constructor for primary key
-	 */
-	public BaseBannerCourse (java.lang.Long uniqueId) {
-		this.setUniqueId(uniqueId);
+	public BaseBannerCourse(Long uniqueId) {
+		setUniqueId(uniqueId);
 		initialize();
 	}
 
-	/**
-	 * Constructor for required fields
-	 */
-	public BaseBannerCourse (
-		java.lang.Long uniqueId,
-		java.lang.Long courseOfferingId) {
+	protected void initialize() {}
 
-		this.setUniqueId(uniqueId);
-		this.setCourseOfferingId(courseOfferingId);
-		initialize();
+	public Long getUniqueId() { return iUniqueId; }
+	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
+
+	public Long getCourseOfferingId() { return iCourseOfferingId; }
+	public void setCourseOfferingId(Long courseOfferingId) { iCourseOfferingId = courseOfferingId; }
+
+	public Long getUniqueIdRolledForwardFrom() { return iUniqueIdRolledForwardFrom; }
+	public void setUniqueIdRolledForwardFrom(Long uniqueIdRolledForwardFrom) { iUniqueIdRolledForwardFrom = uniqueIdRolledForwardFrom; }
+
+	public Set<BannerConfig> getBannerConfigs() { return iBannerConfigs; }
+	public void setBannerConfigs(Set<BannerConfig> bannerConfigs) { iBannerConfigs = bannerConfigs; }
+	public void addTobannerConfigs(BannerConfig bannerConfig) {
+		if (iBannerConfigs == null) iBannerConfigs = new HashSet<BannerConfig>();
+		iBannerConfigs.add(bannerConfig);
 	}
 
-	protected void initialize () {}
-
-
-
-	private int hashCode = Integer.MIN_VALUE;
-
-	// primary key
-	private java.lang.Long uniqueId;
-
-	// fields
-	private java.lang.Long courseOfferingId;
-	private java.lang.Long uniqueIdRolledForwardFrom;
-
-	// collections
-	private java.util.Set bannerConfigs;
-
-
-
-	/**
-	 * Return the unique identifier of this class
-     * @hibernate.id
-     *  generator-class="org.unitime.commons.hibernate.id.UniqueIdGenerator"
-     *  column="UNIQUEID"
-     */
-	public java.lang.Long getUniqueId () {
-		return uniqueId;
+	public boolean equals(Object o) {
+		if (o == null || !(o instanceof BannerCourse)) return false;
+		if (getUniqueId() == null || ((BannerCourse)o).getUniqueId() == null) return false;
+		return getUniqueId().equals(((BannerCourse)o).getUniqueId());
 	}
 
-	/**
-	 * Set the unique identifier of this class
-	 * @param uniqueId the new ID
-	 */
-	public void setUniqueId (java.lang.Long uniqueId) {
-		this.uniqueId = uniqueId;
-		this.hashCode = Integer.MIN_VALUE;
+	public int hashCode() {
+		if (getUniqueId() == null) return super.hashCode();
+		return getUniqueId().hashCode();
 	}
 
-
-
-
-	/**
-	 * Return the value associated with the column: course_offering_id
-	 */
-	public java.lang.Long getCourseOfferingId () {
-		return courseOfferingId;
+	public String toString() {
+		return "BannerCourse["+getUniqueId()+"]";
 	}
 
-	/**
-	 * Set the value related to the column: course_offering_id
-	 * @param courseOfferingId the course_offering_id value
-	 */
-	public void setCourseOfferingId (java.lang.Long courseOfferingId) {
-		this.courseOfferingId = courseOfferingId;
+	public String toDebugString() {
+		return "BannerCourse[" +
+			"\n	CourseOfferingId: " + getCourseOfferingId() +
+			"\n	UniqueId: " + getUniqueId() +
+			"\n	UniqueIdRolledForwardFrom: " + getUniqueIdRolledForwardFrom() +
+			"]";
 	}
-
-
-
-	/**
-	 * Return the value associated with the column: uid_rolled_fwd_from
-	 */
-	public java.lang.Long getUniqueIdRolledForwardFrom () {
-		return uniqueIdRolledForwardFrom;
-	}
-
-	/**
-	 * Set the value related to the column: uid_rolled_fwd_from
-	 * @param uniqueIdRolledForwardFrom the uid_rolled_fwd_from value
-	 */
-	public void setUniqueIdRolledForwardFrom (java.lang.Long uniqueIdRolledForwardFrom) {
-		this.uniqueIdRolledForwardFrom = uniqueIdRolledForwardFrom;
-	}
-
-
-
-	/**
-	 * Return the value associated with the column: bannerConfigs
-	 */
-	public java.util.Set getBannerConfigs () {
-		return bannerConfigs;
-	}
-
-	/**
-	 * Set the value related to the column: bannerConfigs
-	 * @param bannerConfigs the bannerConfigs value
-	 */
-	public void setBannerConfigs (java.util.Set bannerConfigs) {
-		this.bannerConfigs = bannerConfigs;
-	}
-
-	public void addTobannerConfigs (org.unitime.banner.model.BannerConfig bannerConfig) {
-		if (null == getBannerConfigs()) setBannerConfigs(new java.util.HashSet());
-		getBannerConfigs().add(bannerConfig);
-	}
-
-
-
-
-
-	public boolean equals (Object obj) {
-		if (null == obj) return false;
-		if (!(obj instanceof org.unitime.banner.model.BannerCourse)) return false;
-		else {
-			org.unitime.banner.model.BannerCourse bannerCourse = (org.unitime.banner.model.BannerCourse) obj;
-			if (null == this.getUniqueId() || null == bannerCourse.getUniqueId()) return false;
-			else return (this.getUniqueId().equals(bannerCourse.getUniqueId()));
-		}
-	}
-
-	public int hashCode () {
-		if (Integer.MIN_VALUE == this.hashCode) {
-			if (null == this.getUniqueId()) return super.hashCode();
-			else {
-				String hashStr = this.getClass().getName() + ":" + this.getUniqueId().hashCode();
-				this.hashCode = hashStr.hashCode();
-			}
-		}
-		return this.hashCode;
-	}
-
-
-	public String toString () {
-		return super.toString();
-	}
-
-
 }

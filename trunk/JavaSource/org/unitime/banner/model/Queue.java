@@ -20,7 +20,6 @@
 
 package org.unitime.banner.model;
 
-import org.dom4j.Document;
 import org.unitime.banner.model.base.BaseQueue;
 
 
@@ -49,19 +48,6 @@ public abstract class Queue extends BaseQueue {
 	public Queue (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public Queue (
-		java.lang.Long uniqueId,
-		Document xml) {
-
-		super (
-			uniqueId,
-			xml);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 
 	public abstract String getQueueType();

@@ -68,7 +68,7 @@ public class BannerResponse extends BaseBannerResponse {
 	public void setUniqueId(Long uniqueId) {
 		this.uniqueId = uniqueId;
 	}
-	public int getSequenceNumber() {
+	public Integer getSequenceNumber() {
 		return sequenceNumber;
 	}
 	public void setSequenceNumber(int sequenceNumber) {

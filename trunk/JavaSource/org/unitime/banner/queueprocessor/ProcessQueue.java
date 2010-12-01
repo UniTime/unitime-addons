@@ -45,20 +45,14 @@ public class ProcessQueue {
 	private static long sleep_interval = 10; // in seconds
 	private static long loop_times = -1;
 	private static long error_sleep_interval = 300; // in seconds
-	private static String connectString = "";
 	private static String logfilename = "queueprocessor.log";
 
 	public static void main(String[] args) {
 
-		String curDir = System.getProperty("user.dir");
-		
-		ProcessQueue pq = new ProcessQueue();
+		ProcessQueue processQueue = new ProcessQueue();
+		PollStudentUpdates pollStudentUpdates = new PollStudentUpdates();
 
 		Date lastRunTime = new Date();
-
-		if (ApplicationProperties.getProperty("connection.url") != null) {
-			connectString = ApplicationProperties.getProperty("connection.url");
-		}
 
 		if (ApplicationProperties.getProperty("queueprocessor.sleepinterval") != null) {
 			sleep_interval = Integer.parseInt(ApplicationProperties.getProperty("queueprocessor.sleepinterval"));
@@ -88,11 +82,8 @@ public class ProcessQueue {
         ToolBox.configureLogging("logs",logProps);
         System.out.println("Queue Processor Log File:"+logfilename);
         
-		Properties properties = new Properties();
-		if (args.length == 3)
-			properties.put("connection.url", connectString);
 		try {
-			HibernateUtil.configureHibernate(properties);
+			HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			System.exit(1);
@@ -116,7 +107,8 @@ public class ProcessQueue {
 			if (count == 1
 					|| (new Date()).getTime() - lastRunTime.getTime() >= sleep_interval) {
 				lastRunTime = new Date();
-				pq.process();
+				processQueue.process();
+				pollStudentUpdates.poll();
 			} else {
 				try {
 					Thread.sleep(sleep_interval);

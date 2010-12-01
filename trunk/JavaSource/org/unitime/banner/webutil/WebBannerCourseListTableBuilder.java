@@ -247,9 +247,7 @@ public class WebBannerCourseListTableBuilder extends
         row.setOnMouseOver(this.getRowMouseOver(true, isEditable));
         row.setOnMouseOut(this.getRowMouseOut(true));
         row.setOnClick(subjectOnClickAction(bc.getUniqueId()));
-        boolean isManagedAs = !co.isIsControl().booleanValue(); 
-        
-        TableCell cell = null;
+
     	row.addContent(subjectAndCourseInfo(bc, io, co));
         table.addContent(row);
         if (io.getInstrOfferingConfigs() != null & !io.getInstrOfferingConfigs().isEmpty()){
@@ -272,8 +270,6 @@ public class WebBannerCourseListTableBuilder extends
 	    boolean isHeaderRow = true;
 	    boolean isEditable = ioc.isViewableBy(user);
 	    String configName = ioc.getName();
-	    boolean unlimited = ioc.isUnlimitedEnrollment().booleanValue();
-	    boolean hasConfig = false;
 		if (printConfigLine) {
 		    TableRow row = this.initRow(isHeaderRow);
 	        if (clickable){
@@ -288,7 +284,6 @@ public class WebBannerCourseListTableBuilder extends
     	    cell = this.initCell(" &nbsp;", 16, false);
     	    row.addContent(cell);    
 	        table.addContent(row);
-	        hasConfig = true;
 		}
         ArrayList subpartList = new ArrayList(ioc.getSchedulingSubparts());
         Collections.sort(subpartList, new SchedulingSubpartComparator());
@@ -334,7 +329,6 @@ public class WebBannerCourseListTableBuilder extends
             
             Iterator it = childClassesList.iterator();
             Class_ child = null;
-            Integer previousItype = aClass.getSchedulingSubpart().getItype().getItype();
             while (it.hasNext()){              
                 child = (Class_) it.next();
                 buildSectionRows(classAssignment, ct, table, child, bc, indentSpaces + (prevItype != null && prevItype.equals(currentItype)?"":indent), user, currentItype, clickable);

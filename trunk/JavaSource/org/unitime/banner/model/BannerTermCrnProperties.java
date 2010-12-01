@@ -46,27 +46,6 @@ public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 	public BannerTermCrnProperties (java.lang.Long uniqueId) {
 		super(uniqueId);
 	}
-
-	/**
-	 * Constructor for required fields
-	 */
-	public BannerTermCrnProperties (
-		java.lang.Long uniqueId,
-		java.lang.String bannerTermCode,
-		java.lang.Integer lastCrn,
-		java.lang.Boolean searchFlag,
-		java.lang.Integer minCrn,
-		java.lang.Integer maxCrn) {
-
-		super (
-			uniqueId,
-			bannerTermCode,
-			lastCrn,
-			searchFlag,
-			minCrn,
-			maxCrn);
-	}
-
 /*[CONSTRUCTOR MARKER END]*/
 
 	public static BannerTermCrnProperties findBannerTermCrnPropertiesForTermCode(
