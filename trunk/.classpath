@@ -9,7 +9,7 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/hibernate3.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/dom4j-1.6.1.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/iText-5.0.2.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/iText-5.0.5.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant.jar"/>
 	<classpathentry kind="src" path="/UniTime"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ojdbc6.jar"/>
