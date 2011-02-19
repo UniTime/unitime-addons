@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+                                   "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<!-- 
+ * UniTime 3.2 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ -->
+<!-- based on code contributed by Dagmar Murray -->
+<hibernate-mapping package="org.unitime.banner.model">
+ <class name="org.unitime.banner.model.BannerResponse" table="banner_response">
+  <cache include="non-lazy" usage="read-write"/>
+  <id column="UNIQUEID" name="uniqueId" type="java.lang.Long">
+   <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">
+    <param name="sequence">banner_response_seq</param>
+   </generator>
+  </id>
+  <property column="seqno" generated="never" lazy="false"
+   length="20" name="sequenceNumber" not-null="true" type="java.lang.Integer"/>
+  <property column="activity_date" generated="never" lazy="false"
+   length="20" name="activityDate" not-null="true" type="java.util.Date"/>
+  <property column="term_code" generated="never" lazy="false"
+   length="6" name="termCode" not-null="false" type="java.lang.String"/>
+  <property column="crn" generated="never" lazy="false"
+   length="5" name="crn" not-null="false" type="java.lang.String"/>
+  <property column="subj_code" generated="never" lazy="false"
+   length="4" name="subjectCode" not-null="false" type="java.lang.String"/>
+  <property column="crse_numb" generated="never" lazy="false"
+   length="5" name="courseNumber" not-null="false" type="java.lang.String"/>
+  <property column="seq_numb" generated="never" lazy="false"
+   length="3" name="sectionNumber" not-null="false" type="java.lang.String"/>
+  <property column="xlst_group" generated="never" lazy="false"
+   length="2" name="xlstGroup" not-null="false" type="java.lang.String"/>
+  <property column="external_id" generated="never" lazy="false"
+   length="50" name="externalId" not-null="false" type="java.lang.String"/>
+  <property column="action" generated="never" lazy="false"
+   length="50" name="action" not-null="false" type="java.lang.String"/>
+  <property column="type" generated="never" lazy="false"
+   length="50" name="type" not-null="false" type="java.lang.String"/>
+  <property column="message" generated="never" lazy="false"
+   length="4000" name="message" not-null="true" type="java.lang.String"/>
+  <property column="packet_id" generated="never" lazy="false"
+   length="500" name="packetId" not-null="true" type="java.lang.String"/>
+  <property column="queue_id" generated="never" lazy="false"
+   length="20" name="queueId" not-null="true" type="java.lang.Long"/>
+ </class>
+</hibernate-mapping>
