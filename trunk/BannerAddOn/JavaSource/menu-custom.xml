@@ -35,7 +35,7 @@
 		</menu>
 		<menu name="Banner">
 			<item name="Manage Banner Sessions" page="bannerSessionList.do"/>
-			<item name="Banner Term Crn Properties" page="bannerTermCrnPropertiesList.do"/>
+			<item name="Banner Term CRN Properties" page="bannerTermCrnPropertiesList.do"/>
 			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.do"/>
 		</menu>
 	</menu>

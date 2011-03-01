@@ -104,21 +104,21 @@
 		</TR>
 
 		<TR>
-			<TD>Last Crn:</TD>
+			<TD>Last CRN:</TD>
 			<TD colspan='2'>
 				<html:text property="lastCrn" maxlength="5" size="10"/>
 			</TD>
 		</TR>
 		
 		<TR>
-			<TD>Minimum Crn:</TD>
+			<TD>Minimum CRN:</TD>
 			<TD colspan='2'>
 				<html:text property="minCrn" maxlength="5" size="10"/>
 			</TD>
 		</TR>
 
 		<TR>
-			<TD>Maximum Crn:</TD>
+			<TD>Maximum CRN:</TD>
 			<TD colspan='2'>
 				<html:text property="maxCrn" maxlength="5" size="10"/>
 			</TD>
