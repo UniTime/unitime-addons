@@ -46,8 +46,8 @@
 			WebTable webTable = new WebTable(
 					5, "", "bannerTermCrnPropertiesList.do?order=%%",					
 					new String[] {
-						"Banner<br>Term&nbsp;Code", "Last&nbsp;Crn", "Minimum<br>Crn",
-						"Maximum<br>Crn", "Search<br>Flag" },
+						"Banner<br>Term&nbsp;Code", "Last&nbsp;CRN", "Minimum<br>CRN",
+						"Maximum<br>CRN", "Search<br>Flag" },
 					new String[] { "left", "left", "left", "left",
 						"center" }, 
 					new boolean[] { true, true, true, true, false });

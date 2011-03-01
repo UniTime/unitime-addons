@@ -61,16 +61,16 @@
 		<put name="body" value="/banner/bannerSessionEdit.jsp" />
   	</definition>
 	<definition	name="bannerTermCrnPropertiesListTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Banner Term Crn Properties"/>
+		<put name="title" type="string" value="Banner Term CRN Properties"/>
 		<put name="body" value="/banner/bannerTermCrnPropertiesList.jsp" />
   	</definition>
   	<definition	name="bannerTermCrnPropertiesEditTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Edit Banner Term Crn Properties"/>
+		<put name="title" type="string" value="Edit Banner Term CRN Properties"/>
 		<put name="body" value="/banner/bannerTermCrnPropertiesEdit.jsp" />
   	</definition>
 
 	<definition	name="bannerTermCrnPropertiesAddTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Add Banner Term Crn Properties"/>
+		<put name="title" type="string" value="Add Banner Term CRN Properties"/>
 		<put name="body" value="/banner/bannerTermCrnPropertiesEdit.jsp" />
   	</definition>
   	
