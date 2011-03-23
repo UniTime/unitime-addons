@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -50,7 +49,6 @@ import org.unitime.commons.web.Web;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.interfaces.ExternalLinkLookup;
 import org.unitime.timetable.model.CourseOffering;
-import org.unitime.timetable.model.CourseOfferingReservation;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
@@ -247,16 +245,14 @@ public class BannerOfferingDetailAction extends Action {
 	    frm.setIsManager(new Boolean(io.getControllingCourseOffering().isEditableBy(user)));
 	    
         // Check limits on courses if cross-listed
-        if (io.getCourseOfferings().size()>1 && !frm.getUnlimited().booleanValue()) {
-            Set resvs = io.getCourseReservations();
-            int lim = 0;
-            for (Iterator i = resvs.iterator(); i.hasNext(); ) {
-                CourseOfferingReservation cor = (CourseOfferingReservation) i.next();
-                lim += cor.getReserved().intValue();
-            }
-            
-            if (io.getLimit()!=null && lim!=io.getLimit().intValue()) {
-                request.setAttribute("limitsDoNotMatch", ""+lim);
+        if (io.getCourseOfferings().size() > 1 && !frm.getUnlimited().booleanValue()) {
+        	int lim = 0;
+        	for (CourseOffering course: io.getCourseOfferings()) {
+        		if (course.getReservation() != null)
+        			lim += course.getReservation();
+        	}
+            if (io.getLimit() != null && lim != io.getLimit().intValue()) {
+                request.setAttribute("limitsDoNotMatch", "" + lim);
             }
         }
     
