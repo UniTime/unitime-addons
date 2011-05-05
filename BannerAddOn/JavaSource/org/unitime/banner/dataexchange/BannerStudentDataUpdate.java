@@ -359,12 +359,13 @@ public class BannerStudentDataUpdate extends BaseImport {
 				for(Iterator<?> it = record.getPosMajors().iterator(); it.hasNext();){
 					m = (PosMajor) it.next();
 				}
-				if (m == null || !(major.equalsIgnoreCase(m.getExternalUniqueId()) || major.equalsIgnoreCase(m.getCode()))){
+				if (m == null || !(major.equalsIgnoreCase(m.getExternalUniqueId()) || major.equalsIgnoreCase(m.getCode()) 
+						|| (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))){
 					record.getPosMajors().clear();
 					
-					PosMajor posMajor = PosMajor.findByExternalId(session.getUniqueId(), major);
+					PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(session.getUniqueId(), major, academicArea);
 					if (posMajor == null){
-						posMajor = PosMajor.findByCode(session.getUniqueId(), major);
+						posMajor = PosMajor.findByCodeAcadAreaAbbv(session.getUniqueId(), major, academicArea);
 					}
 					if (posMajor == null){
 						posMajor = new PosMajor();
@@ -373,11 +374,17 @@ public class BannerStudentDataUpdate extends BaseImport {
 						posMajor.setName(major);
 						posMajor.setSession(session);
 						posMajor.setUniqueId((Long)getHibSession().save(posMajor));
-						info("Added Major:  " + major);
+						posMajor.addToacademicAreas(aac.getAcademicArea());
+						info("Added Major:  " + major + "to Academic Area:  " + academicArea);
 					}
 					record.addToposMajors(posMajor);
 					changed = true;
+				} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
+					m.addToacademicAreas(aac.getAcademicArea());
+					info("Added Academic Area: " + academicArea + " to existing Major:  " + major);
+					changed = true;
 				}
+
 				Hashtable<Long, StudentClassEnrollment> enrollments = new Hashtable<Long, StudentClassEnrollment>();
             	if (record.getClassEnrollments() != null){
 	            	for (StudentClassEnrollment enrollment: record.getClassEnrollments()) {
