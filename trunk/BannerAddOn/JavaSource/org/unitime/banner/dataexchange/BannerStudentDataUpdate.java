@@ -457,7 +457,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 			for(Iterator<?> it = BannerSection.findAllClassesForCrnAndTermCode(crn, bannerSession).iterator(); it.hasNext();){
 				Class_ c = (Class_) it.next();
 				foundClasses = true;
-				HashMap<CourseOffering,Vector<Class_>> sessionCourseToClasses = enrollments.get(c.getSessionId());
+				HashMap<CourseOffering,Vector<Class_>> sessionCourseToClasses = enrollments.get(c.getSession());
 				if (sessionCourseToClasses == null){
 					sessionCourseToClasses = new HashMap<CourseOffering, Vector<Class_>>();
 					enrollments.put(c.getSession(), sessionCourseToClasses);
