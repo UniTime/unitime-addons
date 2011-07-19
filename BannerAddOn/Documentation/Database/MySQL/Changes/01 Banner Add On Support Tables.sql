@@ -741,7 +741,7 @@ BEGIN
       VALUES
         (next_id, v_term_code,
          v_next_crn,
-         'N',
+         '0',
          v_min_crn,
          v_max_crn);
       update hibernate_unique_key set next_hi = next_hi+1;
@@ -817,7 +817,7 @@ CREATE PROCEDURE get_crn(OUT out_crn BIGINT(10), IN sesn_id LONG)
                                       v_next_crn,
                                       v_min_crn,
                                       v_max_crn);
-      SET v_search   = 'Y';
+      SET v_search   = '1';
     END IF;
 
     IF (v_search IS NULL) THEN
