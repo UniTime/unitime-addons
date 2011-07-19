@@ -894,7 +894,7 @@ CREATE OR REPLACE PACKAGE BODY crn_processor IS
                                       v_next_crn,
                                       v_min_crn,
                                       v_max_crn);
-      v_search   := 'Y';
+      v_search   := '1';
     END IF;
 
     IF (v_search IS NULL) THEN
@@ -902,7 +902,7 @@ CREATE OR REPLACE PACKAGE BODY crn_processor IS
       VALUES
         (pref_group_seq.nextval, v_term_code,
          v_next_crn,
-         'N',
+         '0',
          v_min_crn,
          v_max_crn);
     ELSE
