@@ -32,11 +32,13 @@
 	</target>
 
     <target name="clean">
+        <delete dir="${build_src.dir}" failonerror="false"/>
         <delete dir="${build.dir}" failonerror="false"/>
     	<delete dir="${war.dir}" failonerror="false"/>
     </target>
     
     <target name="init" depends="clean, set-debug-mode, set-optimize-mode">
+        <mkdir dir="${build_src.dir}"/>
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${temp.dir}"/>
     	<mkdir dir="${dist.dir}"/>
@@ -61,14 +63,20 @@
             <entry  key="build.date" value="${build.date}"/>
         	<entry  key="build.number" value="${build.number}${build.tag}"/>
         </propertyfile>
-        <copy todir="${build.dir}" overwrite="Yes" preservelastmodified="Yes">
-        	<fileset dir="${unitime.src.dir}" includes="**/*.*" excludes="**/menu-custom.xml"/>
-            <fileset dir="${src.dir}" includes="**/*.*" excludes="**/hibernate.cfg.xml"/>
+        <copy todir="${build_src.dir}" overwrite="Yes" preservelastmodified="Yes">
+        	<fileset dir="${unitime.src.dir}" includes="**/*.*">
+        		<exclude name="**/menu-custom.xml"/>
+        		<exclude name="**/*.class"/>
+        	</fileset>
+            <fileset dir="${src.dir}" includes="**/*.*" >
+            	<exclude name="**/hibernate.cfg.xml"/>
+            	<exclude name="**/*.class"/>
+            </fileset>
         </copy>
-        <replace file="${build.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
             <replacefilter token="@build.date@" property="build.date"/>
         </replace>
-        <replace file="${build.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
             <replacefilter token="@build.number@" property="build.number"/>
         </replace>
         <path id="build.classpath">
@@ -83,7 +91,7 @@
 	
 	<target name="compile-java" depends="prepare">
 		<javac debug="${java.debug}" optimize="${java.optimize}" source="1.5" target="1.5" destdir="${build.dir}" includeantruntime="false">
-			<src path="${build.dir}" />
+			<src path="${build_src.dir}" />
 			<classpath refid="build.classpath" />
 		</javac>
 		
@@ -93,7 +101,7 @@
 	<target name="compile-gwt" depends="compile-java">
 		<java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler" dir="${temp.dir}">
 			<classpath refid="build.classpath" />
-			<classpath path="${build.dir}"/>
+			<classpath path="${build_src.dir}"/>
 			<jvmarg value="-Xmx600M"/>
 			<jvmarg value="${macJvmArgs}"/>
 			<arg value="org.unitime.timetable.gwt.UniTime"/>
@@ -116,31 +124,39 @@
 	</target>
 
 	<target name="timetable-jar" depends="compile-java, define-merge-xml">
-		<mergexml target="${build.dir}/hibernate.cfg.xml" source="${src.dir}/hibernate.cfg.xml"/>
+		<mergexml target="${build_src.dir}/hibernate.cfg.xml" source="${src.dir}/hibernate.cfg.xml"/>
 		<jar destfile="${dist.dir}/timetable.jar">
 			<fileset dir="${build.dir}">
 				<include name="**/*.class" />
+				<exclude name="edu/purdue/smas/ant/*.class" />
+			</fileset>
+			<fileset dir="${build_src.dir}">
 				<include name="*.xml" />
 				<include name="*.dtd" />
-				<include name="*.properties" />
+				<include name="**/*.properties" />
 				<include name="solver.key" />
-				<exclude name="org/unitime/banner/ant/*.class" />
 			</fileset>
 			<manifest>
 				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.Startup" />
 				<attribute name="Class-Path" value="antlr-2.7.6.jar backport-util-concurrent.jar commons-collections-3.2.1.jar commons-dbcp-1.4.jar commons-logging-1.1.1.jar commons-pool-1.5.4.jar cpsolver-all-1.2.jar dom4j-1.6.1.jar ehcache-1.5.0.jar hibernate3.jar javassist-3.9.0.GA.jar jta-1.1.jar log4j-1.2.15.jar mysql-connector-java-5.1.11-bin.jar ojdbc6.jar ojdbc5.jar ojdbc14.jar slf4j-api-1.5.8.jar slf4j-log4j12-1.5.8.jar jsp-api.jar servlet-api.jar" />
-				<attribute name="Timetabling-Version" value="3.2_bld${build.number}${build.tag}"/>
+				<attribute name="Timetabling-Version" value="3.3_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 	</target>
 
 	<target name="solver-jar" depends="compile-java">
+		<copy file="${build_src.dir}/custom.properties" tofile="${temp.dir}/custom.properties" failonerror="false" />
+		<echo message="" file="${temp.dir}/custom.properties" append="true"/>
 		<jar destfile="${dist.dir}/solver.jar">
 			<fileset dir="${build.dir}">
 				<include name="org/unitime/timetable/solver/remote/core/*.class" />
+			</fileset>
+			<fileset dir="${temp.dir}">
+				<include name="custom.properties" />
+			</fileset>
+			<fileset dir="${build_src.dir}">
 				<include name="application.properties" />
 				<include name="solver.key" />
-				<include name="custom.properties" />
 			</fileset>
 			<fileset dir="${unitime.jsp.dir}">
 				<include name="images/solver*.gif" />
@@ -148,7 +164,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.StartupMinimal" />
 				<attribute name="Class-Path" value="tray-win32.jar" />
-				<attribute name="Timetabling-Version" value="3.2_bld${build.number}${build.tag}"/>
+				<attribute name="Timetabling-Version" value="3.3_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 		<signjar jar="${dist.dir}/solver.jar" alias="solver" storepass="Fh3g1H03e95kf54xZ" keystore="${unitime.src.dir}/solver.key"/>
@@ -170,7 +186,7 @@
 			</fileset>
 		</copy>
 		<copy todir="${war.dir}/WEB-INF/classes" overwrite="Yes" preservelastmodified="Yes">
-			<fileset dir="${build.dir}">
+			<fileset dir="${build_src.dir}">
 				<include name="custom.properties" />
 				<include name="menu-custom.xml" />
 			</fileset>
