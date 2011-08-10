@@ -184,8 +184,7 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	} else {
             		getHibSession().update(student);
             	}
-
-	            flushIfNeeded(true);
+	            flushIfNeededDoNotClearSession(true);
 	        }
             
  	        for (Student student: students.values()) {
