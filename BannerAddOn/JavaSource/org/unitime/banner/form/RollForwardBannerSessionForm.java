@@ -99,5 +99,21 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 		init();
 	}
 	
+	public void copyTo(RollForwardBannerSessionForm form) {
+		form.setButtonAction(getButtonAction());
+		form.setAdmin(isAdmin());
+		form.setToSessions(getToSessions());
+		form.setFromSessions(getFromSessions());
+		form.setSessionToRollForwardTo(getSessionToRollForwardTo());
+		form.setRollForwardBannerSession(getRollForwardBannerSession());
+		form.setSessionToRollBannerDataForwardFrom(getSessionToRollBannerDataForwardFrom());
+	}
+	
+	public Object clone() {
+		RollForwardBannerSessionForm form = new RollForwardBannerSessionForm();
+		copyTo(form);
+		return form;
+	}
+
 	
 }
