@@ -21,6 +21,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld"	prefix="bean"%>
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld"	prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
+<%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
  
 <html> 
 	<head>
@@ -52,6 +53,31 @@
 			</TD>
 		</TR>
 		</logic:messagesPresent>
+	<logic:notEmpty name="table" scope="request">
+		<TR><TD>
+			<tt:section-header>
+				<tt:section-title>Roll Forward(s) In Progress</tt:section-title>
+				<html:submit property="op" accesskey="R" styleClass="btn" onclick="displayElement('loading', true);">Refresh</html:submit>
+			</tt:section-header>
+		</TD></TR>
+		<TR><TD>
+			<TABLE width="100%" border="0" cellspacing="0" cellpadding="3">
+				<bean:write name="table" scope="request" filter="false"/>
+			</TABLE>
+		</TD></TR>
+		<TR><TD>&nbsp;</TD></TR>
+	</logic:notEmpty>
+			
+	<TR><TD>
+		<tt:section-header>
+			<tt:section-title>Roll Forward Actions</tt:section-title>
+			<logic:equal name="<%=frmName%>" property="admin" value="true">
+					<html:submit property="op" accesskey="M" styleClass="btn" onclick="displayElement('loading', true);">
+					<bean:message key="button.rollForward" />
+				</html:submit>
+			</logic:equal>
+		</tt:section-header>
+	</TD></TR>
 		
 		<tr>
 			<td valign="top" nowrap ><b>Session To Roll Foward To: </b>
@@ -70,11 +96,9 @@
 			</td>			
 		</tr>
 		<tr><td>&nbsp;<br>&nbsp;<br></td></tr>
-		<tr>
-			<td>
-				&nbsp;&nbsp;&nbsp;
+				<tr>
+			<td align="right">
 				<logic:equal name="<%=frmName%>" property="admin" value="true">
-					&nbsp;&nbsp;&nbsp;
 					<html:submit property="op" accesskey="M" styleClass="btn" onclick="displayElement('loading', true);">
 						<bean:message key="button.rollForward" />
 					</html:submit>
