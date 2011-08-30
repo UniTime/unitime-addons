@@ -375,7 +375,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 						posMajor.setSession(session);
 						posMajor.setUniqueId((Long)getHibSession().save(posMajor));
 						posMajor.addToacademicAreas(aac.getAcademicArea());
-						info("Added Major:  " + major + "to Academic Area:  " + academicArea);
+						info("Added Major:  " + major + " to Academic Area:  " + academicArea);
 					}
 					record.addToposMajors(posMajor);
 					changed = true;
