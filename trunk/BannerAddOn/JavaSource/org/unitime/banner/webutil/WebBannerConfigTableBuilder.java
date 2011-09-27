@@ -32,14 +32,13 @@ import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.commons.User;
 import org.unitime.commons.web.htmlgen.TableStream;
-import org.unitime.timetable.form.ClassListForm;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Settings;
 import org.unitime.timetable.model.UserData;
-import org.unitime.timetable.model.comparators.ClassComparator;
+import org.unitime.timetable.model.comparators.ClassCourseComparator;
 import org.unitime.timetable.model.comparators.InstrOfferingConfigComparator;
 import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
@@ -76,11 +75,11 @@ public class WebBannerConfigTableBuilder extends
     	
     	if ("yes".equals(Settings.getSettingValue(user, Constants.SETTINGS_KEEP_SORT))) {
     		setClassComparator(
-    			new ClassComparator(
-    					UserData.getProperty(user.getId(),"InstructionalOfferingList.sortBy",ClassListForm.sSortByName),
-    					classAssignment,
-    					false
-    			)
+        			new ClassCourseComparator(
+        					UserData.getProperty(user.getId(),"InstructionalOfferingList.sortBy",ClassCourseComparator.getName(ClassCourseComparator.SortBy.NAME)),
+        					classAssignment,
+        					false
+        			)
     		);
     	}
     	BannerCourse bc = null;
@@ -125,11 +124,11 @@ public class WebBannerConfigTableBuilder extends
     	
     	if ("yes".equals(Settings.getSettingValue(user, Constants.SETTINGS_KEEP_SORT))) {
     		setClassComparator(
-    			new ClassComparator(
-    					UserData.getProperty(user.getId(),"InstructionalOfferingList.sortBy",ClassListForm.sSortByName),
-    					classAssignment,
-    					false
-    			)
+        			new ClassCourseComparator(
+        					UserData.getProperty(user.getId(),"InstructionalOfferingList.sortBy",ClassCourseComparator.getName(ClassCourseComparator.SortBy.NAME)),
+        					classAssignment,
+        					false
+        			)
     		);
     	}
 
