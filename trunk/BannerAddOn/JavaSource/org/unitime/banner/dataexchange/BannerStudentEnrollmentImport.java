@@ -32,9 +32,12 @@ import org.dom4j.Element;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
+import org.unitime.timetable.dataexchange.StudentEnrollmentImport.Pair;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.CourseRequest;
 import org.unitime.timetable.model.Exam;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
@@ -135,9 +138,9 @@ public class BannerStudentEnrollmentImport extends BaseImport {
 		            student.setLastName(studentElement.attributeValue("lastName", student.getLastName()));
             	}
             	
-            	Hashtable<Long, StudentClassEnrollment> enrollments = new Hashtable<Long, StudentClassEnrollment>();
+            	Hashtable<Pair, StudentClassEnrollment> enrollments = new Hashtable<Pair, StudentClassEnrollment>();
             	for (StudentClassEnrollment enrollment: student.getClassEnrollments()) {
-            		enrollments.put(enrollment.getClazz().getUniqueId(), enrollment);
+            		enrollments.put(new Pair(enrollment.getCourseOffering().getUniqueId(), enrollment.getClazz().getUniqueId()), enrollment);
             	}
 
             	for (Iterator j = studentElement.elementIterator("section"); j.hasNext(); ) {
@@ -149,23 +152,39 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             		} catch (NullPointerException e) {
             		} catch (NumberFormatException e) {
             		}
-
+            		
             		List<Class_> classes = (crn == null ? null : crn2classes.get(crn));
             		if (classes == null) {
             			warn("No classes for CRN " + crn + " found.");
             			continue;
             		}
             		
+            		CourseOffering course = crn2course.get(crn);
+            		if (course == null) {
+            			warn("No course for CRN " + crn + " found.");
+            			continue;
+            		}
+            		
             		for (Class_ clazz: classes) {
-                		StudentClassEnrollment enrollment = enrollments.remove(clazz.getUniqueId());
+                		StudentClassEnrollment enrollment = enrollments.remove(new Pair(course.getUniqueId(), clazz.getUniqueId()));
                 		if (enrollment != null) continue; // enrollment already exists
                 		
                 		enrollment = new StudentClassEnrollment();
                 		enrollment.setStudent(student);
                 		enrollment.setClazz(clazz);
-                		enrollment.setCourseOffering(crn2course.get(crn));
+                		enrollment.setCourseOffering(course);
                 		enrollment.setTimestamp(new java.util.Date());
                 		student.getClassEnrollments().add(enrollment);
+
+                		demands: for (CourseDemand d: student.getCourseDemands()) {
+                			for (CourseRequest r: d.getCourseRequests()) {
+                				if (r.getCourseOffering().equals(course)) {
+                					r.getClassEnrollments().add(enrollment);
+                					enrollment.setCourseRequest(r);
+                					break demands;
+                				}
+                			}
+                		}
                 		
                 		if (student.getUniqueId() != null) updatedStudents.add(student.getUniqueId());
             		}
@@ -174,6 +193,8 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	if (!enrollments.isEmpty()) {
             		for (StudentClassEnrollment enrollment: enrollments.values()) {
             			student.getClassEnrollments().remove(enrollment);
+            			if (enrollment.getCourseRequest() != null)
+            				enrollment.getCourseRequest().getClassEnrollments().remove(enrollment);
             			getHibSession().delete(enrollment);
                 		updatedStudents.add(student.getUniqueId());
             		}
@@ -190,6 +211,8 @@ public class BannerStudentEnrollmentImport extends BaseImport {
  	        for (Student student: students.values()) {
         		for (Iterator<StudentClassEnrollment> i = student.getClassEnrollments().iterator(); i.hasNext(); ) {
         			StudentClassEnrollment enrollment = i.next();
+        			if (enrollment.getCourseRequest() != null)
+        				enrollment.getCourseRequest().getClassEnrollments().remove(enrollment);
         			getHibSession().delete(enrollment);
         			i.remove();
      	        	updatedStudents.add(student.getUniqueId());
