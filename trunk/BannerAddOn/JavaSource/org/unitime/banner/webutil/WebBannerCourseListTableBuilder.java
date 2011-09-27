@@ -504,7 +504,7 @@ public class WebBannerCourseListTableBuilder extends
 		cell = this.headerCell("DatePattern", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
-		cell = headerCell("--------" + TIMETABLE + "--------", 1, TIMETABLE_COLUMN_ORDER.length);
+		cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, TIMETABLE_COLUMN_ORDER.length);
 		cell.setAlign("center");
     	row.addContent(cell);
     	for(int j = 0; j < TIMETABLE_COLUMN_ORDER.length; j++){
