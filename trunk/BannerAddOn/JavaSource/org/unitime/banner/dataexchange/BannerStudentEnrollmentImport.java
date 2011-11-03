@@ -132,6 +132,7 @@ public class BannerStudentEnrollmentImport extends BaseImport {
 		            student.setFreeTimeCategory(0);
 		            student.setSchedulePreference(0);
 		            student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
+		            student.setCourseDemands(new HashSet<CourseDemand>());
             	} else {
 		            student.setFirstName(studentElement.attributeValue("firstName", student.getFirstName()));
 		            student.setMiddleName(studentElement.attributeValue("middleName", student.getMiddleName()));
