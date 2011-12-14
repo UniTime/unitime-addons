@@ -108,10 +108,16 @@ public class BannerStudentEnrollmentImport extends BaseImport {
 				ChangeLog.addChange(getHibSession(), manger, session, session, created, ChangeLog.Source.DATA_IMPORT_STUDENT_ENROLLMENTS, ChangeLog.Operation.UPDATE, null, null);
          
 	        Hashtable<String, Student> students = new Hashtable<String, Student>();
-	        for (Student student: StudentDAO.getInstance().findBySession(getHibSession(), session.getUniqueId())) {
-	        	if (student.getExternalUniqueId() != null)
-	        		students.put(student.getExternalUniqueId(), student);
-	        }
+	        for (Student student: (List<Student>)getHibSession().createQuery(
+                    "select distinct s from Student s " +
+                    "left join fetch s.courseDemands as cd " +
+                    "left join fetch cd.courseRequests as cr " +
+                    "left join fetch s.classEnrollments as e " +
+                    "left join fetch cr.classEnrollments as cre "+
+                    "where s.session.uniqueId=:sessionId and s.externalUniqueId is not null").
+                    setLong("sessionId",session.getUniqueId()).list()) { 
+                        students.put(student.getExternalUniqueId(), student);
+                }
 
  	        for (Iterator i = rootElement.elementIterator("student"); i.hasNext(); ) {
 	            Element studentElement = (Element) i.next();
