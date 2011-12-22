@@ -20,7 +20,13 @@
 <!ELEMENT enrollment EMPTY >
 <!ATTLIST enrollment crn NMTOKEN #REQUIRED >
 
-<!ELEMENT student ( enrollment* ) >
+<!ELEMENT studentGroup EMPTY >
+<!ATTLIST studentGroup externalId NMTOKEN #REQUIRED >
+<!ATTLIST studentGroup campus NMTOKEN #REQUIRED >
+<!ATTLIST studentGroup abbreviation NMTOKEN #IMPLIED >
+<!ATTLIST studentGroup name NMTOKEN #IMPLIED >
+
+<!ELEMENT student ( enrollment*, studentGroup* ) >
 <!ATTLIST student academicArea NMTOKEN #REQUIRED >
 <!ATTLIST student classification NMTOKEN #REQUIRED >
 <!ATTLIST student email CDATA #IMPLIED >
