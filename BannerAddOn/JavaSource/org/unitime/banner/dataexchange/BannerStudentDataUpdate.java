@@ -20,6 +20,7 @@
 
 package org.unitime.banner.dataexchange;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.queueprocessor.exception.LoggableException;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
+import org.unitime.timetable.dataexchange.StudentEnrollmentImport.Pair;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicAreaClassification;
 import org.unitime.timetable.model.AcademicClassification;
@@ -45,6 +47,7 @@ import org.unitime.timetable.model.PosMajor;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
+import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentSectioningQueue;
 
 /**
@@ -56,16 +59,14 @@ public class BannerStudentDataUpdate extends BaseImport {
 	private static String rootName = "studentUpdates";
 	private static String studentElementName = "student";
 	private static String enrollmentElementName = "enrollment";
+	private static String groupElementName = "studentGroup";
 	
 	private HashMap<Session,HashSet<Long>> studentIdsSucessfullyProcessed = new HashMap<Session, HashSet<Long>>();
 	private HashSet<String> studentIdsNotProcessed = new HashSet<String>();
 	private HashSet<String> studentIdsSucessfullyProcessedWithProblems = new HashSet<String>();
-	
-	private HashSet<Long> classIdsTouched = new HashSet<Long>();
-	private HashSet<Long> courseIdsTouched = new HashSet<Long>();
-	
+		
 	private boolean trimLeadingZerosFromExternalId;
-	private HashMap<String, Vector<Long>> bannerSessionIdMap = new HashMap<String, Vector<Long>>();
+	private HashMap<String, ArrayList<Long>> bannerSessionIdMap = new HashMap<String, ArrayList<Long>>();
 
 	/**
 	 * 
@@ -107,18 +108,11 @@ public class BannerStudentDataUpdate extends BaseImport {
 				elementCount++;
 			}
 			beginTransaction();
-			info("Updating class enrollments.");
-			updateEnrollmentForClassIds();
-			info("Updating course offering enrollments.");
-			updateCourseOfferingEnrollmentCounts();
-			info("Done updating enrollments.");
-			commitTransaction();
-			beginTransaction();
 			int studentCount = 0;
 			for(Session session : studentIdsSucessfullyProcessed.keySet()){
 				HashSet<Long> updatedStudents = studentIdsSucessfullyProcessed.get(session);
 		        if (!updatedStudents.isEmpty()){
-	 	 	        StudentSectioningQueue.studentChanged(getHibSession(), session.getUniqueId(), updatedStudents);
+	 	 	        StudentSectioningQueue.studentChanged(getHibSession(), null, session.getUniqueId(), updatedStudents);
 	 	 	        studentCount += updatedStudents.size();
 		        }
 			}
@@ -176,7 +170,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 		beginTransaction();
 		HashSet<Student> studentRecords = new HashSet<Student>();
 		for(Long sessionId : getSessionIdsForBannerSession(bannerSession)){
-			Student s = Student.findByExternalId(sessionId, externalId);
+			Student s = Student.findByExternalIdBringBackEnrollments(getHibSession(), sessionId, externalId);
 			if (s != null){
 				studentRecords.add(s);
 			}
@@ -210,8 +204,17 @@ public class BannerStudentDataUpdate extends BaseImport {
 			rollbackTransaction();
 			return;
 		}
+		HashMap<Session, HashSet<StudentGroup>> groups = null;
 		try {
-			studentUpdates = updateStudent(studentRecords, classEnrollments, externalId, firstName, middleName, lastName, academicArea, classification, major, email);			
+			groups = processGroupElements(studentElement, bannerSession, externalId);			
+		} catch (Exception e) {
+			studentIdsNotProcessed.add(externalId);
+			error(e.getMessage());
+			rollbackTransaction();
+			return;
+		}
+		try {
+			studentUpdates = updateStudent(studentRecords, classEnrollments, externalId, firstName, middleName, lastName, academicArea, classification, major, email, groups);			
 		} catch (Exception e) {
 			studentIdsNotProcessed.add(externalId);
 			error(e.getMessage());
@@ -242,200 +245,238 @@ public class BannerStudentDataUpdate extends BaseImport {
 		}
 	}
 	
+	private boolean updateStudentGroups(Student student, HashMap<Session, HashSet<StudentGroup>> groups){
+		boolean changed = false;
+    	HashSet<StudentGroup> addedGroups = groups.get(student.getSession());
+    	if (addedGroups == null || addedGroups.isEmpty()){
+    		if (!student.getGroups().isEmpty()){
+    			HashSet<StudentGroup> removeGroups = new HashSet<StudentGroup>();
+    			removeGroups.addAll(student.getGroups());
+    			for(StudentGroup sg : removeGroups){
+    				sg.getStudents().remove(student);
+    				student.getGroups().remove(sg);
+    			}
+    			changed = true;
+    		}
+    	} else {
+        	HashSet<StudentGroup> removedGroups = new HashSet<StudentGroup>();
+        	removedGroups.addAll(student.getGroups());
+    		removedGroups.removeAll(addedGroups);
+    		addedGroups.removeAll(student.getGroups());
+    		if (!removedGroups.isEmpty()){
+    			for (StudentGroup sg : removedGroups){
+    				sg.getStudents().remove(student);
+    				student.getGroups().remove(sg);
+    			}
+    			changed = true;
+    		}
+    		if (!addedGroups.isEmpty()){
+    			for (StudentGroup sg: addedGroups){
+    				sg.addTostudents(student);
+    				student.addTogroups(sg);
+    			}
+    			changed = true;
+    		}
+    	}
+    	return(changed);
+	}
+	
+	private boolean updateStudentDemographics(Student student, String firstName,
+			String middleName, String lastName, String academicArea,
+			String classification, String major, String email){
+		boolean changed = false;
+		Session session = student.getSession();
+		if (student.getFirstName() == null || !student.getFirstName().equals(firstName)){
+			student.setFirstName(firstName);
+			changed = true;
+		}
+		if (student.getMiddleName() == null || !student.getMiddleName().equals(middleName)){
+			student.setMiddleName(middleName);
+			changed = true;
+		}
+		if (student.getLastName() == null || !student.getLastName().equals(lastName)){
+			student.setLastName(lastName);
+			changed = true;
+		}
+		if (student.getEmail() == null || !student.getEmail().equals(email)){
+			student.setEmail(email);
+			changed = true;
+		}
+
+		// This makes the assumption that when working with Banner students have only one AcademicAreaClassification
+		AcademicAreaClassification aac = null;
+		for(Iterator<?> it = student.getAcademicAreaClassifications().iterator(); it.hasNext();){
+			aac = (AcademicAreaClassification) it.next();
+			break;
+		}
+		if (aac == null || 
+			!((aac.getAcademicArea().getExternalUniqueId().equalsIgnoreCase(academicArea) 
+						|| aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(academicArea)) 
+			  && (aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(classification) 
+					  	|| aac.getAcademicClassification().getCode().equalsIgnoreCase(classification)))) {
+			student.getAcademicAreaClassifications().clear();
+			aac = new AcademicAreaClassification();
+			AcademicArea aa = AcademicArea.findByExternalId(getHibSession(), session.getUniqueId(), academicArea);						
+			if (aa == null){
+				aa = AcademicArea.findByAbbv(getHibSession(), session.getUniqueId(), academicArea);
+			}
+			if (aa == null){
+				aa = new AcademicArea();
+				aa.setAcademicAreaAbbreviation(academicArea);
+				aa.setSession(session);
+				aa.setExternalUniqueId(academicArea);
+				aa.setLongTitle(academicArea);
+				aa.setShortTitle(academicArea);
+				aa.setUniqueId((Long)getHibSession().save(aa));
+				info("Added Academic Area:  " + academicArea);
+			}
+			aac.setAcademicArea(aa);
+			
+			AcademicClassification ac = AcademicClassification.findByExternalId(getHibSession(), session.getUniqueId(), classification);
+			if (ac == null){
+				ac = AcademicClassification.findByCode(getHibSession(), session.getUniqueId(), classification);
+			}
+			if (ac == null){
+				ac = new AcademicClassification();
+				ac.setCode(classification);
+				ac.setExternalUniqueId(classification);
+				ac.setName(classification);
+				ac.setSession(session);
+				ac.setUniqueId((Long) getHibSession().save(ac));
+				info("Added Academic Classification:  " + classification);
+			}
+			aac.setAcademicClassification(ac);
+			aac.setStudent(student);
+			student.getAcademicAreaClassifications().add(aac);
+			changed = true;
+		}
+		
+		//This makes the assumption that when working with Banner students have only one Major
+		PosMajor m = null;
+		for(Iterator<?> it = student.getPosMajors().iterator(); it.hasNext();){
+			m = (PosMajor) it.next();
+		}
+		if (m == null || !(major.equalsIgnoreCase(m.getExternalUniqueId()) || major.equalsIgnoreCase(m.getCode()) 
+				|| (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))){
+			student.getPosMajors().clear();
+			
+			PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(getHibSession(), session.getUniqueId(), major, academicArea);
+			if (posMajor == null){
+				posMajor = PosMajor.findByCodeAcadAreaAbbv(getHibSession(), session.getUniqueId(), major, academicArea);
+			}
+			if (posMajor == null){
+				posMajor = new PosMajor();
+				posMajor.setCode(major);
+				posMajor.setExternalUniqueId(major);
+				posMajor.setName(major);
+				posMajor.setSession(session);
+				posMajor.setUniqueId((Long)getHibSession().save(posMajor));
+				posMajor.addToacademicAreas(aac.getAcademicArea());
+				info("Added Major:  " + major + " to Academic Area:  " + academicArea);
+			}
+			student.addToposMajors(posMajor);
+			changed = true;
+		} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
+			m.addToacademicAreas(aac.getAcademicArea());
+			info("Added Academic Area: " + academicArea + " to existing Major:  " + major);
+			changed = true;
+		}
+	
+		return (changed);
+		
+	}
+	
 	private HashMap<Session, HashSet<Long>> updateStudent(HashSet<Student> studentRecords,
 			HashMap<Session, HashMap<CourseOffering,Vector<Class_>>> classEnrollments, 
 			String externalId, String firstName,
 			String middleName, String lastName, String academicArea,
-			String classification, String major, String email) {
+			String classification, String major, String email, HashMap<Session, HashSet<StudentGroup>> groups) {
 
 		HashMap<Session, HashSet<Long>> recordsProcessed = new HashMap<Session, HashSet<Long>>();
 		
-		if (classEnrollments.isEmpty()){
-			//  If the student has no enrollments remove the student records found
-			for(Student student : studentRecords){
-				addSessionRecordToList(recordsProcessed, student.getSession(), student.getUniqueId());
-				if (student.getClassEnrollments() != null && student.getClassEnrollments().size() > 0){
-					for(StudentClassEnrollment sce : student.getClassEnrollments()){
-						classIdsTouched.add(sce.getClazz().getUniqueId());
-						courseIdsTouched.add(sce.getCourseOffering().getUniqueId());
-					}
-				}
-				getHibSession().delete(student);
-			}
-		} else {
-			// If the student has enrollments update the student's information in each session the student
-			//  has enrollments in and remove the student from any session the student no longer has enrollments in
-			HashSet<Student> records = new HashSet<Student>();
-			records.addAll(studentRecords);
-			for(Session session : classEnrollments.keySet()){
-				boolean changed = false;
-				Student record = null;
-				for(Student student : records){
-					if (student.getSession().getUniqueId().equals(session.getUniqueId())){
-						record = student;
-						break;
-					}
-				}
-				if (record == null){
-					record = new Student();
-					record.setExternalUniqueId(externalId);
-					record.setSession(session);
-					record.setFreeTimeCategory(0);
-		            record.setSchedulePreference(0);
-		            record.setClassEnrollments(new HashSet<StudentClassEnrollment>());
-		            record.setAcademicAreaClassifications(new HashSet<AcademicAreaClassification>());
-		            record.setPosMajors(new HashSet<PosMajor>());
-		            changed = true;
-				} else {
-					records.remove(record);
-				}
-				if (record.getFirstName() == null || !record.getFirstName().equals(firstName)){
-					record.setFirstName(firstName);
-					changed = true;
-				}
-				if (record.getMiddleName() == null || !record.getMiddleName().equals(middleName)){
-					record.setMiddleName(middleName);
-					changed = true;
-				}
-				if (record.getLastName() == null || !record.getLastName().equals(lastName)){
-					record.setLastName(lastName);
-					changed = true;
-				}
-				if (record.getEmail() == null || !record.getEmail().equals(email)){
-					record.setEmail(email);
-					changed = true;
-				}
-
-				// This makes the assumption that when working with Banner students have only one AcademicAreaClassification
-				AcademicAreaClassification aac = null;
-				for(Iterator<?> it = record.getAcademicAreaClassifications().iterator(); it.hasNext();){
-					aac = (AcademicAreaClassification) it.next();
+		HashSet<Student> records = new HashSet<Student>();
+		records.addAll(studentRecords);
+		for(Session session : classEnrollments.keySet()){
+			boolean changed = false;
+			Student record = null;
+			for(Student student : records){
+				if (student.getSession().getUniqueId().equals(session.getUniqueId())){
+					record = student;
 					break;
 				}
-				if (aac == null || 
-					!((aac.getAcademicArea().getExternalUniqueId().equalsIgnoreCase(academicArea) 
-								|| aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(academicArea)) 
-					  && (aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(classification) 
-							  	|| aac.getAcademicClassification().getCode().equalsIgnoreCase(classification)))) {
-					record.getAcademicAreaClassifications().clear();
-					aac = new AcademicAreaClassification();
-					AcademicArea aa = AcademicArea.findByExternalId(session.getUniqueId(), academicArea);						
-					if (aa == null){
-						aa = AcademicArea.findByAbbv(session.getUniqueId(), academicArea);
-					}
-					if (aa == null){
-						aa = new AcademicArea();
-						aa.setAcademicAreaAbbreviation(academicArea);
-						aa.setSession(session);
-						aa.setExternalUniqueId(externalId);
-						aa.setLongTitle(academicArea);
-						aa.setShortTitle(academicArea);
-						aa.setUniqueId((Long)getHibSession().save(aa));
-						info("Added Academic Area:  " + academicArea);
-					}
-					aac.setAcademicArea(aa);
-					
-					AcademicClassification ac = AcademicClassification.findByExternalId(session.getUniqueId(), classification);
-					if (ac == null){
-						ac = AcademicClassification.findByCode(session.getUniqueId(), classification);
-					}
-					if (ac == null){
-						ac = new AcademicClassification();
-						ac.setCode(classification);
-						ac.setExternalUniqueId(classification);
-						ac.setName(classification);
-						ac.setSession(session);
-						ac.setUniqueId((Long) getHibSession().save(ac));
-						info("Added Academic Classification:  " + classification);
-					}
-					aac.setAcademicClassification(ac);
-					aac.setStudent(record);
-					record.getAcademicAreaClassifications().add(aac);
-					changed = true;
-				}
-				
-				//This makes the assumption that when working with Banner students have only one Major
-				PosMajor m = null;
-				for(Iterator<?> it = record.getPosMajors().iterator(); it.hasNext();){
-					m = (PosMajor) it.next();
-				}
-				if (m == null || !(major.equalsIgnoreCase(m.getExternalUniqueId()) || major.equalsIgnoreCase(m.getCode()) 
-						|| (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))){
-					record.getPosMajors().clear();
-					
-					PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(session.getUniqueId(), major, academicArea);
-					if (posMajor == null){
-						posMajor = PosMajor.findByCodeAcadAreaAbbv(session.getUniqueId(), major, academicArea);
-					}
-					if (posMajor == null){
-						posMajor = new PosMajor();
-						posMajor.setCode(major);
-						posMajor.setExternalUniqueId(major);
-						posMajor.setName(major);
-						posMajor.setSession(session);
-						posMajor.setUniqueId((Long)getHibSession().save(posMajor));
-						posMajor.addToacademicAreas(aac.getAcademicArea());
-						info("Added Major:  " + major + " to Academic Area:  " + academicArea);
-					}
-					record.addToposMajors(posMajor);
-					changed = true;
-				} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
-					m.addToacademicAreas(aac.getAcademicArea());
-					info("Added Academic Area: " + academicArea + " to existing Major:  " + major);
-					changed = true;
-				}
+			}
+			if (record == null){
+				record = new Student();
+				record.setExternalUniqueId(externalId);
+				record.setSession(session);
+				record.setFreeTimeCategory(0);
+	            record.setSchedulePreference(0);
+	            record.setClassEnrollments(new HashSet<StudentClassEnrollment>());
+	            record.setAcademicAreaClassifications(new HashSet<AcademicAreaClassification>());
+	            record.setPosMajors(new HashSet<PosMajor>());
+	            changed = true;
+			} else {
+				records.remove(record);
+			}
+			
+			if (updateStudentDemographics(record, firstName, middleName, lastName, academicArea, classification, major, email)){
+				changed = true;
+			}
 
-				Hashtable<Long, StudentClassEnrollment> enrollments = new Hashtable<Long, StudentClassEnrollment>();
-            	if (record.getClassEnrollments() != null){
-	            	for (StudentClassEnrollment enrollment: record.getClassEnrollments()) {
-	            		enrollments.put(enrollment.getClazz().getUniqueId(), enrollment);
-	            	}
+			Hashtable<Pair, StudentClassEnrollment> enrollments = new Hashtable<Pair, StudentClassEnrollment>();
+        	if (record.getClassEnrollments() != null){
+            	for (StudentClassEnrollment enrollment: record.getClassEnrollments()) {
+            		enrollments.put(new Pair(enrollment.getCourseOffering().getUniqueId(), enrollment.getClazz().getUniqueId()), enrollment);
             	}
-            	HashMap<CourseOffering, Vector<Class_>> courseToClassEnrollments = classEnrollments.get(session);
-            	for (CourseOffering co : courseToClassEnrollments.keySet()){
-	            	for (Class_ clazz: courseToClassEnrollments.get(co)) {
-	            		StudentClassEnrollment enrollment = enrollments.remove(clazz.getUniqueId());
-	            		if (enrollment != null) continue; // enrollment already exists
-	            		enrollment = new StudentClassEnrollment();
-	            		enrollment.setStudent(record);
-	            		enrollment.setClazz(clazz);
-	            		enrollment.setCourseOffering(co);
-	            		enrollment.setTimestamp(new java.util.Date());
-	            		record.getClassEnrollments().add(enrollment);    
-	            		changed = true;
-	            		classIdsTouched.add(clazz.getUniqueId());
-	            		courseIdsTouched.add(co.getUniqueId());
-	        		}
-            	}         	
-            	if (!enrollments.isEmpty()) {
-            		for (StudentClassEnrollment enrollment: enrollments.values()) {
-            			classIdsTouched.add(enrollment.getClazz().getUniqueId());
-            			courseIdsTouched.add(enrollment.getCourseOffering().getUniqueId());
-            			record.getClassEnrollments().remove(enrollment);
-            			getHibSession().delete(enrollment);
-            		}
+        	}
+        	HashMap<CourseOffering, Vector<Class_>> courseToClassEnrollments = classEnrollments.get(session);
+        	for (CourseOffering co : courseToClassEnrollments.keySet()){
+            	for (Class_ clazz: courseToClassEnrollments.get(co)) {
+            		StudentClassEnrollment enrollment = enrollments.remove(new Pair(co.getUniqueId(), clazz.getUniqueId()));
+            		if (enrollment != null) continue; // enrollment already exists
+            		enrollment = new StudentClassEnrollment();
+            		enrollment.setStudent(record);
+            		enrollment.setClazz(clazz);
+            		enrollment.setCourseOffering(co);
+            		enrollment.setTimestamp(new java.util.Date());
+            		record.getClassEnrollments().add(enrollment);    
             		changed = true;
-            	}
-            	Long uid = record.getUniqueId();
-            	if (uid == null){
-            		uid = (Long) getHibSession().save(record);
-            	} else if (changed) {
-            		getHibSession().update(record);	
-            	}
-            	addSessionRecordToList(recordsProcessed, session, uid);
-            	
-			}
-			if (!records.isEmpty()){
-				for(Student student : records){
-					addSessionRecordToList(recordsProcessed, student.getSession(), student.getUniqueId());
-					for(StudentClassEnrollment sce : student.getClassEnrollments()){
-						classIdsTouched.add(sce.getClazz().getUniqueId());
-						courseIdsTouched.add(sce.getCourseOffering().getUniqueId());
-					}
-					getHibSession().delete(student);
+        		}
+        	}         	
+        	if (!enrollments.isEmpty()) {
+        		for (StudentClassEnrollment enrollment: enrollments.values()) {
+        			record.getClassEnrollments().remove(enrollment);
+        			if (enrollment.getCourseRequest() != null)
+        				enrollment.getCourseRequest().getClassEnrollments().remove(enrollment);
+        			getHibSession().delete(enrollment);
+        		}
+        		changed = true;
+        	}
+        	if (updateStudentGroups(record, groups)){
+        		changed = true;
+        	}
+        	Long uid = record.getUniqueId();
+        	if (uid == null){
+        		uid = (Long) getHibSession().save(record);
+        	} else if (changed) {
+        		getHibSession().update(record);	
+        	}
+        	addSessionRecordToList(recordsProcessed, session, uid);
+        	
+		}
+		if (!records.isEmpty()){
+			for(Student student : records){
+				addSessionRecordToList(recordsProcessed, student.getSession(), student.getUniqueId());
+				if (updateStudentDemographics(student, firstName, middleName, lastName, academicArea, classification, major, email)){
+					getHibSession().update(student);
+				}
+				student.removeAllEnrollments(getHibSession());
+				if (updateStudentGroups(student, groups)){
+					getHibSession().update(student);
 				}
 			}
-		}	
+			
+		}
 		
 		return(recordsProcessed);
 		
@@ -447,14 +488,14 @@ public class BannerStudentDataUpdate extends BaseImport {
 		for (Iterator<?> eIt = studentElement.elementIterator(enrollmentElementName); eIt.hasNext();) {
 			Element enrollmentElement = (Element) eIt.next();
 			Integer crn = getRequiredIntegerAttribute(enrollmentElement, "crn", enrollmentElementName);
-			CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(crn, bannerSession);
+			CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(getHibSession(), crn, bannerSession);
 			if (co == null){
 				studentIdsSucessfullyProcessedWithProblems.add(externalId);
 				error("Course Offering not found for CRN = " + crn.toString() + ", banner session = " + bannerSession);
 				continue;
 			}
 			boolean foundClasses = false;
-			for(Iterator<?> it = BannerSection.findAllClassesForCrnAndTermCode(crn, bannerSession).iterator(); it.hasNext();){
+			for(Iterator<?> it = BannerSection.findAllClassesForCrnAndTermCode(getHibSession(), crn, bannerSession).iterator(); it.hasNext();){
 				Class_ c = (Class_) it.next();
 				foundClasses = true;
 				HashMap<CourseOffering,Vector<Class_>> sessionCourseToClasses = enrollments.get(c.getSession());
@@ -477,9 +518,79 @@ public class BannerStudentDataUpdate extends BaseImport {
 		return(enrollments);
 	}
 
-	private Vector<Long> getSessionIdsForBannerSession(String bannerSessionId) {
+	private HashMap<Session, HashSet<StudentGroup>> processGroupElements(
+			Element studentElement, String bannerSession, String externalId) throws Exception {
+		HashMap<Session, HashSet<StudentGroup>> groups = new HashMap<Session, HashSet<StudentGroup>>();
+		for (Iterator<?> eIt = studentElement.elementIterator(groupElementName); eIt.hasNext();) {
+			Element groupElement = (Element) eIt.next();
+			String groupExternalId = getRequiredStringAttribute(groupElement, "externalId", groupElementName);
+			String campus = getRequiredStringAttribute(groupElement, "campus", groupElementName);
+			Session acadSession = getSessionFor(bannerSession, campus);
+			StudentGroup sg = StudentGroup.findByExternalId(getHibSession(), groupExternalId, acadSession.getUniqueId());
+			if (sg == null){
+				sg = new StudentGroup();
+				sg.setExternalUniqueId(groupExternalId);
+				sg.setSession(acadSession);
+				String abbreviation = getOptionalStringAttribute(groupElement, "abbreviation");
+				if (abbreviation != null){
+					sg.setGroupAbbreviation(abbreviation);
+				} else {
+					sg.setGroupAbbreviation(groupExternalId);
+				}
+				String name = getOptionalStringAttribute(groupElement, "name");
+				if (name != null){
+					sg.setGroupName(name);
+				} else {
+					sg.setGroupName(groupExternalId);
+				}
+				sg.setUniqueId((Long)getHibSession().save(sg));
+				info("Added Student Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
+			} else {
+				boolean changed = false;
+				String abbreviation = getOptionalStringAttribute(groupElement, "abbreviation");
+				if (abbreviation != null &&  !abbreviation.equals(sg.getGroupAbbreviation())){
+					info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old abbreviation:  " + sg.getGroupAbbreviation() + ", new abbreviation:  " + abbreviation + " in session " + sg.getSession().academicInitiativeDisplayString());
+					sg.setGroupAbbreviation(abbreviation);
+					changed = true;
+				} 
+				String name = getOptionalStringAttribute(groupElement, "name");
+				if (name != null && !name.equals(sg.getGroupName())){
+					info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old name:  " + sg.getGroupName() + ", new name:  " + name + " in session " + sg.getSession().academicInitiativeDisplayString());
+					sg.setGroupName(name);
+					changed = true;
+				}
+				if (changed){
+					getHibSession().update(sg);
+				}
+			}
+			HashSet<StudentGroup> stuGrps = groups.get(sg.getSession());
+			if (stuGrps == null){
+				stuGrps = new HashSet<StudentGroup>();
+				groups.put(sg.getSession(), stuGrps);
+			}
+			stuGrps.add(sg);
+		}			
+		return(groups);
+	}
+	
+ 
+    
+    private Session getSessionFor(String bannerSessionId, String campus){
+    	return (Session)getHibSession().
+        createQuery(
+                "select bs.session from BannerSession bs where "+
+                "bs.bannerTermCode = :termCode and " +
+                "bs.session.academicInitiative = :campus").
+         setString("termCode", bannerSessionId).
+         setString("campus", campus).
+         setCacheable(true).
+         uniqueResult(); 
+    }
+
+	
+	private ArrayList<Long> getSessionIdsForBannerSession(String bannerSessionId) {
 		if (bannerSessionIdMap.get(bannerSessionId) == null){
-			Vector<Long> sessionIds = new Vector<Long>();
+			ArrayList<Long> sessionIds = new ArrayList<Long>();
 			bannerSessionIdMap.put(bannerSessionId, sessionIds);
 			for (Iterator<?> it = getHibSession().createQuery("from BannerSession bs where bs.bannerTermCode = :termCode)").setString("termCode", bannerSessionId).list().iterator(); it.hasNext();){
 				BannerSession bs = (BannerSession) it.next();
@@ -505,60 +616,5 @@ public class BannerStudentDataUpdate extends BaseImport {
 			}
 		} 	
 	}
-
-   private void updateEnrollmentForClassIds(){
-    	String ids = "";
-    	int count = 0;
-    	for (Long id: classIdsTouched) {
-    		if (count > 0) ids += ",";
-    		ids += id;
-    		count ++;
-    		if (count == 1000) {
-    			getHibSession().createQuery("update Class_  c " +
-    	        		"set c.enrollment=(select count(distinct d.student) " +
-    	                " from StudentClassEnrollment d " +
-    	                " where d.clazz.uniqueId =c.uniqueId) " + 
-    	                " where c.uniqueId in (" + ids + ")").executeUpdate();
-    			ids = ""; count = 0;
-    		}
-    	}
-    	if (count > 0) {
-			getHibSession().createQuery("update Class_  c " +
-	        		"set c.enrollment=(select count(distinct d.student) " +
-	                " from StudentClassEnrollment d " +
-	                " where d.clazz.uniqueId =c.uniqueId) " + 
-	                " where c.uniqueId in (" + ids + ")").executeUpdate();
-    	}
-	
-    }
-   
-	private void updateCourseOfferingEnrollmentCounts() {
-
-    	String ids = "";
-    	int count = 0;
-    	for (Long id: courseIdsTouched) {
-    		if (count > 0) ids += ",";
-    		ids += id;
-    		count ++;
-    		if (count == 1000) {
-    			getHibSession().createQuery("update CourseOffering  c " +
-    	        		"set c.enrollment=(select count(distinct d.student) " +
-    	                " from StudentClassEnrollment d " +
-    	                " where d.courseOffering.uniqueId =c.uniqueId) " + 
-    	                " where c.uniqueId in (" + ids + ")").executeUpdate();
-    			ids = ""; count = 0;
-    		}
-    	}
-    	if (count > 0) {
-			getHibSession().createQuery("update CourseOffering  c " +
-	        		"set c.enrollment=(select count(distinct d.student) " +
-	                " from StudentClassEnrollment d " +
-	                " where d.courseOffering.uniqueId =c.uniqueId) " + 
-	                " where c.uniqueId in (" + ids + ")").executeUpdate();
-    	}
-	
-    		
-	}
-
 
 }
