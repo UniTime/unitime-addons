@@ -951,23 +951,29 @@ public class BannerSection extends BaseBannerSection {
     }
 
     public static List findAllClassesForCrnAndTermCode(Integer crn, String termCode){
-    	return (new BannerSectionDAO()).
-			getSession().
+    	return(findAllClassesForCrnAndTermCode((new BannerSectionDAO()).getSession(), crn, termCode));
+    }
+    
+    public static List findAllClassesForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
+    	return (hibSession.
 			createQuery("select distinct c from BannerSession bsess, BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where " +
 					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and bstc.classId = c.uniqueId").
 			setString("termCode",termCode).
 			setInteger("crn", crn).
-			list();
+			list());
     }
-    
+
     public static CourseOffering findCourseOfferingForCrnAndTermCode(Integer crn, String termCode){
-    	return ((CourseOffering)(new BannerSectionDAO()).
-			getSession().
+    	return(findCourseOfferingForCrnAndTermCode((new BannerSectionDAO()).getSession(), crn, termCode));
+    }
+  
+    public static CourseOffering findCourseOfferingForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
+    	return ((CourseOffering)hibSession.
 			createQuery("select distinct co from BannerSession bsess, BannerSection bs, CourseOffering co where " +
 					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId").
 			setString("termCode",termCode).
 			setInteger("crn", crn).
 			uniqueResult());
     }
-  
+
 }
