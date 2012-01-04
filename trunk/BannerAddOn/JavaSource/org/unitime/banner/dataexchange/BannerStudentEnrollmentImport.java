@@ -44,7 +44,6 @@ import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
 import org.unitime.timetable.model.TimetableManager;
-import org.unitime.timetable.model.dao.StudentDAO;
 import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.test.UpdateExamConflicts;
 
