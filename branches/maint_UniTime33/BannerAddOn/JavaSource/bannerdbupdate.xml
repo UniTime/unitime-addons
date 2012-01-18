@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+ * UniTime 3.2 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ -->
+<dbupdate>
+	<dialect type="mysql">org.hibernate.dialect.MySQLDialect</dialect>
+	<dialect type="mysql">org.hibernate.dialect.MySQLInnoDBDialect</dialect>
+	<dialect type="mysql">org.hibernate.dialect.MySQL5InnoDBDialect</dialect>
+	<dialect type="mysql">org.hibernate.dialect.MySQL5Dialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.OracleDialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle8iDialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle9Dialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle9iDialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle10gDialect</dialect>
+ 
+ 	<update version="2" date="21-Sep-2010" comment="Banner Response Indexes">
+		<plsql>
+			create index %SCHEMA%.idx_response_term_code on %SCHEMA%.banner_response(term_code)
+		</plsql>
+		<mysql>
+			create index idx_response_term_code on %SCHEMA%.banner_response(term_code)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_response_crn on %SCHEMA%.banner_response(crn)
+		</plsql>
+		<mysql>
+			create index idx_response_crn on %SCHEMA%.banner_response(crn)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_response_xlst_group on %SCHEMA%.banner_response(xlst_group)
+		</plsql>
+		<mysql>
+			create index idx_response_xlst_group on %SCHEMA%.banner_response(xlst_group)
+		</mysql>
+	</update>
+ 	<update version="3" date="05-Nov-2010" comment="Banner CRN Lookup Indexes">
+		<plsql>
+			create index %SCHEMA%.idx_banner_section_sess_crn on %SCHEMA%.banner_section(session_id, crn)
+		</plsql>
+		<mysql>
+			create index idx_banner_section_sess_crn on %SCHEMA%.banner_section(session_id, crn)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_banner_session_term_code on %SCHEMA%.banner_session(banner_term_code)
+		</plsql>
+		<mysql>
+			create index idx_banner_session_term_code on %SCHEMA%.banner_session(banner_term_code)
+		</mysql>
+	</update>
+ 
+ </dbupdate>
