@@ -1,6 +1,6 @@
 /*
  * UniTime 3.2 (University Timetabling Application)
- * Copyright (C) 2010, UniTime LLC, and individual contributors
+ * Copyright (C) 2010-2012, UniTime LLC, and individual contributors
  * as indicated by the @authors tag.
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -34,8 +34,8 @@ import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.engine.SessionFactoryImplementor;
-import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
+import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.model.base.BaseBannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
@@ -626,10 +626,26 @@ public class BannerSection extends BaseBannerSection {
 
 		int numClassesWithInstructors = 0;
 		TreeMap<DepartmentalInstructor, Integer> instructorPercents = new TreeMap<DepartmentalInstructor, Integer>();
+
+		// Include course coordinators in the instructor list with a percentage of 0 unless they are on a class with a higher percentage.
+		InstructionalOffering io = null;
+		try {
+			io = getBannerConfig().getBannerCourse().getCourseOffering(hibSession).getInstructionalOffering();			
+		} catch (Exception e) {
+			Debug.error("No instructional offering found for banner section uniqueId:  " + getUniqueId() + ".");
+			// no instructional offering found no course coordinators to be sent.
+		}
+		if (io != null && io.getCoordinators() != null){
+			for (DepartmentalInstructor di : io.getCoordinators()){
+				instructorPercents.put(di, new Integer(0));
+			}
+		}
+		boolean sendInstructors = false;
 		for(Iterator<Class_> cIt = this.getClasses(hibSession).iterator(); cIt.hasNext();){
 			Class_ c = cIt.next();		
 			
 			if (c.getCommittedAssignment() != null || c.getEffectiveTimePreferences().isEmpty()){
+				sendInstructors = true;
 				if (c.getClassInstructors() != null && !c.getClassInstructors().isEmpty()){
 					int totalPercent = 0;
 					int instructorCount = 0;
@@ -663,6 +679,9 @@ public class BannerSection extends BaseBannerSection {
 					}
 				}
 			}
+		}
+		if (!sendInstructors){
+			instructorPercents.clear();
 		}
 		if (!instructorPercents.isEmpty() && numClassesWithInstructors > 0){
 			int totalPct = 0;
