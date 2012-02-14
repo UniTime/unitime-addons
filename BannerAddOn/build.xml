@@ -66,6 +66,7 @@
         <copy todir="${build_src.dir}" overwrite="Yes" preservelastmodified="Yes">
         	<fileset dir="${unitime.src.dir}" includes="**/*.*">
         		<exclude name="**/menu-custom.xml"/>
+        		<exclude name="**/custom.properties"/>
         		<exclude name="**/*.class"/>
         	</fileset>
             <fileset dir="${src.dir}" includes="**/*.*" >
