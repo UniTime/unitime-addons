@@ -58,7 +58,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 
 	private static String rootName = "studentUpdates";
 	private static String studentElementName = "student";
-	private static String enrollmentElementName = "enrollment";
+	private static String crnElementName = "crn";
 	private static String groupElementName = "studentGroup";
 	
 	private HashMap<Session,HashSet<Long>> studentIdsSucessfullyProcessed = new HashMap<Session, HashSet<Long>>();
@@ -197,7 +197,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 		
 		HashMap<Session, HashMap<CourseOffering, Vector<Class_>>> classEnrollments = null;
 		try {
-			classEnrollments = processEnrollmentElements(studentElement, bannerSession, externalId);			
+			classEnrollments = processCrnElements(studentElement, bannerSession, externalId);			
 		} catch (Exception e) {
 			studentIdsNotProcessed.add(externalId);
 			error(e.getMessage());
@@ -249,7 +249,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 		boolean changed = false;
     	HashSet<StudentGroup> addedGroups = groups.get(student.getSession());
     	if (addedGroups == null || addedGroups.isEmpty()){
-    		if (!student.getGroups().isEmpty()){
+    		if (student.getGroups() != null && !student.getGroups().isEmpty()){
     			HashSet<StudentGroup> removeGroups = new HashSet<StudentGroup>();
     			removeGroups.addAll(student.getGroups());
     			for(StudentGroup sg : removeGroups){
@@ -482,12 +482,22 @@ public class BannerStudentDataUpdate extends BaseImport {
 		
 	}
 
-	private HashMap<Session, HashMap<CourseOffering, Vector<Class_>>> processEnrollmentElements(
+	private HashMap<Session, HashMap<CourseOffering, Vector<Class_>>> processCrnElements(
 			Element studentElement, String bannerSession, String externalId) throws Exception {
 		HashMap<Session, HashMap<CourseOffering, Vector<Class_>>> enrollments = new HashMap<Session, HashMap<CourseOffering,Vector<Class_>>>();
-		for (Iterator<?> eIt = studentElement.elementIterator(enrollmentElementName); eIt.hasNext();) {
+		for (Iterator<?> eIt = studentElement.elementIterator(crnElementName); eIt.hasNext();) {
 			Element enrollmentElement = (Element) eIt.next();
-			Integer crn = getRequiredIntegerAttribute(enrollmentElement, "crn", enrollmentElementName);
+			String crnString = null;
+			Integer crn = null;
+			try {
+				crnString = (String) enrollmentElement.getData();
+				crn = new Integer(crnString);
+			} catch (Exception e) {
+				throw new Exception("For element '" + crnElementName + "' an integer value is required");
+			}
+			if (crn == null){
+				throw new Exception("For element '" + crnElementName + "' an integer value is required");
+			}
 			CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(getHibSession(), crn, bannerSession);
 			if (co == null){
 				studentIdsSucessfullyProcessedWithProblems.add(externalId);

@@ -17,8 +17,7 @@
  * 
  -->
  
-<!ELEMENT enrollment EMPTY >
-<!ATTLIST enrollment crn NMTOKEN #REQUIRED >
+<!ELEMENT crn ( #PCDATA ) >
 
 <!ELEMENT studentGroup EMPTY >
 <!ATTLIST studentGroup externalId NMTOKEN #REQUIRED >
