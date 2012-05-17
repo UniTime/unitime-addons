@@ -107,38 +107,43 @@ public class BannerStudentDataUpdate extends BaseImport {
 //				timeMap.put(new Long(timeDiff), new Long(timeCount.longValue() + 1));
 				elementCount++;
 			}
-			beginTransaction();
-			int studentCount = 0;
-			for(Session session : studentIdsSucessfullyProcessed.keySet()){
-				HashSet<Long> updatedStudents = studentIdsSucessfullyProcessed.get(session);
-		        if (!updatedStudents.isEmpty()){
-	 	 	        StudentSectioningQueue.studentChanged(getHibSession(), null, session.getUniqueId(), updatedStudents);
-	 	 	        studentCount += updatedStudents.size();
-		        }
-			}
-			commitTransaction();
-			Date end = new Date();
-			
-			info(Integer.toString(studentCount) + " student records updated in " + (end.getTime() - start.getTime())+ " milliseconds.");
-			info(Integer.toString(studentIdsNotProcessed.size()) + " student records failed to update.");
-			info(Integer.toString(studentIdsSucessfullyProcessedWithProblems.size()) + " student records were updated, but had problems.");
-			info("Minimum milliseconds required to process a record = " + minElementTime);
-			info("Maximum milliseconds required to process a record = " + maxElementTime);
-			info("Average milliseconds required to process a record = " + ((end.getTime() - start.getTime())/elementCount));
-//			info("The distribution of time to process each record is as follows:");
-//			for(Long elapsedTime : timeMap.keySet()){
-//				info("	" + elapsedTime.toString() + ":  " + timeMap.get(elapsedTime).toString());
-//			}
-			if (!studentIdsNotProcessed.isEmpty()){
-				error("The following student ids were not successfully processed:  ");
-				for(String studentId : studentIdsNotProcessed){
-					error("    " + studentId);
+			if (elementCount == 0){
+				info("There were no student data update records to process.");				
+			} else {
+				beginTransaction();
+				int studentCount = 0;
+				for(Session session : studentIdsSucessfullyProcessed.keySet()){
+					HashSet<Long> updatedStudents = studentIdsSucessfullyProcessed.get(session);
+			        if (!updatedStudents.isEmpty()){
+		 	 	        StudentSectioningQueue.studentChanged(getHibSession(), null, session.getUniqueId(), updatedStudents);
+		 	 	        studentCount += updatedStudents.size();
+			        }
 				}
-			}
-			if (!studentIdsSucessfullyProcessedWithProblems.isEmpty()){
-				error("The following student ids were successfully processed, but may have had problems finding all classes the student was enrolled in:  ");
-				for(String studentId : studentIdsSucessfullyProcessedWithProblems){
-					error("    " + studentId);
+				commitTransaction();
+				Date end = new Date();
+			
+			
+				info(Integer.toString(studentCount) + " student records updated in " + (end.getTime() - start.getTime())+ " milliseconds.");
+				info(Integer.toString(studentIdsNotProcessed.size()) + " student records failed to update.");
+				info(Integer.toString(studentIdsSucessfullyProcessedWithProblems.size()) + " student records were updated, but had problems.");
+				info("Minimum milliseconds required to process a record = " + minElementTime);
+				info("Maximum milliseconds required to process a record = " + maxElementTime);
+				info("Average milliseconds required to process a record = " + ((end.getTime() - start.getTime())/elementCount));
+	//			info("The distribution of time to process each record is as follows:");
+	//			for(Long elapsedTime : timeMap.keySet()){
+	//				info("	" + elapsedTime.toString() + ":  " + timeMap.get(elapsedTime).toString());
+	//			}
+				if (!studentIdsNotProcessed.isEmpty()){
+					error("The following student ids were not successfully processed:  ");
+					for(String studentId : studentIdsNotProcessed){
+						error("    " + studentId);
+					}
+				}
+				if (!studentIdsSucessfullyProcessedWithProblems.isEmpty()){
+					error("The following student ids were successfully processed, but may have had problems finding all classes the student was enrolled in:  ");
+					for(String studentId : studentIdsSucessfullyProcessedWithProblems){
+						error("    " + studentId);
+					}
 				}
 			}
 		}
