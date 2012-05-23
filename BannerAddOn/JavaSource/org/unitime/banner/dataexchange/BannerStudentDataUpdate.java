@@ -258,10 +258,12 @@ public class BannerStudentDataUpdate extends BaseImport {
     			HashSet<StudentGroup> removeGroups = new HashSet<StudentGroup>();
     			removeGroups.addAll(student.getGroups());
     			for(StudentGroup sg : removeGroups){
-    				sg.getStudents().remove(student);
-    				student.getGroups().remove(sg);
+    				if (sg.getExternalUniqueId() != null){
+	    				sg.getStudents().remove(student);
+	    				student.getGroups().remove(sg);
+	    				changed = true;
+    				}
     			}
-    			changed = true;
     		}
     	} else {
         	HashSet<StudentGroup> removedGroups = new HashSet<StudentGroup>();
@@ -270,10 +272,13 @@ public class BannerStudentDataUpdate extends BaseImport {
     		addedGroups.removeAll(student.getGroups());
     		if (!removedGroups.isEmpty()){
     			for (StudentGroup sg : removedGroups){
-    				sg.getStudents().remove(student);
-    				student.getGroups().remove(sg);
+    				if (sg.getExternalUniqueId() != null){
+	    				sg.getStudents().remove(student);
+	    				student.getGroups().remove(sg);
+	    				changed = true;
+    				}
     			}
-    			changed = true;
+    		
     		}
     		if (!addedGroups.isEmpty()){
     			for (StudentGroup sg: addedGroups){
