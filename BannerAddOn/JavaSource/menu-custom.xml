@@ -39,4 +39,16 @@
 			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.do"/>
 		</menu>
 	</menu>
+	<item name="Scheduling Assistant" page="sectioning" type="gwt">
+                <new-condition>
+                        <and>
+                                <or>
+                                        <not><isAuthenticated/></not>
+                                        <not><hasRole/></not>
+                                        <hasRole name="Advisor"/>
+                                </or>
+                                <hasRight name="isSectioningEnabled"/>
+                        </and>
+                </new-condition>
+    </item>
 </unitime-menu>
