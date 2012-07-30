@@ -324,8 +324,11 @@ public class BannerStudentDataUpdate extends BaseImport {
 						|| aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(academicArea)) 
 			  && (aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(classification) 
 					  	|| aac.getAcademicClassification().getCode().equalsIgnoreCase(classification)))) {
-			student.getAcademicAreaClassifications().clear();
-			aac = new AcademicAreaClassification();
+			if (aac == null) { 
+				aac = new AcademicAreaClassification();
+				aac.setStudent(student);
+				student.addToacademicAreaClassifications(aac);
+			}
 			AcademicArea aa = AcademicArea.findByExternalId(getHibSession(), session.getUniqueId(), academicArea);						
 			if (aa == null){
 				aa = AcademicArea.findByAbbv(getHibSession(), session.getUniqueId(), academicArea);
@@ -356,8 +359,6 @@ public class BannerStudentDataUpdate extends BaseImport {
 				info("Added Academic Classification:  " + classification);
 			}
 			aac.setAcademicClassification(ac);
-			aac.setStudent(student);
-			student.getAcademicAreaClassifications().add(aac);
 			changed = true;
 		}
 		
