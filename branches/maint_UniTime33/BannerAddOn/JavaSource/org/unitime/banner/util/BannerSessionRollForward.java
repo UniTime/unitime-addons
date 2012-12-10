@@ -94,6 +94,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			StringBuilder sb = new StringBuilder();
 			sb.append("select distinct bc from BannerCourse bc, CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId")
 			  .append(" and bc.courseOfferingId = co.uniqueIdRolledForwardFrom")
+			  .append(" and co.uniqueId not in (select bc2.courseOfferingId from BannerCourse bc2)")
 			  .append(" and co.subjectArea.uniqueId = :subjectId");
 			String queryString = sb.toString();
 			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
@@ -126,26 +127,30 @@ public class BannerSessionRollForward extends SessionRollForward {
 						for(Iterator fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
 							BannerSection fromBs = (BannerSection) fromBannerSectionsIt.next();
 							BannerSection toBs = new BannerSection();
-							toBs.setBannerConfig(toBcfg);
-							toBcfg.addTobannerSections(toBs);
 							toBs.setCrossListIdentifier(fromBs.getCrossListIdentifier());
 							toBs.setLinkIdentifier(fromBs.getLinkIdentifier());
 							toBs.setLinkConnector(fromBs.getLinkConnector());
 							toBs.setCrn(fromBs.getCrn());
 							toBs.setSectionIndex(fromBs.getSectionIndex());
 							toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueIdRolledForwardFrom());
-							toBs.setConsentType(fromBs.getConsentType());
 							toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
 							toBs.setOverrideLimit(fromBs.getOverrideLimit());
-							toBs.setSession(toSession);
 							
 							for (Iterator fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();){
 								BannerSectionToClass fromBsc = (BannerSectionToClass) fromBannerSectionToClassIt.next();
-								BannerSectionToClass toBsc = new BannerSectionToClass();
-								toBsc.setBannerSection(toBs);
-								toBs.addTobannerSectionToClasses(toBsc);
 								Class_ toClass = Class_.findByIdRolledForwardFrom(toSessionId, fromBsc.getClassId());
-								toBsc.setClassId(toClass.getUniqueId());
+								if (toClass != null) {
+									BannerSectionToClass toBsc = new BannerSectionToClass();
+									toBsc.setBannerSection(toBs);
+									toBs.addTobannerSectionToClasses(toBsc);
+									toBsc.setClassId(toClass.getUniqueId());
+								}
+							}
+							if (toBs.getBannerSectionToClasses() != null){
+								toBs.setBannerConfig(toBcfg);
+								toBcfg.addTobannerSections(toBs);								
+								toBs.setConsentType(fromBs.getConsentType());
+								toBs.setSession(toSession);
 							}
 						}
 					}
@@ -211,19 +216,22 @@ public class BannerSessionRollForward extends SessionRollForward {
 	}
 	private void rollForwardBannerSessionData(Session toSession,
 			Session fromSession) {
-		BannerSession fromBs = BannerSession.findBannerSessionForSession(fromSession, null);
-		BannerSession toBs = new BannerSession();
-		toBs.setBannerCampus(fromBs.getBannerCampus());
-		String oldYearStr = fromBs.getBannerTermCode().substring(0,4);
-		int year = Integer.parseInt(oldYearStr);
-		year++;
-		String newYearStr = Integer.toString(year) + fromBs.getBannerTermCode().substring(4, 6);
-		toBs.setBannerTermCode(newYearStr);
-		toBs.setStoreDataForBanner(fromBs.isStoreDataForBanner());
-		toBs.setSendDataToBanner(new Boolean(false));
-		toBs.setLoadingOfferingsFile(new Boolean(false));
-		toBs.setSession(toSession);
-		BannerSessionDAO.getInstance().save(toBs);
+		BannerSession toBs = BannerSession.findBannerSessionForSession(toSession, null);
+		if (toBs == null) {
+			BannerSession fromBs = BannerSession.findBannerSessionForSession(fromSession, null);
+			toBs = new BannerSession();
+			toBs.setBannerCampus(fromBs.getBannerCampus());
+			String oldYearStr = fromBs.getBannerTermCode().substring(0,4);
+			int year = Integer.parseInt(oldYearStr);
+			year++;
+			String newYearStr = Integer.toString(year) + fromBs.getBannerTermCode().substring(4, 6);
+			toBs.setBannerTermCode(newYearStr);
+			toBs.setStoreDataForBanner(fromBs.isStoreDataForBanner());
+			toBs.setSendDataToBanner(new Boolean(false));
+			toBs.setLoadingOfferingsFile(new Boolean(false));
+			toBs.setSession(toSession);
+			BannerSessionDAO.getInstance().save(toBs);
+		}
 	}
 
 	private ExternalSessionRollForwardCustomizationInterface getExternalSessionRollForwardCustomization() throws Exception{
