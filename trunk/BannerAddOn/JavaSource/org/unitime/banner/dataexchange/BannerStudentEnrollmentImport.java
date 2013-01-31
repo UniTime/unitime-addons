@@ -39,6 +39,7 @@ import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.CourseRequest;
 import org.unitime.timetable.model.Exam;
+import org.unitime.timetable.model.ExamType;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
@@ -227,7 +228,7 @@ public class BannerStudentEnrollmentImport extends BaseImport {
  	        }
  	        
  	        if (!updatedStudents.isEmpty())
- 	 	        StudentSectioningQueue.studentChanged(getHibSession(), session.getUniqueId(), updatedStudents);
+ 	 	        StudentSectioningQueue.studentChanged(getHibSession(), null, session.getUniqueId(), updatedStudents);
             
             commitTransaction();
             
@@ -241,18 +242,8 @@ public class BannerStudentEnrollmentImport extends BaseImport {
         if (session!=null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.finalExam.updateConflicts","false"))) {
             try {
                 beginTransaction();
-                new UpdateExamConflicts(this).update(session.getUniqueId(), Exam.sExamTypeFinal, getHibSession());
-                commitTransaction();
-            } catch (Exception e) {
-                fatal("Exception: " + e.getMessage(), e);
-                rollbackTransaction();
-            }
-        }
-        
-        if (session!=null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.midtermExam.updateConflicts","false"))) {
-            try {
-                beginTransaction();
-                new UpdateExamConflicts(this).update(session.getUniqueId(), Exam.sExamTypeMidterm, getHibSession());
+                for (ExamType type: ExamType.findAllOfType(ExamType.sExamTypeFinal))
+                	new UpdateExamConflicts(this).update(session.getUniqueId(), type.getUniqueId(), getHibSession());
                 commitTransaction();
             } catch (Exception e) {
                 fatal("Exception: " + e.getMessage(), e);
@@ -260,18 +251,16 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             }
         }
 
-        if (session != null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.class.updateEnrollments","false"))){
-        	org.hibernate.Session hibSession = new _RootDAO().createNewSession();
+        if (session!=null && "true".equals(ApplicationProperties.getProperty("tmtbl.data.import.studentEnrl.midtermExam.updateConflicts","false"))) {
             try {
-                info("  Updating class enrollments...");
-                Class_.updateClassEnrollmentForSession(session, hibSession);
-                info("  Updating course offering enrollments...");
-                CourseOffering.updateCourseOfferingEnrollmentForSession(session, hibSession);
+                beginTransaction();
+                for (ExamType type: ExamType.findAllOfType(ExamType.sExamTypeMidterm))
+                	new UpdateExamConflicts(this).update(session.getUniqueId(), type.getUniqueId(), getHibSession());
+                commitTransaction();
             } catch (Exception e) {
                 fatal("Exception: " + e.getMessage(), e);
-            } finally {
-            	hibSession.close();
-            }      	
+                rollbackTransaction();
+            }
         }
         
         info("  Banner Student Enrollment Load Complete");

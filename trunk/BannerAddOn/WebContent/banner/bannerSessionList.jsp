@@ -33,9 +33,11 @@
 					<tt:section-title>
 						
 					</tt:section-title>
+					<sec:authorize access="hasPermission(null, null, 'AcademicSessionAdd')">
 					<html:submit property="doit" styleClass="btn" accesskey="A" titleKey="title.addSession">
 						<bean:message key="button.addSession" />
 					</html:submit>
+					</sec:authorize>
 				</tt:section-header>
 			</td>
 		</tr>
@@ -108,9 +110,11 @@
 		</tr>
 		<tr>
 			<td align="right">
-				<html:submit property="doit" styleClass="btn" accesskey="A" titleKey="title.addSession">
-					<bean:message key="button.addSession" />
-				</html:submit>
+				<sec:authorize access="hasPermission(null, null, 'AcademicSessionAdd')">
+					<html:submit property="doit" styleClass="btn" accesskey="A" titleKey="title.addSession">
+						<bean:message key="button.addSession" />
+					</html:submit>
+				</sec:authorize>
 			</td>
 		</tr>
 	</table>

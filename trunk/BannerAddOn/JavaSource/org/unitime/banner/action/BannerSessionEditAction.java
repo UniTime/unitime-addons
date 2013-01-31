@@ -33,25 +33,29 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.LookupDispatchAction;
 import org.hibernate.HibernateException;
 import org.hibernate.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerSessionEditForm;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerSessionDAO;
-import org.unitime.commons.web.Web;
 import org.unitime.timetable.model.ChangeLog;
-import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.dao.SessionDAO;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
+import org.unitime.timetable.spring.struts.SpringAwareLookupDispatchAction;
 
 /**
  * 
  * @author says
  *
  */
-public class BannerSessionEditAction extends LookupDispatchAction {
+@Service("/bannerSessionEdit")
+public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
 	// --------------------------------------------------------- Instance Variables
 	
 
 	// --------------------------------------------------------- Methods
-
+	@Autowired SessionContext sessionContext;
 	/** 
 	 * Method execute
 	 * @param mapping
@@ -80,11 +84,8 @@ public class BannerSessionEditAction extends LookupDispatchAction {
 		HttpServletRequest request,
 		HttpServletResponse response) throws Exception {
 		
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
         BannerSessionEditForm sessionEditForm = (BannerSessionEditForm) form;		
 		Long id =  new Long(Long.parseLong(request.getParameter("sessionId")));
@@ -111,11 +112,9 @@ public class BannerSessionEditAction extends LookupDispatchAction {
 			HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 		
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionAdd);
+
 
 //		BannerSessionEditForm sessionEditForm = (BannerSessionEditForm) form;
 		setAvailableSessionsInForm((BannerSessionEditForm) form);
@@ -128,11 +127,8 @@ public class BannerSessionEditAction extends LookupDispatchAction {
 			HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 				
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionEdit);
         
         Transaction tx = null;
         org.hibernate.Session hibSession = BannerSessionDAO.getInstance().getSession();
@@ -171,7 +167,7 @@ public class BannerSessionEditAction extends LookupDispatchAction {
 
             ChangeLog.addChange(
                     hibSession, 
-                    request, 
+                    sessionContext, 
                     sessn, 
                     ChangeLog.Source.SESSION_EDIT, 
                     ChangeLog.Operation.UPDATE, 

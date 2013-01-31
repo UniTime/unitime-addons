@@ -34,7 +34,6 @@
 			RollForwardBannerSessionForm frm = (RollForwardBannerSessionForm) request
 					.getAttribute(frmName);
 %>
-<% if (frm.isAdmin()) {  %>
 		<html:form action="/rollForwardBannerSession">
 		<TABLE border="0" cellspacing="5" cellpadding="5">
 		<logic:messagesPresent>
@@ -71,11 +70,9 @@
 	<TR><TD>
 		<tt:section-header>
 			<tt:section-title>Roll Forward Actions</tt:section-title>
-			<logic:equal name="<%=frmName%>" property="admin" value="true">
 					<html:submit property="op" accesskey="M" styleClass="btn" onclick="displayElement('loading', true);">
 					<bean:message key="button.rollForward" />
 				</html:submit>
-			</logic:equal>
 		</tt:section-header>
 	</TD></TR>
 		
@@ -98,18 +95,13 @@
 		<tr><td>&nbsp;<br>&nbsp;<br></td></tr>
 				<tr>
 			<td align="right">
-				<logic:equal name="<%=frmName%>" property="admin" value="true">
 					<html:submit property="op" accesskey="M" styleClass="btn" onclick="displayElement('loading', true);">
 						<bean:message key="button.rollForward" />
 					</html:submit>
-				</logic:equal>
 			</TD>
 		</TR>
 		</TABLE>
 		</html:form>
-		<% } else { %>
-		<b>User must be an administrator to roll foward to a session.</b>
-		<% } %>
 	<script language="javascript">displayElement('loading', false);</script>
 	</body>
 </html>

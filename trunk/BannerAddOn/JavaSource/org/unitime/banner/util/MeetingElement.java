@@ -339,7 +339,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				}
 			} else {
 				if (notMeetingIndex != -1){
-					if (datePattern.getPattern().toCharArray()[notMeetingIndex + 1] != '0'){
+					if (((notMeetingIndex + 1)  != datePattern.getPattern().length())  && datePattern.getPattern().toCharArray()[notMeetingIndex + 1] != '0'){
 						aCalendarDate.add(Calendar.DAY_OF_MONTH, (notMeetingIndex - previousNotMeetingIndex +1));
 						meetingStartDate = aCalendarDate.getTime();
 						haveMeetingBeginDate = true;

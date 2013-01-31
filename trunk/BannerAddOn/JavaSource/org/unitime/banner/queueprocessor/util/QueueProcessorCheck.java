@@ -81,7 +81,7 @@ public class QueueProcessorCheck {
 	
 	static void mailMessage(String msg){
     	try {
-           	Email email = new Email();
+           	Email email = Email.createEmail();
            	email.setSubject("UniTime Queue Processor has unprocessed transactions");
            	email.addNotify();
            	email.setText(msg);

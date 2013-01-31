@@ -27,7 +27,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
@@ -36,15 +35,19 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.util.MessageResources;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.form.RollForwardBannerSessionForm;
 import org.unitime.banner.util.BannerSessionRollForward;
-import org.unitime.commons.User;
-import org.unitime.commons.web.Web;
+import org.unitime.commons.Debug;
 import org.unitime.commons.web.WebTable;
 import org.unitime.commons.web.WebTable.WebTableLine;
 import org.unitime.timetable.action.RollForwardSessionAction;
 import org.unitime.timetable.model.Session;
-import org.unitime.timetable.model.TimetableManager;
+import org.unitime.timetable.model.dao.SessionDAO;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.UserContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.util.queue.QueueItem;
 import org.unitime.timetable.util.queue.QueueProcessor;
 
@@ -55,10 +58,13 @@ import org.unitime.timetable.util.queue.QueueProcessor;
  * @author says
  *
  */
+@Service("/rollForwardBannerSession")
 public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 	/*
 	 * Generated Methods
 	 */
+
+	@Autowired SessionContext sessionContext;
 
 	/** 
 	 * Method execute
@@ -71,22 +77,28 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 	 */
 	public ActionForward execute(ActionMapping mapping, ActionForm form,
 		HttpServletRequest request, HttpServletResponse response) throws Exception {
-	    HttpSession webSession = request.getSession();
-        if(!Web.isLoggedIn( webSession )) {
-            throw new Exception ("Access Denied.");
-        }
-        MessageResources rsc = getResources(request);
+	    
+		if (sessionContext == null){
+			Debug.info("session context is null");
+			throw(new Exception("session context is null"));
+		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionEdit);
+
+		MessageResources rsc = getResources(request);
         
         RollForwardBannerSessionForm rollForwardBannerSessionForm = (RollForwardBannerSessionForm) form;
-		User user = Web.getUser(request.getSession());
         // Get operation
         String op = request.getParameter("op");		  
                 
         if (op != null && op.equals(rsc.getMessage("button.rollForward"))) {
+    		sessionContext.checkPermission(rollForwardBannerSessionForm.getSessionToRollForwardTo(), "Session", Right.SessionRollForward);
             ActionMessages errors = rollForwardBannerSessionForm.validate(mapping, request);
             if (errors.size() == 0 && rollForwardBannerSessionForm.getRollForwardBannerSession().booleanValue()) {
             	QueueProcessor.getInstance().add(new BannerRollForwardQueueItem(
-            			Session.getCurrentAcadSession(user), TimetableManager.getManager(user), (RollForwardBannerSessionForm)rollForwardBannerSessionForm.clone()));
+            			SessionDAO.getInstance().get(rollForwardBannerSessionForm.getSessionToRollForwardTo()), 
+            			sessionContext.getUser(),
+            			(RollForwardBannerSessionForm)rollForwardBannerSessionForm.clone()));
             } else {
                 saveErrors(request, errors);
             }
@@ -95,19 +107,17 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 		if (request.getParameter("remove") != null) {
 			QueueProcessor.getInstance().remove(Long.valueOf(request.getParameter("remove")));
 	    }
-		WebTable table = getQueueTable(request, TimetableManager.getManager(user).getUniqueId(), rollForwardBannerSessionForm);
+		WebTable table = getQueueTable(request, rollForwardBannerSessionForm);
 	    if (table != null) {
-	    	request.setAttribute("table", table.printTable(WebTable.getOrder(request.getSession(),"rollForwardBannerSession.ord")));
+	    	request.setAttribute("table", table.printTable(WebTable.getOrder(sessionContext,"rollForwardBannerSession.ord")));
 	    }
-
         
-		rollForwardBannerSessionForm.setAdmin(user.isAdmin());
 		setToFromSessionsInForm(rollForwardBannerSessionForm);
   		return mapping.findForward("displayRollForwardBannerSessionForm");
 	}
 	
-	private WebTable getQueueTable(HttpServletRequest request, Long managerId, RollForwardBannerSessionForm form) {
-        WebTable.setOrder(request.getSession(),"rollForwardBannerSession.ord",request.getParameter("ord"),1);
+	private WebTable getQueueTable(HttpServletRequest request, RollForwardBannerSessionForm form) {
+        WebTable.setOrder(sessionContext,"rollForwardBannerSession.ord",request.getParameter("ord"),1);
 		String log = request.getParameter("log");
 		DateFormat df = new SimpleDateFormat("h:mma");
 		List<QueueItem> queue = QueueProcessor.getInstance().getItems(null, null, "Banner Roll Forward");
@@ -123,7 +133,7 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 			String name = item.name();
 			if (name.length() > 60) name = name.substring(0, 57) + "...";
 			String delete = null;
-			if (managerId.equals(item.getOwnerId()) && (item.started() == null || item.finished() != null)) {
+			if (sessionContext.getUser().getExternalUserId().equals(item.getOwnerId()) && (item.started() == null || item.finished() != null)) {
 				delete = "<img src='images/Delete16.gif' border='0' onClick=\"if (confirm('Do you really want to remove this roll forward?')) document.location='rollForwardBannerSession.do?remove="+item.getId()+"'; event.cancelBubble=true;\">";
 			}
 			WebTableLine line = table.addLine("onClick=\"document.location='rollForwardBannerSession.do?log=" + item.getId() + "';\"",
@@ -131,7 +141,7 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 						name + (delete == null ? "": " " + delete),
 						item.status(),
 						(item.progress() <= 0.0 || item.progress() >= 1.0 ? "" : String.valueOf(Math.round(100 * item.progress())) + "%"),
-						item.getOwner().getName(),
+						item.getOwnerName(),
 						item.getSession().getLabel(),
 						df.format(item.created()),
 						item.started() == null ? "" : df.format(item.started()),
@@ -142,7 +152,7 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 						item.getId(),
 						item.status(),
 						item.progress(),
-						item.getOwner().getName(),
+						item.getOwnerName(),
 						item.getSession(),
 						item.created().getTime(),
 						item.started() == null ? Long.MAX_VALUE : item.started().getTime(),
@@ -157,14 +167,7 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 				saveErrors(request, ((BannerRollForwardQueueItem)item).getErrors());
 				line.setBgColor("rgb(168,187,225)");
 			}
-			if (log == null && item.started() != null && item.finished() == null && managerId.equals(item.getOwnerId())) {
-				request.setAttribute("logname", name);
-				request.setAttribute("logid", item.getId().toString());
-				request.setAttribute("log", item.log());
-				((BannerRollForwardQueueItem)item).getForm().copyTo(form);
-				saveErrors(request, ((BannerRollForwardQueueItem)item).getErrors());
-				line.setBgColor("rgb(168,187,225)");
-			}
+
 		}
 		return table;
 	}
@@ -175,8 +178,8 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 		private int iProgress = 0;
 		private ActionErrors iErrors = new ActionErrors();
 		
-		public BannerRollForwardQueueItem(Session session, TimetableManager owner, RollForwardBannerSessionForm form) {
-			super(session, owner);
+		public BannerRollForwardQueueItem(Session session, UserContext owner, RollForwardBannerSessionForm form) {
+			super(session, sessionContext.getUser());
 			iForm = form;
 		}
 		

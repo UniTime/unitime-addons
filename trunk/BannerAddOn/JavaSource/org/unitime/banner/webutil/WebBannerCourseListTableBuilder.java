@@ -30,14 +30,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.JspWriter;
 
 import org.unitime.banner.form.BannerCourseListForm;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
-import org.unitime.commons.User;
 import org.unitime.commons.web.htmlgen.TableCell;
 import org.unitime.commons.web.htmlgen.TableHeaderCell;
 import org.unitime.commons.web.htmlgen.TableRow;
@@ -47,12 +45,13 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
-import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
 import org.unitime.timetable.model.comparators.InstrOfferingConfigComparator;
 import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 import org.unitime.timetable.model.dao.Class_DAO;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.webutil.Navigation;
 import org.unitime.timetable.webutil.WebInstructionalOfferingTableBuilder;
@@ -77,11 +76,10 @@ public class WebBannerCourseListTableBuilder extends
 	
     @SuppressWarnings("unchecked")
 	public void htmlTableForBannerOfferings(
-    		HttpSession session,
+			SessionContext context,
             ClassAssignmentProxy classAssignment, 
             BannerCourseListForm form, 
-            Long subjectAreaId, 
-            User user,
+            Long subjectAreaId,
             boolean displayHeader,
             boolean allCoursesAreGiven,
             JspWriter outputStream,
@@ -90,10 +88,9 @@ public class WebBannerCourseListTableBuilder extends
     	
     	setBackType(backType); setBackId(backId);
     	
-    	htmlTableForBannerOfferings(session, classAssignment,
+    	htmlTableForBannerOfferings(context, classAssignment,
     			(TreeSet<InstructionalOffering>) form.getInstructionalOfferings(), 
      			subjectAreaId,
-    			user,
     			displayHeader, allCoursesAreGiven,
     			outputStream,
     			iClassComparator
@@ -101,11 +98,10 @@ public class WebBannerCourseListTableBuilder extends
     }
 	
     public void htmlTableForBannerOfferings(
-    		HttpSession session,
+    		SessionContext context,
             ClassAssignmentProxy classAssignment, 
             TreeSet<InstructionalOffering> instructionalOfferings, 
-            Long subjectAreaId, 
-            User user,
+            Long subjectAreaId,
             boolean displayHeader, boolean allCoursesAreGiven,
             JspWriter outputStream,
             Comparator classComparator){
@@ -123,7 +119,7 @@ public class WebBannerCourseListTableBuilder extends
         InstructionalOffering io = null;
         boolean hasOfferedCourses = false;
         boolean hasNotOfferedCourses = false;
-		setUserSettings(user);
+		setUserSettings(context.getUser());
         
          while (it.hasNext()){
             io = (InstructionalOffering) it.next();
@@ -159,7 +155,7 @@ public class WebBannerCourseListTableBuilder extends
                   
             if (hasOfferedCourses){
                 it = offeredOfferings.keySet().iterator();
-                TableStream offeredTable = this.initTable(outputStream, (Session.getCurrentAcadSession(user) == null?null:Session.getCurrentAcadSession(user).getUniqueId()));
+                TableStream offeredTable = this.initTable(outputStream, (context.getUser().getCurrentAcademicSessionId() == null?null:context.getUser().getCurrentAcademicSessionId()));
                 
                 while (it.hasNext()){
                     co = (CourseOffering) it.next();
@@ -167,7 +163,7 @@ public class WebBannerCourseListTableBuilder extends
                     if (!offeringIds.contains(io.getUniqueId())){
                     	offeringIds.add(io.getUniqueId());
                     }
-                    this.addBannerCourseRowsToTable(classAssignment, offeredTable, co, io, subjectAreaId, user);            	
+                    this.addBannerCourseRowsToTable(classAssignment, offeredTable, co, io, subjectAreaId, context);            	
                 }
                 offeredTable.tableComplete();
             } else {
@@ -194,14 +190,14 @@ public class WebBannerCourseListTableBuilder extends
             
             if (hasNotOfferedCourses){
                 it = notOfferedOfferings.keySet().iterator();
-                TableStream notOfferedTable = this.initTable(outputStream, (Session.getCurrentAcadSession(user) == null?null:Session.getCurrentAcadSession(user).getUniqueId()));
+                TableStream notOfferedTable = this.initTable(outputStream, (context.getUser().getCurrentAcademicSessionId() == null?null:context.getUser().getCurrentAcademicSessionId()));
                 while (it.hasNext()){
                 	co = (CourseOffering) it.next();
                     io = (InstructionalOffering) notOfferedOfferings.get(co);
                     if (!offeringIds.contains(io.getUniqueId())){
                     	offeringIds.add(io.getUniqueId());
                     }
-                    this.addBannerCourseRowsToTable(classAssignment, notOfferedTable, co, io, subjectAreaId, user);            	
+                    this.addBannerCourseRowsToTable(classAssignment, notOfferedTable, co, io, subjectAreaId, context);            	
                 }
                 notOfferedTable.tableComplete();
             } else {
@@ -214,7 +210,7 @@ public class WebBannerCourseListTableBuilder extends
             }
         }
         
-        Navigation.set(session, Navigation.sInstructionalOfferingLevel, offeringIds);
+        Navigation.set(context, Navigation.sInstructionalOfferingLevel, offeringIds);
     }
 
     private String subjectOnClickAction(Long bannerCourseId){
@@ -223,8 +219,8 @@ public class WebBannerCourseListTableBuilder extends
 
 	private void addBannerCourseRowsToTable(
 			ClassAssignmentProxy classAssignment, TableStream table, CourseOffering co,
-			InstructionalOffering io, Long subjectAreaId, User user) {
-        boolean isEditable = io.isViewableBy(user);
+			InstructionalOffering io, Long subjectAreaId, SessionContext sessionContext) {
+        boolean isEditable = sessionContext.hasPermission(io, Right.InstructionalOfferingDetail);
         if (!isEditable){
         	if (io.getInstrOfferingConfigs() != null && io.getInstrOfferingConfigs().size() > 0){
         		boolean canEdit = true;
@@ -232,7 +228,7 @@ public class WebBannerCourseListTableBuilder extends
         		InstrOfferingConfig ioc = null;
         		while(canEdit && it.hasNext()){
         			ioc = (InstrOfferingConfig) it.next();
-        			if(!ioc.isViewableBy(user)){
+        			if(!sessionContext.hasPermission(ioc, Right.InstrOfferingConfigEdit)){
         				canEdit = false;
         			}
         		}
@@ -253,22 +249,22 @@ public class WebBannerCourseListTableBuilder extends
         if (io.getInstrOfferingConfigs() != null & !io.getInstrOfferingConfigs().isEmpty()){
         	TreeSet configs = new TreeSet(new InstrOfferingConfigComparator(io.getControllingCourseOffering().getSubjectArea().getUniqueId()));
         	configs.addAll(io.getInstrOfferingConfigs());
-        	buildSectionConfigRows(classAssignment, table, bc, configs, user, true);
+        	buildSectionConfigRows(classAssignment, table, bc, configs, sessionContext, true);
         }
     }
 	
-    private void buildSectionConfigRows(ClassAssignmentProxy classAssignment, TableStream table, BannerCourse bc, Set instrOfferingConfigs, User user, boolean printConfigLine) {
+    private void buildSectionConfigRows(ClassAssignmentProxy classAssignment, TableStream table, BannerCourse bc, Set instrOfferingConfigs, SessionContext sessionContext, boolean printConfigLine) {
         Iterator it = instrOfferingConfigs.iterator();
         InstrOfferingConfig ioc = null;
         while (it.hasNext()){
             ioc = (InstrOfferingConfig) it.next();
-            buildSectionConfigRow(null, classAssignment, bc, table, ioc, user, printConfigLine && instrOfferingConfigs.size()>1, true);
+            buildSectionConfigRow(null, classAssignment, bc, table, ioc, sessionContext, printConfigLine && instrOfferingConfigs.size()>1, true);
         }
     }
 
-	protected void buildSectionConfigRow(Vector subpartIds, ClassAssignmentProxy classAssignment, BannerCourse bc, TableStream table, InstrOfferingConfig ioc, User user, boolean printConfigLine, boolean clickable) {
+	protected void buildSectionConfigRow(Vector subpartIds, ClassAssignmentProxy classAssignment, BannerCourse bc, TableStream table, InstrOfferingConfig ioc, SessionContext sessionContext, boolean printConfigLine, boolean clickable) {
 	    boolean isHeaderRow = true;
-	    boolean isEditable = ioc.isViewableBy(user);
+	    boolean isEditable = sessionContext.hasPermission(ioc, Right.InstrOfferingConfigEdit);
 	    String configName = ioc.getName();
 		if (printConfigLine) {
 		    TableRow row = this.initRow(isHeaderRow);
@@ -300,7 +296,7 @@ public class WebBannerCourseListTableBuilder extends
 					Class_ c = null;
 					while (cIt.hasNext()) {
 						c = (Class_) cIt.next();
-						buildSectionRows(classAssignment, ++ct, table, c, bc, indent, user, null, clickable);
+						buildSectionRows(classAssignment, ++ct, table, c, bc, indent, sessionContext, null, clickable);
 					}
 				}
 			}
@@ -314,11 +310,11 @@ public class WebBannerCourseListTableBuilder extends
 
 	private void buildSectionRows(ClassAssignmentProxy classAssignment,
 			int ct, TableStream table,
-			Class_ aClass, BannerCourse bc, String indentSpaces, User user,
+			Class_ aClass, BannerCourse bc, String indentSpaces, SessionContext sessionContext,
 			Integer prevItype, boolean clickable) {
 		Integer currentItype = aClass.getSchedulingSubpart().getItype().getItype();
 		if (prevItype == null || !prevItype.equals(currentItype)){
-			buildSectionRow(classAssignment, ct, table, aClass, bc, indentSpaces, user, clickable);
+			buildSectionRow(classAssignment, ct, table, aClass, bc, indentSpaces, sessionContext, clickable);
 		}
     	Set childClasses = aClass.getChildClasses();
 
@@ -331,7 +327,7 @@ public class WebBannerCourseListTableBuilder extends
             Class_ child = null;
             while (it.hasNext()){              
                 child = (Class_) it.next();
-                buildSectionRows(classAssignment, ct, table, child, bc, indentSpaces + (prevItype != null && prevItype.equals(currentItype)?"":indent), user, currentItype, clickable);
+                buildSectionRows(classAssignment, ct, table, child, bc, indentSpaces + (prevItype != null && prevItype.equals(currentItype)?"":indent), sessionContext, currentItype, clickable);
             }
         }
 		
@@ -339,12 +335,11 @@ public class WebBannerCourseListTableBuilder extends
 	
 	private void buildSectionRow(ClassAssignmentProxy classAssignment,
 			int ct, TableStream table,
-			Class_ c, BannerCourse bc, String indentSpaces, User user, boolean clickable) {
+			Class_ c, BannerCourse bc, String indentSpaces, SessionContext sessionContext, boolean clickable) {
 
 		org.hibernate.Session hibSession = Class_DAO.getInstance().getSession();
     	boolean isHeaderRow = false;
-        boolean isEditable = c.isViewableBy(user);
-        isEditable = true;
+        boolean isEditable = true;
     	TableRow row = this.initRow(isHeaderRow);
         if (clickable){
             row.setOnClick(subjectOnClickAction(bc.getUniqueId()));

@@ -26,13 +26,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import javax.servlet.http.HttpSession;
-
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.unitime.banner.model.base.BaseBannerCourse;
 import org.unitime.banner.model.comparators.BannerCourseComparator;
-import org.unitime.commons.User;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
@@ -40,6 +37,7 @@ import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
 import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
+import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.webutil.Navigation;
 
 
@@ -101,17 +99,17 @@ public class BannerCourse extends BaseBannerCourse {
 		this.courseOffering = courseOffering;
 	}
 	
-    public BannerCourse getNextBannerCourse(HttpSession session, User user, boolean canEdit, boolean canView) {
-    	return getNextBannerCourse(session, new BannerCourseComparator(), user, canEdit, canView);
+    public BannerCourse getNextBannerCourse(SessionContext context, boolean canEdit, boolean canView) {
+    	return getNextBannerCourse(context, new BannerCourseComparator(), canEdit, canView);
     }
 
-    public BannerCourse getPreviousBannerCourse(HttpSession session, User user, boolean canEdit, boolean canView) {
-    	return getPreviousBannerCourse(session, new BannerCourseComparator(), user, canEdit, canView);
+    public BannerCourse getPreviousBannerCourse(SessionContext context, boolean canEdit, boolean canView) {
+    	return getPreviousBannerCourse(context, new BannerCourseComparator(), canEdit, canView);
     }
 
 
     @SuppressWarnings("unchecked")
-	public BannerCourse getNextBannerCourse(HttpSession session, Comparator cmp, User user, boolean canEdit, boolean canView) {
+	public BannerCourse getNextBannerCourse(SessionContext context, Comparator cmp, boolean canEdit, boolean canView) {
     	InstructionalOfferingDAO ioDao = new InstructionalOfferingDAO();
     	CourseOffering currentCo = getCourseOffering(ioDao.getSession());
     	BannerCourse next = null;
@@ -137,7 +135,7 @@ public class BannerCourse extends BaseBannerCourse {
     		return(next);
     	}
     	InstructionalOffering nextIo = null;
-    	Long nextId = Navigation.getNext(session, Navigation.sInstructionalOfferingLevel, currentCo.getInstructionalOffering().getUniqueId());
+    	Long nextId = Navigation.getNext(context, Navigation.sInstructionalOfferingLevel, currentCo.getInstructionalOffering().getUniqueId());
     	if (nextId!=null) {
     		if (nextId.longValue()<0) return null;
     		nextIo = (InstructionalOffering)ioDao.get(nextId);
@@ -172,7 +170,7 @@ public class BannerCourse extends BaseBannerCourse {
     }
 
     @SuppressWarnings("unchecked")
-	public BannerCourse getPreviousBannerCourse(HttpSession session, Comparator cmp, User user, boolean canEdit, boolean canView) {
+	public BannerCourse getPreviousBannerCourse(SessionContext context, Comparator cmp, boolean canEdit, boolean canView) {
     	InstructionalOfferingDAO ioDao = new InstructionalOfferingDAO();
     	CourseOffering currentCo = getCourseOffering(ioDao.getSession());
     	BannerCourse previous = null;
@@ -199,7 +197,7 @@ public class BannerCourse extends BaseBannerCourse {
     		return(previous);
     	}
     	InstructionalOffering previousIo = null;
-    	Long previousId = Navigation.getPrevious(session, Navigation.sInstructionalOfferingLevel, currentCo.getInstructionalOffering().getUniqueId());
+    	Long previousId = Navigation.getPrevious(context, Navigation.sInstructionalOfferingLevel, currentCo.getInstructionalOffering().getUniqueId());
     	if (previousId!=null) {
     		if (previousId.longValue()<0) return null;
     		previousIo = (InstructionalOffering)ioDao.get(previousId);

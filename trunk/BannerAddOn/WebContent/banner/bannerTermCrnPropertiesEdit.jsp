@@ -17,31 +17,10 @@
  * 
  --%>
 <%@ page import="org.unitime.timetable.webutil.JavascriptFunctions" %>
-<%@ page import="org.unitime.commons.web.Web" %>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean"%> 
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html"%>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic"%>
 <%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
-<SCRIPT language="javascript">
-	<!--
-		<%= JavascriptFunctions.getJsConfirm(Web.getUser(session)) %>
-		
-		function confirmDelete() {
-			if (jsConfirm!=null && !jsConfirm)
-				return true;
-
-			if(confirm('The banner session and all associated data will be deleted. Continue?')) {
-				return true;
-			}
-			return false;
-		}
-
-		function trim(str) {
-			return str.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1");		
-		}
-				
-	// -->
-</SCRIPT>
 
 <html:form method="post" action="bannerTermCrnPropertiesEdit.do">
 	

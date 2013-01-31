@@ -27,22 +27,25 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.hibernate.HibernateException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerSessionListForm;
 import org.unitime.banner.model.BannerSession;
-import org.unitime.commons.web.Web;
-import org.unitime.timetable.model.Roles;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 
 /**
  * 
  * @author says
  *
  */
+@Service("/bannerSessionList")
 public class BannerSessionListAction extends Action {
 
 	// --------------------------------------------------------- Instance Variables
 
 	// --------------------------------------------------------- Methods
-
+	@Autowired SessionContext sessionContext;
 	/** 
 	 * Method execute
 	 * @param mapping
@@ -58,11 +61,8 @@ public class BannerSessionListAction extends Action {
 		HttpServletRequest request,
 		HttpServletResponse response) throws Exception {
 
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionAdd);
 
 		BannerSessionListForm sessionListForm = (BannerSessionListForm) form;
 		sessionListForm.setSessions(BannerSession.getAllSessions());

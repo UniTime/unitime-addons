@@ -24,19 +24,24 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.hibernate.HibernateException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerCourseListForm;
 import org.unitime.commons.Debug;
-import org.unitime.commons.web.Web;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.Messages;
+import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
-import org.unitime.timetable.util.Constants;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.webutil.BackTracker;
 
 
@@ -45,7 +50,16 @@ import org.unitime.timetable.webutil.BackTracker;
  * @author Stephanie Schluttenhofer
  */
 
+@Service("/bannerOfferingShowSearch")
 public class BannerOfferingShowSearchAction extends Action {
+
+	protected final static BannerMessages MSG = Localization.create(BannerMessages.class);
+
+	@Autowired SessionContext sessionContext;
+	
+	protected Messages getMessages() {
+		return MSG;
+	}
 
 	/** 
 	 * Method execute
@@ -62,27 +76,25 @@ public class BannerOfferingShowSearchAction extends Action {
 		HttpServletRequest request,
 		HttpServletResponse response) throws Exception {
 
-	    HttpSession httpSession = request.getSession();
-        if(!Web.isLoggedIn( httpSession )) {
-            throw new Exception ("Access Denied.");
-        }
+    	sessionContext.checkPermission(Right.InstructionalOfferings);
+
         
         BackTracker.markForBack(request, null, null, false, true); //clear back list
         
-        httpSession.setAttribute("callingPage", "bannerOfferingShowSearch");
+        sessionContext.setAttribute("callingPage", "bannerOfferingShowSearch");
         BannerCourseListForm frm = (BannerCourseListForm) form;
         
         // Check if subject area / course number saved to session
-	    Object sa = httpSession.getAttribute(Constants.SUBJ_AREA_ID_ATTR_NAME);
-	    Object cn = httpSession.getAttribute(Constants.CRS_NBR_ATTR_NAME);
+	    Object sa = sessionContext.getAttribute(SessionAttribute.OfferingsSubjectArea);
+	    Object cn = sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
 	    String subjectAreaId = "";
 	    String courseNbr = "";
 	    
 	    if ( (sa==null || sa.toString().trim().length()==0) 
 	            && (cn==null || cn.toString().trim().length()==0) ) {
 		    // use session variables from class search  
-		    sa = httpSession.getAttribute(Constants.CRS_LST_SUBJ_AREA_IDS_ATTR_NAME);
-		    cn = httpSession.getAttribute(Constants.CRS_LST_CRS_NBR_ATTR_NAME);
+		    sa = sessionContext.getAttribute(SessionAttribute.ClassesSubjectAreas);
+		    cn = sessionContext.getAttribute(SessionAttribute.ClassesCourseNumber);
 		    
 		    // Use first subject area
 		    if (sa!=null) {
@@ -143,14 +155,14 @@ public class BannerOfferingShowSearchAction extends Action {
 	        }
 	        catch (NumberFormatException nfe) {
 	            Debug.error("Subject Area Id session attribute is corrupted. Resetting ... ");
-	            httpSession.setAttribute(Constants.SUBJ_AREA_ID_ATTR_NAME, null);
-	            httpSession.setAttribute(Constants.CRS_NBR_ATTR_NAME, null);
+	            sessionContext.removeAttribute(SessionAttribute.OfferingsSubjectArea);
+	            sessionContext.removeAttribute(SessionAttribute.OfferingsCourseNumber);
 	        }
 	    }
 	    
 	    // No session attribute found - Load subject areas
 	    else {	        
-	        frm.setCollections(request, null);
+	        frm.setCollections(sessionContext, null);
 	        
 	        // Check if only 1 subject area exists
 	        Set s = (Set) frm.getSubjectAreas();
@@ -187,7 +199,7 @@ public class BannerOfferingShowSearchAction extends Action {
 	        BannerCourseListForm frm) throws Exception {
 	    
 	    
-	    frm.setCollections(request, BannerCourseSearchAction.getInstructionalOfferings(request, frm));
+	    frm.setCollections(sessionContext, BannerCourseSearchAction.getInstructionalOfferings(sessionContext.getUser().getCurrentAcademicSessionId(), request, frm));
 		Collection instrOfferings = frm.getInstructionalOfferings();
         
 		// Search return results - Generate html

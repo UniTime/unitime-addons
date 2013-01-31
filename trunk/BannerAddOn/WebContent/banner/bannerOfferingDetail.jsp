@@ -17,32 +17,34 @@
  * 
 --%>
 <%@ page language="java" autoFlush="true" errorPage="../error.jsp" %>
+
+<%@ page import="org.unitime.timetable.defaults.SessionAttribute"%>
 <%@ page import="org.unitime.timetable.util.Constants" %>
 <%@ page import="org.unitime.timetable.model.DistributionPref" %>
-<%@ page import="org.unitime.commons.web.Web" %>
 <%@ page import="org.unitime.timetable.webutil.JavascriptFunctions" %>
 <%@ page import="org.unitime.banner.webutil.WebBannerConfigTableBuilder"%>
 <%@ page import="org.unitime.banner.form.BannerOfferingDetailForm"%>
 <%@ page import="org.unitime.timetable.solver.WebSolver"%>
 <%@ page import="org.unitime.timetable.model.CourseOffering" %>
-<%@ page import="org.unitime.timetable.model.Roles" %>
-<%@ page import="org.unitime.commons.User" %>
+<%@ page import="org.unitime.timetable.model.Reservation" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
+<%@ taglib uri="/WEB-INF/tld/localization.tld" prefix="loc" %> 
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
+
 <tiles:importAttribute />
+<tt:session-context />
 <% 
-	User user = Web.getUser(session);
 	String frmName = "bannerOfferingDetailForm";
 	BannerOfferingDetailForm frm = (BannerOfferingDetailForm) request.getAttribute(frmName);
 
-	String crsNbr = "";
-	if (session.getAttribute(Constants.CRS_NBR_ATTR_NAME)!=null )
-		crsNbr = session.getAttribute(Constants.CRS_NBR_ATTR_NAME).toString();
+	String crsNbr = (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
 %>
+<loc:bundle name="BannerMessages" >
 
 	<TABLE width="93%" border="0" cellspacing="0" cellpadding="3">
 		<TR>
@@ -155,11 +157,10 @@
 	if (frm.getInstrOfferingId() != null){
 		WebBannerConfigTableBuilder bcTableBuilder = new WebBannerConfigTableBuilder();
 		bcTableBuilder.htmlConfigTablesForBannerOffering(
-									session,
 				    		        WebSolver.getClassAssignmentProxy(session),
 				    		        frm.getInstrOfferingId(),
 				    		        frm.getBannerCourseOfferingId(),
-				    		        Web.getUser(session), out,
+				    		        sessionContext, out,
 				    		        request.getParameter("backType"),
 				    		        request.getParameter("backId"));
 	}
@@ -220,3 +221,4 @@
 		</TR>
 
 	</TABLE>
+	</loc:bundle>

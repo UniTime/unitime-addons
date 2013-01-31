@@ -19,35 +19,34 @@
 */
 package org.unitime.banner.action;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.apache.struts.actions.LookupDispatchAction;
 import org.hibernate.HibernateException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerCourseListForm;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.dao.BannerCourseDAO;
-import org.unitime.commons.User;
-import org.unitime.commons.web.Web;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.impl.LocalizedLookupDispatchAction;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.Messages;
+import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.form.InstructionalOfferingListForm;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
-import org.unitime.timetable.solver.WebSolver;
-import org.unitime.timetable.util.Constants;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.webutil.BackTracker;
-import org.unitime.timetable.webutil.pdf.PdfInstructionalOfferingTableBuilder;
 
 
 
@@ -55,16 +54,16 @@ import org.unitime.timetable.webutil.pdf.PdfInstructionalOfferingTableBuilder;
  * @author Stephanie Schluttenhofer
  */
 
-public class BannerCourseSearchAction extends LookupDispatchAction {
+@Service("/bannerOfferingSearch")
+public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
+	protected final static BannerMessages MSG = Localization.create(BannerMessages.class);
 
-	protected Map<String, String> getKeyMethodMap() {
-	      Map<String, String> map = new HashMap<String, String>();
-	      map.put("button.search", "searchBannerCourses");
-	      map.put("button.exportPDF", "exportPdf");
-	      map.put("button.cancel", "searchBannerCourses");
-	      return map;
-	}
+	@Autowired SessionContext sessionContext;
 	
+	protected Messages getMessages() {
+		return MSG;
+	}
+		
 	/** 
 	 * Method execute
 	 * @param mapping
@@ -81,10 +80,8 @@ public class BannerCourseSearchAction extends LookupDispatchAction {
 			HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 
-	    	HttpSession httpSession = request.getSession();
-	        if(!Web.isLoggedIn( httpSession )) {
-	            throw new Exception ("Access Denied.");
-	        }
+
+	        sessionContext.checkPermission(Right.InstructionalOfferings);
         
 	        // Check that a valid subject area is selected
 		    BannerCourseListForm frm = (BannerCourseListForm) form;
@@ -94,22 +91,20 @@ public class BannerCourseSearchAction extends LookupDispatchAction {
 		    // Validation fails
 		    if(errors.size()>0) {
 			    saveErrors(request, errors);
-			    frm.setCollections(request, null);
+			    frm.setCollections(sessionContext, null);
 			    return mapping.findForward("showBannerOfferingSearch");
 		    }
-
-		    // Set Session Variables
-	        httpSession.setAttribute(Constants.SUBJ_AREA_ID_ATTR_NAME, frm.getSubjectAreaId());
-	        httpSession.setAttribute(Constants.CRS_NBR_ATTR_NAME, frm.getCourseNbr());
 	        
+		    // Set Session Variables
+		    sessionContext.setAttribute(SessionAttribute.OfferingsSubjectArea, frm.getSubjectAreaId().toString());
+		    sessionContext.setAttribute(SessionAttribute.OfferingsCourseNumber, frm.getCourseNbr());
 	        
 	        // Perform Search
-		    frm.setCollections(request, getInstructionalOfferings(request, frm));
+		    frm.setCollections(sessionContext, getInstructionalOfferings(sessionContext.getUser().getCurrentAcademicSessionId(), request, frm));
 		    TreeSet<InstructionalOffering> instructionalOfferings = frm.getInstructionalOfferings();
 			
 			// No results returned
 			if (instructionalOfferings.isEmpty()) {
-			    if(errors==null) errors = new ActionMessages();
 			    errors.add("searchResult", new ActionMessage("errors.generic", "No records matching the search criteria were found."));
 			    saveErrors(request, errors);
 			    return mapping.findForward("showBannerOfferingSearch");
@@ -154,25 +149,25 @@ public class BannerCourseSearchAction extends LookupDispatchAction {
         
         InstructionalOfferingListForm frm = (InstructionalOfferingListForm) form;
         
-        if (getErrors(request).isEmpty()) {
-            File pdfFile = 
-                (new PdfInstructionalOfferingTableBuilder())
-                .pdfTableForInstructionalOfferings(
-                        WebSolver.getClassAssignmentProxy(request.getSession()),
-                        WebSolver.getExamSolver(request.getSession()),
-                        frm, 
-                        new Long(frm.getSubjectAreaId()), 
-                        Web.getUser(request.getSession()),  
-                        true, 
-                        frm.getCourseNbr()==null || frm.getCourseNbr().length()==0);
-            
-            if (pdfFile!=null) {
-                request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+pdfFile.getName());
-                //response.sendRedirect("temp/"+pdfFile.getName());
-            } else {
-                getErrors(request).add("searchResult", new ActionMessage("errors.generic", "Unable to create PDF file."));
-            }
-        }
+//        if (getErrors(request).isEmpty()) {
+//            File pdfFile = 
+//                (new PdfInstructionalOfferingTableBuilder())
+//                .pdfTableForInstructionalOfferings(
+//                        WebSolver.getClassAssignmentProxy(request.getSession()),
+//                        WebSolver.getExamSolver(request.getSession()),
+//                        frm, 
+//                        new Long(frm.getSubjectAreaId()), 
+//                        sessionContext,  
+//                        true, 
+//                        frm.getCourseNbr()==null || frm.getCourseNbr().length()==0);
+//            
+//            if (pdfFile!=null) {
+//                request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+pdfFile.getName());
+//                //response.sendRedirect("temp/"+pdfFile.getName());
+//            } else {
+//                getErrors(request).add("searchResult", new ActionMessage("errors.generic", "Unable to create PDF file."));
+//            }
+//        }
         
         return fwd;
 	}
@@ -180,13 +175,8 @@ public class BannerCourseSearchAction extends LookupDispatchAction {
 	
 	@SuppressWarnings("unchecked")
 	public static TreeSet<InstructionalOffering> getInstructionalOfferings(
-            HttpServletRequest request, BannerCourseListForm form) {
-        
-        HttpSession httpSession = request.getSession();
-        User user = Web.getUser(httpSession);
-        Long sessionId = (Long) user.getAttribute(Constants.SESSION_ID_ATTR_NAME);
-        
-        
+            Long sessionId, HttpServletRequest request, BannerCourseListForm form) {
+                
         boolean fetchStructure = true;
         boolean fetchCredits = false;
         boolean fetchInstructors = false;
@@ -194,8 +184,9 @@ public class BannerCourseSearchAction extends LookupDispatchAction {
         boolean fetchAssignments = true;
         boolean fetchReservations = false;
         
-        return(InstructionalOffering.search(sessionId, form.getSubjectAreaId(), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
+        return(InstructionalOffering.search(sessionId, new Long(form.getSubjectAreaId()), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
         
     }
 
+	
 }
