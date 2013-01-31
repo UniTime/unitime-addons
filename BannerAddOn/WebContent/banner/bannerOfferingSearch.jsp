@@ -25,14 +25,17 @@
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/struts-layout.tld" prefix="layout" %>
 <%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
+<%@ taglib uri="/WEB-INF/tld/localization.tld" prefix="loc" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 <script language="JavaScript" type="text/javascript" src="scripts/block.js"></script>
 
 <tiles:importAttribute />
 <html:form action="/bannerOfferingSearch">
+<loc:bundle name="BannerMessages">
 	<html:hidden property="doit" value="Search"/>
 	<TABLE border="0" cellspacing="0" cellpadding="3">
 		<TR>
-			<TH valign="top">Subject:</TH>
+			<TH valign="top"><loc:message name="filterSubject"/></TH>
 			<TD valign="top">
 				<html:select name="bannerOfferingListForm" property="subjectAreaId"
 					onfocus="setUp();" 
@@ -42,7 +45,7 @@
 					<html:optionsCollection property="subjectAreas"	label="subjectAreaAbbreviation" value="uniqueId" />
 				</html:select>
 			</TD>
-			<TH valign="top">Course Number:</TH>
+			<TH valign="top"><loc:message name="filterCourseNumber"/></TH>
 			<TD valign="top">
 				<layout:suggest 
 					suggestAction="/getCourseNumbers" property="courseNbr" styleId="courseNbrText" 
@@ -56,7 +59,7 @@
 				<html:submit
 					accesskey="S" styleClass="btn" titleKey="title.search"
 					onclick="doit.value=this.value;displayLoading();">
-					<bean:message key="button.search" />
+					<loc:message name="actionSearchBannerOfferings"/>
 				</html:submit> 
 		<!--  	
 				<html:submit
@@ -73,6 +76,7 @@
 			</TD>
 		</TR>
 	</TABLE>
+</loc:bundle>
 </html:form>
 
 

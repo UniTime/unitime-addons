@@ -25,22 +25,23 @@ import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.JspWriter;
 
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.dao.BannerCourseDAO;
-import org.unitime.commons.User;
 import org.unitime.commons.web.htmlgen.TableStream;
+import org.unitime.timetable.defaults.CommonValues;
+import org.unitime.timetable.defaults.UserProperty;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
-import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Settings;
 import org.unitime.timetable.model.UserData;
 import org.unitime.timetable.model.comparators.ClassCourseComparator;
 import org.unitime.timetable.model.comparators.InstrOfferingConfigComparator;
 import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.util.Constants;
 import org.unitime.timetable.webutil.Navigation;
@@ -61,11 +62,10 @@ public class WebBannerConfigTableBuilder extends
 	}
 
     public void htmlConfigTablesForBannerOffering(
-    		HttpSession session,
     		ClassAssignmentProxy classAssignment, 
             Long instructionalOffering, 
     		Long bannerCourse,
-            User user,
+            SessionContext context,
             JspWriter outputStream,
             String backType,
             String backId){
@@ -73,24 +73,24 @@ public class WebBannerConfigTableBuilder extends
     	setBackType(backType);
         setBackId(backId);    	
     	
-    	if ("yes".equals(Settings.getSettingValue(user, Constants.SETTINGS_KEEP_SORT))) {
+    	if (CommonValues.Yes.eq(UserProperty.ClassesKeepSort.get(context.getUser()))) {
     		setClassComparator(
         			new ClassCourseComparator(
-        					UserData.getProperty(user.getId(),"InstructionalOfferingList.sortBy",ClassCourseComparator.getName(ClassCourseComparator.SortBy.NAME)),
+        					UserData.getProperty(context.getUser().getExternalUserId(),"InstructionalOfferingList.sortBy",ClassCourseComparator.getName(ClassCourseComparator.SortBy.NAME)),
         					classAssignment,
         					false
         			)
     		);
     	}
     	BannerCourse bc = null;
-    	if (bannerCourse != null && user != null){
+    	if (bannerCourse != null && context.getUser() != null){
     		bc = BannerCourseDAO.getInstance().get(bannerCourse);
     	}
-       	if (instructionalOffering != null && user != null){
+       	if (instructionalOffering != null && context.getUser() != null){
 	        InstructionalOfferingDAO iDao = new InstructionalOfferingDAO();
 	        InstructionalOffering io = iDao.get(instructionalOffering);
 	        
-			setUserSettings(user);
+			setUserSettings(context.getUser());
 			
 			Vector subpartIds = new Vector();
 
@@ -106,11 +106,11 @@ public class WebBannerConfigTableBuilder extends
 	        				outputStream.println("<br><br>");
 	        			} catch (IOException e) {}
 	        		}
-	        		this.htmlTableForBannerOfferingConfig(subpartIds, classAssignment, ioc, bc, user, outputStream);
+	        		this.htmlTableForBannerOfferingConfig(subpartIds, classAssignment, ioc, bc, context, outputStream);
 	        	}
 	        }
 			
-			Navigation.set(session, Navigation.sSchedulingSubpartLevel, subpartIds);
+			Navigation.set(context, Navigation.sSchedulingSubpartLevel, subpartIds);
        	}
     }
 
@@ -119,38 +119,40 @@ public class WebBannerConfigTableBuilder extends
     		ClassAssignmentProxy classAssignment,
             InstrOfferingConfig ioc,
             BannerCourse bannerCourse,
-            User user,
+            SessionContext context,
             JspWriter outputStream){
     	
-    	if ("yes".equals(Settings.getSettingValue(user, Constants.SETTINGS_KEEP_SORT))) {
+    	if (CommonValues.Yes.eq(UserProperty.ClassesKeepSort.get(context.getUser()))) {
     		setClassComparator(
         			new ClassCourseComparator(
-        					UserData.getProperty(user.getId(),"InstructionalOfferingList.sortBy",ClassCourseComparator.getName(ClassCourseComparator.SortBy.NAME)),
+        					UserData.getProperty(context.getUser().getExternalUserId(),"InstructionalOfferingList.sortBy",ClassCourseComparator.getName(ClassCourseComparator.SortBy.NAME)),
         					classAssignment,
         					false
         			)
     		);
     	}
 
-    	if (ioc != null && user != null){
+    	if (ioc != null && context.getUser() != null){
 	        
 	        this.setDisplayDistributionPrefs(false);
 	        
 	        
-	        boolean isEditable = ioc.isEditableBy(user);
-	        boolean isFullyEditable = ioc.isEditableBy(user); //config is editable PLUS all subparts are editable as well
+	        boolean isEditable = context.hasPermission(ioc, Right.InstrOfferingConfigEdit);
+	        boolean isFullyEditable = context.hasPermission(ioc, Right.InstrOfferingConfigEdit); //config is editable PLUS all subparts are editable as well
 	        boolean isExtManaged = false;
 	        if (!isEditable) {
-	            isExtManaged = ioc.hasExternallyManagedSubparts(user, true);
+	        	
+	            isExtManaged = context.hasPermission(ioc, Right.InstrOfferingConfigEditSubpart);
 	        }
 	        boolean isLimitedEditable = false;
 	        if (ioc.hasClasses()) {
 	        	for (Iterator i=ioc.getSchedulingSubparts().iterator();i.hasNext();) {
 	        		SchedulingSubpart ss = (SchedulingSubpart)i.next();
-	        		if (ss.isLimitedEditable(user)) {
+	        		if (context.hasPermission(ss, Right.SchedulingSubpartEdit)) {
 	        			isLimitedEditable = true;
+	        			
 	        		}
-	        		if (!ss.isEditableBy(user))
+	        		if (context.hasPermission(ss, Right.SchedulingSubpartEdit))
 	        			isFullyEditable = false;
 	        	}
 	        }	        
@@ -158,8 +160,8 @@ public class WebBannerConfigTableBuilder extends
     		try {
     			outputStream.write(this.buttonsTable(ioc, bannerCourse, isEditable, isFullyEditable, isLimitedEditable, isExtManaged));
     		} catch (IOException e) {}
-       	TableStream configTable = this.initTable(outputStream, (Session.getCurrentAcadSession(user) == null?null:Session.getCurrentAcadSession(user).getUniqueId()));
-         	this.buildSectionConfigRow(subpartIds, classAssignment, bannerCourse, configTable, ioc, user, false, false);
+       	TableStream configTable = this.initTable(outputStream, context.getUser().getCurrentAcademicSessionId() == null?null: context.getUser().getCurrentAcademicSessionId());
+         	this.buildSectionConfigRow(subpartIds, classAssignment, bannerCourse, configTable, ioc, context, false, false);
          	configTable.tableComplete();
 	    }
     }

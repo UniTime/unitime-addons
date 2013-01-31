@@ -27,10 +27,12 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.hibernate.HibernateException;
+import org.springframework.stereotype.Service;
 
 /**
  * @author Stephanie Schluttenhofer
  */
+@Service("/bannerOfferingList")
 public class BannerOfferingListAction extends Action {
 	// --------------------------------------------------------- Instance Variables
 

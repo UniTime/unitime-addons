@@ -35,27 +35,31 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.LookupDispatchAction;
 import org.hibernate.HibernateException;
 import org.hibernate.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerTermCrnPropertiesEditForm;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.BannerTermCrnProperties;
 import org.unitime.banner.model.dao.BannerSessionDAO;
 import org.unitime.banner.model.dao.BannerTermCrnPropertiesDAO;
-import org.unitime.commons.web.Web;
 import org.unitime.timetable.model.ChangeLog;
-import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.dao.SessionDAO;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
+import org.unitime.timetable.spring.struts.SpringAwareLookupDispatchAction;
 
 /**
  * 
  * @author says
  *
  */
-public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
+@Service("/bannerTermCrnPropertiesEdit")
+public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatchAction {
 	// --------------------------------------------------------- Instance Variables
 	
 
 	// --------------------------------------------------------- Methods
-
+	@Autowired SessionContext sessionContext;
 	/** 
 	 * Method execute
 	 * @param mapping
@@ -66,9 +70,8 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
 	 * @throws HibernateException
 	 */
 	
-	@SuppressWarnings("unchecked")
-	protected Map getKeyMethodMap() {
-	      Map map = new HashMap();
+	protected Map<String, String> getKeyMethodMap() {
+	      Map<String, String> map = new HashMap<String, String>();
 	      map.put("editSession", "editSession");
 	      map.put("button.addSession", "addSession");
 	      map.put("button.saveSession", "saveSession");
@@ -84,11 +87,8 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
 		HttpServletRequest request,
 		HttpServletResponse response) throws Exception {
 		
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
         BannerTermCrnPropertiesEditForm bannerTermCrnPropertiesEditFrom = (BannerTermCrnPropertiesEditForm) form;		
 		Long id =  new Long(Long.parseLong(request.getParameter("bannerTermCrnPropertiesId")));
@@ -102,7 +102,9 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
 		return mapping.findForward("showEdit");
 	}
 	protected void setAvailableSessionsInForm(BannerTermCrnPropertiesEditForm sessionEditForm){
-		ArrayList bannerTermCodes = new ArrayList();
+		ArrayList<BannerSession> bannerTermCodes = new ArrayList<BannerSession>();
+
+		@SuppressWarnings("rawtypes")
 		Iterator it = SessionDAO.getInstance().getQuery("select bs from BannerSession bs where bs.bannerTermCode not in (select btcp.bannerTermCode from BannerTermCrnProperties btcp)").iterate();
 		TreeMap<String, BannerSession> bannerSessions = new TreeMap<String, BannerSession>();
 		while(it.hasNext()){
@@ -121,12 +123,9 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
 			ActionForm form,
 			HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
-		
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionAdd);
 
 //		BannerTermCrnPropertiesEditForm sessionEditForm = (BannerTermCrnPropertiesEditForm) form;
 		setAvailableSessionsInForm((BannerTermCrnPropertiesEditForm) form);
@@ -139,11 +138,8 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
 			HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 				
-        // Check access
-        if(!Web.hasRole( request.getSession(),
-		 			 new String[] {Roles.ADMIN_ROLE} )) {
-		  throw new Exception ("Access Denied.");
-		}
+	    // Check Access
+		sessionContext.checkPermission(Right.AcademicSessionEdit);
         
         Transaction tx = null;
         org.hibernate.Session hibSession = BannerSessionDAO.getInstance().getSession();
@@ -181,7 +177,7 @@ public class BannerTermCrnPropertiesEditAction extends LookupDispatchAction {
 
             ChangeLog.addChange(
                     hibSession, 
-                    request, 
+                    sessionContext,
                     bannerTermCrnProperties, 
                     ChangeLog.Source.SESSION_EDIT, 
                     ChangeLog.Operation.UPDATE, 

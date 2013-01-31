@@ -23,6 +23,7 @@
 package org.unitime.banner.action;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -37,33 +38,37 @@ import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
-import org.unitime.banner.form.BannerMessageResponsesForm;
-import org.unitime.banner.model.BannerResponse;
-import org.unitime.banner.model.dao.BannerResponseDAO;
-import org.unitime.commons.User;
-import org.unitime.commons.web.Web;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.commons.web.WebTable;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Department;
-import org.unitime.timetable.model.Session;
+import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.TimetableManager;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.util.Constants;
+import org.unitime.timetable.util.ExportUtils;
 import org.unitime.timetable.webutil.PdfWebTable;
+
+import org.unitime.banner.form.BannerMessageResponsesForm;
+import org.unitime.banner.model.BannerResponse;
+import org.unitime.banner.model.dao.BannerResponseDAO;
 
 
 
 /** 
  * based on code contributed by Dagmar Murray
  */
+@Service("/bannerMessageResponses")
 public class BannerMessageResponsesAction extends Action {
+
+	@Autowired SessionContext sessionContext;
 
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		BannerMessageResponsesForm myForm = (BannerMessageResponsesForm) form;
 		
-        // Check Access
-        if (!Web.isLoggedIn( request.getSession() )) {
-            throw new Exception ("Access Denied.");
-        }
+        sessionContext.checkPermission(Right.InstructionalOfferings);
         
         // Read operation to be performed
         String op = (myForm.getOp()!=null?myForm.getOp():request.getParameter("op"));
@@ -80,26 +85,23 @@ public class BannerMessageResponsesAction extends Action {
         } else {
             myForm.load(request);
         }
-        
-        Session session = Session.getCurrentAcadSession(Web.getUser(request.getSession()));
- 
-        User user = Web.getUser(request.getSession());
-        request.setAttribute("subjAreas",new TreeSet(TimetableManager.getSubjectAreas(user)));
+         
+        request.setAttribute("subjAreas",new TreeSet(SubjectArea.getUserSubjectAreas(sessionContext.getUser())));
         
         String [] respTypes = new String[] {"AUDIT", "ERROR", "SUCCESS", "WARNING"};
         request.setAttribute("respTypes", respTypes);
  
         Set subjects;
         
-		if (user.isAdmin()){
+		if (sessionContext.hasPermission(Right.AcademicSessions)){
 			request.setAttribute("managers",TimetableManager.getManagerList());
-	        request.setAttribute("departments",Department.findAll(session.getUniqueId()));
+	        request.setAttribute("departments",Department.getUserDepartments(sessionContext.getUser()));
 	        subjects = new TreeSet();
 		} else {
-	        subjects = TimetableManager.getSubjectAreas(user);
+	        subjects = SubjectArea.getUserSubjectAreas(sessionContext.getUser());
 		}
         
-        WebTable.setOrder(request.getSession(),"lastChanges.ord2",request.getParameter("ord"),1);
+        WebTable.setOrder(sessionContext,"lastChanges.ord2",request.getParameter("ord"),1);
         
         WebTable webTable = new WebTable( 9, "Banner Responses",
                 "bannerMessageResponses.do?ord=%%",
@@ -108,7 +110,7 @@ public class BannerMessageResponsesAction extends Action {
                 new boolean[] { false, true, true, true, true, true, true, true, true} );
      
         List responses = BannerResponseDAO.getInstance().find(
-                session.getUniqueId(), 
+        		sessionContext.getUser().getCurrentAcademicSessionId(),
         		(myForm.getStartDate() == null ? null : myForm.getStartDate()),
         		(myForm.getStopDate() == null ? null : myForm.getStopDate()),
                 (myForm.getSubjAreaId() == null || myForm.getSubjAreaId().longValue() < 0 ? null : myForm.getSubjAreaId()),
@@ -133,7 +135,7 @@ public class BannerMessageResponsesAction extends Action {
                 printLastResponseTableRow(request, webTable, (BannerResponse)i.next(), true);
         }
         
-        request.setAttribute("table", webTable.printTable(WebTable.getOrder(request.getSession(),"lastChanges.ord2")));
+        request.setAttribute("table", webTable.printTable(WebTable.getOrder(sessionContext,"lastChanges.ord2")));
         
         if ("Export PDF".equals(op) && responses!=null) {
             PdfWebTable pdfTable = new PdfWebTable( 9, "Banner Responses",
@@ -144,7 +146,8 @@ public class BannerMessageResponsesAction extends Action {
             for (Iterator i=responses.iterator();i.hasNext();)
                 printLastResponseTableRow(request, pdfTable, (BannerResponse)i.next(), false);
             File file = ApplicationProperties.getTempFile("bannerResponses", "pdf");
-            pdfTable.exportPdf(file, WebTable.getOrder(request.getSession(),"lastChanges.ord2"));
+            OutputStream out = ExportUtils.getPdfOutputStream(response, "bannerResponses");
+            pdfTable.exportPdf(out, WebTable.getOrder(sessionContext,"lastChanges.ord2"));
             if (file!=null) request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+file.getName());
         }
         

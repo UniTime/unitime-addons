@@ -31,12 +31,11 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.unitime.commons.Debug;
-import org.unitime.commons.User;
-import org.unitime.commons.web.Web;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.Roles;
-import org.unitime.timetable.model.TimetableManager;
+import org.unitime.timetable.model.SubjectArea;
+import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.util.Constants;
 
 
@@ -68,24 +67,20 @@ public class BannerCourseListForm extends ActionForm {
 
 	private String ctrlInstrOfferingId;
 
-	private Collection controlCourseOfferings;
+//TODO: Verify this is not used	
+//	private Collection controlCourseOfferings;
 
 		
-	/**
-	 * @return Returns the controlCourseOfferings.
-	 */
-	public Collection getControlCourseOfferings() {
-		return controlCourseOfferings;
-	}
+//	/**
+//	 * @param controlCourseOfferings
+//	 *            The controlCourseOfferings to set.
+//	 */
+//TODO: Verify this is not used	
+//	public void setControlCourseOfferings(Collection controlCourseOfferings) {
+//		this.controlCourseOfferings = controlCourseOfferings;
+//	}
 
-	/**
-	 * @param controlCourseOfferings
-	 *            The controlCourseOfferings to set.
-	 */
-	public void setControlCourseOfferings(Collection controlCourseOfferings) {
-		this.controlCourseOfferings = controlCourseOfferings;
-	}
-
+	
 	/**
 	 * @return Returns the ctrlInstrOfferingId.
 	 */
@@ -251,16 +246,15 @@ public class BannerCourseListForm extends ActionForm {
 		return errors;
 	}
 
-	public void setCollections(HttpServletRequest request, TreeSet<InstructionalOffering> instructionalOfferings) throws Exception {
-		User user = Web.getUser(request.getSession());
-		Long sessionId = (Long) user.getAttribute(Constants.SESSION_ID_ATTR_NAME);
-		setSubjectAreas(TimetableManager.getSubjectAreas(user));
+	public void setCollections(SessionContext sessionContext, TreeSet<InstructionalOffering> instructionalOfferings) throws Exception {
+		setSubjectAreas(SubjectArea.getUserSubjectAreas(sessionContext.getUser()));
 		setInstructionalOfferings(instructionalOfferings);
 
-		if (Web.hasRole(request.getSession(), new String[] { Roles.ADMIN_ROLE }))
-			setControlCourseOfferings(CourseOffering.getControllingCourses(sessionId));
-		else
-			setControlCourseOfferings(new Vector());
+//TODO: Verify this is not used		
+//		if (Web.hasRole(request.getSession(), new String[] { Roles.ADMIN_ROLE }))
+//			setControlCourseOfferings(CourseOffering.getControllingCourses(sessionId));
+//		else
+//			setControlCourseOfferings(new Vector());
 
 	}
 
@@ -276,7 +270,8 @@ public class BannerCourseListForm extends ActionForm {
         subjectAreaAbbv=null;
         isControl=null;
         ctrlInstrOfferingId=null;
-        controlCourseOfferings=null;
+//TODO: verify this is not used
+//        controlCourseOfferings=null;
         super.finalize();
     }
 	

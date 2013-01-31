@@ -21,12 +21,13 @@
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
+<%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
 <%@ page import="org.unitime.banner.webutil.WebBannerCourseListTableBuilder"%>
 <%@ page import="org.unitime.banner.form.BannerCourseListForm"%>
 <%@ page import="org.unitime.timetable.solver.WebSolver"%>
-<%@ page import="org.unitime.commons.web.Web"%>
 <html:form action="/bannerOfferingSearch">
 <bean:define id="instructionalOfferings" name="bannerOfferingListForm" property="instructionalOfferings"></bean:define>
+<tt:session-context/>
 <%	
 	String subjectAreaId = (request.getParameter("subjectAreaId")!=null)
 							? request.getParameter("subjectAreaId")
@@ -40,11 +41,10 @@
 	if (frm.getInstructionalOfferings() != null && frm.getInstructionalOfferings().size() > 0){
 		new WebBannerCourseListTableBuilder()
 				    		.htmlTableForBannerOfferings(
-				    				session,
+				    				sessionContext,
 				    		        WebSolver.getClassAssignmentProxy(session),
 				    		        frm, 
-				    		        new Long(frm.getSubjectAreaId()), 
-				    		        Web.getUser(session),	
+				    		        new Long(frm.getSubjectAreaId()),	
 				    		        true, 
 				    		        frm.getCourseNbr()==null || frm.getCourseNbr().length()==0,
 				    		        out,

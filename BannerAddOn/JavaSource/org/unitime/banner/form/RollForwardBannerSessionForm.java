@@ -71,10 +71,11 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 		
 		if (getRollForwardBannerSession().booleanValue()){
 			ArrayList<BannerSession> list = new ArrayList<BannerSession>();
-			BannerSession bs = BannerSession.findBannerSessionForSession(s, null);
-			if (bs != null){
-				list.add(bs);
-			}
+// If banner session exist we will just use it rather that insist it be created.  This is to allow the roll to be restarted if it fails.
+//			BannerSession bs = BannerSession.findBannerSessionForSession(s, null);
+//			if (bs != null){
+//				list.add(bs);
+//			}
 			validateRollForward(errors, s, getSessionToRollBannerDataForwardFrom(), "Banner Session", list);			
  		}
 	
@@ -101,7 +102,6 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 	
 	public void copyTo(RollForwardBannerSessionForm form) {
 		form.setButtonAction(getButtonAction());
-		form.setAdmin(isAdmin());
 		form.setToSessions(getToSessions());
 		form.setFromSessions(getFromSessions());
 		form.setSessionToRollForwardTo(getSessionToRollForwardTo());

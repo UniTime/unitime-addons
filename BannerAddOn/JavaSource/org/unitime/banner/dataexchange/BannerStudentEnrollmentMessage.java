@@ -65,7 +65,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 			membershipElements(rootElement);
 
 			for (Map.Entry<Long, Set<Long>> entry: iUpdatedStudents.entrySet())
-	 	        StudentSectioningQueue.studentChanged(getHibSession(), entry.getKey(), entry.getValue());
+	 	        StudentSectioningQueue.studentChanged(getHibSession(), null, entry.getKey(), entry.getValue());
 
 			commitTransaction();
 		} catch (Exception e) {

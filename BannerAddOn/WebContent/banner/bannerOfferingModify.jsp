@@ -17,17 +17,20 @@
  * 
 --%>
 <%@ page language="java" autoFlush="true" errorPage="../error.jsp" %>
-<%@ page import="org.unitime.timetable.util.Constants" %>
 <%@ page import="org.unitime.timetable.util.IdValue" %>
 <%@ page import="org.unitime.timetable.model.DatePattern" %>
 <%@ page import="org.unitime.banner.form.BannerOfferingModifyForm" %>
 <%@page import="org.unitime.timetable.model.OfferingConsentType"%>
 <%@page import="org.unitime.timetable.model.ItypeDesc"%>
+<%@ page import="org.unitime.timetable.defaults.SessionAttribute"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
+<%@ taglib uri="/WEB-INF/tld/localization.tld" prefix="loc" %>
+
+<loc:bundle name="CourseMessages">
 
 <SCRIPT language="javascript">
 	<!--
@@ -43,12 +46,11 @@
 </SCRIPT>
 
 <tiles:importAttribute />
+<tt:session-context/>
 <% 
 	String frmName = "bannerOfferingModifyForm";
 	BannerOfferingModifyForm frm = (BannerOfferingModifyForm)request.getAttribute(frmName);
-	String crsNbr = "";
-	if (session.getAttribute(Constants.CRS_NBR_ATTR_NAME)!=null )
-		crsNbr = session.getAttribute(Constants.CRS_NBR_ATTR_NAME).toString();
+	String crsNbr = (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
 %>
 
 <script language='JavaScript'>
@@ -228,3 +230,4 @@
 </html:form>
 	<script language="javascript">displayElement('loading', false);</script>
 
+</loc:bundle>

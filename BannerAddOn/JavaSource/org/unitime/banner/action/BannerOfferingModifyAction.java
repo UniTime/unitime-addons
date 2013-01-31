@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,8 +37,10 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.util.MessageResources;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.unitime.banner.dataexchange.SendBannerMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
+import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.form.BannerOfferingModifyForm;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
@@ -46,8 +49,6 @@ import org.unitime.banner.model.dao.BannerConfigDAO;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.commons.Debug;
-import org.unitime.commons.User;
-import org.unitime.commons.web.Web;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.Department;
@@ -56,12 +57,13 @@ import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.ItypeDesc;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.SchedulingSubpart;
-import org.unitime.timetable.model.TimetableManager;
 import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 import org.unitime.timetable.model.dao.ItypeDescDAO;
 import org.unitime.timetable.model.dao.OfferingConsentTypeDAO;
+import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.solver.WebSolver;
 import org.unitime.timetable.util.LookupTables;
@@ -70,8 +72,12 @@ import org.unitime.timetable.util.LookupTables;
 /**
  * @author Stephanie Schluttenhofer
  */
+@Service("/bannerOfferingModify")
 public class BannerOfferingModifyAction extends Action {
-    /**
+
+	@Autowired SessionContext sessionContext;
+
+	/**
      * Method execute
      * @param mapping
      * @param form
@@ -84,13 +90,18 @@ public class BannerOfferingModifyAction extends Action {
         ActionForm form,
         HttpServletRequest request,
         HttpServletResponse response) throws Exception {
-
-        if(!Web.isLoggedIn( request.getSession() )) {
-            throw new Exception ("Access Denied.");
-        }
+    	
+		LookupTables.setupExternalDepts(request, sessionContext.getUser().getCurrentAcademicSessionId());
+		TreeSet<Department> ts = new TreeSet<Department>();
+		for (@SuppressWarnings("unchecked")
+		Iterator<Department> it = ((TreeSet<Department>) request.getAttribute(Department.EXTERNAL_DEPT_ATTR_NAME)).iterator(); it.hasNext();){
+			Department d = it.next();
+			if (sessionContext.hasPermission(d, Right.MultipleClassSetupDepartment))
+				ts.add(d);
+		}
+		request.setAttribute((Department.EXTERNAL_DEPT_ATTR_NAME + "list"), ts);
 
         MessageResources rsc = getResources(request);
-        User user = Web.getUser(request.getSession());
         BannerOfferingModifyForm frm = (BannerOfferingModifyForm) form;
 		LookupTables.setupConsentType(request);
        // Get operation
@@ -129,7 +140,7 @@ public class BannerOfferingModifyAction extends Action {
 										        : request.getAttribute("bc").toString()
 										: request.getParameter("bc");
 
-            doLoad(request, frm, instrOffrConfigId, bannerCourseOfferingId, user);
+            doLoad(request, frm, instrOffrConfigId, bannerCourseOfferingId);
             setupItypeChoices(request, frm);
         }
 
@@ -142,7 +153,7 @@ public class BannerOfferingModifyAction extends Action {
             ActionMessages errors = frm.validate(mapping, request);
             setupItypeChoices(request, frm);
             if(errors.size()==0) {
-                doUpdate(request, frm, user);
+                doUpdate(request, frm);
                 request.setAttribute("io", frm.getInstrOfferingId());
                 request.setAttribute("bc", frm.getBannerCourseOfferingId());
                 return mapping.findForward("bannerOfferingDetail");
@@ -171,14 +182,16 @@ public class BannerOfferingModifyAction extends Action {
     		HttpServletRequest request,
     		BannerOfferingModifyForm frm,
             String instrOffrConfigId,
-            String bannerCourseOfferingId,
-            User user ) throws Exception {
+            String bannerCourseOfferingId
+            ) throws Exception {
 
-        // Check uniqueid
+		// Check uniqueid
         if(instrOffrConfigId==null || instrOffrConfigId.trim().length()==0)
             throw new Exception ("Missing Instructional Offering Config.");
 
-        // Check banner course uniqueid
+		sessionContext.checkPermission(instrOffrConfigId, "InstrOfferingConfig", Right.MultipleClassSetup);
+
+		// Check banner course uniqueid
         if(bannerCourseOfferingId==null || bannerCourseOfferingId.trim().length()==0)
             throw new Exception ("Missing Banner Course Offering.");
 
@@ -198,7 +211,7 @@ public class BannerOfferingModifyAction extends Action {
         frm.setBannerCourseOfferingId(bc.getUniqueId());
         frm.setBannerConfigId(bannerConfig.getUniqueId());
         frm.setItypeId(bannerConfig.getGradableItype() != null?bannerConfig.getGradableItype().getItype():null);
-        frm.setConfigIsEditable(new Boolean(ioc.isEditableBy(user)));
+        frm.setConfigIsEditable(!sessionContext.hasPermission(ioc, Right.MultipleClassSetup));
 
         String name = bc.getCourseOffering(bcDao.getSession()).getCourseNameWithTitle();
         if (io.hasMultipleConfigurations()) {
@@ -209,34 +222,23 @@ public class BannerOfferingModifyAction extends Action {
         if (ioc.getSchedulingSubparts() == null || ioc.getSchedulingSubparts().size() == 0)
         	throw new Exception("Instructional Offering Config has not been defined.");
 
-        ArrayList subpartList = new ArrayList(ioc.getSchedulingSubparts());
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+		ArrayList<SchedulingSubpart> subpartList = new ArrayList(ioc.getSchedulingSubparts());
+        
         Collections.sort(subpartList, new SchedulingSubpartComparator());
         ClassAssignmentProxy cap = WebSolver.getClassAssignmentProxy(request.getSession());
-        for(Iterator it = subpartList.iterator(); it.hasNext();){
+        for(Iterator<SchedulingSubpart> it = subpartList.iterator(); it.hasNext();){
         	SchedulingSubpart ss = (SchedulingSubpart) it.next();
     		if (ss.getClasses() == null || ss.getClasses().size() == 0)
     			throw new Exception("Initial setup of Instructional Offering Config has not been completed.");
     		if (ss.getParentSubpart() == null){
-        		loadClasses(frm, user, bc, ss.getClasses(), new Boolean(true), new String(), null, cap);
+        		loadClasses(frm, bc, ss.getClasses(), new Boolean(true), new String(), null, cap);
         	}
         }
       }
 
-    @SuppressWarnings("unchecked")
-	private boolean userHasDepartment(User user, Department department){
-    	boolean hasDepartment = false;
-    	TimetableManager tm = TimetableManager.getManager(user);
-    	if (tm != null){
-	    	for(Department dept : (Set<Department>) tm.getDepartments()){
-	    		if (dept.getUniqueId().longValue() == department.getUniqueId().longValue()){
-	    			hasDepartment = true;
-	    			break;
-	    		}
-	    	}
-    	}
-    	return(hasDepartment);
-    }
-    private void loadClasses(BannerOfferingModifyForm frm, User user, BannerCourse bc, Set classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
+
+    private void loadClasses(BannerOfferingModifyForm frm, BannerCourse bc, Set classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
     	if (classes != null && classes.size() > 0){
     		ArrayList classesList = new ArrayList(classes);
             Collections.sort(classesList, new ClassComparator(ClassComparator.COMPARE_BY_ITYPE) );
@@ -245,15 +247,15 @@ public class BannerOfferingModifyAction extends Action {
 	    	for(Iterator it = classesList.iterator(); it.hasNext();){
 	    		cls = (Class_) it.next();
 	    		if (previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype())){
-		    		if (!isReadOnly.booleanValue()){
+	    			if (!isReadOnly.booleanValue()){
 		    			readOnlyClass = new Boolean(isReadOnly.booleanValue());
 		    		} else {
-		    			readOnlyClass = new Boolean(!(user.isAdmin() || (userHasDepartment(user, cls.getControllingDept()) && cls.getControllingDept().effectiveStatusType().canOwnerEdit())));
+		    			readOnlyClass = new Boolean(!sessionContext.hasPermission(cls, Right.MultipleClassSetupClass));
 		    		}
 		    		BannerSection bs = BannerSection.findBannerSectionForBannerCourseAndClass(bc, cls);
 		    		frm.addToBannerSections(bs, cls, classAssignmentProxy, readOnlyClass, indent);
 		    	}
-	    		loadClasses(frm, user, bc, cls.getChildClasses(), new Boolean(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
+	    		loadClasses(frm, bc, cls.getChildClasses(), new Boolean(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
 	    	}
     	}
     }
@@ -264,7 +266,7 @@ public class BannerOfferingModifyAction extends Action {
      * @param frm
      */
     @SuppressWarnings("unchecked")
-	private void doUpdate(HttpServletRequest request, BannerOfferingModifyForm frm, User user)
+	private void doUpdate(HttpServletRequest request, BannerOfferingModifyForm frm)
     	throws Exception {
 
         // Get Instructional Offering Config
@@ -297,7 +299,7 @@ public class BannerOfferingModifyAction extends Action {
 
             ChangeLog.addChange(
                     hibSession,
-                    request,
+                    sessionContext,
                     ioc,
                     ChangeLog.Source.CLASS_SETUP,
                     ChangeLog.Operation.UPDATE,

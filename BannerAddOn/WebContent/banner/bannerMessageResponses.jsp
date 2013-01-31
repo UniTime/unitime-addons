@@ -21,7 +21,6 @@
  --%>
 <%@ page language="java" autoFlush="true"%>
 <%@ page import="org.unitime.banner.form.BannerMessageResponsesForm"%>
-<%@ page import="org.unitime.commons.web.Web" %>
 <%@ page import="org.unitime.timetable.model.Roles" %>
 
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
@@ -29,6 +28,7 @@
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
 <%@ taglib uri="/WEB-INF/tld/struts-tiles.tld" prefix="tiles" %>
 <%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <%
 	// Get Form 
@@ -133,7 +133,7 @@
 		mm/dd/yyyy
 		</TD>
 	</TR>
-	<% if(Web.hasRole(request.getSession(), new String[] { Roles.ADMIN_ROLE})) {%>
+	<sec:authorize access="hasPermission(null, null, 'IsAdmin')">
 	<TR>
 		<TD>Manager:</TD>
 		<TD>
@@ -158,7 +158,7 @@
 			</html:select>
 		</TD>
 	</TR>
-	<%}%>
+	</sec:authorize>
 	<TR>
 		<TD>
 		Show History:

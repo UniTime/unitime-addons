@@ -43,7 +43,7 @@
       path="/rollForwardBannerSession"
       scope="request"
       validate="false"
-      type="org.unitime.banner.action.RollForwardBannerSessionAction" >
+      type="org.springframework.web.struts.DelegatingActionProxy" >
        <forward 
        		name="displayRollForwardBannerSessionForm" 
        		path="rollForwardBannerSessionTile" />
@@ -59,7 +59,7 @@
       path="/bannerMessageResponses"
       scope="request"
       validate="false"
-      type="org.unitime.banner.action.BannerMessageResponsesAction" >
+      type="org.springframework.web.struts.DelegatingActionProxy" >
        <forward 
        		name="displayBannerMessageResponsesForm" 
        		path="bannerMessageResponsesTile" />
@@ -75,7 +75,7 @@
          name="bannerOfferingListForm"
          parameter="doit"
          scope="request"
-         type="org.unitime.banner.action.BannerCourseSearchAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
         <forward 
         	name="showBannerOfferingList" 
@@ -93,7 +93,7 @@
       
       <action
          path="/bannerOfferingShowSearch"
-         type="org.unitime.banner.action.BannerOfferingShowSearchAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          attribute="bannerOfferingListForm"
          input="bannerOfferingSearchTile"
          name="bannerOfferingListForm"
@@ -114,7 +114,7 @@
          name="bannerOfferingListForm"
          parameter="doit"
          scope="request"
-         type="org.unitime.banner.action.BannerCourseSearchAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
         <forward 
         	name="showBannerOfferingList" 
@@ -130,7 +130,7 @@
          input="bannerOfferingListTile"
          name="bannerOfferingListForm"
          scope="request"
-         type="org.unitime.banner.action.BannerOfferingListAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
          <forward 
          	name="showBannerOfferingList" 
@@ -139,7 +139,7 @@
 
       	<action
           path="/bannerOfferingDetail"
-          type="org.unitime.banner.action.BannerOfferingDetailAction"
+          type="org.springframework.web.struts.DelegatingActionProxy"
           attribute="bannerOfferingDetailForm"
           input="bannerOfferingDetailTile"
           name="bannerOfferingDetailForm"
@@ -155,7 +155,7 @@
 
       <action
          path="/bannerOfferingModify"
-         type="org.unitime.banner.action.BannerOfferingModifyAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          attribute="bannerOfferingModifyForm"
          input="bannerOfferingModifyTile"
          name="bannerOfferingModifyForm"
@@ -174,7 +174,7 @@
          input="bannerSessionListTile"
          name="bannerSessionListForm"
          scope="request"
-         type="org.unitime.banner.action.BannerSessionListAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
          <forward name="showBannerSessionList" path="bannerSessionListTile" />
       </action>
@@ -184,7 +184,7 @@
          name="bannerSessionEditForm"
          parameter="doit"
          scope="request"
-         type="org.unitime.banner.action.BannerSessionEditAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
          <forward name="showEdit" path="bannerSessionEditTile" />
          <forward name="showAdd" path="bannerSessionAddTile" />
@@ -199,7 +199,7 @@
          input="bannerTermCrnPropertiesListTile"
          name="bannerTermCrnPropertiesListForm"
          scope="request"
-         type="org.unitime.banner.action.BannerTermCrnPropertiesListAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
          <forward name="showBannerTermCrnPropertiesList" path="bannerTermCrnPropertiesListTile" />
       </action>
@@ -209,7 +209,7 @@
          name="bannerTermCrnPropertiesEditForm"
          parameter="doit"
          scope="request"
-         type="org.unitime.banner.action.BannerTermCrnPropertiesEditAction"
+         type="org.springframework.web.struts.DelegatingActionProxy"
          validate="false">
          <forward name="showEdit" path="bannerTermCrnPropertiesEditTile" />
          <forward name="showAdd" path="bannerTermCrnPropertiesAddTile" />
