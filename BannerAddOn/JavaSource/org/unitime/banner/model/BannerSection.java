@@ -36,9 +36,11 @@ import org.hibernate.Transaction;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
+import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
 import org.unitime.banner.model.base.BaseBannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
+import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
 import org.unitime.commons.Debug;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Assignment;
@@ -71,6 +73,7 @@ public class BannerSection extends BaseBannerSection {
 	 * 
 	 */
 	private static final long serialVersionUID = -7327253389631092870L;
+	private static ExternalBannerCampusCodeElementHelperInterface externalCampusCodeElementHelper;
 
 
 	/*[CONSTRUCTOR MARKER BEGIN]*/
@@ -618,7 +621,7 @@ public class BannerSection extends BaseBannerSection {
 		if (getConsentType() != null){
 			return(getConsentType());
 		}
-		return(getBannerConfig().getBannerCourse().getCourseOffering(BannerCourseDAO.getInstance().getSession()).getInstructionalOffering().getConsentType());
+		return(getBannerConfig().getBannerCourse().getCourseOffering(BannerCourseDAO.getInstance().getSession()).getConsentType());
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -787,7 +790,15 @@ public class BannerSection extends BaseBannerSection {
     }
 
     public String buildInstructorHtml(){
-		TreeMap<DepartmentalInstructor, Integer> instructors = this.findInstructorsWithPercents(BannerSectionDAO.getInstance().getSession());
+    	Session hibSession = BannerSectionDAO.getInstance().getSession();
+		TreeMap<DepartmentalInstructor, Integer> instructors = this.findInstructorsWithPercents(hibSession);
+		InstructionalOffering io = null;
+		try {
+			io = getBannerConfig().getBannerCourse().getCourseOffering(hibSession).getInstructionalOffering();			
+		} catch (Exception e) {
+			Debug.error("No instructional offering found for banner section uniqueId:  " + getUniqueId() + ".");
+			// no instructional offering found no course coordinators to be sent.
+		}
 		boolean first = true;
      	StringBuilder instructorString = new StringBuilder();
      	if (!instructors.isEmpty()){
@@ -797,6 +808,11 @@ public class BannerSection extends BaseBannerSection {
          		} else {
          			instructorString.append("<br>");
          		}
+     			if (io != null && io.getCoordinators() != null){
+     				if (io.getCoordinators().contains(di)){
+     					instructorString.append("*");
+     				}
+     			}
      			Integer pct = instructors.get(di);
      			instructorString.append(di.getName(DepartmentalInstructor.sNameFormatLastInitial) + " (" + pct.toString() +  "%)");
      		}
@@ -994,5 +1010,46 @@ public class BannerSection extends BaseBannerSection {
 			setInteger("crn", crn).
 			uniqueResult());
     }
+    
+	private ExternalBannerCampusCodeElementHelperInterface getExternalCampusCodeElementHelper(){
+		if (externalCampusCodeElementHelper == null){
+            String className = ApplicationProperties.getProperty("tmtbl.banner.campus.element.helper");
+        	if (className != null && className.trim().length() > 0){
+        		try {
+        			externalCampusCodeElementHelper = (ExternalBannerCampusCodeElementHelperInterface) (Class.forName(className).newInstance());
+				} catch (InstantiationException e) {
+					Debug.error("Failed to instantiate instance of: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+				} catch (IllegalAccessException e) {
+					Debug.error("Illegal Access Exception on: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+				} catch (ClassNotFoundException e) {
+					Debug.error("Failed to find class: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+				}
+        	} else {
+        		externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+        	}
+		}
+		return externalCampusCodeElementHelper;
+
+	}
+
+	public String getCampusCode(BannerSession bannerSession,
+			Class_ clazz) {
+		if (this.getBannerCampusOverride() != null){
+			return(this.getBannerCampusOverride().getBannerCampusCode());
+		} else {
+			return(getExternalCampusCodeElementHelper().getDefaultCampusCode(this, bannerSession, clazz));
+		}
+	}
+
+	public String getDefualtCampusCode(BannerSession bannerSession,
+			Class_ clazz) {
+		return(getExternalCampusCodeElementHelper().getDefaultCampusCode(this, bannerSession, clazz));
+	}
 
 }

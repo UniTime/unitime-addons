@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
@@ -48,6 +49,7 @@ public abstract class BaseBannerSection implements Serializable {
 	private BannerSection iParentBannerSection;
 	private Set<BannerSectionToClass> iBannerSectionToClasses;
 	private Set<BannerSection> iBannerSectionToChildSections;
+	private BannerCampusOverride iBannerCampusOverride;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_CRN = "crn";
@@ -58,6 +60,7 @@ public abstract class BaseBannerSection implements Serializable {
 	public static String PROP_UID_ROLLED_FWD_FROM = "uniqueIdRolledForwardFrom";
 	public static String PROP_OVERRIDE_LIMIT = "overrideLimit";
 	public static String PROP_OVERRIDE_COURSE_CREDIT = "overrideCourseCredit";
+	public static String PROP_BANNER_CAMPUS_OVERRIDE = "bannerCampusOverride";
 
 	public BaseBannerSection() {
 		initialize();
@@ -109,6 +112,9 @@ public abstract class BaseBannerSection implements Serializable {
 	public BannerSection getParentBannerSection() { return iParentBannerSection; }
 	public void setParentBannerSection(BannerSection parentBannerSection) { iParentBannerSection = parentBannerSection; }
 
+	public BannerCampusOverride getBannerCampusOverride() { return iBannerCampusOverride; }
+	public void setBannerCampusOverride(BannerCampusOverride bannerCampusOverride) { iBannerCampusOverride = bannerCampusOverride; }
+
 	public Set<BannerSectionToClass> getBannerSectionToClasses() { return iBannerSectionToClasses; }
 	public void setBannerSectionToClasses(Set<BannerSectionToClass> bannerSectionToClasses) { iBannerSectionToClasses = bannerSectionToClasses; }
 	public void addTobannerSectionToClasses(BannerSectionToClass bannerSectionToClass) {
@@ -153,6 +159,7 @@ public abstract class BaseBannerSection implements Serializable {
 			"\n	Session: " + getSession() +
 			"\n	UniqueId: " + getUniqueId() +
 			"\n	UniqueIdRolledForwardFrom: " + getUniqueIdRolledForwardFrom() +
+			"\n	Banner Campus Override: " + getBannerCampusOverride() +
 			"]";
 	}
 }

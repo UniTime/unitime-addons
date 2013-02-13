@@ -20,30 +20,46 @@
  * 
  -->
 
-<hibernate-configuration>
-	<session-factory>
+<hibernate-mapping package="org.unitime.banner.model">
+	<class
+		name="BannerCampusOverride"
+		table="banner_campus_override">
 
-		<property name="show_sql">false</property>
+ 		<cache include="non-lazy" usage="read-write"/>
+ 		
+        <id
+            name="uniqueId"
+            column="UNIQUEID"
+            type="java.lang.Long"
+        >
+            <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">
+                <param name="sequence">pref_group_seq</param>
+            </generator>
+        </id>
+        
+		<property
+			name="bannerCampusCode"
+			column="banner_campus_code"
+			type="java.lang.String"
+			not-null="true"
+			length="20"
+		/>
 		
-		<!-- Banner Specific Event Listeners -->
-		<event type="post-update">
-			<listener class="org.unitime.banner.commons.hibernate.util.BannerUpdateListener"/>
-		</event>
+		<property
+			name="bannerCampusName"
+			column="banner_campus_name"
+			type="java.lang.String"
+			not-null="true"
+			length="100"
+		/>
 
-		<!-- End of Banner Specific Event Listeners -->
+		<property
+			name="visible"
+			column="visible"
+			type="java.lang.Boolean"
+			not-null="true"
+		/>
 		
-		<!-- Custom hbm.xml files -->
-		<mapping resource="BannerSession.hbm.xml" />
-		<mapping resource="BannerCourse.hbm.xml" />
-		<mapping resource="BannerConfig.hbm.xml" />
-		<mapping resource="BannerSection.hbm.xml" />
-		<mapping resource="BannerSectionToClass.hbm.xml" />
-		<mapping resource="Queue.hbm.xml" />
-		<mapping resource="QueueError.hbm.xml" />
-		<mapping resource="BannerResponse.hbm.xml" />
-		<mapping resource="BannerTermCrnProperties.hbm.xml" />
-		<mapping resource="BannerCampusOverride.hbm.xml" />
-		
-		<!-- End of custom hbm.xml files -->
-	</session-factory>
-</hibernate-configuration>
+	</class>
+
+</hibernate-mapping>

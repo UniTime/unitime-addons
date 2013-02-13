@@ -2,7 +2,7 @@
  * UniTime 3.2 (University Timetabling Application)
  * Copyright (C) 2010, UniTime LLC, and individual contributors
  * as indicated by the @authors tag.
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
@@ -17,20 +17,23 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
 */
+package org.unitime.banner.model.base;
 
-package org.unitime.banner.interfaces;
+import org.unitime.banner.model.BannerCampusOverride;
+import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
+import org.unitime.banner.model.dao._RootDAO;
 
-import org.unitime.banner.model.BannerSection;
-import org.unitime.banner.model.BannerSession;
-import org.unitime.timetable.model.Class_;
+public abstract class BaseBannerCampusOverrideDAO extends _RootDAO<BannerCampusOverride,Long> {
 
-/**
- * 
- * @author says
- *
- */
-public interface ExternalBannerCampusCodeElementHelperInterface {
-	
-	public String getDefaultCampusCode(BannerSection bannerSection, BannerSession bannerSession, Class_ clazz);
-	
+	private static BannerCampusOverrideDAO sInstance;
+
+	public static BannerCampusOverrideDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerCampusOverrideDAO();
+		return sInstance;
+	}
+
+	public Class<BannerCampusOverride> getReferenceClass() {
+		return BannerCampusOverride.class;
+	}
+
 }

@@ -69,7 +69,6 @@ public class BannerMessage {
 	
     private static SimpleDateFormat sDateFormat = new SimpleDateFormat("MM/dd/yyyy");
 	private static ExternalBannerSessionElementHelperInterface externalSessionElementHelper;
-	private static ExternalBannerCampusCodeElementHelperInterface externalCampusCodeElementHelper;
 
 	private HashMap<Long, TreeMap<Date, Date>> datePatternMap;
 	private static HashMap<Long, Long> sessionDefaultDatePatternMap;
@@ -286,32 +285,13 @@ public class BannerMessage {
 
 	}
 
-	private ExternalBannerCampusCodeElementHelperInterface getExternalCampusCodeElementHelper(){
-		if (externalCampusCodeElementHelper == null){
-            String className = ApplicationProperties.getProperty("tmtbl.banner.campus.element.helper");
-        	if (className != null && className.trim().length() > 0){
-        		try {
-        			externalCampusCodeElementHelper = (ExternalBannerCampusCodeElementHelperInterface) (Class.forName(className).newInstance());
-				} catch (InstantiationException e) {
-					Debug.error("Failed to instantiate instance of: " + className + " using the default campus code element helper.");
-					e.printStackTrace();
-					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
-				} catch (IllegalAccessException e) {
-					Debug.error("Illegal Access Exception on: " + className + " using the default campus code element helper.");
-					e.printStackTrace();
-					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
-				} catch (ClassNotFoundException e) {
-					Debug.error("Failed to find class: " + className + " using the default campus code element helper.");
-					e.printStackTrace();
-					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
-				}
-        	} else {
-        		externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
-        	}
-		}
-		return externalCampusCodeElementHelper;
+	private void addCampusCodeElement(Element sectionElement,
+			BannerSection bannerSection, BannerSession bannerSession, Class_ clazz) {
+
+		sectionElement.addAttribute("CAMP_CODE", bannerSection.getCampusCode(bannerSession, clazz));
 
 	}
+
 
 	private Element beginSectionElement(BannerSection bannerSection, BannerMessageAction action, BannerSession bs, Session hibSession){
 		if (bannerSection.getBannerConfig().getBannerCourse() == null || courseOffering == null){
@@ -331,7 +311,7 @@ public class BannerMessage {
 			sectionElement.addAttribute("ID", bannerSection.getSectionIndex());
 			sectionElement.addAttribute("TITLE", courseOffering.getTitle());
 			getExternalSessionElementHelper().addSessionElementIfNeeded(sectionElement, bannerSection);
-			getExternalCampusCodeElementHelper().addCampusCodeElement(sectionElement, bannerSection, bs, clazz);
+			addCampusCodeElement(sectionElement, bannerSection, bs, clazz);
 			sectionElement.addAttribute("SCHD_CODE", clazz.getSchedulingSubpart().getItype().getSis_ref());
 			sectionElement.addAttribute("GRADABLE", (bannerSection.getBannerConfig().getGradableItype()==null?"N":(clazz.getSchedulingSubpart().getItype().getItype().equals(bannerSection.getBannerConfig().getGradableItype().getItype())?"Y":"N")));
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(bannerSection.calculateMaxEnrl(hibSession))).toString()));

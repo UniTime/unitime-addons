@@ -165,6 +165,16 @@
 			not-null="false"
 		/>
 
+		<many-to-one 
+			name="bannerCampusOverride" 
+			class="org.unitime.banner.model.BannerCampusOverride" 
+			column="banner_campus_override_id" 
+			not-null="false"
+			insert="true"
+			update="true"
+			lazy="false"
+			foreign-key="fk_campus_override"
+		/>
 	</class>
 
 </hibernate-mapping>

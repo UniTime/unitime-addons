@@ -18,19 +18,17 @@
  * 
 */
 
-package org.unitime.banner.interfaces;
+package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.BannerSection;
-import org.unitime.banner.model.BannerSession;
-import org.unitime.timetable.model.Class_;
+import org.unitime.banner.model.base.BaseBannerCampusOverrideDAO;
 
-/**
- * 
- * @author says
- *
- */
-public interface ExternalBannerCampusCodeElementHelperInterface {
-	
-	public String getDefaultCampusCode(BannerSection bannerSection, BannerSession bannerSession, Class_ clazz);
-	
+
+public class BannerCampusOverrideDAO extends BaseBannerCampusOverrideDAO {
+
+	/**
+	 * Default constructor.  Can be used in place of getInstance()
+	 */
+	public BannerCampusOverrideDAO () {}
+
+
 }

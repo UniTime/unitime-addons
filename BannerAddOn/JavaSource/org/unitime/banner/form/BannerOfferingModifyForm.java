@@ -37,6 +37,7 @@ import org.apache.struts.util.MessageResources;
 import org.hibernate.Session;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
+import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
@@ -88,8 +89,11 @@ public class BannerOfferingModifyForm extends ActionForm {
 	private List courseCredits;
 	private List courseCreditOverrides;
 	private List classLimits;
-	
+	private List defaultCampus;
+	private List campusOverrides;
+	private List campuses;
 	private List classHasErrors;
+	private List bannerCampusOverrides;
 	
 	/*
 	private static String BANNER_SECTION_IDS_TOKEN = "bannerSectionIds";
@@ -273,6 +277,10 @@ public class BannerOfferingModifyForm extends ActionForm {
        	classLimits = DynamicList.getInstance(new ArrayList(), factoryClasses);
        	courseCredits = DynamicList.getInstance(new ArrayList(), factoryClasses);
        	courseCreditOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
+       	defaultCampus = DynamicList.getInstance(new ArrayList(), factoryClasses);
+       	campusOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
+       	campuses = DynamicList.getInstance(new ArrayList(), factoryClasses);
+       	bannerCampusOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
     }
      
 	public List getBannerSectionIds() {
@@ -349,7 +357,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 	}
 
 	    
-	public void addToBannerSections(BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent){
+	public void addToBannerSections(BannerSession bsess, BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent){
 		showLimitOverride = new Boolean(bs.isCrossListedSection(null));
 		this.bannerSectionLabels.add(bs.bannerSectionLabel());
 		this.bannerSectionLabelIndents.add(indent);
@@ -370,6 +378,9 @@ public class BannerOfferingModifyForm extends ActionForm {
 		}
 		this.courseCreditOverrides.add(bs.getOverrideCourseCredit()==null?"":bs.getOverrideCourseCredit());
 		this.courseCredits.add(bs.courseCreditStringBasedOnClass(cls));
+		this.defaultCampus.add(bs.getDefualtCampusCode(bsess, cls));
+		this.campusOverrides.add(bs.getBannerCampusOverride()==null?null:bs.getBannerCampusOverride().getUniqueId());
+		this.campuses.add(bs.getCampusCode(bsess, cls));
 	}
 	
 	public Integer getSubjectAreaId() {
@@ -508,6 +519,38 @@ public class BannerOfferingModifyForm extends ActionForm {
 
 	public void setCourseCredits(List courseCredits) {
 		this.courseCredits = courseCredits;
+	}
+
+	public List getDefaultCampus() {
+		return defaultCampus;
+	}
+
+	public void setDefaultCampus(List defaultCampus) {
+		this.defaultCampus = defaultCampus;
+	}
+
+	public List getCampusOverrides() {
+		return campusOverrides;
+	}
+
+	public void setCampusOverrides(List campusOverrides) {
+		this.campusOverrides = campusOverrides;
+	}
+
+	public List getCampuses() {
+		return campuses;
+	}
+
+	public void setCampuses(List campuses) {
+		this.campuses = campuses;
+	}
+
+	public List getBannerCampusOverrides() {
+		return bannerCampusOverrides;
+	}
+
+	public void setBannerCampusOverrides(List bannerCampusOverrides) {
+		this.bannerCampusOverrides = bannerCampusOverrides;
 	}
 
 }

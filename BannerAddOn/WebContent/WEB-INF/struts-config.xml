@@ -30,6 +30,8 @@
 	  <form-bean name="bannerSessionEditForm" type="org.unitime.banner.form.BannerSessionEditForm" />
 	  <form-bean name="bannerTermCrnPropertiesListForm" type="org.unitime.banner.form.BannerTermCrnPropertiesListForm" />
 	  <form-bean name="bannerTermCrnPropertiesEditForm" type="org.unitime.banner.form.BannerTermCrnPropertiesEditForm" />
+	  <form-bean name="bannerCampusOverrideListForm" type="org.unitime.banner.form.BannerCampusOverrideListForm" />
+	  <form-bean name="bannerCampusOverrideEditForm" type="org.unitime.banner.form.BannerCampusOverrideEditForm" />
 
    		<!-- End of custom forms -->
    </form-beans>
@@ -216,6 +218,31 @@
          <forward
             name="showBannerTermCrnPropertiesList"
             path="/bannerTermCrnPropertiesList.do"
+            redirect="true" />
+      </action>
+      <action
+         path="/bannerCampusOverrideList"
+         attribute="bannerCampusOverrideListForm"
+         input="bannerCampusOverrideListTile"
+         name="bannerCampusOverrideListForm"
+         scope="request"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         validate="false">
+         <forward name="showBannerCampusOverrideList" path="bannerCampusOverrideListTile" />
+      </action>
+      <action
+         path="/bannerCampusOverrideEdit"
+         attribute="bannerCampusOverrideEditForm"
+         name="bannerCampusOverrideEditForm"
+         parameter="doit"
+         scope="request"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         validate="false">
+         <forward name="showEdit" path="bannerCampusOverrideEditTile" />
+         <forward name="showAdd" path="bannerCampusOverrideAddTile" />
+         <forward
+            name="showBannerCampusOverrideList"
+            path="/bannerCampusOverrideList.do"
             redirect="true" />
       </action>
 
