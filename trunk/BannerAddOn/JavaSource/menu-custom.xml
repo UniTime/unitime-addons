@@ -52,6 +52,11 @@
 				<condition>
 					<hasPermission name="AcademicSessions"/>
 				</condition>
+			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.do">
+				<condition>
+					<hasPermission name="AcademicSessions"/>
+				</condition>
+ 			</item>
 			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.do">
 				<condition>
 					<hasPermission name="SessionRollForward"/>

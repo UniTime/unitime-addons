@@ -34,15 +34,14 @@ import org.unitime.timetable.model.Class_;
 public class SampleExternalBannerCampusCodeElementHelper implements
 		ExternalBannerCampusCodeElementHelperInterface {
 
-	public void addCampusCodeElement(Element sectionElement,
-			BannerSection bannerSection, BannerSession bannerSession, Class_ clazz) {
-
+	@Override
+	public String getDefaultCampusCode(BannerSection bannerSection,
+			BannerSession bannerSession, Class_ clazz) {
 		String campusCode = bannerSession.getBannerCampus();
 		if (bannerSection.getSession().getAcademicInitiative().equals("PWL") && clazz.getManagingDept() != null && clazz.getManagingDept().getDeptCode().equals("1589")){
 			campusCode = "CEC";
 		}
-		sectionElement.addAttribute("CAMP_CODE", campusCode);
-
+		return (campusCode);
 	}
 
 }

@@ -234,10 +234,10 @@ public class BannerOfferingDetailAction extends Action {
         frm.setUnlimited(Boolean.FALSE);
         frm.setCreditText((io.getCredit() != null)?io.getCredit().creditText():"");
         
-        if (io.getConsentType()==null)
+        if (co.getConsentType()==null)
             frm.setConsentType("None Required");
         else
-            frm.setConsentType(io.getConsentType().getLabel());
+            frm.setConsentType(co.getConsentType().getLabel());
         
         for (Iterator i=io.getInstrOfferingConfigs().iterator();i.hasNext();)
         	if (((InstrOfferingConfig)i.next()).isUnlimitedEnrollment().booleanValue()) {

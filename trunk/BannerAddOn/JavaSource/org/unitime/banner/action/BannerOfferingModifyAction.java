@@ -42,9 +42,11 @@ import org.springframework.stereotype.Service;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.form.BannerOfferingModifyForm;
+import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
+import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerConfigDAO;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
@@ -104,6 +106,7 @@ public class BannerOfferingModifyAction extends Action {
         MessageResources rsc = getResources(request);
         BannerOfferingModifyForm frm = (BannerOfferingModifyForm) form;
 		LookupTables.setupConsentType(request);
+		frm.setBannerCampusOverrides(BannerCampusOverride.getBannerCampusOverrideList());
        // Get operation
         String op = (request.getParameter("op")==null)
 						? (frm.getOp()==null || frm.getOp().length()==0)
@@ -204,6 +207,7 @@ public class BannerOfferingModifyAction extends Action {
         BannerCourse bc = bcDao.get(Long.valueOf(bannerCourseOfferingId));
         
         BannerConfig bannerConfig = BannerConfig.findBannerConfigForInstrOffrConfigAndCourseOffering(ioc, bc.getCourseOffering(bcDao.getSession()), bcDao.getSession());
+        BannerSession bsess = BannerSession.findBannerSessionForSession(io.getSession(), bcDao.getSession());
         
         // Load form properties
         frm.setInstrOffrConfigId(ioc.getUniqueId());
@@ -232,13 +236,13 @@ public class BannerOfferingModifyAction extends Action {
     		if (ss.getClasses() == null || ss.getClasses().size() == 0)
     			throw new Exception("Initial setup of Instructional Offering Config has not been completed.");
     		if (ss.getParentSubpart() == null){
-        		loadClasses(frm, bc, ss.getClasses(), new Boolean(true), new String(), null, cap);
+        		loadClasses(frm, bsess, bc, ss.getClasses(), new Boolean(true), new String(), null, cap);
         	}
         }
       }
 
 
-    private void loadClasses(BannerOfferingModifyForm frm, BannerCourse bc, Set classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
+    private void loadClasses(BannerOfferingModifyForm frm, BannerSession bsess, BannerCourse bc, Set classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
     	if (classes != null && classes.size() > 0){
     		ArrayList classesList = new ArrayList(classes);
             Collections.sort(classesList, new ClassComparator(ClassComparator.COMPARE_BY_ITYPE) );
@@ -253,9 +257,9 @@ public class BannerOfferingModifyAction extends Action {
 		    			readOnlyClass = new Boolean(!sessionContext.hasPermission(cls, Right.MultipleClassSetupClass));
 		    		}
 		    		BannerSection bs = BannerSection.findBannerSectionForBannerCourseAndClass(bc, cls);
-		    		frm.addToBannerSections(bs, cls, classAssignmentProxy, readOnlyClass, indent);
+		    		frm.addToBannerSections(bsess, bs, cls, classAssignmentProxy, readOnlyClass, indent);
 		    	}
-	    		loadClasses(frm, bc, cls.getChildClasses(), new Boolean(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
+	    		loadClasses(frm, bsess, bc, cls.getChildClasses(), new Boolean(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
 	    	}
     	}
     }
@@ -338,7 +342,8 @@ public class BannerOfferingModifyAction extends Action {
 		Iterator it3 = frm.getConsents().listIterator();
 		Iterator it4 = frm.getCourseCreditOverrides().listIterator();
 		Iterator it5 = frm.getLimitOverrides().listIterator();
-
+		Iterator it6 = frm.getCampusOverrides().listIterator();
+		
 		for(;it1.hasNext();){
 			boolean changed = false;
 			Long sectionId = new Long(it1.next().toString());
@@ -391,6 +396,18 @@ public class BannerOfferingModifyAction extends Action {
 					changed = true;
 				}
 			}
+			Long campusOverrideId = new Long(it6.next().toString());
+			BannerCampusOverride newCmp = null;
+			if ((campusOverrideId != null && bs.getBannerCampusOverride() != null && !bs.getBannerCampusOverride().getUniqueId().equals(campusOverrideId)) ||
+				(campusOverrideId != null && bs.getBannerCampusOverride() == null) ||
+				(campusOverrideId == null && bs.getBannerCampusOverride() != null))
+			{
+				if (campusOverrideId != null) {
+					newCmp = BannerCampusOverride.getBannerCampusOverrideById(campusOverrideId);
+				}
+				bs.setBannerCampusOverride(newCmp);
+				changed = true;
+			} 
 			if (changed){
 				hibSession.update(bs);
 			}

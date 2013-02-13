@@ -20,7 +20,6 @@
 
 package org.unitime.banner.util;
 
-import org.dom4j.Element;
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
@@ -34,12 +33,12 @@ import org.unitime.timetable.model.Class_;
 public class DefaultExternalBannerCampusCodeElementHelper implements
 		ExternalBannerCampusCodeElementHelperInterface {
 
-	public void addCampusCodeElement(Element sectionElement,
-			BannerSection bannerSection, BannerSession bannerSession, Class_ clazz) {
 
-		String campusCode = bannerSession.getBannerCampus();
-		sectionElement.addAttribute("CAMP_CODE", campusCode);
-
+	@Override
+	public String getDefaultCampusCode(BannerSection bannerSection, BannerSession bannerSession,
+			Class_ clazz) {
+		return (bannerSession.getBannerCampus());
 	}
+
 
 }

@@ -35,6 +35,7 @@ import javax.servlet.jsp.JspWriter;
 import org.unitime.banner.form.BannerCourseListForm;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
+import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.commons.web.htmlgen.TableCell;
 import org.unitime.commons.web.htmlgen.TableHeaderCell;
@@ -277,7 +278,7 @@ public class WebBannerCourseListTableBuilder extends
     	    cell = this.initNormalCell(indent + "Configuration " + configName, isEditable);
     	    cell.setNoWrap(true);
     	    row.addContent(cell);
-    	    cell = this.initCell(" &nbsp;", 16, false);
+    	    cell = this.initCell(" &nbsp;", 17, false);
     	    row.addContent(cell);    
 	        table.addContent(row);
 		}
@@ -378,6 +379,15 @@ public class WebBannerCourseListTableBuilder extends
      	row.addContent(cell);
      	cell = initNormalCell("", isEditable);
      	cell.setNoWrap(true);
+     	BannerSession bsess = BannerSession.findBannerSessionForSession(bs.getSession(), hibSession);
+     	cell.addContent(bs.getCampusCode(bsess, c));
+     	row.addContent(cell);
+
+     	cell = initNormalCell("", isEditable);
+     	cell.setNoWrap(true);
+     	cell.addContent(bs.buildClassLabelHtml(classAssignment));
+     	row.addContent(cell);
+
      	TableCell dpCell = initNormalCell("", isEditable);
      	dpCell.setNoWrap(true);
      	TableCell timeCell = initNormalCell("", isEditable);
@@ -387,12 +397,10 @@ public class WebBannerCourseListTableBuilder extends
      	TableCell roomCapacityCell = initNormalCell("", isEditable);
      	roomCapacityCell.setNoWrap(true);
      	roomCapacityCell.setAlign("right");
-     	cell.addContent(bs.buildClassLabelHtml(classAssignment));
      	timeCell.addContent(bs.buildAssignedTimeHtml(classAssignment));
      	roomCell.addContent(bs.buildAssignedRoomHtml(classAssignment));
      	roomCapacityCell.addContent(bs.buildAssignedRoomCapacityHtml(classAssignment));
      	dpCell.addContent(bs.buildDatePatternHtml(classAssignment));
-     	row.addContent(cell);
      	row.addContent(dpCell);
      	row.addContent(timeCell);
      	row.addContent(roomCell);
@@ -427,7 +435,7 @@ public class WebBannerCourseListTableBuilder extends
 
 	
     private TableCell subjectAndCourseInfo(BannerCourse bc, InstructionalOffering io, CourseOffering co) {
-        TableCell cell = this.initCell(null, 17, true);
+        TableCell cell = this.initCell(null, 18, true);
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + bc.getUniqueId().toString() + "\"></A>");
@@ -491,6 +499,9 @@ public class WebBannerCourseListTableBuilder extends
 		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Credit", 2, 1);
+		cell.addContent("<hr>");
+		row.addContent(cell);
+		cell = this.headerCell("Campus", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Class Label", 2, 1);

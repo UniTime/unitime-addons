@@ -23,6 +23,7 @@
 <%@page import="org.unitime.timetable.model.OfferingConsentType"%>
 <%@page import="org.unitime.timetable.model.ItypeDesc"%>
 <%@ page import="org.unitime.timetable.defaults.SessionAttribute"%>
+<%@ page import="org.unitime.banner.model.BannerCampusOverride"%>
 <%@ taglib uri="/WEB-INF/tld/struts-bean.tld" prefix="bean" %>
 <%@ taglib uri="/WEB-INF/tld/struts-html.tld" prefix="html" %>
 <%@ taglib uri="/WEB-INF/tld/struts-logic.tld" prefix="logic" %>
@@ -145,6 +146,7 @@
 							<TD align="center" valign="bottom" rowSpan="2"><I>Limit<br>Override</I></TD>
 							<TD align="center" valign="bottom" rowSpan="2"><I>Limit</I></TD>
 						</logic:equal>
+						<TD align="center" valign="bottom" rowSpan="2"><I>Campus&nbsp;Override</I></TD>
 						<TD rowspan="2">&nbsp;</TD>
 						<TD align="center" valign="bottom" rowSpan="2"><I>Date Pattern</I></TD>
 						<TD rowspan="2">&nbsp;</TD>
@@ -175,7 +177,8 @@
 						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:text name="<%=frmName%>" property='<%= "limitOverrides[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(8000 + ctr.intValue())%>" maxlength="5" size="5"/></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><bean:write name="<%=frmName%>" property='<%= "limitOverrides[" + ctr + "]" %>'/><html:hidden property='<%= "limitOverrides[" + ctr + "]" %>'/></logic:equal></TD>	
 						<TD align="right" valign="top" nowrap><%=frm.getClassLimits().get(ctr)%>
 						<html:hidden property='<%= "classLimits[" + ctr + "]" %>'/></TD>
-</logic:equal>
+ </logic:equal>
+ 						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:select style="width:200;" property='<%= "campusOverrides[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(11000 + ctr.intValue())%>"><html:option value="-1">Default (<%=frm.getDefaultCampus().get(ctr)%>)</html:option><logic:iterate name="<%=frmName%>" property="bannerCampusOverrides" id="obj" indexId="bcoIdx"><% BannerCampusOverride bco = (BannerCampusOverride) obj; if (bco.isVisible().booleanValue() || bco.getUniqueId().equals(frm.getCampusOverrides().get(ctr))) { %><html:option value="<%=bco.getUniqueId().toString()%>"><%=bco.getBannerCampusCode()%> - <%=bco.getBannerCampusName()%></html:option><% } %></logic:iterate></html:select></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><%=frm.getCampuses().get(ctr)%></logic:equal></TD><html:hidden property='<%= "campusOverrides[" + ctr + "]" %>'/><html:hidden property='<%= "defaultCampus[" + ctr + "]" %>'/><html:hidden property='<%= "campuses[" + ctr + "]" %>'/>
 						<TD>&nbsp;</TD>
 						<TD align="left" valign="top" nowrap><%=frm.getDatePatterns().get(ctr)%></TD>
 						<TD>&nbsp;</TD>

@@ -63,5 +63,30 @@
 			create index idx_banner_session_term_code on %SCHEMA%.banner_session(banner_term_code)
 		</mysql>
 	</update>
+ 	<update version="4" date="06-Feb-2013" comment="Banner Campus Override Support">
+		<plsql>
+			create table %SCHEMA%.banner_campus_override (
+				uniqueid number(20,0) constraint nn_campus_ovrrd_uniqueid not null,
+				banner_campus_code varchar2(20) constraint nn_campus_ovrrd_code not null enable,
+				banner_campus_name varchar2(100) constraint nn_campus_ovrrd_name not null enable,
+				visible number(1,0) constraint nn_campus_ovrrd_visible not null enable)
+		</plsql>
+		<plsql>
+			alter table %SCHEMA%.banner_campus_override add constraint pk_banner_campus_override_uid primary key (uniqueid)
+		</plsql>
+		<mysql>
+			create table %SCHEMA%.banner_campus_override (
+				uniqueid decimal(20,0) primary key not null,
+				banner_campus_code varchar(20) not null,
+				banner_campus_name varchar(100) not null,
+				visible number(1,0) not null) engine = INNODB
+		</mysql>
+		<plsql>alter table %SCHEMA%.banner_section add banner_campus_override_id number(20,0)</plsql>
+		<mysql>alter table %SCHEMA%.banner_section add banner_campus_override_id decimal(20,0)</mysql>
+		<sql>
+			alter table %SCHEMA%.banner_section add constraint fk_campus_override foreign key (banner_campus_override_id)
+			references %SCHEMA%.banner_campus_override (uniqueid) on delete set null
+		</sql>
+ 	</update>
  
  </dbupdate>
