@@ -24,6 +24,13 @@
 			<item name="Banner Offerings" page="bannerOfferingShowSearch.do"/>
 		</menu>
 	</menu>
+	<menu name="Students">
+			<item name="Scheduling Assistant Help" page="tmtbl.help.banner.sched_assist"  type="property" target="dialog">
+			<condition>
+				<hasRight name="isSectioningEnabled"/>
+			</condition>
+		</item>
+	</menu>
 	<menu name="Administration">
 		<menu name="Other">
 			<item name="Users" page="userEdit.do">
@@ -51,4 +58,24 @@
                         </and>
                 </new-condition>
     </item>
+    <item name="Scheduling Assistant Help" page="tmtbl.help.banner.sched_assist"  type="property" target="dialog">
+		<condition>
+			<and>
+				<or>
+					<not>
+						<isAuthenticated/>
+					</not>
+					<and>
+						<not>
+							<hasRole/>
+						</not>
+						<hasRight name="isStudent"/>
+					</and>
+					<hasRole name="Advisor"/>
+				</or>
+				<hasRight name="isSectioningEnabled"/>
+			</and>
+		</condition>
+	</item>
+    
 </unitime-menu>
