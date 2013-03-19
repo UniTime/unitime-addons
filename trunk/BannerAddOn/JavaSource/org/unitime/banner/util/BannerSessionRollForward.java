@@ -28,6 +28,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.unitime.banner.form.RollForwardBannerSessionForm;
 import org.unitime.banner.interfaces.ExternalSessionRollForwardCustomizationInterface;
+import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
@@ -135,6 +136,8 @@ public class BannerSessionRollForward extends SessionRollForward {
 							toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueIdRolledForwardFrom());
 							toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
 							toBs.setOverrideLimit(fromBs.getOverrideLimit());
+							toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
+						
 							
 							for (Iterator fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();){
 								BannerSectionToClass fromBsc = (BannerSectionToClass) fromBannerSectionToClassIt.next();
