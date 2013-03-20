@@ -46,6 +46,7 @@
 %>
 <loc:bundle name="BannerMessages" >
 
+	<bean:define name="bannerOfferingDetailForm" property="instrOfferingName" id="instrOfferingName"/>
 	<TABLE width="93%" border="0" cellspacing="0" cellpadding="3">
 		<TR>
 			<TD valign="middle" colspan='2'>
@@ -72,6 +73,23 @@
 					<bean:define id="subjectAreaId">
 						<bean:write name="bannerOfferingDetailForm" property="subjectAreaId" />				
 					</bean:define>
+
+					<sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanLock')">
+						<html:submit property="op" styleClass="btn" 
+								accesskey="<%=MSG.accessLockIO() %>" 
+								title="<%=MSG.titleLockIO(MSG.accessLockIO()) %>"
+								onclick="<%=MSG.jsSubmitLockIO((String)instrOfferingName)%>">
+							<loc:message name="actionLockIO"/>
+						</html:submit>
+					</sec:authorize>
+					 <sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanUnlock')">
+						<html:submit property="op" styleClass="btn" 
+								accesskey="<%=MSG.accessUnlockIO() %>" 
+								title="<%=MSG.titleUnlockIO(MSG.accessUnlockIO()) %>"
+								onclick="<%=MSG.jsSubmitUnlockIO((String)instrOfferingName)%>">
+							<loc:message name="actionUnlockIO"/>
+						</html:submit>
+					</sec:authorize>
 	
 					<input type='submit' name='op' value="Resend to Banner" title="Resend Data to Banner" class='btn'>
 				
@@ -197,6 +215,23 @@
 					<html:hidden property="nextId"/>
 					<html:hidden property="previousId"/>
 					
+					<sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanLock')">
+						<html:submit property="op" styleClass="btn" 
+								accesskey="<%=MSG.accessLockIO() %>" 
+								title="<%=MSG.titleLockIO(MSG.accessLockIO()) %>"
+								onclick="<%=MSG.jsSubmitLockIO((String)instrOfferingName)%>">
+							<loc:message name="actionLockIO"/>
+						</html:submit>
+					</sec:authorize>
+					 <sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanUnlock')">
+						<html:submit property="op" styleClass="btn" 
+								accesskey="<%=MSG.accessUnlockIO() %>" 
+								title="<%=MSG.titleUnlockIO(MSG.accessUnlockIO()) %>"
+								onclick="<%=MSG.jsSubmitUnlockIO((String)instrOfferingName)%>">
+							<loc:message name="actionUnlockIO"/>
+						</html:submit>
+					</sec:authorize>
+
 				<input type='submit' name='op' value="Resend to Banner" title="Resend Data to Banner" class='btn'>
 
 				<logic:notEmpty name="bannerOfferingDetailForm" property="previousId">
