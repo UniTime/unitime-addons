@@ -55,6 +55,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
+import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.webutil.BackTracker;
@@ -166,7 +167,29 @@ public class BannerOfferingDetailAction extends Action {
         	return null;
         }
 		
-		BackTracker.markForBack(
+        if (op.equals(MSG.actionLockIO())) {
+		    InstructionalOfferingDAO idao = new InstructionalOfferingDAO();
+	        InstructionalOffering io = idao.get(frm.getInstrOfferingId());
+
+	    	sessionContext.checkPermission(io, Right.OfferingCanLock);
+
+	    	io.getSession().lockOffering(io.getUniqueId());
+        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId()));
+        	return null;
+        }
+		
+        if (op.equals(MSG.actionUnlockIO())) {
+	    	InstructionalOfferingDAO idao = new InstructionalOfferingDAO();
+	        InstructionalOffering io = idao.get(frm.getInstrOfferingId());
+
+	    	sessionContext.checkPermission(io, Right.OfferingCanUnlock);
+
+	        io.getSession().unlockOffering(io, sessionContext.getUser());
+        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId()));
+        	return null;
+        }
+
+        BackTracker.markForBack(
 				request,
 				"bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId(),
 				"Banner Offering ("+frm.getInstrOfferingName()+")",

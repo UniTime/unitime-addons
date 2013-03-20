@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.util.DynamicList;
 import org.unitime.timetable.util.DynamicListObjectFactory;
@@ -39,7 +41,9 @@ import org.unitime.timetable.util.DynamicListObjectFactory;
  */
 public class BannerOfferingDetailForm extends ActionForm {
 
-    /**
+	protected final static BannerMessages MSG = Localization.create(BannerMessages.class);
+
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -5161466018324037153L;
