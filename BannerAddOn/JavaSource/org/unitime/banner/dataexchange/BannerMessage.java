@@ -370,8 +370,8 @@ public class BannerMessage {
 			} else {
 				sectionElement.addAttribute("TEXT_NARRATIVE", "");				
 			}
-			sectionElement.addAttribute("WEB_AVAIL", clazz.isDisplayInScheduleBook().booleanValue()?"Y":"N");
-			sectionElement.addAttribute("PRINT_IND", clazz.isDisplayInScheduleBook().booleanValue()?"Y":"N");
+			sectionElement.addAttribute("WEB_AVAIL", clazz.isEnabledForStudentScheduling().booleanValue()?"Y":"N");
+			sectionElement.addAttribute("PRINT_IND", clazz.isEnabledForStudentScheduling().booleanValue()?"Y":"N");
 			sectionElement.addAttribute("USERID", "UniTime");			
 		}
 		return(sectionElement);
