@@ -334,8 +334,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 				aa.setAcademicAreaAbbreviation(academicArea);
 				aa.setSession(session);
 				aa.setExternalUniqueId(academicArea);
-				aa.setLongTitle(academicArea);
-				aa.setShortTitle(academicArea);
+				aa.setTitle(academicArea);
 				aa.setUniqueId((Long)getHibSession().save(aa));
 				info("Added Academic Area:  " + academicArea);
 			}
