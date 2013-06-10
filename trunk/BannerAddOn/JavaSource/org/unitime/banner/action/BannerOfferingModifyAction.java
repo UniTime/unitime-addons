@@ -215,7 +215,7 @@ public class BannerOfferingModifyAction extends Action {
         frm.setBannerCourseOfferingId(bc.getUniqueId());
         frm.setBannerConfigId(bannerConfig.getUniqueId());
         frm.setItypeId(bannerConfig.getGradableItype() != null?bannerConfig.getGradableItype().getItype():null);
-        frm.setConfigIsEditable(!sessionContext.hasPermission(ioc, Right.MultipleClassSetup));
+        frm.setConfigIsEditable(sessionContext.hasPermission(ioc, Right.MultipleClassSetup));
 
         String name = bc.getCourseOffering(bcDao.getSession()).getCourseNameWithTitle();
         if (io.hasMultipleConfigurations()) {
