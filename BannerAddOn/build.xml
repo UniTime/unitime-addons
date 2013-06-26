@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
- * UniTime 3.2 (University Timetabling Application)
- * Copyright (C) 2010, UniTime LLC
+ * UniTime 3.4 (University Timetabling Application)
+ * Copyright (C) 2010-2013, UniTime LLC
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 		<property environment="env"/>
 	</target>
 
-    <target name="clean">
+    <target name="clean" depends="load-properties">
         <delete dir="${build_src.dir}" failonerror="false"/>
         <delete dir="${build.dir}" failonerror="false"/>
     	<delete dir="${war.dir}" failonerror="false"/>
@@ -74,10 +74,16 @@
             	<exclude name="**/*.class"/>
             </fileset>
         </copy>
-        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
-            <replacefilter token="@build.date@" property="build.date"/>
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java">
+            <replacetoken>${build.number}</replacetoken>
+            <replacevalue>@build.number@</replacevalue>
+        </replace>
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java">
+            <replacetoken>${build.date}</replacetoken>
+            <replacevalue>@build.date@</replacevalue>
         </replace>
         <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
+            <replacefilter token="@build.date@" property="build.date"/>
             <replacefilter token="@build.number@" property="build.number"/>
         </replace>
         <path id="build.classpath">
@@ -86,6 +92,7 @@
             </fileset>
 			<fileset dir="${3rd_party.dir}">
 				<include name="*.jar" />
+				<include name="sources/validation-api-*-sources.jar" />
 			</fileset>
         </path>
     </target>
@@ -95,8 +102,6 @@
 			<src path="${build_src.dir}" />
 			<classpath refid="build.classpath" />
 		</javac>
-		
-		<delete file="build.date" failonerror="false" />		
 	</target>
 
 	<target name="compile-gwt" depends="compile-java">
@@ -105,6 +110,7 @@
 			<classpath path="${build_src.dir}"/>
 			<jvmarg value="-Xmx600M"/>
 			<jvmarg value="${macJvmArgs}"/>
+			<jvmarg value="-Dgwt.persistentunitcache=false"/>
 			<arg value="org.unitime.timetable.gwt.UniTime"/>
 		</java>
 	</target>
@@ -166,7 +172,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.StartupMinimal" />
 				<attribute name="Class-Path" value="tray-win32.jar" />
-				<attribute name="Timetabling-Version" value="3.3_bld${build.number}${build.tag}"/>
+				<attribute name="Timetabling-Version" value="3.4_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 		<signjar jar="${dist.dir}/solver.jar" alias="solver" storepass="Fh3g1H03e95kf54xZ" keystore="${unitime.src.dir}/solver.key"/>
@@ -221,9 +227,21 @@
 				<exclude name="WEB-INF/**/*.*" />
 			</fileset>
 		</copy>
-		<replace file="${war.dir}/help/Release-Notes.xml" token="@release.date@" value="${build.date}" />
-		<replace file="${war.dir}/help/Release-Notes.xml" token="@build.number@" value="${build.number}${build.tag}" />
+        <replace file="${war.dir}/help/Release-Notes.xml">
+            <replacetoken>${build.number}</replacetoken>
+            <replacevalue>@build.number@</replacevalue>
+        </replace>
+        <replace file="${war.dir}/help/Release-Notes.xml">
+            <replacetoken>${build.date}</replacetoken>
+            <replacevalue>@build.date@</replacevalue>
+        </replace>
+        <replace file="${war.dir}/help/Release-Notes.xml" propertyFile="build.date">
+            <replacefilter token="@build.date@" property="build.date"/>
+            <replacefilter token="@build.number@" property="build.number"/>
+        </replace>
 		<copy todir="${war.dir}/solver" file="${dist.dir}/solver.jar"/>
+		<copy todir="${dist.dir}" file="${war.dir}/help/Release-Notes.xml"/>
+		<copy todir="${dist.dir}" file="${war.dir}/help/Release-Notes.css"/>
 	</target>
 	
 	<target name="copy-gwt" depends="init, compile-gwt">
@@ -242,7 +260,7 @@
 				<include name="**/*.*" />
 			</fileset>
 			<manifest>
-				<attribute name="Timetabling-Version" value="3.2_bld${build.number}${build.tag}"/>
+				<attribute name="Timetabling-Version" value="3.4_bld${build.number}${build.tag}"/>
 			</manifest>
 		</jar>
 	</target>
