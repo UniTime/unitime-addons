@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ * UniTime 3.4 (University Timetabling Application)
+ * Copyright (C) 2010-2013, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ -->
+<project name="timetabling" basedir="." default="build">
+	<!-- Mac GWT requires -XstartOnFirstThread -->
+	<condition property="mac">
+		<os name="Mac OS X"/>
+	</condition>	
+	<condition property="macJvmArgs" value="-XstartOnFirstThread" else="-Dgwt.dummy.arg1=">
+		<isset property="mac"/>
+	</condition>
+
+	<target name="load-properties">
+		<loadproperties srcFile="${basedir}/build.properties" />
+		<property environment="env"/>
+	</target>
+
+    <target name="clean" depends="load-properties">
+        <delete dir="${build_src.dir}" failonerror="false"/>
+        <delete dir="${build.dir}" failonerror="false"/>
+    	<delete dir="${war.dir}" failonerror="false"/>
+    </target>
+    
+    <target name="init" depends="clean, set-debug-mode, set-optimize-mode">
+        <mkdir dir="${build_src.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${temp.dir}"/>
+    	<mkdir dir="${dist.dir}"/>
+    </target>
+	
+	<target name="set-debug-mode" unless="java.debug">
+		<property name="java.debug" value="false"/>
+	</target>
+	
+	<target name="set-optimize-mode" unless="java.optimize">
+		<property name="java.optimize" value="true"/>
+	</target>
+    
+    <target name="prepare" depends="init">
+        <buildnumber/>
+        <echo message="Build number: ${build.number}${build.tag}"/>
+        <tstamp>
+            <format property="build.date" pattern="EEE, d MMM yyyy" locale="en"/>
+        </tstamp>
+        <echo message="Build date: ${build.date}"/>
+        <propertyfile file="build.date" comment="Build info">
+            <entry  key="build.date" value="${build.date}"/>
+        	<entry  key="build.number" value="${build.number}${build.tag}"/>
+        </propertyfile>
+        <copy todir="${build_src.dir}" overwrite="Yes" preservelastmodified="Yes">
+        	<fileset dir="${unitime.src.dir}" includes="**/*.*">
+        		<exclude name="**/menu-custom.xml"/>
+        		<exclude name="**/custom.properties"/>
+        		<exclude name="**/*.class"/>
+        	</fileset>
+            <fileset dir="${src.dir}" includes="**/*.*" >
+            	<exclude name="**/hibernate.cfg.xml"/>
+            	<exclude name="**/*.class"/>
+            </fileset>
+        </copy>
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java">
+            <replacetoken>${build.number}</replacetoken>
+            <replacevalue>@build.number@</replacevalue>
+        </replace>
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java">
+            <replacetoken>${build.date}</replacetoken>
+            <replacevalue>@build.date@</replacevalue>
+        </replace>
+        <replace file="${build_src.dir}/org/unitime/timetable/util/Constants.java" propertyFile="build.date">
+            <replacefilter token="@build.date@" property="build.date"/>
+            <replacefilter token="@build.number@" property="build.number"/>
+        </replace>
+        <path id="build.classpath">
+            <fileset dir="${lib.dir}">
+            	<include name="*.jar"/>
+            </fileset>
+			<fileset dir="${3rd_party.dir}">
+				<include name="*.jar" />
+				<include name="sources/validation-api-*-sources.jar" />
+			</fileset>
+        </path>
+    </target>
+	
+	<target name="compile-java" depends="prepare">
+		<javac debug="${java.debug}" optimize="${java.optimize}" source="1.5" target="1.5" destdir="${build.dir}" includeantruntime="false">
+			<src path="${build_src.dir}" />
+			<classpath refid="build.classpath" />
+		</javac>
+	</target>
+
+	<target name="compile-gwt" depends="compile-java">
+		<java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler" dir="${temp.dir}">
+			<classpath refid="build.classpath" />
+			<classpath path="${build_src.dir}"/>
+			<jvmarg value="-Xmx600M"/>
+			<jvmarg value="${macJvmArgs}"/>
+			<jvmarg value="-Dgwt.persistentunitcache=false"/>
+			<arg value="org.unitime.timetable.gwt.UniTime"/>
+		</java>
+	</target>
+	
+	<target name="define-merge-xml" depends="compile-java">
+        <path id="merge-xml.classpath">
+            <fileset dir="${lib.dir}">
+            	<include name="*.jar"/>
+            </fileset>
+			<fileset dir="${3rd_party.dir}">
+				<include name="*.jar" />
+			</fileset>
+        </path>
+		<taskdef name="mergexml" classname="org.unitime.banner.ant.MergeXml">
+			<classpath refid="build.classpath"/>
+			<classpath path="${build.dir}"/>
+		</taskdef>
+	</target>
+
+	<target name="timetable-jar" depends="compile-java, define-merge-xml">
+		<mergexml target="${build_src.dir}/hibernate.cfg.xml" source="${src.dir}/hibernate.cfg.xml"/>
+		<jar destfile="${dist.dir}/timetable.jar">
+			<fileset dir="${build.dir}">
+				<include name="**/*.class" />
+				<exclude name="edu/purdue/smas/ant/*.class" />
+			</fileset>
+			<fileset dir="${build_src.dir}">
+				<include name="*.xml" />
+				<include name="*.dtd" />
+				<include name="**/*.properties" />
+				<include name="solver.key" />
+				<include name="**/*.ftl" />
+			</fileset>
+			<manifest>
+				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.Startup" />
+				<attribute name="Class-Path" value="activation-1.1.jar antlr-2.7.6.jar backport-util-concurrent-3.1.jar commons-collections-3.1.jar commons-configuration-1.8.jar commons-dbcp-1.4.jar commons-lang-2.6.jar commons-logging-1.1.1.jar commons-pool-1.5.4.jar cpsolver-1.2.128.jar dom4j-1.6.1.jar ehcache-1.5.0.jar gwt-servlet-2.5.0.jar hibernate-core-3.5.6-Final.jar hibernate-ehcache-3.5.6-Final.jar javassist-3.15.0-GA.jar jsp-api-2.1.jar jsr107cache-1.0.jar jta-1.1.jar log4j-1.2.16.jar mail-1.4.5.jar mysql-connector-java-5.1.20.jar ojdbc14-10.2.0.4.0.jar protobuf-java-2.4.1.jar servlet-api-2.5.jar slf4j-api-1.5.8.jar slf4j-log4j12-1.5.8.jar xml-apis-1.0.b2.jar commons-logging-1.0.4.jar spring-security-core-3.1.0.RELEASE.jar"  />
+				<attribute name="Timetabling-Version" value="3.4_bld${build.number}${build.tag}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="solver-jar" depends="compile-java">
+		<copy file="${build_src.dir}/custom.properties" tofile="${temp.dir}/custom.properties" failonerror="false" />
+		<echo message="" file="${temp.dir}/custom.properties" append="true"/>
+		<jar destfile="${dist.dir}/solver.jar">
+			<fileset dir="${build.dir}">
+				<include name="org/unitime/timetable/solver/remote/core/*.class" />
+			</fileset>
+			<fileset dir="${temp.dir}">
+				<include name="custom.properties" />
+			</fileset>
+			<fileset dir="${build_src.dir}">
+				<include name="application.properties" />
+				<include name="solver.key" />
+			</fileset>
+			<fileset dir="${unitime.jsp.dir}">
+				<include name="images/solver*.gif" />
+			</fileset>
+			<manifest>
+				<attribute name="Main-Class" value="org.unitime.timetable.solver.remote.core.StartupMinimal" />
+				<attribute name="Class-Path" value="tray-win32.jar" />
+				<attribute name="Timetabling-Version" value="3.4_bld${build.number}${build.tag}"/>
+			</manifest>
+		</jar>
+		<signjar jar="${dist.dir}/solver.jar" alias="solver" storepass="Fh3g1H03e95kf54xZ" keystore="${unitime.src.dir}/solver.key"/>
+	</target>	
+
+	<target name="copy-libs" depends="init">
+		<copy todir="${war.dir}/WEB-INF/lib" overwrite="Yes" preservelastmodified="Yes">
+			<fileset dir="${lib.dir}">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${war.dir}/WEB-INF" overwrite="Yes" preservelastmodified="Yes">
+			<fileset dir="${unitime.jsp.dir}/WEB-INF">
+				<include name="**/*.xml" />
+				<include name="**/*.tld" />
+				<include name="**/*.xsd" />
+				<include name="**/*.dtd" />
+				<exclude name="classes/**/*.*" />
+			</fileset>
+		</copy>
+		<copy todir="${war.dir}/WEB-INF/classes" overwrite="Yes" preservelastmodified="Yes">
+			<fileset dir="${build_src.dir}">
+				<include name="custom.properties" />
+				<include name="menu-custom.xml" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="copy-jsp" depends="init, solver-jar">
+		<copy todir="${war.dir}" overwrite="Yes" preservelastmodified="Yes">
+			<fileset dir="${unitime.jsp.dir}">
+				<include name="**/*.js" />
+				<include name="**/*.jsp" />
+				<include name="**/*.jspf" />
+				<include name="**/*.htm" />
+				<include name="**/*.html" />
+				<include name="**/*.css" />
+				<include name="images/*.jpg" />
+				<include name="images/*.png" />
+				<include name="images/*.gif" />
+				<include name="images/*.ico" />
+				<include name="solver/*.jar" />
+				<include name="solver/*.jnlp" />
+				<include name="help/**/*.*" />
+				<include name="scripts/**/*.gif" />
+				<exclude name="WEB-INF/**/*.*" />
+				<exclude name="unitime/**/*.*" />
+				<exclude name="test/**/*.*" />
+			</fileset>
+			<fileset dir="${jsp.dir}">
+				<include name="**/*.*" />
+				<exclude name="WEB-INF/**/*.*" />
+			</fileset>
+		</copy>
+        <replace file="${war.dir}/help/Release-Notes.xml">
+            <replacetoken>${build.number}</replacetoken>
+            <replacevalue>@build.number@</replacevalue>
+        </replace>
+        <replace file="${war.dir}/help/Release-Notes.xml">
+            <replacetoken>${build.date}</replacetoken>
+            <replacevalue>@build.date@</replacevalue>
+        </replace>
+        <replace file="${war.dir}/help/Release-Notes.xml" propertyFile="build.date">
+            <replacefilter token="@build.date@" property="build.date"/>
+            <replacefilter token="@build.number@" property="build.number"/>
+        </replace>
+		<copy todir="${war.dir}/solver" file="${dist.dir}/solver.jar"/>
+		<copy todir="${dist.dir}" file="${war.dir}/help/Release-Notes.xml"/>
+		<copy todir="${dist.dir}" file="${war.dir}/help/Release-Notes.css"/>
+	</target>
+	
+	<target name="copy-gwt" depends="init, compile-gwt">
+		<copy todir="${war.dir}" overwrite="Yes" preservelastmodified="Yes">
+			<fileset dir="${temp.dir}/war"/>
+		</copy>
+	</target>
+
+	<target name="compile-war" depends="timetable-jar,compile-gwt,copy-libs,copy-jsp,copy-gwt,define-merge-xml">
+		<mergexml target="${war.dir}/WEB-INF/web.xml" source="${jsp.dir}/WEB-INF/web.xml"/>
+		<mergexml target="${war.dir}/WEB-INF/struts-config.xml" source="${jsp.dir}/WEB-INF/struts-config.xml"/>
+		<mergexml target="${war.dir}/WEB-INF/tiles-defs.xml" source="${jsp.dir}/WEB-INF/tiles-defs.xml"/>
+		<copy todir="${war.dir}/WEB-INF/lib" file="${dist.dir}/timetable.jar"/>
+		<jar destfile="${dist.dir}/UniTimeB.war">
+			<fileset dir="${war.dir}">
+				<include name="**/*.*" />
+			</fileset>
+			<manifest>
+				<attribute name="Timetabling-Version" value="3.4_bld${build.number}${build.tag}"/>
+			</manifest>
+		</jar>
+	</target>
+	
+	<target name="check-tomcat-home" depends="load-properties" unless="env.TOMCAT_HOME">
+		<fail>
+			Environment variable TOMCAT_HOME is not defined.
+		</fail>
+	</target>
+	
+	<target name="tomcat-deploy-local" description="Deploys to local Tomcat" depends="check-tomcat-home">
+		<copy file="${dist.dir}/UniTimeB.war" todir="${env.TOMCAT_HOME}/webapps" overwrite="Yes" preservelastmodified="No" verbose="Yes" />
+	</target>
+
+	<target name="done">
+		<delete dir="${temp.dir}" />
+	</target>
+
+	<target name="create-model" depends="load-properties,init">
+        <path id="build.classpath">
+            <fileset dir="${lib.dir}">
+            	<include name="*.jar"/>
+            </fileset>
+			<fileset dir="${3rd_party.dir}">
+				<include name="*.jar" />
+			</fileset>
+        </path>
+		<javac source="1.5" target="1.5" destdir="${build.dir}" includes="org/unitime/commons/ant/CreateBaseModelFromXml.java" debug="true" includeantruntime="false">
+			<src path="${unitime.src.dir}"/>
+			<classpath refid="build.classpath"/>
+		</javac>
+		<taskdef name="create-model" classname="org.unitime.commons.ant.CreateBaseModelFromXml">
+			<classpath refid="build.classpath"/>
+			<classpath path="${build.dir}"/>
+		</taskdef>
+		<create-model config="hibernate.cfg.xml" source="${src.dir}"/>
+        <delete dir="${build.dir}" failonerror="false"/>
+		<delete dir="${temp.dir}" failonerror="false"/>
+	</target>
+
+	<target name="build" depends="load-properties,compile-war,done" />
+	
+	<target name="build-deploy-local" depends="build,tomcat-deploy-local" />
+</project>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+ * UniTime 3.2 (University Timetabling Application)
+ * Copyright (C) 2010, UniTime LLC
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ -->
+<dbupdate>
+	<dialect type="mysql">org.hibernate.dialect.MySQLDialect</dialect>
+	<dialect type="mysql">org.hibernate.dialect.MySQLInnoDBDialect</dialect>
+	<dialect type="mysql">org.hibernate.dialect.MySQL5InnoDBDialect</dialect>
+	<dialect type="mysql">org.hibernate.dialect.MySQL5Dialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.OracleDialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle8iDialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle9Dialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle9iDialect</dialect>
+	<dialect type="plsql">org.hibernate.dialect.Oracle10gDialect</dialect>
+ 
+ 	<update version="2" date="21-Sep-2010" comment="Banner Response Indexes">
+		<plsql>
+			create index %SCHEMA%.idx_response_term_code on %SCHEMA%.banner_response(term_code)
+		</plsql>
+		<mysql>
+			create index idx_response_term_code on %SCHEMA%.banner_response(term_code)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_response_crn on %SCHEMA%.banner_response(crn)
+		</plsql>
+		<mysql>
+			create index idx_response_crn on %SCHEMA%.banner_response(crn)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_response_xlst_group on %SCHEMA%.banner_response(xlst_group)
+		</plsql>
+		<mysql>
+			create index idx_response_xlst_group on %SCHEMA%.banner_response(xlst_group)
+		</mysql>
+	</update>
+ 	<update version="3" date="05-Nov-2010" comment="Banner CRN Lookup Indexes">
+		<plsql>
+			create index %SCHEMA%.idx_banner_section_sess_crn on %SCHEMA%.banner_section(session_id, crn)
+		</plsql>
+		<mysql>
+			create index idx_banner_section_sess_crn on %SCHEMA%.banner_section(session_id, crn)
+		</mysql>
+		<plsql>
+			create index %SCHEMA%.idx_banner_session_term_code on %SCHEMA%.banner_session(banner_term_code)
+		</plsql>
+		<mysql>
+			create index idx_banner_session_term_code on %SCHEMA%.banner_session(banner_term_code)
+		</mysql>
+	</update>
+ 	<update version="4" date="06-Feb-2013" comment="Banner Campus Override Support">
+		<plsql>
+			create table %SCHEMA%.banner_campus_override (
+				uniqueid number(20,0) constraint nn_campus_ovrrd_uniqueid not null,
+				banner_campus_code varchar2(20) constraint nn_campus_ovrrd_code not null enable,
+				banner_campus_name varchar2(100) constraint nn_campus_ovrrd_name not null enable,
+				visible number(1,0) constraint nn_campus_ovrrd_visible not null enable)
+		</plsql>
+		<plsql>
+			alter table %SCHEMA%.banner_campus_override add constraint pk_banner_campus_override_uid primary key (uniqueid)
+		</plsql>
+		<mysql>
+			create table %SCHEMA%.banner_campus_override (
+				uniqueid decimal(20,0) primary key not null,
+				banner_campus_code varchar(20) not null,
+				banner_campus_name varchar(100) not null,
+				visible number(1,0) not null) engine = INNODB
+		</mysql>
+		<plsql>alter table %SCHEMA%.banner_section add banner_campus_override_id number(20,0)</plsql>
+		<mysql>alter table %SCHEMA%.banner_section add banner_campus_override_id decimal(20,0)</mysql>
+		<sql>
+			alter table %SCHEMA%.banner_section add constraint fk_campus_override foreign key (banner_campus_override_id)
+			references %SCHEMA%.banner_campus_override (uniqueid) on delete set null
+		</sql>
+ 	</update>
+ 
+ </dbupdate>
