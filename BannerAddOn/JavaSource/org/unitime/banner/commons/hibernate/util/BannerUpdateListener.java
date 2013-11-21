@@ -22,8 +22,8 @@ package org.unitime.banner.commons.hibernate.util;
 
 import java.io.Serializable;
 
-import org.hibernate.event.PostUpdateEvent;
-import org.hibernate.event.PostUpdateEventListener;
+import org.hibernate.event.spi.PostUpdateEvent;
+import org.hibernate.event.spi.PostUpdateEventListener;
 import org.unitime.banner.dataexchange.BannerSectionAuditExport;
 import org.unitime.timetable.dataexchange.DataExchangeHelper;
 

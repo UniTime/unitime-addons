@@ -33,7 +33,7 @@ import java.util.Vector;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.engine.SessionFactoryImplementor;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
@@ -293,16 +293,15 @@ public class BannerSection extends BaseBannerSection {
 		Integer nextCrn = null;
 	   	try {
     		String nextCrnSql = ApplicationProperties.getProperty("banner.crn.generator","{?=call timetable.crn_processor.get_crn(?)}");
-    		
-            SessionFactoryImplementor hibSessionFactory = (SessionFactoryImplementor)new _RootDAO().getSession().getSessionFactory();
-            Connection connection = hibSessionFactory.getConnectionProvider().getConnection();
+    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextCrnSql);
             call.registerOutParameter(1, java.sql.Types.INTEGER);
             call.setLong(2, acadSession.getUniqueId().longValue());
             call.execute();
             nextCrn = call.getInt(1);
             call.close();
-            hibSessionFactory.getConnectionProvider().closeConnection(connection);
+            session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
@@ -316,8 +315,8 @@ public class BannerSection extends BaseBannerSection {
 	   	try {
     		String sectionExistsSql = ApplicationProperties.getProperty("banner.section_id.validator");
     		
-            SessionFactoryImplementor hibSessionFactory = (SessionFactoryImplementor)new _RootDAO().getSession().getSessionFactory();
-            Connection connection = hibSessionFactory.getConnectionProvider().getConnection();
+    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(sectionExistsSql);
             call.registerOutParameter(1, java.sql.Types.INTEGER);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -327,7 +326,7 @@ public class BannerSection extends BaseBannerSection {
             call.execute();
             sectionExists = call.getInt(1);
             call.close();
-            hibSessionFactory.getConnectionProvider().closeConnection(connection);
+            session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
@@ -340,8 +339,8 @@ public class BannerSection extends BaseBannerSection {
 	   	try {
 //    		String nextSectionIdSql = ApplicationProperties.getProperty("banner.section_id.generator","{?= call timetable.section_processor.get_section(?,?,?)}");
     		String nextSectionIdSql = ApplicationProperties.getProperty("banner.section_id.generator");
-            SessionFactoryImplementor hibSessionFactory = (SessionFactoryImplementor)new _RootDAO().getSession().getSessionFactory();
-            Connection connection = hibSessionFactory.getConnectionProvider().getConnection();
+    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextSectionIdSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -350,7 +349,7 @@ public class BannerSection extends BaseBannerSection {
             call.execute();
             nextSectionId = call.getString(1);
             call.close();
-            hibSessionFactory.getConnectionProvider().closeConnection(connection);
+            session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
@@ -364,8 +363,8 @@ public class BannerSection extends BaseBannerSection {
 	   	try {
     		String nextLinkIdSql = ApplicationProperties.getProperty("banner.link_id.generator","{?= call timetable.section_processor.get_link_identifier(?,?,?)}");
     		
-            SessionFactoryImplementor hibSessionFactory = (SessionFactoryImplementor)new _RootDAO().getSession().getSessionFactory();
-            Connection connection = hibSessionFactory.getConnectionProvider().getConnection();
+    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextLinkIdSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -374,7 +373,7 @@ public class BannerSection extends BaseBannerSection {
             call.execute();
             nextLinkId = call.getString(1);
             call.close();
-            hibSessionFactory.getConnectionProvider().closeConnection(connection);
+            session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
