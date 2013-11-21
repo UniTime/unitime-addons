@@ -29,7 +29,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.engine.SessionFactoryImplementor;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.model.BannerConfig;
@@ -315,16 +315,15 @@ public class BannerSectionCrosslistHelper {
 		String nextCrosslistId = null;
 	   	try {
     		String nextXlistSql = ApplicationProperties.getProperty("banner.crosslist_id.generator", "{?= call timetable.cross_list_processor.get_cross_list_id(?)}");
-
-            SessionFactoryImplementor hibSessionFactory = (SessionFactoryImplementor)new _RootDAO().getSession().getSessionFactory();
-            Connection connection = hibSessionFactory.getConnectionProvider().getConnection();
+    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextXlistSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
             call.execute();
             nextCrosslistId = call.getString(1);
             call.close();
-            hibSessionFactory.getConnectionProvider().closeConnection(connection);
+            session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
