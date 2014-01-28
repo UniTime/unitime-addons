@@ -373,6 +373,8 @@ public class BannerMessage {
 			sectionElement.addAttribute("WEB_AVAIL", clazz.isEnabledForStudentScheduling().booleanValue()?"Y":"N");
 			sectionElement.addAttribute("PRINT_IND", clazz.isEnabledForStudentScheduling().booleanValue()?"Y":"N");
 			sectionElement.addAttribute("USERID", "UniTime");			
+		} else {
+			sectionElement.addAttribute("ID", "***");
 		}
 		return(sectionElement);
 	}
