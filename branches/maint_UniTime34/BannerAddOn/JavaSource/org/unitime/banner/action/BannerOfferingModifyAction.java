@@ -351,12 +351,16 @@ public class BannerOfferingModifyAction extends Action {
 			if (bannerSectionIndex != null){
 				bannerSectionIndex = bannerSectionIndex.toUpperCase();
 			}
-			Long consentId = new Long(it3.next().toString());
 			BannerSection bs = bsDao.get(sectionId);
 			if ((bannerSectionIndex != null && !bannerSectionIndex.equals(bs.getSectionIndex())) || (bannerSectionIndex == null && bs.getSectionIndex() != null)){
 				bs.setSectionIndex(bannerSectionIndex);
 				bs.updateClassSuffixForClassesIfNecessary(bsDao.getSession());
 				changed = true;
+			}
+			String consentStr = it3.next().toString();
+			Long consentId = new Long((consentStr.equals("-")?"-1":consentStr.toString()));
+			if (consentId.equals(-1)){
+				consentId = null;
 			}
 			OfferingConsentType oct = bs.effectiveConsentType(); 
 			if ((consentId == null &&  bs.getConsentType() != null)
