@@ -40,6 +40,7 @@ import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterf
 import org.unitime.banner.model.base.BaseBannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
+import org.unitime.banner.util.BannerCrnValidator;
 import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
 import org.unitime.commons.Debug;
 import org.unitime.timetable.ApplicationProperties;
@@ -290,6 +291,36 @@ public class BannerSection extends BaseBannerSection {
 	}
 
 	public static Integer findNextUnusedCrnFor(org.unitime.timetable.model.Session acadSession, Session hibSession) {
+		boolean crnIsUsed = true;
+		String crnIsUsedStr = null;
+		Integer crn = null;
+		BannerCrnValidator bannerCrnValidator = new BannerCrnValidator();
+		BannerSession bs = BannerSession.findBannerSessionForSession(acadSession, hibSession);
+		do {
+			crn = findNextUnusedCrnInUniTimeFor(acadSession, hibSession);
+			if (crn == null){
+				break;
+			}
+			try {
+				crnIsUsedStr = bannerCrnValidator.isCrnUsedInBannerForTerm(crn, bs.getBannerTermCode());
+				if (crnIsUsedStr == null){
+					Debug.error("Failed to validate whether new CRN: " + crn.toString() + " already exists in Banner");					
+					crn = null;
+					break;
+				}
+				crnIsUsed = !"N".equals(crnIsUsedStr);
+			} catch (Exception e) {
+				Debug.error("Failed to validate whether new CRN: " + crn.toString() + " already exists in Banner");
+				e.printStackTrace();
+				crn = null;
+				break;
+			}
+		} while (crnIsUsed);
+        return(crn);
+	}
+		
+	
+	public static Integer findNextUnusedCrnInUniTimeFor(org.unitime.timetable.model.Session acadSession, Session hibSession) {
 		Integer nextCrn = null;
 	   	try {
     		String nextCrnSql = ApplicationProperties.getProperty("banner.crn.generator","{?=call timetable.crn_processor.get_crn(?)}");
@@ -305,10 +336,10 @@ public class BannerSection extends BaseBannerSection {
             hibSessionFactory.getConnectionProvider().closeConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} 
-
+		}
 		return(nextCrn);
 	}
+	
 	
 	public static boolean isSectionIndexUniqueForCourse(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,
 			Session hibSession, String sectionId) {
