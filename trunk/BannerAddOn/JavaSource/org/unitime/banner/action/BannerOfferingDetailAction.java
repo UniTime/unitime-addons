@@ -230,10 +230,6 @@ public class BannerOfferingDetailAction extends Action {
         if (sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber) != null && !sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber).toString().isEmpty())
             sessionContext.setAttribute(SessionAttribute.OfferingsCourseNumber, io.getControllingCourseOffering().getCourseNbr());
 
-        
-        // Get Configuration
-        TreeSet<InstructionalOffering> ts = new TreeSet<InstructionalOffering>();
-        ts.add(io);
 	    
         // Sort Offerings
         ArrayList offerings = new ArrayList(io.getCourseOfferings());
