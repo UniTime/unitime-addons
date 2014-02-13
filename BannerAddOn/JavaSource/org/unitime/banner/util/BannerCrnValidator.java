@@ -24,12 +24,21 @@ import java.sql.SQLException;
 import org.unitime.banner.queueprocessor.BannerCaller;
 import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Debug;
+import org.unitime.timetable.ApplicationProperties;
 
 
 public class BannerCrnValidator extends BannerCaller {
 
 	public String isCrnUsedInBannerForTerm(Integer crn, String bannerTermCode) throws Exception{
+		String bannerHost = ApplicationProperties.getProperty("banner.host");
+		if ( bannerHost == null || bannerHost.trim().length() == 0){
+			return("N");			
+		}
 		OracleConnector jdbc = getJDBCconnection();
+		if (jdbc == null){
+			Debug.info("No Connection to Banner, skipping Banner check for CRN: " + crn.toString() + " for Banner Term " + bannerTermCode);
+			return("N");
+		}
 
 		Debug.info("Sending check for CRN: " + crn.toString() + " for Banner Term " + bannerTermCode + " to Banner...");
 		String result;
