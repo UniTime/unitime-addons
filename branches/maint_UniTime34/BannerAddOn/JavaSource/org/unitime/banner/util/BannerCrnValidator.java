@@ -34,6 +34,10 @@ public class BannerCrnValidator extends BannerCaller {
 		if ( bannerHost == null || bannerHost.trim().length() == 0){
 			return("N");			
 		}
+		String bannerStoredProcedure = ApplicationProperties.getProperty("banner.crnValidator.storedProcedure.call");
+		if ( bannerStoredProcedure == null || bannerStoredProcedure.trim().length() == 0){
+		    return("N");
+		}
 		OracleConnector jdbc = getJDBCconnection();
 		if (jdbc == null){
 			Debug.info("No Connection to Banner, skipping Banner check for CRN: " + crn.toString() + " for Banner Term " + bannerTermCode);
