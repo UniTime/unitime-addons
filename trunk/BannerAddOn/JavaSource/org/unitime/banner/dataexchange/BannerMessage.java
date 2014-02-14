@@ -115,9 +115,11 @@ public class BannerMessage {
 	public Long findDefaultDatePatternFor(org.unitime.timetable.model.Session acadSession){		
 		manageDefaultDatePatternMapCache();
 		if (!sessionDefaultDatePatternMap.containsKey(acadSession.getUniqueId())){
-			DatePattern defaultDatePattern = (DatePattern)DatePatternDAO.getInstance().createNewSession().createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
+			Session hibSession = DatePatternDAO.getInstance().createNewSession();
+			DatePattern defaultDatePattern = (DatePattern)hibSession.createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
 			sessionDefaultDatePatternMap.put(acadSession.getUniqueId(), defaultDatePattern.getUniqueId());
 			updateDatesForDatePattern(defaultDatePattern);
+			hibSession.close();
 		}
 		return(sessionDefaultDatePatternMap.get(acadSession.getUniqueId()));
 	}
