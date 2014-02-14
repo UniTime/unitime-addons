@@ -31,13 +31,11 @@ import java.util.TreeSet;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.hibernate.Session;
-import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
 import org.unitime.banner.interfaces.ExternalBannerSessionElementHelperInterface;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.util.BannerMessageIdGenerator;
-import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
 import org.unitime.banner.util.DefaultExternalBannerSessionElementHelper;
 import org.unitime.banner.util.MeetingElement;
 import org.unitime.commons.Debug;
@@ -114,10 +112,13 @@ public class BannerMessage {
 
 	public Long findDefaultDatePatternFor(org.unitime.timetable.model.Session acadSession){		
 		manageDefaultDatePatternMapCache();
+		
 		if (!sessionDefaultDatePatternMap.containsKey(acadSession.getUniqueId())){
-			DatePattern defaultDatePattern = (DatePattern)DatePatternDAO.getInstance().createNewSession().createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
+			Session hibSession = DatePatternDAO.getInstance().createNewSession();
+			DatePattern defaultDatePattern = (DatePattern)hibSession.createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
 			sessionDefaultDatePatternMap.put(acadSession.getUniqueId(), defaultDatePattern.getUniqueId());
 			updateDatesForDatePattern(defaultDatePattern);
+			hibSession.close();
 		}
 		return(sessionDefaultDatePatternMap.get(acadSession.getUniqueId()));
 	}
