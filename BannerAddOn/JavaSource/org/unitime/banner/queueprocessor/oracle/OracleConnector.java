@@ -76,10 +76,7 @@ public class OracleConnector {
 		Debug.info("**");
 		Debug.info("**    banner.storedProcedure.call=begin sz_unitime.p_process_packet(in_packet => ?,out_response => ?,out_sync => ?); end;");
 		Debug.info("**");			
-		Debug.info("**  If you change the value of the 'banner.storedProcedure.call' the queue processor must be");
-		Debug.info("**    restarted to begin using the new procedure call.");
-		Debug.info("**");
-		Debug.info("**  If you have the parameters defined correctly then possbile he error is in documentToCLOB ");
+		Debug.info("**  If you have the parameters defined correctly then possbile the error is in documentToCLOB ");
 		Debug.info("******************************************************************************************************");
 		e.printStackTrace();
 		Debug.info("******************************************************************************************************");
@@ -99,18 +96,37 @@ public class OracleConnector {
 		Debug.info("**");
 		Debug.info("**  An example of how to define a banner stored procedure call in the properties file is as follows:");
 		Debug.info("**");
-		Debug.info("**    banner.storedProcedure.call=begin sz_unitime.p_request_student_updates(out_response => ?); end;");
+		Debug.info("**    banner.studentUpdates.storedProcedure.call=begin sz_unitime.p_request_student_updates(out_response => ?); end;");
 		Debug.info("**");			
-		Debug.info("**  If you change the value of the 'banner.studentUpdates.storedProcedure.call' the queue processor must be");
-		Debug.info("**    restarted to begin using the new procedure call.");
-		Debug.info("**");
-		Debug.info("**  If you have the parameters defined correctly then possbile he error is in documentToCLOB ");
+		Debug.info("**  If you have the parameters defined correctly then possbile the error is in documentToCLOB ");
 		Debug.info("******************************************************************************************************");
 		e.printStackTrace();
 		Debug.info("******************************************************************************************************");
 	
 	}
 
+	private void outputStandardCrnValidatorDebugInfo(Exception e){
+		Debug.info("******************************************************************************************************");
+		Debug.info("**  Make sure the stored procedure that is to validate CRNs for banner exists.  The call to ");
+		Debug.info("**  the stored procedure is defined by the property: 'banner.crnValidator.storedProcedure.call'.");
+		Debug.info("**  The required format of the parameters for the Banner Stored procedure must be: ");
+		Debug.info("**");
+		Debug.info("**    in_term => ?, in_crn => ?, out_used => ?");
+		Debug.info("**");
+		Debug.info("**  The names of the parameters may change but the first parameter must be a String input,");
+		Debug.info("**    the second parameter must be an Integer input, and the third parameter must be a String ");
+		Debug.info("**    output('Y' if used in Banner or 'N' if not used in Banner)");
+		Debug.info("**");
+		Debug.info("**  An example of how to define a Banner stored procedure call in the properties file is as follows:");
+		Debug.info("**");
+		Debug.info("**    banner.crnValidator.storedProcedure.call=begin sz_unitime.p_validate_crn(in_term => ?, in_crn => ?, out_used => ?); end;");
+		Debug.info("**");			
+		Debug.info("******************************************************************************************************");
+		e.printStackTrace();
+		Debug.info("******************************************************************************************************");
+	
+	}
+	
 	public Clob processUnitimePacket(Document in_clob) throws SQLException,
 			IOException {
 
@@ -192,6 +208,42 @@ public class OracleConnector {
 		
 	}
 
+	public String validateCrnWithBanner(String bannerTermCode, Integer crn) throws SQLException  {
+
+		CallableStatement stmt = null;
+		try {
+			String crnValidatorStoredProcedureCall = getBannerCrnValidatorStoredProcedureCall();
+			if (crnValidatorStoredProcedureCall == null){
+				return("N");
+			}
+			stmt = conn.prepareCall(crnValidatorStoredProcedureCall);
+		} catch (Exception e1) {
+			outputStandardCrnValidatorDebugInfo(e1);
+		}
+		
+		try {
+			stmt.registerOutParameter(3, java.sql.Types.CLOB);
+            stmt.setString(1, bannerTermCode);
+            stmt.setInt(2, crn.intValue());
+
+		} catch (Exception e) {
+			outputStandardCrnValidatorDebugInfo(e);
+		}
+		
+		try {
+			stmt.execute();			
+		} catch (Exception e) {
+			outputStandardCrnValidatorDebugInfo(e);
+		}
+		
+		String result = stmt.getString(3);
+		
+		stmt.close();
+				
+		return result;
+		
+	}
+
 	public void cleanup() throws SQLException {
 
 		if (conn != null)
@@ -212,6 +264,14 @@ public class OracleConnector {
         	bannerStudentUpdatesStoredProcedureCall = "begin sz_unitime.p_request_student_updates(out_response => ?); end;";
         }
 		return bannerStudentUpdatesStoredProcedureCall;
+	}
+	
+	private static String getBannerCrnValidatorStoredProcedureCall() throws Exception{
+		String bannerCrnValidatorStoredProcedureCall = ApplicationProperties.getProperty("banner.crnValidator.storedProcedure.call");
+        if (bannerCrnValidatorStoredProcedureCall != null && bannerCrnValidatorStoredProcedureCall.trim().length() == 0){
+        	bannerCrnValidatorStoredProcedureCall = null;
+        }
+		return bannerCrnValidatorStoredProcedureCall;
 	}
 
 }
