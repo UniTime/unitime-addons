@@ -24,8 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import net.sf.cpsolver.ifs.util.ToolBox;
-
+import org.cpsolver.ifs.util.ToolBox;
 import org.unitime.banner.model.QueueOut;
 import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.model.dao.QueueOutDAO;

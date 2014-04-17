@@ -176,9 +176,9 @@ public class BannerMessage {
 		} else {
 			clazz =  bannerSection.getClasses(hibSession).iterator().next();
 			instructionalOffering = clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalOffering();
-			courseCreditUnitConfig = instructionalOffering.getCredit();			
+			courseCreditUnitConfig = courseOffering.getCredit();			
 		}
-		courseCreditUnitConfig = instructionalOffering.getCredit();
+		courseCreditUnitConfig = courseOffering.getCredit();
 
 		createSectionXmlForBanner(bannerSection, action, hibSession);
 	}

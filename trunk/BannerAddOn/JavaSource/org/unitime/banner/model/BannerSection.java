@@ -250,16 +250,24 @@ public class BannerSection extends BaseBannerSection {
 			SchedulingSubpart schedSubpart) {
 
     	String credit = "";
-    	if (getBannerConfig().getGradableItype() != null) {
-    		if (schedSubpart != null && schedSubpart.getInstrOfferingConfig().getInstructionalOffering().getCredit() != null && schedSubpart.getInstrOfferingConfig().getInstructionalOffering().getCredit() instanceof FixedCreditUnitConfig) {
+    	if (getBannerConfig().getGradableItype() != null && schedSubpart != null) {
+    		// Get course offering for this banner section
+    		CourseOffering course = null;
+    		for (CourseOffering co: schedSubpart.getInstrOfferingConfig().getInstructionalOffering().getCourseOfferings()) {
+    			if (co.getUniqueId().equals(getBannerConfig().getBannerCourse().getCourseOfferingId())) {
+    				course = co; break;
+    			}
+    		}
+    		if (course == null)
+    			course = schedSubpart.getControllingCourseOffering();
+    		// Get course credit
+    		if (course.getCredit() != null && course.getCredit() instanceof FixedCreditUnitConfig) {
     			if (schedSubpart.getItype().getItype().equals(getBannerConfig().getGradableItype().getItype())) {
-    				FixedCreditUnitConfig fixed = (FixedCreditUnitConfig) schedSubpart.getInstrOfferingConfig().getInstructionalOffering().getCredit();
+    				FixedCreditUnitConfig fixed = (FixedCreditUnitConfig) schedSubpart.getInstrOfferingConfig().getInstructionalOffering().getControllingCourseOffering().getCredit();
     				credit = fixed.getFixedUnits().toString();
     			} else {
     				credit = "0.0";
     			}
-    		} else {
-    			credit = "";
     		}
     	}
 		return(credit);

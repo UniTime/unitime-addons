@@ -22,8 +22,7 @@ package org.unitime.banner.util;
 
 import java.util.Properties;
 
-import net.sf.cpsolver.ifs.util.ToolBox;
-
+import org.cpsolver.ifs.util.ToolBox;
 import org.unitime.banner.dataexchange.BannerSectionAuditExport;
 import org.unitime.commons.Debug;
 import org.unitime.commons.hibernate.util.HibernateUtil;
