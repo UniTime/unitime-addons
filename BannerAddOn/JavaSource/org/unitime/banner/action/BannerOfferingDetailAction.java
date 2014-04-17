@@ -251,7 +251,7 @@ public class BannerOfferingDetailAction extends Action {
         frm.setProjectedDemand(io.getProjectedDemand());
         frm.setLimit(io.getLimit());
         frm.setUnlimited(Boolean.FALSE);
-        frm.setCreditText((io.getCredit() != null)?io.getCredit().creditText():"");
+        frm.setCreditText((co.getCredit() != null)?co.getCredit().creditText():"");
         
         if (co.getConsentType()==null)
             frm.setConsentType("None Required");

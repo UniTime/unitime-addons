@@ -28,8 +28,7 @@ import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import net.sf.cpsolver.coursett.model.TimeLocation.IntEnumeration;
-
+import org.cpsolver.coursett.model.TimeLocation.IntEnumeration;
 import org.dom4j.Element;
 import org.unitime.banner.dataexchange.BannerMessage;
 import org.unitime.banner.model.BannerSection;
