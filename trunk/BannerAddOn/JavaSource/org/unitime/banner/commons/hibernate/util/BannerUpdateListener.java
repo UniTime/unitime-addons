@@ -24,6 +24,7 @@ import java.io.Serializable;
 
 import org.hibernate.event.spi.PostUpdateEvent;
 import org.hibernate.event.spi.PostUpdateEventListener;
+import org.hibernate.persister.entity.EntityPersister;
 import org.unitime.banner.dataexchange.BannerSectionAuditExport;
 import org.unitime.timetable.dataexchange.DataExchangeHelper;
 
@@ -60,5 +61,11 @@ public class BannerUpdateListener implements PostUpdateEventListener, Serializab
 	 */
 	public void onPostUpdate(PostUpdateEvent event) {
 		// Add post update actions here if needed.  Currently not needed.
+	}
+
+	@Override
+	public boolean requiresPostCommitHanding(EntityPersister persister) {
+		// FIXME: Auto-generated method stub
+		return false;
 	}
 }
