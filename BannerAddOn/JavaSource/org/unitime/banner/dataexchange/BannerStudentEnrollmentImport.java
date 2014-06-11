@@ -21,31 +21,33 @@
 package org.unitime.banner.dataexchange;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.dom4j.Element;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
 import org.unitime.timetable.dataexchange.StudentEnrollmentImport.Pair;
+import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.CourseRequest;
-import org.unitime.timetable.model.Exam;
+import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.ExamType;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
 import org.unitime.timetable.model.TimetableManager;
-import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.test.UpdateExamConflicts;
 
 /**
@@ -60,7 +62,7 @@ public class BannerStudentEnrollmentImport extends BaseImport {
 
 	@Override
 	public void loadXml(Element rootElement) throws Exception {
-		boolean trimLeadingZerosFromExternalId = "true".equals(ApplicationProperties.getProperty("tmtbl.data.exchange.trim.externalId","false"));
+		boolean trimLeadingZerosFromExternalId = ApplicationProperty.DataExchangeTrimLeadingZerosFromExternalIds.isTrue();
 
         if (!rootElement.getName().equalsIgnoreCase("bannerStudentEnrollments"))
         	throw new Exception("Given XML file is not a Student Enrollments load file.");
@@ -113,18 +115,20 @@ public class BannerStudentEnrollmentImport extends BaseImport {
                     "left join fetch s.courseDemands as cd " +
                     "left join fetch cd.courseRequests as cr " +
                     "left join fetch s.classEnrollments as e " +
-                    "left join fetch cr.classEnrollments as cre "+
                     "where s.session.uniqueId=:sessionId and s.externalUniqueId is not null").
                     setLong("sessionId",session.getUniqueId()).list()) { 
                         students.put(student.getExternalUniqueId(), student);
                 }
 
+	        Date ts = new Date();
  	        for (Iterator i = rootElement.elementIterator("student"); i.hasNext(); ) {
 	            Element studentElement = (Element) i.next();
 	            
 	            String externalId = studentElement.attributeValue("externalId");
 	            if (externalId == null) continue;
 	            while (trimLeadingZerosFromExternalId && externalId.startsWith("0")) externalId = externalId.substring(1);
+	            
+	            boolean fixCourseDemands = false;
 
             	Student student = students.remove(externalId);
             	if (student == null) {
@@ -149,6 +153,11 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	for (StudentClassEnrollment enrollment: student.getClassEnrollments()) {
             		enrollments.put(new Pair(enrollment.getCourseOffering().getUniqueId(), enrollment.getClazz().getUniqueId()), enrollment);
             	}
+            	int nextPriority = 0;
+            	for (CourseDemand cd: student.getCourseDemands())
+            		if (!cd.isAlternative() && cd.getPriority() >= nextPriority)
+            			nextPriority = cd.getPriority() + 1;
+            	Set<CourseDemand> remaining = new TreeSet<CourseDemand>(student.getCourseDemands());
 
             	for (Iterator j = studentElement.elementIterator("section"); j.hasNext(); ) {
             		Element classElement = (Element) j.next();
@@ -180,17 +189,39 @@ public class BannerStudentEnrollmentImport extends BaseImport {
                 		enrollment.setStudent(student);
                 		enrollment.setClazz(clazz);
                 		enrollment.setCourseOffering(course);
-                		enrollment.setTimestamp(new java.util.Date());
+                		enrollment.setTimestamp(ts);
                 		student.getClassEnrollments().add(enrollment);
 
                 		demands: for (CourseDemand d: student.getCourseDemands()) {
                 			for (CourseRequest r: d.getCourseRequests()) {
                 				if (r.getCourseOffering().equals(course)) {
-                					r.getClassEnrollments().add(enrollment);
                 					enrollment.setCourseRequest(r);
                 					break demands;
                 				}
                 			}
+                		}
+                		
+                		if (enrollment.getCourseRequest() != null) {
+                			remaining.remove(enrollment.getCourseRequest().getCourseDemand());
+                		} else {
+                			CourseDemand cd = new CourseDemand();
+                			cd.setTimestamp(ts);
+                			cd.setCourseRequests(new HashSet<CourseRequest>());
+                			cd.setStudent(student);
+                			student.getCourseDemands().add(cd);
+                			cd.setAlternative(false);
+                			cd.setPriority(nextPriority++);
+                			cd.setWaitlist(false);
+                			CourseRequest cr = new CourseRequest();
+                			cd.getCourseRequests().add(cr);
+                			cr.setCourseDemand(cd);
+                			cr.setCourseRequestOptions(new HashSet<CourseRequestOption>());
+                			cr.setAllowOverlap(false);
+                			cr.setCredit(0);
+                			cr.setOrder(0);
+                			cr.setCourseOffering(enrollment.getCourseOffering());
+                			enrollment.setCourseRequest(cr);
+                			fixCourseDemands = true;
                 		}
                 		
                 		if (student.getUniqueId() != null) updatedStudents.add(student.getUniqueId());
@@ -200,8 +231,6 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	if (!enrollments.isEmpty()) {
             		for (StudentClassEnrollment enrollment: enrollments.values()) {
             			student.getClassEnrollments().remove(enrollment);
-            			if (enrollment.getCourseRequest() != null)
-            				enrollment.getCourseRequest().getClassEnrollments().remove(enrollment);
             			getHibSession().delete(enrollment);
                 		updatedStudents.add(student.getUniqueId());
             		}
@@ -212,14 +241,30 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	} else {
             		getHibSession().update(student);
             	}
+            	
+            	if (fixCourseDemands) {
+            		// removed unused course demands
+            		for (CourseDemand cd: remaining) {
+            			if (cd.getFreeTime() != null)
+            				getHibSession().delete(cd.getFreeTime());
+            			for (CourseRequest cr: cd.getCourseRequests())
+            				getHibSession().delete(cr);
+            			student.getCourseDemands().remove(cd);
+            			getHibSession().delete(cd);
+            		}
+            		int priority = 0;
+            		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
+            			cd.setPriority(priority++);
+            			getHibSession().saveOrUpdate(cd);
+            		}
+            	}
+
 	            flushIfNeededDoNotClearSession(true);
 	        }
             
  	        for (Student student: students.values()) {
         		for (Iterator<StudentClassEnrollment> i = student.getClassEnrollments().iterator(); i.hasNext(); ) {
         			StudentClassEnrollment enrollment = i.next();
-        			if (enrollment.getCourseRequest() != null)
-        				enrollment.getCourseRequest().getClassEnrollments().remove(enrollment);
         			getHibSession().delete(enrollment);
         			i.remove();
      	        	updatedStudents.add(student.getUniqueId());
