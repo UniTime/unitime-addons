@@ -20,15 +20,24 @@
 package org.unitime.banner.commons.hibernate.util;
 
 import org.dom4j.Document;
+import org.unitime.banner.dataexchange.BannerSectionAuditExport;
 import org.unitime.commons.hibernate.util.DatabaseUpdate;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.dataexchange.DataExchangeHelper;
 
 /**
  * @author says
  *
  */
 public class BannerAddOnDatabaseUpdate extends DatabaseUpdate {
-
+	    static {
+	        DataExchangeHelper.sImportRegister.put("bannerOfferings", org.unitime.banner.dataexchange.BannerCourseOfferingImport.class);
+	        DataExchangeHelper.sImportRegister.put("SCHEDULE_RESPONSE", org.unitime.banner.dataexchange.ReceiveBannerResponseMessage.class);
+	        DataExchangeHelper.sImportRegister.put("bannerStudentEnrollments", org.unitime.banner.dataexchange.BannerStudentEnrollmentImport.class);
+	        DataExchangeHelper.sExportRegister.put("schedule", BannerSectionAuditExport.class);
+	        DataExchangeHelper.sImportRegister.put("enterprise", org.unitime.banner.dataexchange.BannerStudentEnrollmentMessage.class);
+	        DataExchangeHelper.sImportRegister.put("studentUpdates", org.unitime.banner.dataexchange.BannerStudentDataUpdate.class);
+	    }
 		public BannerAddOnDatabaseUpdate(Document document) throws Exception {
 	        super(document);
 	    }
