@@ -79,7 +79,7 @@
 				uniqueid decimal(20,0) primary key not null,
 				banner_campus_code varchar(20) not null,
 				banner_campus_name varchar(100) not null,
-				visible number(1,0) not null) engine = INNODB
+				visible decimal(1,0) not null) engine = INNODB
 		</mysql>
 		<plsql>alter table %SCHEMA%.banner_section add banner_campus_override_id number(20,0)</plsql>
 		<mysql>alter table %SCHEMA%.banner_section add banner_campus_override_id decimal(20,0)</mysql>
