@@ -452,28 +452,30 @@ public class BannerStudentDataUpdate extends BaseImport {
         	for (CourseDemand cd: record.getCourseDemands())
         		if (!cd.isAlternative() && cd.getPriority() >= nextPriority)
         			nextPriority = cd.getPriority() + 1;
-        	Set<CourseDemand> remaining = new TreeSet<CourseDemand>(record.getCourseDemands());
+        	Set<CourseDemand> remaining = new HashSet<CourseDemand>(record.getCourseDemands());
         	boolean fixCourseDemands = false;
 
         	HashMap<CourseOffering, Vector<Class_>> courseToClassEnrollments = classEnrollments.get(session);
         	for (CourseOffering co : courseToClassEnrollments.keySet()){
             	for (Class_ clazz: courseToClassEnrollments.get(co)) {
             		StudentClassEnrollment enrollment = enrollments.remove(new Pair(co.getUniqueId(), clazz.getUniqueId()));
-            		if (enrollment != null) continue; // enrollment already exists
-            		enrollment = new StudentClassEnrollment();
-            		enrollment.setStudent(record);
-            		enrollment.setClazz(clazz);
-            		enrollment.setCourseOffering(co);
-            		enrollment.setTimestamp(new java.util.Date());
-            		record.getClassEnrollments().add(enrollment);    
-            		
-            		demands: for (CourseDemand d: record.getCourseDemands()) {
-            			for (CourseRequest r: d.getCourseRequests()) {
-            				if (r.getCourseOffering().equals(co)) {
-            					enrollment.setCourseRequest(r);
-            					break demands;
-            				}
-            			}
+            		if (enrollment == null) {
+                		enrollment = new StudentClassEnrollment();
+                		enrollment.setStudent(record);
+                		enrollment.setClazz(clazz);
+                		enrollment.setCourseOffering(co);
+                		enrollment.setTimestamp(new java.util.Date());
+                		record.getClassEnrollments().add(enrollment);    
+                		
+                		demands: for (CourseDemand d: record.getCourseDemands()) {
+                			for (CourseRequest r: d.getCourseRequests()) {
+                				if (r.getCourseOffering().equals(co)) {
+                					enrollment.setCourseRequest(r);
+                					break demands;
+                				}
+                			}
+                		}
+                		changed = true;
             		}
             		
             		if (enrollment.getCourseRequest() != null) {
@@ -497,9 +499,9 @@ public class BannerStudentDataUpdate extends BaseImport {
             			cr.setCourseOffering(enrollment.getCourseOffering());
             			enrollment.setCourseRequest(cr);
             			fixCourseDemands = true;
+                		
+                		changed = true;
             		}            		
-            		
-            		changed = true;
         		}
         	}         	
         	if (!enrollments.isEmpty()) {
