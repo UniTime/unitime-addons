@@ -88,5 +88,19 @@
 			references %SCHEMA%.banner_campus_override (uniqueid) on delete set null
 		</sql>
  	</update>
- 
+ 	<update version="5" date="12-Aug-2014" comment="Populate Class External UniqueIds with CRN">
+ 	    <plsql>
+			update %SCHEMA%.class_ c
+			set c.external_uid = substr(c.class_suffix, 0, instr(c.class_suffix, '-') - 1)
+			where c.external_uid is null
+			  and c.class_suffix like '%-%'
+   	    </plsql>
+   	    <mysql>
+   	        update %SCHEMA%.class_ c
+			set c.external_uid = substring_index(c.class_suffix, '-', 1)
+			where c.external_uid is null
+			  and c.class_suffix like '%-%' 
+   	    </mysql>
+ 	</update>
+ 	
  </dbupdate>
