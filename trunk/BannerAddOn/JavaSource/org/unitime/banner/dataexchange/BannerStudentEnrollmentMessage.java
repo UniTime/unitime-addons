@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import org.dom4j.Element;
@@ -32,7 +33,10 @@ import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
 import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.CourseRequest;
+import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
@@ -65,7 +69,8 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 			membershipElements(rootElement);
 
 			for (Map.Entry<Long, Set<Long>> entry: iUpdatedStudents.entrySet())
-	 	        StudentSectioningQueue.studentChanged(getHibSession(), null, entry.getKey(), entry.getValue());
+				if (!entry.getValue().isEmpty())
+					StudentSectioningQueue.studentChanged(getHibSession(), null, entry.getKey(), entry.getValue());
 
 			commitTransaction();
 		} catch (Exception e) {
@@ -158,6 +163,8 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	            student.setExternalUniqueId(id);
 	            student.setFreeTimeCategory(new Integer(0));
 	            student.setSchedulePreference(new Integer(0));
+	            student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
+	            student.setCourseDemands(new HashSet<CourseDemand>());
 	            studentId = (Long)getHibSession().save(student);
 			} else {
 				studentId = student.getUniqueId();
@@ -213,7 +220,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 		for (Iterator it = classes.iterator(); it.hasNext(); ){
 			Class_ c = (Class_) it.next();
 			StudentClassEnrollment sce = findStudentClassEnrollment(student, c);
-			if (sce == null){
+			if (sce == null) {
 				changed = true;
 				sce = new StudentClassEnrollment();
 		    	sce.setStudent(student);
@@ -221,13 +228,71 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 		    	sce.setCourseOffering(courseOffering);
 		    	sce.setTimestamp(new java.util.Date());
 		    	student.addToclassEnrollments(sce);
-		    	c.setEnrollment(new Integer(c.getEnrollment() == null?1:c.getEnrollment().intValue()) + 1);
-		    	getHibSession().update(c);
 			}
 		}
+		
+		// make sure all class enrollments have a course request filled in
+    	boolean fixCourseDemands = false;
+    	Set<CourseDemand> remaining = new HashSet<CourseDemand>(student.getCourseDemands());
+    	enrollments: for (StudentClassEnrollment sce: student.getClassEnrollments()) {
+			if (sce.getCourseRequest() != null) {
+				// already set -> no change is needed
+    			remaining.remove(sce.getCourseRequest().getCourseDemand());
+    		} else {
+    			for (CourseDemand d: student.getCourseDemands()) {
+        			for (CourseRequest r: d.getCourseRequests()) {
+        				if (r.getCourseOffering().equals(courseOffering)) {
+        					// not set, but there is one that can be used already
+        					sce.setCourseRequest(r);
+        					changed = true;
+        					continue enrollments;
+        				}
+        			}
+    			}
+    			
+    			// create a new request
+            	CourseDemand cd = new CourseDemand();
+    			cd.setTimestamp(new java.util.Date());
+    			cd.setCourseRequests(new HashSet<CourseRequest>());
+    			cd.setStudent(student);
+    			student.addTocourseDemands(cd);
+    			cd.setAlternative(false);
+    			cd.setPriority(student.getCourseDemands().size() + 1);
+    			cd.setWaitlist(false);
+    			CourseRequest cr = new CourseRequest();
+    			cd.getCourseRequests().add(cr);
+    			cr.setCourseDemand(cd);
+    			cr.setCourseRequestOptions(new HashSet<CourseRequestOption>());
+    			cr.setAllowOverlap(false);
+    			cr.setCredit(0);
+    			cr.setOrder(0);
+    			cr.setCourseOffering(sce.getCourseOffering());
+    			sce.setCourseRequest(cr);
+    			changed = true;
+    			fixCourseDemands = true;
+    		}
+    	}
+    	
+    	if (fixCourseDemands) {
+    		// removed unused course demands
+    		for (CourseDemand cd: remaining) {
+    			if (cd.getFreeTime() != null)
+    				getHibSession().delete(cd.getFreeTime());
+    			for (CourseRequest cr: cd.getCourseRequests())
+    				getHibSession().delete(cr);
+    			student.getCourseDemands().remove(cd);
+    			getHibSession().delete(cd);
+    		}
+    		// fix priorities
+    		int priority = 0;
+    		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
+    			cd.setPriority(priority++);
+    			getHibSession().saveOrUpdate(cd);
+    		}
+    	}
+    	
 		if (changed){
 			getHibSession().saveOrUpdate(student);
-			updateOfferingEnrollment(courseOffering);
 		}
 		return changed;
 	}
@@ -237,28 +302,13 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 		Vector<StudentClassEnrollment> enrollments = findStudentClassEnrollments(student, classes);
 		for (StudentClassEnrollment sce : enrollments){
 			changed = true;
-			sce.getClazz().setEnrollment(new Integer(sce.getClazz().getEnrollment() == null?0:sce.getClazz().getEnrollment().intValue() - 1));
-			getHibSession().update(sce.getClazz());
 			student.getClassEnrollments().remove(sce);
 			getHibSession().delete(sce);
 		}
 		if (changed){
 			getHibSession().update(student);
-			updateOfferingEnrollment(courseOffering);
 		}
 		return changed;
-	}
-
-	private void updateOfferingEnrollment(CourseOffering courseOffering) {
-		getHibSession().createQuery("update CourseOffering  c " +
-         		"set c.enrollment=(select count(distinct d.student) " +
-                 " from StudentClassEnrollment d " +
-                 " where d.courseOffering.uniqueId =c.uniqueId) " + 
-                 " where c.uniqueId in (select crs.uniqueId " + 
-                 " from CourseOffering crs " +
-                 " where crs.uniqueId = :crsOffrId)").
-                 setLong("crsOffrId", courseOffering.getUniqueId().longValue()).executeUpdate();
-		getHibSession().refresh(courseOffering);
 	}
 
 	/**
