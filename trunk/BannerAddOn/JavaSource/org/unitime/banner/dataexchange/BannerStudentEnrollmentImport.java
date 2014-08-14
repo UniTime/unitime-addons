@@ -157,7 +157,7 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	for (CourseDemand cd: student.getCourseDemands())
             		if (!cd.isAlternative() && cd.getPriority() >= nextPriority)
             			nextPriority = cd.getPriority() + 1;
-            	Set<CourseDemand> remaining = new TreeSet<CourseDemand>(student.getCourseDemands());
+            	Set<CourseDemand> remaining = new HashSet<CourseDemand>(student.getCourseDemands());
 
             	for (Iterator j = studentElement.elementIterator("section"); j.hasNext(); ) {
             		Element classElement = (Element) j.next();
@@ -183,22 +183,24 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             		
             		for (Class_ clazz: classes) {
                 		StudentClassEnrollment enrollment = enrollments.remove(new Pair(course.getUniqueId(), clazz.getUniqueId()));
-                		if (enrollment != null) continue; // enrollment already exists
-                		
-                		enrollment = new StudentClassEnrollment();
-                		enrollment.setStudent(student);
-                		enrollment.setClazz(clazz);
-                		enrollment.setCourseOffering(course);
-                		enrollment.setTimestamp(ts);
-                		student.getClassEnrollments().add(enrollment);
+                		if (enrollment == null) {
+                    		enrollment = new StudentClassEnrollment();
+                    		enrollment.setStudent(student);
+                    		enrollment.setClazz(clazz);
+                    		enrollment.setCourseOffering(course);
+                    		enrollment.setTimestamp(ts);
+                    		student.getClassEnrollments().add(enrollment);
 
-                		demands: for (CourseDemand d: student.getCourseDemands()) {
-                			for (CourseRequest r: d.getCourseRequests()) {
-                				if (r.getCourseOffering().equals(course)) {
-                					enrollment.setCourseRequest(r);
-                					break demands;
-                				}
-                			}
+                    		demands: for (CourseDemand d: student.getCourseDemands()) {
+                    			for (CourseRequest r: d.getCourseRequests()) {
+                    				if (r.getCourseOffering().equals(course)) {
+                    					enrollment.setCourseRequest(r);
+                    					break demands;
+                    				}
+                    			}
+                    		}
+                    		
+                    		if (student.getUniqueId() != null) updatedStudents.add(student.getUniqueId());
                 		}
                 		
                 		if (enrollment.getCourseRequest() != null) {
@@ -222,9 +224,8 @@ public class BannerStudentEnrollmentImport extends BaseImport {
                 			cr.setCourseOffering(enrollment.getCourseOffering());
                 			enrollment.setCourseRequest(cr);
                 			fixCourseDemands = true;
+                    		if (student.getUniqueId() != null) updatedStudents.add(student.getUniqueId());
                 		}
-                		
-                		if (student.getUniqueId() != null) updatedStudents.add(student.getUniqueId());
             		}
             	}
             	
