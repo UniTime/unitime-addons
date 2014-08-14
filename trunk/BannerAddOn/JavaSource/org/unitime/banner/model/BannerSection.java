@@ -601,6 +601,18 @@ public class BannerSection extends BaseBannerSection {
 		return(sb.toString());
 	}
 	
+	public String externalUniqueIdFor(Class_ clazz, Session hibSession){
+		if (this.getCrn() == null){
+			if (clazz != null && clazz.getExternalUniqueId() != null){
+				return(clazz.getExternalUniqueId());
+			} else {
+				return("");
+			}
+		}
+
+		return(this.getCrn().toString());
+	}
+
 	public void assignNewSectionIndex(Session hibSession){
 		this.setSectionIndex(BannerSection.findNextUnusedSectionIndexFor(this.getSession(), this.getBannerConfig().getBannerCourse().getCourseOffering(hibSession), hibSession));
 		hibSession.update(this);
@@ -629,6 +641,7 @@ public class BannerSection extends BaseBannerSection {
 					String classSuffix = this.classSuffixFor(clazz, hibSession);
 					if(clazz.getClassSuffix() == null || !clazz.getClassSuffix().equals(classSuffix)){
 						clazz.setClassSuffix(classSuffix);
+						clazz.setExternalUniqueId(this.externalUniqueIdFor(clazz, hibSession));
 						hibSession.update(clazz);
 						hibSession.flush();
 						if (refresh){
