@@ -47,10 +47,7 @@
 	<TR>
 		<TD>Subject Area:</TD>
 		<TD>
-			<html:select property="subjAreaId"
-				onfocus="setUp();" 
-				onkeypress="return selectSearch(event, this);" 
-				onkeydown="return checkKey(event, this);">
+			<html:select property="subjAreaId">
 				<html:option value="">All Subjects</html:option>
 				<html:options collection="subjAreas" labelProperty="subjectAreaAbbreviation" property="uniqueId" />
 			</html:select>
@@ -137,10 +134,7 @@
 	<TR>
 		<TD>Manager:</TD>
 		<TD>
-			<html:select property="managerId"
-				onfocus="setUp();" 
-				onkeypress="return selectSearch(event, this);" 
-				onkeydown="return checkKey(event, this);">
+			<html:select property="managerId">
 				<html:option value="-1">All Managers</html:option>
 				<html:options collection="managers" labelProperty="name" property="uniqueId" />
 			</html:select>
@@ -149,10 +143,7 @@
 	<TR>
 		<TD>Department:</TD>
 		<TD>
-			<html:select property="departmentId"
-				onfocus="setUp();" 
-				onkeypress="return selectSearch(event, this);" 
-				onkeydown="return checkKey(event, this);">
+			<html:select property="departmentId">
 				<html:option value="-1">All Departments</html:option>
 				<html:options collection="departments" labelProperty="label" property="uniqueId" />
 			</html:select>
