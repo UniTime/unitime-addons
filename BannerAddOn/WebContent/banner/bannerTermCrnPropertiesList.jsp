@@ -19,10 +19,10 @@
 <%@ page import="java.text.DecimalFormat"%>
 <%@ page import="java.text.DateFormat"%>
 <%@ page import="org.unitime.commons.web.*"%>
-<%@ taglib uri="/WEB-INF/tld/struts-bean.tld"	prefix="bean"%>
-<%@ taglib uri="/WEB-INF/tld/struts-html.tld"	prefix="html"%>
-<%@ taglib uri="/WEB-INF/tld/struts-logic.tld"	prefix="logic"%>
-<%@ taglib uri="/WEB-INF/tld/timetable.tld" prefix="tt" %>
+<%@ taglib uri="http://struts.apache.org/tags-bean"	prefix="bean"%>
+<%@ taglib uri="http://struts.apache.org/tags-html"	prefix="html"%>
+<%@ taglib uri="http://struts.apache.org/tags-logic"	prefix="logic"%>
+<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
 
 <html:form action="bannerTermCrnPropertiesEdit">
 
