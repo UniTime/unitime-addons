@@ -25,7 +25,7 @@
 <!ATTLIST studentGroup abbreviation NMTOKEN #IMPLIED >
 <!ATTLIST studentGroup name NMTOKEN #IMPLIED >
 
-<!ELEMENT student ( enrollment*, studentGroup* ) >
+<!ELEMENT student ( crn*, studentGroup* ) >
 <!ATTLIST student academicArea NMTOKEN #REQUIRED >
 <!ATTLIST student classification NMTOKEN #REQUIRED >
 <!ATTLIST student email CDATA #IMPLIED >

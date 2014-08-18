@@ -23,15 +23,6 @@
 <hibernate-configuration>
 	<session-factory>
 
-		<property name="show_sql">false</property>
-		
-		<!-- Banner Specific Event Listeners -->
-		<event type="post-update">
-			<listener class="org.unitime.banner.commons.hibernate.util.BannerUpdateListener"/>
-		</event>
-
-		<!-- End of Banner Specific Event Listeners -->
-		
 		<!-- Custom hbm.xml files -->
 		<mapping resource="BannerSession.hbm.xml" />
 		<mapping resource="BannerCourse.hbm.xml" />

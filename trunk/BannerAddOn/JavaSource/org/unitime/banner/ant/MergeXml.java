@@ -22,6 +22,7 @@ package org.unitime.banner.ant;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -38,6 +39,9 @@ import org.dom4j.Text;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 /**
  * 
  * @author Tomas Muller
@@ -104,8 +108,21 @@ public class MergeXml extends Task {
     public void execute() throws BuildException {
         try {
             log("Merging "+iTarget+" with "+iSource);
-            Document targetDoc = (new SAXReader()).read(new File(iTarget));
-            Document sourceDoc = (new SAXReader()).read(new File(iSource));
+            SAXReader sax = new SAXReader();
+            sax.setEntityResolver( new EntityResolver() {
+				@Override
+				public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+            		if (publicId.equals("-//Hibernate/Hibernate Mapping DTD 3.0//EN")) {
+            			return new InputSource(getClass().getClassLoader().getResourceAsStream("org/hibernate/hibernate-mapping-3.0.dtd"));
+            		} else if (publicId.equals("-//Hibernate/Hibernate Configuration DTD 3.0//EN")) {
+            			return new InputSource(getClass().getClassLoader().getResourceAsStream("org/hibernate/hibernate-configuration-3.0.dtd"));
+            		}
+            		return null;
+            	}
+            });
+            sax.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            Document targetDoc = sax.read(new File(iTarget));
+            Document sourceDoc = sax.read(new File(iSource));
             
             merge(targetDoc.getRootElement(), sourceDoc.getRootElement());
             
