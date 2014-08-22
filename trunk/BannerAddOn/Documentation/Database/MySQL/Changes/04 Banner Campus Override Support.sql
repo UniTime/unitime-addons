@@ -28,14 +28,14 @@ create table banner_campus_override (
 				uniqueid decimal(20,0) primary key not null,
 				banner_campus_code varchar(20) not null,
 				banner_campus_name varchar(100) not null,
-				visible number(1,0) not null) engine = INNODB;
+				visible decimal(1,0) not null) engine = INNODB;
     
 /*
  * Add column to BannerSection to store banner campus override
  */
  
- ALTER TABLE "BANNER_SECTION" ADD BANNER_CAMPUS_OVERRIDE_ID DECIMAL(20,0);
- ALTER TABLE "BANNER_SECTION" ADD CONSTRAINT FK_CAMPUS_OVERRIDE FOREIGN KEY ("BANNER_CAMPUS_OVERRIDE_ID") REFERENCES "BANNER_CAMPUS_OVERRIDE"("UNIQUEID") ON DELETE SET NULL;
+alter table banner_section add banner_campus_override_id decimal(20,0);
+alter table banner_section add constraint fk_campus_override foreign key (banner_campus_override_id) references banner_campus_override(uniqueid) on delete set null;
  
  
 /*
