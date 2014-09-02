@@ -263,7 +263,7 @@ public class BannerSection extends BaseBannerSection {
     		// Get course credit
     		if (course.getCredit() != null && course.getCredit() instanceof FixedCreditUnitConfig) {
     			if (schedSubpart.getItype().getItype().equals(getBannerConfig().getGradableItype().getItype())) {
-    				FixedCreditUnitConfig fixed = (FixedCreditUnitConfig) schedSubpart.getInstrOfferingConfig().getInstructionalOffering().getControllingCourseOffering().getCredit();
+    				FixedCreditUnitConfig fixed = (FixedCreditUnitConfig) course.getCredit();
     				credit = fixed.getFixedUnits().toString();
     			} else {
     				credit = "0.0";
