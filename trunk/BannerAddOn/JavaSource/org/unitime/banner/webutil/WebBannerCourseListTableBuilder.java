@@ -359,10 +359,10 @@ public class WebBannerCourseListTableBuilder extends
     	cell = initNormalCell(Integer.toString(bs.calculateMaxEnrl(hibSession)), isEditable);
     	cell.setAlign("right");
     	row.addContent(cell);
-		cell = initNormalCell((bs.getBannerConfig().getGradableItype() != null && bs.getBannerConfig().getGradableItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype()))?"<IMG border='0' alt='Yes' title='Section is gradable.' align='absmiddle' src='images/tick.gif'>":"", isEditable);
+		cell = initNormalCell((bs.getBannerConfig().getGradableItype() != null && bs.getBannerConfig().getGradableItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype()))?"<IMG border='0' alt='Yes' title='Section is gradable.' align='absmiddle' src='images/accept.png'>":"", isEditable);
 		cell.setAlign("center");
 	   	row.addContent(cell);
-		cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/tick.gif'>":""), isEditable);
+		cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/accept.png'>":""), isEditable);
 		cell.setAlign("center");
 		row.addContent(cell);
 		cell = initNormalCell(bs.getCrossListIdentifier(), isEditable);

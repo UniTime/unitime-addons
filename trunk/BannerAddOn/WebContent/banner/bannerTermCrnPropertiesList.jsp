@@ -68,13 +68,13 @@
 								s.getLastCrn().toString() + "&nbsp;",
 								s.getMinCrn().toString() + "&nbsp;",
 								s.getMaxCrn().toString() + "&nbsp;",
-								s.isSearchFlag().booleanValue() ? "<img src='images/tick.gif'> " : "&nbsp; "},
+								s.isSearchFlag().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; "},
 							new Comparable[] {
 								s.getBannerTermCode(),
 								s.getLastCrn().toString(),
 								s.getMinCrn(),
 								s.getMaxCrn(),
-								s.isSearchFlag().booleanValue() ? "<img src='images/tick.gif'>" : "" } );
+								s.isSearchFlag().booleanValue() ? "<img src='images/accept.png'>" : "" } );
 			%>
 
 		</logic:iterate>

@@ -70,17 +70,17 @@
 								s.getSession().academicInitiativeDisplayString() + "&nbsp;",
 								s.getBannerTermCode() + "&nbsp;",
 								s.getBannerCampus() + "&nbsp;",
-								s.isStoreDataForBanner().booleanValue() ? "<img src='images/tick.gif'> " : "&nbsp; ", 
-								s.isSendDataToBanner().booleanValue() ? "<img src='images/tick.gif'> " : "&nbsp; ", 
-								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/tick.gif'> " : "&nbsp; "},
+								s.isStoreDataForBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
+								s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
+								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; "},
 							new Comparable[] {
 								s.getSession().getLabel(),
 								s.getSession().academicInitiativeDisplayString(),
 								s.getBannerTermCode(),
 								s.getBannerCampus(),
-								s.isStoreDataForBanner().booleanValue() ? "<img src='images/tick.gif'>" : "",
-								s.isSendDataToBanner().booleanValue() ? "<img src='images/tick.gif'>" : "",
-								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/tick.gif'>" : "" } );
+								s.isStoreDataForBanner().booleanValue() ? "<img src='images/accept.png'>" : "",
+								s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'>" : "",
+								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'>" : "" } );
 			%>
 
 		</logic:iterate>

@@ -67,11 +67,11 @@
 							new String[] {
 								bco.getBannerCampusCode() + "&nbsp;",
 								bco.getBannerCampusName() + "&nbsp;",
-								bco.getVisible().booleanValue() ? "<img src='images/tick.gif'> " : "&nbsp; " }, 
+								bco.getVisible().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; " }, 
 							new Comparable[] {
 								bco.getBannerCampusCode(),
 								bco.getBannerCampusName(),
-								bco.getVisible().booleanValue() ? "<img src='images/tick.gif'>" : "" } );
+								bco.getVisible().booleanValue() ? "<img src='images/accept.png'>" : "" } );
 			%>
 
 		</logic:iterate>
