@@ -143,7 +143,7 @@
 					</TR>
 				<logic:iterate id="co" name="bannerOfferingDetailForm" property="courseOfferings" >
 					<TR>
-						<TD align="center">&nbsp;<logic:equal name="co" property="isControl" value="true"><IMG src="images/tick.gif" alt="Controlling Course" title="Controlling Course" border="0"></logic:equal>&nbsp;</TD>
+						<TD align="center">&nbsp;<logic:equal name="co" property="isControl" value="true"><IMG src="images/accept.png" alt="Controlling Course" title="Controlling Course" border="0"></logic:equal>&nbsp;</TD>
 						<TD class="BottomBorderGray"><bean:write name="co" property="courseNameWithTitle"/></TD>
 						
 						<TD align="right" class="BottomBorderGray">
