@@ -41,6 +41,7 @@ import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.PosMajor;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
+import org.unitime.timetable.model.StudentAccomodation;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.dao.SessionDAO;
@@ -253,25 +254,26 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			student.setPosMajors(new HashSet<PosMajor>());
 			student.setCourseDemands(new HashSet<CourseDemand>());
 			student.setGroups(new HashSet<StudentGroup>());
+			student.setAccomodations(new HashSet<StudentAccomodation>());
 		}
 		return student;
 	}
 	
 	private boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper) {
 		boolean changed = false;
-		if (student.getFirstName() == null || !student.getFirstName().equals(iFName)) {
+		if (!eq(iFName, student.getFirstName())) {
 			student.setFirstName(iFName);
 			changed = true;
 		}
-		if (student.getMiddleName() == null || !student.getMiddleName().equals(iMName)){
+		if (!eq(iMName, student.getMiddleName())) {
 			student.setMiddleName(iMName);
 			changed = true;
 		}
-		if (student.getLastName() == null || !student.getLastName().equals(iLName)){
+		if (!eq(iLName, student.getLastName())) {
 			student.setLastName(iLName);
 			changed = true;
 		}
-		if (student.getEmail() == null || !student.getEmail().equals(iEmail)){
+		if (!eq(iEmail, student.getEmail())) {
 			student.setEmail(iEmail);
 			changed = true;
 		}
@@ -533,6 +535,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			}
 		}
 		return enrollments;
+	}
+	
+	protected boolean eq(Object o1, Object o2) {
+		if (o1 == null)
+			return o2 == null;
+		else
+			return o1.equals(o2);
 	}
 
 	@Override
