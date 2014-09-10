@@ -54,7 +54,9 @@ public class BannerStudentUpdatesPoller  extends Thread {
 			if (iServer != null && iServer.isActive() && iServer.getOnlineStudentSchedulingContainer() instanceof OnlineStudentSchedulingContainerRemote) {
 				iLock = ((OnlineStudentSchedulingContainerRemote)iServer.getOnlineStudentSchedulingContainer()).getLockService().getLock("studentUpdatesService");
 				try {
+					sLog.info("Waiting for lock...");
 					iLock.lockInterruptibly();
+					sLog.info("Lock acquired, behold the new master!");
 				} catch (InterruptedException e) {
 					iLock = null;
 					throw e;
@@ -84,7 +86,7 @@ public class BannerStudentUpdatesPoller  extends Thread {
 	
 	public void run() {
 		try {
-			sLog.debug("Banner Student Updates Poller is up.");
+			sLog.info("Banner Student Updates Poller is up.");
 			while (true) {
 				try {
 					sleep(getSleepInterval());
@@ -108,7 +110,7 @@ public class BannerStudentUpdatesPoller  extends Thread {
 					sLog.error("Failed to persist log entries:" + e.getMessage(), e);
 				}
 			}
-			sLog.debug("Query Log Saver is down.");
+			sLog.info("Banner Student Updates Poller is down.");
 		} finally {
 			releaseLockIfNeeded();
 		}
