@@ -101,6 +101,7 @@ public class BannerStudentUpdatesPoller  extends Thread {
 						if (!iActive) break;
 					}
 				} else {
+					releaseLockIfNeeded();
 					continue;
 				}
 				
