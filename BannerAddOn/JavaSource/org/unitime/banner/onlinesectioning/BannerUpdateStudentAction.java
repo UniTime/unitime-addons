@@ -438,7 +438,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
             		enrollment.setCourseOffering(co);
             		enrollment.setTimestamp(new java.util.Date());
             		student.getClassEnrollments().add(enrollment);    
-            		
+            		changed = true;
+        		}
+        		
+        		if (enrollment.getCourseRequest() == null) {
             		demands: for (CourseDemand d: student.getCourseDemands()) {
             			for (CourseRequest r: d.getCourseRequests()) {
             				if (r.getCourseOffering().equals(co)) {
