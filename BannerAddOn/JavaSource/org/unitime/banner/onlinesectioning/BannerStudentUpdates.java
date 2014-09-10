@@ -69,11 +69,13 @@ public class BannerStudentUpdates extends BannerCaller {
 				sLog.info("Sending student update request to Banner...");
 				Clob clob = jdbc.requestEnrollmentChanges();
 				sLog.info("Response received from Banner.");
+				if (clob == null) return;
 				message = convertClobToDocument(clob);
 			} finally {
 				jdbc.cleanup();
 			}
 
+			if (message == null) return;
 			org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
 			try {
 				QueueIn qi = new QueueIn();
@@ -176,10 +178,13 @@ public class BannerStudentUpdates extends BannerCaller {
 							switch (server.execute(update, user())) {
 							case OK:
 								updatedStudents.add(externalId);
+								break;
 							case FAILURE:
 								failedStudents.add(externalId);
+								break;
 							case PROBLEM:
 								problemStudents.add(externalId);
+								break;
 							case NO_CHANGE:
 							}
 						} else {
@@ -189,10 +194,13 @@ public class BannerStudentUpdates extends BannerCaller {
 							switch (result) {
 							case OK:
 								updatedStudents.add(externalId);
+								break;
 							case FAILURE:
 								failedStudents.add(externalId);
+								break;
 							case PROBLEM:
 								problemStudents.add(externalId);
+								break;
 							case NO_CHANGE:
 							}
 							if (update.getStudentId() != null && (result == UpdateResult.OK || result == UpdateResult.PROBLEM)) {

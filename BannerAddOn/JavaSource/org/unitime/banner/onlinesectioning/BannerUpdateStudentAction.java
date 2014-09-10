@@ -282,76 +282,82 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			aac = (AcademicAreaClassification) it.next();
 			break;
 		}
-		if (aac == null || !(
-			(aac.getAcademicArea().getExternalUniqueId().equalsIgnoreCase(iAcademicArea) || aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(iAcademicArea)) &&
-			(aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(iClassification) || aac.getAcademicClassification().getCode().equalsIgnoreCase(iAcademicArea)))) {
-			AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iAcademicArea);						
-			if (aa == null)
-				aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), iAcademicArea);
-			if (aa == null){
-				aa = new AcademicArea();
-				aa.setAcademicAreaAbbreviation(iAcademicArea);
-				aa.setSession(student.getSession());
-				aa.setExternalUniqueId(iAcademicArea);
-				aa.setTitle(iAcademicArea);
-				aa.setUniqueId((Long)helper.getHibSession().save(aa));
-				helper.info("Added Academic Area:  " + iAcademicArea);
+		if (iAcademicArea != null && iClassification != null) {
+			if (aac == null || !(
+					(aac.getAcademicArea().getExternalUniqueId().equalsIgnoreCase(iAcademicArea) || aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(iAcademicArea)) &&
+					(aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(iClassification) || aac.getAcademicClassification().getCode().equalsIgnoreCase(iAcademicArea)))) {
+				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iAcademicArea);						
+				if (aa == null)
+					aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), iAcademicArea);
+				if (aa == null){
+					aa = new AcademicArea();
+					aa.setPosMajors(new HashSet<PosMajor>());
+					aa.setAcademicAreaAbbreviation(iAcademicArea);
+					aa.setSession(student.getSession());
+					aa.setExternalUniqueId(iAcademicArea);
+					aa.setTitle(iAcademicArea);
+					aa.setUniqueId((Long)helper.getHibSession().save(aa));
+					helper.info("Added Academic Area:  " + iAcademicArea);
+				}
+				if (aac == null) 
+					aac = new AcademicAreaClassification();
+				aac.setAcademicArea(aa);
+				
+				AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iClassification);
+				if (ac == null)
+					ac = AcademicClassification.findByCode(helper.getHibSession(), student.getSession().getUniqueId(), iClassification);
+				if (ac == null){
+					ac = new AcademicClassification();
+					ac.setCode(iClassification);
+					ac.setExternalUniqueId(iClassification);
+					ac.setName(iClassification);
+					ac.setSession(student.getSession());
+					ac.setUniqueId((Long) helper.getHibSession().save(ac));
+					helper.info("Added Academic Classification:  " + iClassification);
+				}
+				aac.setAcademicClassification(ac);
+				if (aac.getStudent() == null) {
+					aac.setStudent(student);
+					student.addToacademicAreaClassifications(aac);				
+				}
+				changed = true;
 			}
-			if (aac == null) 
-				aac = new AcademicAreaClassification();
-			aac.setAcademicArea(aa);
-			
-			AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iClassification);
-			if (ac == null)
-				ac = AcademicClassification.findByCode(helper.getHibSession(), student.getSession().getUniqueId(), iClassification);
-			if (ac == null){
-				ac = new AcademicClassification();
-				ac.setCode(iClassification);
-				ac.setExternalUniqueId(iClassification);
-				ac.setName(iClassification);
-				ac.setSession(student.getSession());
-				ac.setUniqueId((Long) helper.getHibSession().save(ac));
-				helper.info("Added Academic Classification:  " + iClassification);
-			}
-			aac.setAcademicClassification(ac);
-			if (aac.getStudent() == null) {
-				aac.setStudent(student);
-				student.addToacademicAreaClassifications(aac);				
-			}
-			changed = true;
 		}
 		
 		//This makes the assumption that when working with Banner students have only one Major
-		PosMajor m = null;
-		for(Iterator<?> it = student.getPosMajors().iterator(); it.hasNext();) {
-			m = (PosMajor) it.next();
-			break;
-		}
-		if (m == null || !(
-				iMajor.equalsIgnoreCase(m.getExternalUniqueId()) || iMajor.equalsIgnoreCase(m.getCode()) || (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))) {
-			student.getPosMajors().clear();
-			
-			PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
-			if (posMajor == null)
-				posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
-			if (posMajor == null){
-				posMajor = new PosMajor();
-				posMajor.setCode(iMajor);
-				posMajor.setExternalUniqueId(iMajor);
-				posMajor.setName(iMajor);
-				posMajor.setSession(student.getSession());
-				posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
-				posMajor.addToacademicAreas(aac.getAcademicArea());
-				helper.info("Added Major:  " + iMajor + " to Academic Area:  " + iAcademicArea);
+		if (iMajor != null && aac != null) {
+			PosMajor m = null;
+			for(Iterator<?> it = student.getPosMajors().iterator(); it.hasNext();) {
+				m = (PosMajor) it.next();
+				break;
 			}
-			student.addToposMajors(posMajor);
-			changed = true;
-		} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
-			m.addToacademicAreas(aac.getAcademicArea());
-			helper.info("Added Academic Area: " + iAcademicArea + " to existing Major:  " + iMajor);
-			changed = true;
+			if (m == null || !(
+					iMajor.equalsIgnoreCase(m.getExternalUniqueId()) || iMajor.equalsIgnoreCase(m.getCode()) || (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))) {
+				student.getPosMajors().clear();
+				
+				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
+				if (posMajor == null)
+					posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
+				if (posMajor == null) {
+					posMajor = new PosMajor();
+					posMajor.setCode(iMajor);
+					posMajor.setExternalUniqueId(iMajor);
+					posMajor.setName(iMajor);
+					posMajor.setSession(student.getSession());
+					posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
+					posMajor.addToacademicAreas(aac.getAcademicArea());
+					aac.getAcademicArea().addToposMajors(posMajor);
+					helper.info("Added Major:  " + iMajor + " to Academic Area:  " + iAcademicArea);
+				}
+				student.addToposMajors(posMajor);
+				changed = true;
+			} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
+				m.addToacademicAreas(aac.getAcademicArea());
+				aac.getAcademicArea().addToposMajors(m);
+				helper.info("Added Academic Area: " + iAcademicArea + " to existing Major:  " + iMajor);
+				changed = true;
+			}
 		}
-	
 		return changed;
 	}
 	
@@ -370,14 +376,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.info("Added Student Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
 			} else {
 				boolean changed = false;
-				if (g[3] != null &&  !g[3].equals(sg.getGroupAbbreviation())){
-					helper.info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old abbreviation:  " + sg.getGroupAbbreviation() + ", new abbreviation:  " + g[3] + " in session " + sg.getSession().academicInitiativeDisplayString());
-					sg.setGroupAbbreviation(g[3]);
+				if (g[2] != null &&  !g[2].equals(sg.getGroupAbbreviation())){
+					helper.info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old abbreviation:  " + sg.getGroupAbbreviation() + ", new abbreviation:  " + g[2] + " in session " + sg.getSession().academicInitiativeDisplayString());
+					sg.setGroupAbbreviation(g[2]);
 					changed = true;
 				} 
-				if (g[4] != null && !g[4].equals(sg.getGroupName())){
-					helper.info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old name:  " + sg.getGroupName() + ", new name:  " + g[4] + " in session " + sg.getSession().academicInitiativeDisplayString());
-					sg.setGroupName(g[4]);
+				if (g[3] != null && !g[3].equals(sg.getGroupName())){
+					helper.info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old name:  " + sg.getGroupName() + ", new name:  " + g[3] + " in session " + sg.getSession().academicInitiativeDisplayString());
+					sg.setGroupName(g[3]);
 					changed = true;
 				}
 				if (changed) {
