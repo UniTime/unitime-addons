@@ -13,6 +13,8 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/itext-2.1.7.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-3.1.4.RELEASE.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-3.1.4.RELEASE.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-3.4.1.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.8.4.jar"/>
 	<classpathentry kind="src" path="/UniTime"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ojdbc14-10.2.0.4.0.jar"/>
