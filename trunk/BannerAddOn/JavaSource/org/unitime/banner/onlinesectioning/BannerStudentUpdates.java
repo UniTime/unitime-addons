@@ -45,6 +45,7 @@ import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
+import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
@@ -94,9 +95,10 @@ public class BannerStudentUpdates extends BannerCaller {
 			} finally {
 				hibSession.close();
 			}
-
 		} catch (Exception ex) {
 			sLog.error("Failed to process a message: " + ex.getMessage(), ex);
+		} finally {
+			_RootDAO.closeCurrentThreadSessions();
 		}
 
 	}
