@@ -400,7 +400,11 @@ public class BannerOfferingModifyAction extends Action {
 					changed = true;
 				}
 			}
-			Long campusOverrideId = new Long(it6.next().toString());
+			String campusOverrideIdStr = it6.next().toString();
+			Long campusOverrideId = new Long((campusOverrideIdStr.equals("-")?"-1":campusOverrideIdStr.toString()));
+			if (campusOverrideId.equals(-1)){
+				campusOverrideId = null;
+			}
 			BannerCampusOverride newCmp = null;
 			if ((campusOverrideId != null && bs.getBannerCampusOverride() != null && !bs.getBannerCampusOverride().getUniqueId().equals(campusOverrideId)) ||
 				(campusOverrideId != null && bs.getBannerCampusOverride() == null) ||
