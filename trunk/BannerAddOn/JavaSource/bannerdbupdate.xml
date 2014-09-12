@@ -102,5 +102,12 @@
 			  and c.class_suffix like '%-%' 
    	    </mysql>
  	</update>
- 	
+ 	<update version="6" date="12-Sep-2014" comment="Banner Queue In Status Index">
+		<plsql>
+			create index %SCHEMA%.idx_integrationqueuein_status on %SCHEMA%.integrationqueuein(uniqueId, status)
+		</plsql>
+		<mysql>
+			create index idx_integrationqueuein_status on %SCHEMA%.integrationqueuein(uniqueId, status)
+		</mysql>
+ 	</update>
  </dbupdate>

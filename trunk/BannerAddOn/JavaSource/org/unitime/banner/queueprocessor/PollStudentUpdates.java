@@ -27,7 +27,6 @@ import java.util.Date;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.unitime.banner.dataexchange.BannerStudentDataUpdate;
 import org.unitime.banner.model.QueueIn;
 import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.queueprocessor.exception.LoggableException;
@@ -53,6 +52,9 @@ public class PollStudentUpdates extends BannerCaller {
 		try {
 
 			Document result = callOracleProcess();
+			
+			// Skip null and empty messages
+			if (result == null || result.getRootElement().elements().isEmpty()) return;
 
 			QueueIn qi = new QueueIn();
 			try {
@@ -61,13 +63,13 @@ public class PollStudentUpdates extends BannerCaller {
 				QueueInDAO qid = new QueueInDAO();
 
 				qi.setMatchId(null);
-				qi.setStatus(QueueIn.STATUS_POSTED);
+				qi.setStatus(QueueIn.STATUS_READY);
 				qi.setXml(result);
 
 				qid.save(qi);
 				
 				// Process in UniTime
-				BannerStudentDataUpdate.receiveResponseDocument(qi);
+				// BannerStudentDataUpdate.receiveResponseDocument(qi);
 				
 			} catch (Exception ex) {
 				LoggableException le = new LoggableException(ex, qi);
