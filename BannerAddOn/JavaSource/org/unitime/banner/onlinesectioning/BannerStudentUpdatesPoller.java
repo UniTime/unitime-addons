@@ -108,7 +108,7 @@ public class BannerStudentUpdatesPoller  extends Thread {
 				try {
 					iUpdates.pollMessage();
 				} catch (Exception e) {
-					sLog.error("Failed to persist log entries:" + e.getMessage(), e);
+					sLog.error("Failed to process update messages:" + e.getMessage(), e);
 				}
 			}
 			sLog.info("Banner Student Updates Poller is down.");

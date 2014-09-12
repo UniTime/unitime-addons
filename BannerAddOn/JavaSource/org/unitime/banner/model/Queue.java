@@ -36,6 +36,10 @@ public abstract class Queue extends BaseQueue {
 	public static final String STATUS_PROCESSED = "PROCESSED";
 	public static final String STATUS_INVALID = "INVALID";
 	public static final String STATUS_STALE = "STALE";
+	// posted message is ready to be processed (outside of the queue processor)
+	public static final String STATUS_READY = "READY";
+	// posted message failed to be processed (outside of the queue processor)
+	public static final String STATUS_FAILED = "FAILED";
 
 /*[CONSTRUCTOR MARKER BEGIN]*/
 	public Queue () {

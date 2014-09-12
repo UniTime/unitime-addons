@@ -19,9 +19,6 @@
 */
 package org.unitime.banner.onlinesectioning;
 
-import java.io.IOException;
-import java.sql.Clob;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,16 +29,12 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.hibernate.CacheMode;
 import org.unitime.banner.model.Queue;
 import org.unitime.banner.model.QueueIn;
 import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.UpdateResult;
-import org.unitime.banner.queueprocessor.BannerCaller;
-import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
@@ -54,7 +47,7 @@ import org.unitime.timetable.solver.jgroups.SolverContainer;
 /**
  * @author Tomas Muller
  */
-public class BannerStudentUpdates extends BannerCaller {
+public class BannerStudentUpdates {
 	protected static Log sLog = LogFactory.getLog(BannerStudentUpdates.class);
 	private SolverContainer<OnlineSectioningServer> iContainer;
 
@@ -64,56 +57,36 @@ public class BannerStudentUpdates extends BannerCaller {
 	
 	public void pollMessage() {
 		try {
-			Document message = null;
-			OracleConnector jdbc = getJDBCconnection();
-			try {
-				sLog.info("Sending student update request to Banner...");
-				Clob clob = jdbc.requestEnrollmentChanges();
-				sLog.info("Response received from Banner.");
-				if (clob == null) return;
-				message = convertClobToDocument(clob);
-			} finally {
-				jdbc.cleanup();
-			}
-
-			if (message == null) return;
-			org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
-			try {
-				QueueIn qi = new QueueIn();
-				qi.setPostDate(new Date());
-				qi.setMatchId(null);
-				qi.setStatus(QueueIn.STATUS_POSTED);
-				qi.setXml(message);
-				hibSession.save(qi);
-				hibSession.flush();
-				
-				processMessage(hibSession, message.getRootElement());
-				qi.setProcessDate(new Date());
-				qi.setStatus(Queue.STATUS_PROCESSED);
-				hibSession.update(qi);
-				hibSession.flush();
-			} finally {
-				hibSession.close();
+			while (true) {
+				org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
+				try {
+					QueueIn qi = (QueueIn)hibSession.createQuery("from QueueIn where status = :status order by uniqueId")
+							.setString("status", QueueIn.STATUS_READY)
+							.setMaxResults(1)
+							.uniqueResult();
+					if (qi == null) break;
+					
+					sLog.info("Processing message posted at " + qi.getPostDate());
+					try {
+						processMessage(hibSession, qi.getXml().getRootElement());
+						sLog.info("Message processed.");
+						qi.setStatus(Queue.STATUS_PROCESSED);
+					} catch (Exception e) {
+						qi.setStatus(Queue.STATUS_FAILED);
+						sLog.error("Failed to process a message: " + e.getMessage(), e);
+					}
+					qi.setProcessDate(new Date());
+					hibSession.update(qi);
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+					_RootDAO.closeCurrentThreadSessions();
+				}
 			}
 		} catch (Exception ex) {
-			sLog.error("Failed to process a message: " + ex.getMessage(), ex);
-		} finally {
-			_RootDAO.closeCurrentThreadSessions();
+			sLog.error("Failed to process messages: " + ex.getMessage(), ex);
 		}
 
-	}
-	
-	protected Document callOracleProcess() throws ClassNotFoundException, SQLException, IOException, DocumentException {
-		OracleConnector jdbc = getJDBCconnection();
-		try {
-			sLog.info("Sending student update request to Banner...");
-			Clob clob = jdbc.requestEnrollmentChanges();
-			sLog.info("Response received from Banner.");
-
-			return convertClobToDocument(clob);
-		} finally {
-			jdbc.cleanup();
-		}
 	}
 	
 	@SuppressWarnings("unchecked")
