@@ -69,7 +69,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private static final long serialVersionUID = 1L;
 	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iAcademicArea, iClassification, iMajor;
 	private List<String[]> iGroups = new ArrayList<String[]>();
-	private List<Integer> iCRNs = new ArrayList<Integer>();
+	private Set<Integer> iCRNs = new TreeSet<Integer>();
 	private Long iStudentId;
 	private Session iSession;
 	private UpdateResult iResult = UpdateResult.OK;
