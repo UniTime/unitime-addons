@@ -127,6 +127,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					.setName(iLName + ", " + iFName + (iMName == null ? "" : " " + iMName))
 					.setType(OnlineSectioningLog.Entity.EntityType.STUDENT));
 			
+			helper.getAction().addOptionBuilder().setKey("CRNs").setValue(iCRNs.toString());
+			if (iEmail != null)
+				helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
+			if (iAcademicArea != null && iClassification != null)
+				helper.getAction().addOptionBuilder().setKey("curriculum").setValue(iAcademicArea + "/" + iMajor + " " + iClassification);
+			
 			if (iStudentId != null)
 				action.getStudentBuilder().setUniqueId(iStudentId);
 			
@@ -139,7 +145,33 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				if (updateStudentGroups(student, helper))
 					changed = true;
 				
-				if (updateClassEnrollments(student, getEnrollments(helper), helper))
+				Map<CourseOffering, List<Class_>> enrollments = getEnrollments(helper);
+				
+				OnlineSectioningLog.Enrollment.Builder external = OnlineSectioningLog.Enrollment.newBuilder();
+				external.setType(OnlineSectioningLog.Enrollment.EnrollmentType.EXTERNAL);
+				for (Map.Entry<CourseOffering, List<Class_>> e: enrollments.entrySet()) {
+					CourseOffering course = e.getKey();
+					for (Class_ clazz: e.getValue()) {
+						external.addSectionBuilder()
+								.setClazz(OnlineSectioningLog.Entity.newBuilder()
+										.setUniqueId(clazz.getUniqueId())
+										.setExternalId(clazz.getExternalId(course))
+										.setName(clazz.getClassSuffix(course))
+										)
+								.setCourse(OnlineSectioningLog.Entity.newBuilder()
+										.setUniqueId(course.getUniqueId())
+										.setName(course.getCourseName())
+										)
+								.setSubpart(OnlineSectioningLog.Entity.newBuilder()
+										.setUniqueId(clazz.getSchedulingSubpart().getUniqueId())
+										.setName(clazz.getSchedulingSubpart().getItypeDesc())
+										)
+								;
+					}
+				}
+				helper.getAction().addEnrollment(external);
+				
+				if (updateClassEnrollments(student, enrollments, helper))
 					changed = true;
 				
 				if (iStudentId == null) {
@@ -148,42 +180,43 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				} else if (changed)
 					helper.getHibSession().update(student);
 				
-				// Unload student
-				XStudent oldStudent = server.getStudent(iStudentId);
-				if (oldStudent != null) {
-					OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
-					enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.PREVIOUS);
-					for (XRequest oldRequest: oldStudent.getRequests()) {
-						if (oldRequest instanceof XCourseRequest && ((XCourseRequest)oldRequest).getEnrollment() != null) {
-							XEnrollment enrl = ((XCourseRequest)oldRequest).getEnrollment();
-							XOffering offering = server.getOffering(enrl.getOfferingId());
-							for (XSection section: offering.getSections(enrl))
-								enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
+				if (changed) {
+					// Unload student
+					XStudent oldStudent = server.getStudent(iStudentId);
+					if (oldStudent != null) {
+						OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
+						enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.PREVIOUS);
+						for (XRequest oldRequest: oldStudent.getRequests()) {
+							if (oldRequest instanceof XCourseRequest && ((XCourseRequest)oldRequest).getEnrollment() != null) {
+								XEnrollment enrl = ((XCourseRequest)oldRequest).getEnrollment();
+								XOffering offering = server.getOffering(enrl.getOfferingId());
+								for (XSection section: offering.getSections(enrl))
+									enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
+							}
 						}
+						action.addEnrollment(enrollment);
 					}
-					action.addEnrollment(enrollment);
-				}
-				
-				// Load student
-				XStudent newStudent = ReloadAllData.loadStudent(student, null, server, helper);
-				if (newStudent != null) {
-					server.update(newStudent, true);
-					OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
-					enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.STORED);
-					for (XRequest newRequest: newStudent.getRequests()) {
-						action.addRequest(OnlineSectioningHelper.toProto(newRequest));
-						if (newRequest instanceof XCourseRequest && ((XCourseRequest)newRequest).getEnrollment() != null) {
-							XEnrollment enrl = ((XCourseRequest)newRequest).getEnrollment();
-							XOffering offering = server.getOffering(enrl.getOfferingId());
-							for (XSection section: offering.getSections(enrl))
-								enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
+					
+					// Load student
+					XStudent newStudent = ReloadAllData.loadStudent(student, null, server, helper);
+					if (newStudent != null) {
+						server.update(newStudent, true);
+						OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
+						enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.STORED);
+						for (XRequest newRequest: newStudent.getRequests()) {
+							action.addRequest(OnlineSectioningHelper.toProto(newRequest));
+							if (newRequest instanceof XCourseRequest && ((XCourseRequest)newRequest).getEnrollment() != null) {
+								XEnrollment enrl = ((XCourseRequest)newRequest).getEnrollment();
+								XOffering offering = server.getOffering(enrl.getOfferingId());
+								for (XSection section: offering.getSections(enrl))
+									enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
+							}
 						}
+						action.addEnrollment(enrollment);
 					}
-					action.addEnrollment(enrollment);
-				}
-				
-				if (changed)
+
 					server.execute(server.createAction(NotifyStudentAction.class).forStudent(iStudentId).oldStudent(oldStudent), helper.getUser());
+				}
 			
 				helper.commitTransaction();
 			} catch (Exception e) {
@@ -195,11 +228,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			
 		} catch (Exception e) {
 			helper.error("Student update failed: " + e.getMessage(), e);
+			helper.getAction().setResult(OnlineSectioningLog.Action.ResultType.FAILURE);
 			return UpdateResult.FAILURE;
+		} finally {
+			for (OnlineSectioningLog.Message m: helper.getLog().getMessageList())
+				helper.getAction().addMessage(m);
 		}
-			
+		helper.getAction().setResult(changed ? OnlineSectioningLog.Action.ResultType.TRUE : OnlineSectioningLog.Action.ResultType.FALSE);
+		
 		if (iResult == UpdateResult.OK && !changed)
 			return UpdateResult.NO_CHANGE;
+		
 		return iResult;
 	}
 	
@@ -333,8 +372,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				m = (PosMajor) it.next();
 				break;
 			}
-			if (m == null || !(
-					iMajor.equalsIgnoreCase(m.getExternalUniqueId()) || iMajor.equalsIgnoreCase(m.getCode()) || (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))) {
+			if (m == null || !(iMajor.equalsIgnoreCase(m.getExternalUniqueId()) || iMajor.equalsIgnoreCase(m.getCode())) ||
+					!(m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea()))) {
 				student.getPosMajors().clear();
 				
 				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
