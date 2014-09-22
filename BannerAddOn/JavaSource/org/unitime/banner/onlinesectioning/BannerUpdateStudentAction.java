@@ -57,8 +57,11 @@ import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer.Lock;
 import org.unitime.timetable.onlinesectioning.model.XCourseRequest;
 import org.unitime.timetable.onlinesectioning.model.XEnrollment;
+import org.unitime.timetable.onlinesectioning.model.XIndividualReservation;
 import org.unitime.timetable.onlinesectioning.model.XOffering;
 import org.unitime.timetable.onlinesectioning.model.XRequest;
+import org.unitime.timetable.onlinesectioning.model.XReservation;
+import org.unitime.timetable.onlinesectioning.model.XReservationType;
 import org.unitime.timetable.onlinesectioning.model.XSection;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
 import org.unitime.timetable.onlinesectioning.server.CheckMaster;
@@ -222,7 +225,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				} else if (changed)
 					helper.getHibSession().update(student);
 				
-				if (updateStudentOverrides(student, helper))
+				if (updateStudentOverrides(student, server, helper))
 					changed = true;
 				
 				if (changed) {
@@ -308,7 +311,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			else if (changed)
 				helper.getHibSession().update(student);
 
-			if (updateStudentOverrides(student, helper))
+			if (updateStudentOverrides(student, null, helper))
 				changed = true;
 
 			if (updateClassEnrollments(student, getEnrollments(helper), helper))
@@ -536,7 +539,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return false;
 	}
 	
-	private boolean updateStudentOverrides(Student student, OnlineSectioningHelper helper) {
+	private boolean updateStudentOverrides(Student student, OnlineSectioningServer server, OnlineSectioningHelper helper) {
 		boolean changed = false;
 
 		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = new HashMap<InstructionalOffering, Map<OverrideType, Set<Class_>>>();
@@ -683,19 +686,67 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				
 				helper.info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
 
-				helper.getHibSession().saveOrUpdate(override);
+				if (override.getUniqueId() == null)
+					override.setUniqueId((Long)helper.getHibSession().save(override));
+				else
+					helper.getHibSession().update(override);
+				
+				if (server != null) {
+					Lock w = server.writeLock();
+					try {
+						XOffering offering = server.getOffering(io.getUniqueId());
+						if (offering != null) {
+							// remove the previous one
+							for (Iterator<XReservation> i = offering.getReservations().iterator(); i.hasNext(); ) {
+								XReservation r = i.next();
+								if (r.getType() == XReservationType.Override && r.getReservationId().equals(override.getUniqueId())) {
+									i.remove(); break;
+								}
+							}
+							// load the new one
+							offering.getReservations().add(new XIndividualReservation(offering, override));
+							server.update(offering);
+						}
+					} finally {
+						w.release();
+					}
+				}
+				
 				changed = true;
 			}
 		}
 		
-		for (OverrideReservation r: overrides) {
-			helper.info("Removed " + r.getOverrideType().getReference() + " override for " + r.getInstructionalOffering().getCourseName());
-			if (r.getStudents().size() > 1) {
-				r.getStudents().remove(student);
-				helper.getHibSession().update(r);
+		for (OverrideReservation override: overrides) {
+			helper.info("Removed " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName());
+			if (override.getStudents().size() > 1) {
+				override.getStudents().remove(student);
+				helper.getHibSession().update(override);
 			} else {
-				r.getInstructionalOffering().getReservations().remove(r);
-				helper.getHibSession().delete(r);
+				override.getInstructionalOffering().getReservations().remove(override);
+				helper.getHibSession().delete(override);
+			}
+			if (server != null) {
+				Lock w = server.writeLock();
+				try {
+					XOffering offering = server.getOffering(override.getInstructionalOffering().getUniqueId());
+					if (offering != null) {
+						for (Iterator<XReservation> i = offering.getReservations().iterator(); i.hasNext(); ) {
+							XReservation r = i.next();
+							if (r.getType() == XReservationType.Override && r.getReservationId().equals(override.getUniqueId())) {
+								XIndividualReservation ir = (XIndividualReservation)r;
+								if (ir.getStudentIds().size() > 1) {
+									ir.getStudentIds().remove(iStudentId);
+								} else {
+									i.remove();
+								}
+								break;
+							}
+						}
+						server.update(offering);
+					}
+				} finally {
+					w.release();
+				}
 			}
 			changed = true;
 		}
