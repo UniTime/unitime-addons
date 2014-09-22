@@ -129,21 +129,81 @@ public class BannerStudentUpdates {
 				update.forStudent(externalId, bannerSession);
 				update.withName(studentElement.attributeValue("firstName"), studentElement.attributeValue("middleName"), studentElement.attributeValue("lastName"));
 				update.withEmail(studentElement.attributeValue("email"));
-				update.withCurriculum(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"), studentElement.attributeValue("major"));
 				
-				for (Iterator<?> j = studentElement.elementIterator("studentGroup"); j.hasNext(); ) {
-					Element studentGroupElement = (Element)j.next();
-					update.withGroup(studentGroupElement.attributeValue("externalId"), studentGroupElement.attributeValue("campus"), studentGroupElement.attributeValue("abbreviation"), studentGroupElement.attributeValue("name")); 
+				Element studentAcadAreaClassElement = studentElement.element("studentAcadAreaClass");
+				if (studentAcadAreaClassElement != null) {
+					// Student XML format
+					update.updateAcadAreaClassifications(true);
+					for (Iterator<?> j = studentAcadAreaClassElement.elementIterator("acadAreaClass"); j.hasNext(); ) {
+						Element areaClassElement = (Element)j.next();
+						update.withAcadAreaClassification(areaClassElement.attributeValue("academicArea"), areaClassElement.attributeValue("academicClass"));
+					}					
+				} else {
+					// Old banner update message format
+					update.withAcadAreaClassification(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"));
 				}
 				
+				Element studentMajorsElement = studentElement.element("studentMajors");
+				if (studentMajorsElement != null) {
+					// Student XML format
+					update.updateAcadAreaMajors(true);
+					for (Iterator<?> j = studentMajorsElement.elementIterator("major"); j.hasNext(); ) {
+						Element majorElement = (Element)j.next();
+						update.withAcadAreaMajor(majorElement.attributeValue("academicArea"), majorElement.attributeValue("code"));
+					}					
+				} else {
+					// Old banner update message format
+					update.withAcadAreaMajor(studentElement.attributeValue("academicArea"), studentElement.attributeValue("major"));
+				}
+				
+				Element studentGroupsElement = studentElement.element("studentGroups");
+				if (studentGroupsElement != null) {
+					// Student XML format
+					for (Iterator<?> j = studentGroupsElement.elementIterator("studentGroup"); j.hasNext(); ) {
+						Element studentGroupElement = (Element)j.next();
+						update.withGroup(
+								studentGroupElement.attributeValue("externalId", studentGroupElement.attributeValue("group")),
+								studentGroupElement.attributeValue("campus"),
+								studentGroupElement.attributeValue("abbreviation", studentGroupElement.attributeValue("group")),
+								studentGroupElement.attributeValue("name")); 
+					}
+				} else {
+					// Old banner upadte message format
+					for (Iterator<?> j = studentElement.elementIterator("studentGroup"); j.hasNext(); ) {
+						Element studentGroupElement = (Element)j.next();
+						update.withGroup(studentGroupElement.attributeValue("externalId"), studentGroupElement.attributeValue("campus"), studentGroupElement.attributeValue("abbreviation"), studentGroupElement.attributeValue("name")); 
+					}
+				}
+				
+				// Old banner update message format
 				for (Iterator<?> j = studentElement.elementIterator("crn"); j.hasNext(); ) {
 					Element crnElement = (Element)j.next();
 					try {
-						update.withCRN(new Integer(crnElement.getTextTrim()));
+						update.withCRN(Integer.valueOf(crnElement.getTextTrim()));
 					} catch (Exception e) {
 						sLog.error("An integer value is required for a crn element (student " + externalId + ").");
 						problemStudents.add(externalId);
 					}
+				}
+				// Student enrollment XML format
+				for (Iterator<?> j = studentElement.elementIterator("class"); j.hasNext(); ) {
+					Element classElement = (Element)j.next();
+					try {
+						update.withCRN(Integer.valueOf(classElement.attributeValue("externalId")));
+					} catch (Exception e) {
+						sLog.error("An integer value is required as external id of a class element (student " + externalId + ").");
+						problemStudents.add(externalId);
+					}
+				}
+				
+				// Overrides
+				for (Iterator<?> j = studentElement.elementIterator("override"); j.hasNext(); ) {
+					Element overrideElement = (Element)j.next();
+					update.withOverride(
+							overrideElement.attributeValue("type"),
+							overrideElement.attributeValue("subject"),
+							overrideElement.attributeValue("course", overrideElement.attributeValue("courseNbr")),
+							overrideElement.attributeValue("crn"));
 				}
 				
 				for (Long sessionId: sessionIds) {
