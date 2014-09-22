@@ -20,6 +20,7 @@
 package org.unitime.banner.onlinesectioning;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.unitime.banner.model.BannerSection;
+import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicAreaClassification;
 import org.unitime.timetable.model.AcademicClassification;
@@ -38,6 +40,9 @@ import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.CourseRequest;
 import org.unitime.timetable.model.CourseRequestOption;
+import org.unitime.timetable.model.InstrOfferingConfig;
+import org.unitime.timetable.model.InstructionalOffering;
+import org.unitime.timetable.model.OverrideReservation;
 import org.unitime.timetable.model.PosMajor;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
@@ -67,8 +72,13 @@ import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
 @CheckMaster(Master.REQUIRED)
 public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerUpdateStudentAction.UpdateResult> {
 	private static final long serialVersionUID = 1L;
-	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iAcademicArea, iClassification, iMajor;
+	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail;
 	private List<String[]> iGroups = new ArrayList<String[]>();
+	private List<String[]> iAcadAreaClasf = new ArrayList<String[]>();
+	private boolean iUpdateAcadAreaClasf = false;
+	private List<String[]> iAcadAreaMajor = new ArrayList<String[]>();
+	private boolean iUpdateAcadeAreaMajor = false;
+	private List<String[]> iOverrides = new ArrayList<String[]>();
 	private Set<Integer> iCRNs = new TreeSet<Integer>();
 	private Long iStudentId;
 	private Session iSession;
@@ -92,13 +102,31 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
-	public BannerUpdateStudentAction withCurriculum(String academicArea, String classification, String major) {
-		iAcademicArea = academicArea;
-		iClassification = classification;
-		iMajor = major;
+	public BannerUpdateStudentAction withAcadAreaClassification(String academicArea, String classification) {
+		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty()) return this;
+		iUpdateAcadAreaClasf = true;
+		iAcadAreaClasf.add(new String[] {academicArea, classification});
 		return this;
 	}
 	
+	public BannerUpdateStudentAction updateAcadAreaClassifications(boolean update) {
+		iUpdateAcadAreaClasf = update;
+		return this;
+	}
+	
+	public BannerUpdateStudentAction withAcadAreaMajor(String academicArea, String major) {
+		if (academicArea == null || academicArea.isEmpty() || major == null || major.isEmpty()) return this;
+		iUpdateAcadeAreaMajor = true;
+		iAcadAreaMajor.add(new String[] {academicArea, major});
+		return this;
+	}
+	
+	public BannerUpdateStudentAction updateAcadAreaMajors(boolean update) {
+		iUpdateAcadeAreaMajor = update;
+		return this;
+	}
+
+
 	public BannerUpdateStudentAction withGroup(String externalId, String campus, String abbreviation, String name) {
 		iGroups.add(new String[] {externalId, campus, abbreviation, name});
 		return this;
@@ -106,6 +134,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	public BannerUpdateStudentAction withCRN(Integer crn) {
 		iCRNs.add(crn);
+		return this;
+	}
+	
+	public BannerUpdateStudentAction withOverride(String type, String subject, String course, String crn) {
+		iOverrides.add(new String[] {type, subject, course, crn});
 		return this;
 	}
 
@@ -130,8 +163,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			helper.getAction().addOptionBuilder().setKey("CRNs").setValue(iCRNs.toString());
 			if (iEmail != null)
 				helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
-			if (iAcademicArea != null && iClassification != null)
-				helper.getAction().addOptionBuilder().setKey("curriculum").setValue(iAcademicArea + "/" + iMajor + " " + iClassification);
+			if (!iAcadAreaClasf.isEmpty()) {
+				if (iAcadAreaClasf.isEmpty()) return null;
+				String[] areaClasf = iAcadAreaClasf.get(0);
+				String major = null;
+				for (String[] areaMajor: iAcadAreaMajor)
+					if (areaMajor[0].equals(areaClasf[0])) {
+						major = areaMajor[1]; break;
+					}
+				helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + (major == null ? "" : "/" + major) + " " + areaClasf[1]);
+			}
+				
 			
 			if (iStudentId != null)
 				action.getStudentBuilder().setUniqueId(iStudentId);
@@ -179,6 +221,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					action.getStudentBuilder().setUniqueId(iStudentId);
 				} else if (changed)
 					helper.getHibSession().update(student);
+				
+				if (updateStudentOverrides(student, helper))
+					changed = true;
 				
 				if (changed) {
 					// Unload student
@@ -258,13 +303,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			if (updateStudentGroups(student, helper))
 				changed = true;
 			
-			if (updateClassEnrollments(student, getEnrollments(helper), helper))
-				changed = true;
-			
 			if (iStudentId == null)
 				iStudentId = (Long)helper.getHibSession().save(student);
 			else if (changed)
 				helper.getHibSession().update(student);
+
+			if (updateStudentOverrides(student, helper))
+				changed = true;
+
+			if (updateClassEnrollments(student, getEnrollments(helper), helper))
+				changed = true;
 			
 			helper.commitTransaction();
 		} catch (Exception e) {
@@ -317,88 +365,113 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			changed = true;
 		}
 		
-		// This makes the assumption that when working with Banner students have only one AcademicAreaClassification
-		AcademicAreaClassification aac = null;
-		for(Iterator<?> it = student.getAcademicAreaClassifications().iterator(); it.hasNext();){
-			aac = (AcademicAreaClassification) it.next();
-			break;
-		}
-		if (iAcademicArea != null && iClassification != null) {
-			if (aac == null || !(
-					(aac.getAcademicArea().getExternalUniqueId().equalsIgnoreCase(iAcademicArea) || aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(iAcademicArea)) &&
-					(aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(iClassification) || aac.getAcademicClassification().getCode().equalsIgnoreCase(iAcademicArea)))) {
-				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iAcademicArea);						
+		if (iUpdateAcadAreaClasf) {
+			List<AcademicAreaClassification> remaining = new ArrayList<AcademicAreaClassification>(student.getAcademicAreaClassifications());
+			aac: for (String[] areaClasf: iAcadAreaClasf) {
+				String area = areaClasf[0], clasf = areaClasf[1];
+				for (Iterator<AcademicAreaClassification> i = remaining.iterator(); i.hasNext(); ) {
+					AcademicAreaClassification aac = i.next();
+					if ((area.equalsIgnoreCase(aac.getAcademicArea().getExternalUniqueId()) || area.equalsIgnoreCase(aac.getAcademicArea().getAcademicAreaAbbreviation())) &&
+						(clasf.equalsIgnoreCase(aac.getAcademicClassification().getExternalUniqueId()) || clasf.equalsIgnoreCase(aac.getAcademicClassification().getCode()))) {
+						i.remove(); continue aac;
+					}
+				}
+					
+				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), area);						
 				if (aa == null)
-					aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), iAcademicArea);
+					aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), area);
 				if (aa == null){
 					aa = new AcademicArea();
 					aa.setPosMajors(new HashSet<PosMajor>());
-					aa.setAcademicAreaAbbreviation(iAcademicArea);
+					aa.setAcademicAreaAbbreviation(area);
 					aa.setSession(student.getSession());
-					aa.setExternalUniqueId(iAcademicArea);
-					aa.setTitle(iAcademicArea);
+					aa.setExternalUniqueId(area);
+					aa.setTitle(area);
 					aa.setUniqueId((Long)helper.getHibSession().save(aa));
-					helper.info("Added Academic Area:  " + iAcademicArea);
+					helper.info("Added Academic Area:  " + area);
 				}
-				if (aac == null) 
-					aac = new AcademicAreaClassification();
-				aac.setAcademicArea(aa);
 				
-				AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iClassification);
+				AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), clasf);
 				if (ac == null)
-					ac = AcademicClassification.findByCode(helper.getHibSession(), student.getSession().getUniqueId(), iClassification);
+					ac = AcademicClassification.findByCode(helper.getHibSession(), student.getSession().getUniqueId(), clasf);
 				if (ac == null){
 					ac = new AcademicClassification();
-					ac.setCode(iClassification);
-					ac.setExternalUniqueId(iClassification);
-					ac.setName(iClassification);
+					ac.setCode(clasf);
+					ac.setExternalUniqueId(clasf);
+					ac.setName(clasf);
 					ac.setSession(student.getSession());
 					ac.setUniqueId((Long) helper.getHibSession().save(ac));
-					helper.info("Added Academic Classification:  " + iClassification);
+					helper.info("Added Academic Classification:  " + clasf);
 				}
+
+				AcademicAreaClassification aac = new AcademicAreaClassification();
+				aac.setAcademicArea(aa);
 				aac.setAcademicClassification(ac);
-				if (aac.getStudent() == null) {
-					aac.setStudent(student);
-					student.addToacademicAreaClassifications(aac);				
-				}
+				aac.setStudent(student);
+				student.addToacademicAreaClassifications(aac);
+				changed = true;
+			}
+			
+			for (AcademicAreaClassification aac: remaining) {
+				student.getAcademicAreaClassifications().remove(aac);
+				helper.getHibSession().delete(aac);
 				changed = true;
 			}
 		}
 		
-		//This makes the assumption that when working with Banner students have only one Major
-		if (iMajor != null && aac != null) {
-			PosMajor m = null;
-			for(Iterator<?> it = student.getPosMajors().iterator(); it.hasNext();) {
-				m = (PosMajor) it.next();
-				break;
-			}
-			if (m == null || !(iMajor.equalsIgnoreCase(m.getExternalUniqueId()) || iMajor.equalsIgnoreCase(m.getCode())) ||
-					!(m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea()))) {
-				student.getPosMajors().clear();
+		if (iUpdateAcadeAreaMajor) {
+			List<PosMajor> remaining = new ArrayList<PosMajor>(student.getPosMajors());
+			mj: for (String[] areaMajor: iAcadAreaMajor){
+				String area = areaMajor[0], major = areaMajor[1];
+				for (Iterator<PosMajor> i = remaining.iterator(); i.hasNext(); ) {
+					PosMajor m = i.next();
+					if (!major.equalsIgnoreCase(m.getExternalUniqueId()) && !major.equalsIgnoreCase(m.getCode())) continue;
+					for (AcademicArea a: m.getAcademicAreas()) {
+						if (area.equalsIgnoreCase(a.getExternalUniqueId()) || area.equalsIgnoreCase(a.getAcademicAreaAbbreviation())) {
+							i.remove(); continue mj;
+						}
+					}
+				}
 				
-				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
+				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), area);						
+				if (aa == null)
+					aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), area);
+				if (aa == null){
+					aa = new AcademicArea();
+					aa.setPosMajors(new HashSet<PosMajor>());
+					aa.setAcademicAreaAbbreviation(area);
+					aa.setSession(student.getSession());
+					aa.setExternalUniqueId(area);
+					aa.setTitle(area);
+					aa.setUniqueId((Long)helper.getHibSession().save(aa));
+					helper.info("Added Academic Area:  " + area);
+				}
+				
+				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), major, area);
 				if (posMajor == null)
-					posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), student.getSession().getUniqueId(), iMajor, iAcademicArea);
+					posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), student.getSession().getUniqueId(), major, area);
 				if (posMajor == null) {
 					posMajor = new PosMajor();
-					posMajor.setCode(iMajor);
-					posMajor.setExternalUniqueId(iMajor);
-					posMajor.setName(iMajor);
+					posMajor.setCode(major);
+					posMajor.setExternalUniqueId(major);
+					posMajor.setName(major);
 					posMajor.setSession(student.getSession());
 					posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
-					posMajor.addToacademicAreas(aac.getAcademicArea());
-					aac.getAcademicArea().addToposMajors(posMajor);
-					helper.info("Added Major:  " + iMajor + " to Academic Area:  " + iAcademicArea);
+					posMajor.addToacademicAreas(aa);
+					aa.addToposMajors(posMajor);
+					helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 				}
+				
 				student.addToposMajors(posMajor);
 				changed = true;
-			} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
-				m.addToacademicAreas(aac.getAcademicArea());
-				aac.getAcademicArea().addToposMajors(m);
-				helper.info("Added Academic Area: " + iAcademicArea + " to existing Major:  " + iMajor);
+			}
+			
+			for (PosMajor m: remaining) {
+				student.getPosMajors().remove(m);
 				changed = true;
 			}
 		}
+		
 		return changed;
 	}
 	
@@ -448,6 +521,186 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			changed = true;
 		}
     	return changed;
+	}
+	
+	private boolean isParentOf(Class_ c1, Class_ c2) {
+		if (c2 == null) return false;
+		if (c1.equals(c2.getParentClass())) return true;
+		return isParentOf(c1, c2.getParentClass());
+	}
+	
+	private boolean hasChild(Class_ c1, Collection<Class_> classes) {
+		for (Class_ c2: classes) {
+			if (isParentOf(c1, c2)) return true;
+		}
+		return false;
+	}
+	
+	private boolean updateStudentOverrides(Student student, OnlineSectioningHelper helper) {
+		boolean changed = false;
+
+		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = new HashMap<InstructionalOffering, Map<OverrideType, Set<Class_>>>();
+		for (String[] override: iOverrides) {
+			OverrideType type = null;
+			for (OverrideType t: OverrideType.values()) {
+				if (t.getReference().equalsIgnoreCase(override[0])) { type = t; break; }
+			}
+			if (type == null) {
+				helper.info("Unknown override type " + override[0]);
+				continue;
+			}
+			
+			String subject = override[1], course = override[2];
+
+			Integer crn = null;
+			if (override[3] != null && !override[3].isEmpty()) {
+				try {
+					crn = Integer.valueOf(override[3]);
+				} catch (NumberFormatException e) {
+					helper.warn("Failed to parse CRN " + override[3]);
+				}
+			}
+			
+			if (crn == null) {
+				@SuppressWarnings("unchecked")
+				List<CourseOffering> courses = (List<CourseOffering>)helper.getHibSession().createQuery(
+						"from CourseOffering co where " +
+						"co.instructionalOffering.session.uniqueId = :sessionId and " +
+						"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course")
+						.setString("subject", subject).setString("course", course + "%").setLong("sessionId", iSession.getUniqueId()).list();
+				if (course.isEmpty()) {
+					helper.error("No course offering found for subject " + subject + ", course number " + course + " and banner session " + iTermCode);
+					iResult = UpdateResult.PROBLEM;
+				}
+				// all matching courses
+				for (CourseOffering co: courses) {
+					Map<OverrideType, Set<Class_>> type2classes = restrictions.get(co.getInstructionalOffering());
+					if (type2classes == null) {
+						type2classes = new HashMap<OverrideType, Set<Class_>>();
+						restrictions.put(co.getInstructionalOffering(), type2classes);
+					}
+					Set<Class_> classes = type2classes.get(type);
+					if (classes == null) {
+						classes = new HashSet<Class_>();
+						type2classes.put(type, classes);
+					}
+				}
+			} else {
+				CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(helper.getHibSession(), crn, iTermCode);
+				if (co == null) {
+					helper.error("No course offering found for CRN " + crn + " and banner session " + iTermCode);
+					iResult = UpdateResult.PROBLEM;
+					continue;
+				}
+				if (!iSession.equals(co.getInstructionalOffering().getSession())) continue;
+				
+				Map<OverrideType, Set<Class_>> type2classes = restrictions.get(co.getInstructionalOffering());
+				if (type2classes == null) {
+					type2classes = new HashMap<OverrideType, Set<Class_>>();
+					restrictions.put(co.getInstructionalOffering(), type2classes);
+				}
+				Set<Class_> classes = type2classes.get(type);
+				if (classes == null) {
+					classes = new HashSet<Class_>();
+					type2classes.put(type, classes);
+				}
+
+				boolean foundClass = false;
+				for(Iterator<?> it = BannerSection.findAllClassesForCrnAndTermCode(helper.getHibSession(), crn, iTermCode).iterator(); it.hasNext();) {
+					Class_ c = (Class_) it.next();
+					if (!iSession.equals(c.getSession())) continue;
+					classes.add(c);
+					foundClass = true;
+				}
+				if (!foundClass) {
+					helper.error("No classes found for CRN " + crn + " and banner session " + iTermCode);
+					iResult = UpdateResult.PROBLEM;
+					continue;
+				}
+			}
+		}
+		
+		@SuppressWarnings("unchecked")
+		List<OverrideReservation> overrides = (List<OverrideReservation>)helper.getHibSession().createQuery(
+				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
+			.setLong("studentId", student.getUniqueId()).list();
+		
+		for (Map.Entry<InstructionalOffering, Map<OverrideType, Set<Class_>>> e: restrictions.entrySet()) {
+			InstructionalOffering io = e.getKey();
+			overrides: for (Map.Entry<OverrideType, Set<Class_>> f: e.getValue().entrySet()) {
+				OverrideType type = f.getKey();
+				Set<Class_> classes = f.getValue();
+				OverrideReservation override = null;
+				
+				for (Iterator<OverrideReservation> i = overrides.iterator(); i.hasNext(); ) {
+					OverrideReservation r = i.next();
+					if (r.getOverrideType().equals(type) && r.getInstructionalOffering().equals(io)) {
+						int cnt = 0;
+						boolean match = true;
+						for (Class_ c: classes) {
+							if (hasChild(c, classes)) continue;
+							if (r.getClasses().contains(c)) {
+								cnt ++;
+							} else {
+								match = false; break;
+							}
+						}
+						if (match && r.getClasses().size() == cnt && r.getConfigurations().isEmpty()) {
+							// match found --> no change is needed
+							i.remove();
+							continue overrides;
+						}
+						if (r.getStudents().size() == 1) {
+							// update an existing override
+							override = r;
+							i.remove();
+							break;
+						}
+					}
+				}
+				
+				if (override == null) {
+					// create a new override reservation
+					override = new OverrideReservation();
+					override.setOverrideType(type);
+					override.setStudents(new HashSet<Student>());
+					override.setConfigurations(new HashSet<InstrOfferingConfig>());
+					override.setClasses(new HashSet<Class_>());
+					override.setInstructionalOffering(io);
+					io.addToreservations(override);
+					override.addTostudents(student);
+				} else {
+					override.getConfigurations().clear();
+					override.getClasses().clear();
+				}
+				
+				String rx = null;
+				for (Class_ c: classes)
+					if (!hasChild(c, classes)) {
+						override.addToclasses(c);
+						rx = (rx == null ? c.getExternalId(io.getControllingCourseOffering()) : rx + ", " + c.getExternalId(io.getControllingCourseOffering()));
+					}
+				
+				helper.info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
+
+				helper.getHibSession().saveOrUpdate(override);
+				changed = true;
+			}
+		}
+		
+		for (OverrideReservation r: overrides) {
+			helper.info("Removed " + r.getOverrideType().getReference() + " override for " + r.getInstructionalOffering().getCourseName());
+			if (r.getStudents().size() > 1) {
+				r.getStudents().remove(student);
+				helper.getHibSession().update(r);
+			} else {
+				r.getInstructionalOffering().getReservations().remove(r);
+				helper.getHibSession().delete(r);
+			}
+			changed = true;
+		}
+		
+		return changed;
 	}
 	
 	private boolean updateClassEnrollments(Student student, Map<CourseOffering, List<Class_>> courseToClassEnrollments, OnlineSectioningHelper helper) {
