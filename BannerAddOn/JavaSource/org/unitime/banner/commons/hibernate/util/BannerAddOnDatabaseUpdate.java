@@ -37,6 +37,8 @@ public class BannerAddOnDatabaseUpdate extends DatabaseUpdate {
 	        DataExchangeHelper.sExportRegister.put("schedule", BannerSectionAuditExport.class);
 	        DataExchangeHelper.sImportRegister.put("enterprise", org.unitime.banner.dataexchange.BannerStudentEnrollmentMessage.class);
 	        DataExchangeHelper.sImportRegister.put("studentUpdates", org.unitime.banner.onlinesectioning.BannerStudentUpdates.class);
+	        DataExchangeHelper.sImportRegister.put("students", org.unitime.banner.dataexchange.BannerStudentImport.class);
+	        DataExchangeHelper.sExportRegister.put("students", org.unitime.banner.dataexchange.BannerStudentExport.class);
 	    }
 		public BannerAddOnDatabaseUpdate(Document document) throws Exception {
 	        super(document);
