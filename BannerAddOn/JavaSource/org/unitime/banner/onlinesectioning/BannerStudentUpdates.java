@@ -27,32 +27,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
 import org.hibernate.CacheMode;
 import org.unitime.banner.model.Queue;
 import org.unitime.banner.model.QueueIn;
 import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.UpdateResult;
+import org.unitime.timetable.dataexchange.BaseImport;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
 import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
+import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper.Message;
+import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper.MessageHandler;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.solver.jgroups.SolverContainer;
+import org.unitime.timetable.solver.service.SolverServerService;
+import org.unitime.timetable.spring.SpringApplicationContextHolder;
 
 /**
  * @author Tomas Muller
  */
-public class BannerStudentUpdates {
-	protected static Log sLog = LogFactory.getLog(BannerStudentUpdates.class);
+public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 	private SolverContainer<OnlineSectioningServer> iContainer;
 
 	public BannerStudentUpdates(SolverContainer<OnlineSectioningServer> container) {
+		super();
 		iContainer = container;
+	}
+	
+	public BannerStudentUpdates() {
+		super();
+		if (SpringApplicationContextHolder.isInitialized())
+			iContainer = ((SolverServerService)SpringApplicationContextHolder.getBean("solverServerService")).getOnlineStudentSchedulingContainer();
 	}
 	
 	public void pollMessage() {
@@ -66,14 +75,14 @@ public class BannerStudentUpdates {
 							.uniqueResult();
 					if (qi == null) break;
 					
-					sLog.info("Processing message posted at " + qi.getPostDate());
+					info("Processing message posted at " + qi.getPostDate());
 					try {
 						processMessage(hibSession, qi.getXml().getRootElement());
-						sLog.info("Message processed.");
+						info("Message processed.");
 						qi.setStatus(Queue.STATUS_PROCESSED);
 					} catch (Exception e) {
 						qi.setStatus(Queue.STATUS_FAILED);
-						sLog.error("Failed to process a message: " + e.getMessage(), e);
+						error("Failed to process a message: " + e.getMessage(), e);
 					}
 					qi.setProcessDate(new Date());
 					hibSession.update(qi);
@@ -84,7 +93,7 @@ public class BannerStudentUpdates {
 				}
 			}
 		} catch (Exception ex) {
-			sLog.error("Failed to process messages: " + ex.getMessage(), ex);
+			error("Failed to process messages: " + ex.getMessage(), ex);
 		}
 
 	}
@@ -107,14 +116,14 @@ public class BannerStudentUpdates {
 			try {
 				String externalId = studentElement.attributeValue("externalId");
 				if (externalId == null) {
-					sLog.error("No externalId was given for a student.");
+					error("No externalId was given for a student.");
 					continue;
 				}
 				while (trimLeadingZerosFromExternalId && externalId.startsWith("0")) externalId = externalId.substring(1);
 				
 				String bannerSession = studentElement.attributeValue("session");
 				if (bannerSession == null) {
-					sLog.error("No session was given for a student.");
+					error("No session was given for a student.");
 					continue;
 				}
 				List<Long> sessionIds = session2ids.get(bannerSession);
@@ -181,7 +190,7 @@ public class BannerStudentUpdates {
 					try {
 						update.withCRN(Integer.valueOf(crnElement.getTextTrim()));
 					} catch (Exception e) {
-						sLog.error("An integer value is required for a crn element (student " + externalId + ").");
+						error("An integer value is required for a crn element (student " + externalId + ").");
 						problemStudents.add(externalId);
 					}
 				}
@@ -191,7 +200,7 @@ public class BannerStudentUpdates {
 					try {
 						update.withCRN(Integer.valueOf(classElement.attributeValue("externalId")));
 					} catch (Exception e) {
-						sLog.error("An integer value is required as external id of a class element (student " + externalId + ").");
+						error("An integer value is required as external id of a class element (student " + externalId + ").");
 						problemStudents.add(externalId);
 					}
 				}
@@ -224,7 +233,7 @@ public class BannerStudentUpdates {
 							}
 						} else {
 							OnlineSectioningHelper h = new OnlineSectioningHelper(hibSession, user(), CacheMode.REFRESH);
-							h.addMessageHandler(new OnlineSectioningHelper.DefaultMessageLogger(sLog));
+							h.addMessageHandler(this);
 							UpdateResult result = update.execute(sessionId, h);
 							switch (result) {
 							case OK:
@@ -248,7 +257,7 @@ public class BannerStudentUpdates {
 							}
 						}
 					} catch (Exception e) {
-						sLog.error("Failed to update student " +externalId + ": " + e.getMessage());
+						error("Failed to update student " +externalId + ": " + e.getMessage());
 						failedStudents.add(externalId);
 					}
 				}
@@ -265,21 +274,21 @@ public class BannerStudentUpdates {
 			}
 		}
 		long end = System.currentTimeMillis();
-		sLog.info(updatedStudents.size() + " student records updated in " + (end - start)+ " milliseconds.");
-		sLog.info(failedStudents.size() + " student records failed to update.");
-		sLog.info(problemStudents.size() + " student records were updated, but had problems.");
+		info(updatedStudents.size() + " student records updated in " + (end - start)+ " milliseconds.");
+		info(failedStudents.size() + " student records failed to update.");
+		info(problemStudents.size() + " student records were updated, but had problems.");
 		if (elementCount > 0) {
-			sLog.info("Minimum milliseconds required to process a record = " + minElementTime);
-			sLog.info("Maximum milliseconds required to process a record = " + maxElementTime);
-			sLog.info("Average milliseconds required to process a record = " + ((end - start)/elementCount));
+			info("Minimum milliseconds required to process a record = " + minElementTime);
+			info("Maximum milliseconds required to process a record = " + maxElementTime);
+			info("Average milliseconds required to process a record = " + ((end - start)/elementCount));
 		}
 		if (!failedStudents.isEmpty()) {
-			sLog.error("The following student ids were not successfully processed:  ");
-			for(String studentId : failedStudents) sLog.error("\t" + studentId);
+			error("The following student ids were not successfully processed:  ");
+			for(String studentId : failedStudents) error("\t" + studentId);
 		}
 		if (!problemStudents.isEmpty()){
-			sLog.error("The following student ids were successfully processed, but may have had problems finding all classes the student was enrolled in:  ");
-			for(String studentId : problemStudents) sLog.error("\t" + studentId);
+			error("The following student ids were successfully processed, but may have had problems finding all classes the student was enrolled in:  ");
+			for(String studentId : problemStudents) error("\t" + studentId);
 		}
 		for (Map.Entry<Long, Set<Long>> entry: session2studentIds.entrySet()) {
 			StudentSectioningQueue.studentChanged(hibSession, null, entry.getKey(), entry.getValue());
@@ -292,6 +301,45 @@ public class BannerStudentUpdates {
 			.setExternalId(StudentClassEnrollment.SystemChange.SYSTEM.name())
 			.setName(StudentClassEnrollment.SystemChange.SYSTEM.getName())
 			.setType(OnlineSectioningLog.Entity.EntityType.OTHER).build();
+	}
+
+	@Override
+	public void loadXml(Element rootElement) throws Exception {
+		org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
+		try {
+			processMessage(hibSession, rootElement);
+		} finally {
+			hibSession.close();
+			_RootDAO.closeCurrentThreadSessions();
+		}
+	}
+
+	@Override
+	public void onMessage(Message message) {
+		switch (message.getLevel()) {
+		case DEBUG:
+			debug(message.getMessage(), message.getThrowable());
+			break;
+		case INFO:
+			info(message.getMessage(), message.getThrowable());
+			break;
+		case WARN:
+			warn(message.getMessage(), message.getThrowable());
+			break;
+		case ERROR:
+			error(message.getMessage(), message.getThrowable());
+			break;
+		case FATAL:
+			fatal(message.getMessage(), message.getThrowable());
+			break;
+		default:
+			info(message.getMessage(), message.getThrowable());
+		}
+	}
+
+	@Override
+	public boolean isDebugEnabled() {
+		return false;
 	}
 
 }
