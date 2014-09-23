@@ -318,7 +318,8 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 	public void onMessage(Message message) {
 		switch (message.getLevel()) {
 		case DEBUG:
-			debug(message.getMessage(), message.getThrowable());
+			if (isDebugEnabled())
+				debug(message.getMessage(), message.getThrowable());
 			break;
 		case INFO:
 			info(message.getMessage(), message.getThrowable());
