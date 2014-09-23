@@ -157,7 +157,10 @@ public class BannerStudentImport extends StudentImport {
 
 				boolean foundClass = false;
 				for (Class_ c: findClasses(crn, session.getUniqueId())) {
-					classes.add(c);
+					while (c != null) {
+						classes.add(c);
+						c = c.getParentClass();
+					}
 					foundClass = true;
 				}
 				if (!foundClass) {
@@ -170,8 +173,32 @@ public class BannerStudentImport extends StudentImport {
 		return restrictions;
 	}
 	
+	protected void mergeTimeAndLimitOverrides(Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions) {
+		for (Map<OverrideType, Set<Class_>> overrides: restrictions.values()) {
+			Set<Class_> times = overrides.get(OverrideType.AllowTimeConflict);
+			Set<Class_> limits = overrides.get(OverrideType.AllowOverLimit);
+			Set<Class_> both = overrides.get(OverrideType.AllowOverLimitTimeConflict);
+			if (times == null || limits == null || both != null) continue;
+			if (times.isEmpty() || times.containsAll(limits)) {
+				if (limits.isEmpty() || limits.containsAll(times)) {
+					overrides.put(OverrideType.AllowOverLimitTimeConflict, times);
+					overrides.remove(OverrideType.AllowTimeConflict);
+					overrides.remove(OverrideType.AllowOverLimit);
+				} else {
+					overrides.put(OverrideType.AllowOverLimitTimeConflict, times);
+					overrides.remove(OverrideType.AllowTimeConflict);
+				}
+			} else if (limits.isEmpty() || limits.containsAll(times)) {
+				overrides.put(OverrideType.AllowOverLimitTimeConflict, limits);
+				overrides.remove(OverrideType.AllowOverLimit);
+			}
+		}
+	}
+	
 	protected boolean updateStudentOverrides(Element element, Session session, Student student) {
 		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = parseOverrides(element, session);
+		
+		mergeTimeAndLimitOverrides(restrictions);
 		
 		@SuppressWarnings("unchecked")
 		List<OverrideReservation> overrides = (List<OverrideReservation>)getHibSession().createQuery(

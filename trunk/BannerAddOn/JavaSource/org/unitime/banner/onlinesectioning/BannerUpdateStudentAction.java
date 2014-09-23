@@ -349,7 +349,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return student;
 	}
 	
-	private boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper) {
+	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper) {
 		boolean changed = false;
 		if (!eq(iFName, student.getFirstName())) {
 			student.setFirstName(iFName);
@@ -478,7 +478,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return changed;
 	}
 	
-	private boolean updateStudentGroups(Student student, OnlineSectioningHelper helper) {
+	protected boolean updateStudentGroups(Student student, OnlineSectioningHelper helper) {
 		Set<StudentGroup> groups = new HashSet<StudentGroup>();
 		for (String[] g: iGroups) {
 			if (!iSession.getAcademicInitiative().equals(g[1])) continue;
@@ -526,22 +526,20 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	return changed;
 	}
 	
-	private boolean isParentOf(Class_ c1, Class_ c2) {
+	protected boolean isParentOf(Class_ c1, Class_ c2) {
 		if (c2 == null) return false;
 		if (c1.equals(c2.getParentClass())) return true;
 		return isParentOf(c1, c2.getParentClass());
 	}
 	
-	private boolean hasChild(Class_ c1, Collection<Class_> classes) {
+	protected boolean hasChild(Class_ c1, Collection<Class_> classes) {
 		for (Class_ c2: classes) {
 			if (isParentOf(c1, c2)) return true;
 		}
 		return false;
 	}
 	
-	private boolean updateStudentOverrides(Student student, OnlineSectioningServer server, OnlineSectioningHelper helper) {
-		boolean changed = false;
-
+	protected Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> getOverrides(OnlineSectioningHelper helper) {
 		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = new HashMap<InstructionalOffering, Map<OverrideType, Set<Class_>>>();
 		for (String[] override: iOverrides) {
 			OverrideType type = null;
@@ -612,7 +610,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				for(Iterator<?> it = BannerSection.findAllClassesForCrnAndTermCode(helper.getHibSession(), crn, iTermCode).iterator(); it.hasNext();) {
 					Class_ c = (Class_) it.next();
 					if (!iSession.equals(c.getSession())) continue;
-					classes.add(c);
+					while (c!=null) {
+						classes.add(c);
+						c = c.getParentClass();
+					}
 					foundClass = true;
 				}
 				if (!foundClass) {
@@ -622,6 +623,36 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 			}
 		}
+		return restrictions;
+	}
+	
+	protected void mergeTimeAndLimitOverrides(Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions) {
+		for (Map<OverrideType, Set<Class_>> overrides: restrictions.values()) {
+			Set<Class_> times = overrides.get(OverrideType.AllowTimeConflict);
+			Set<Class_> limits = overrides.get(OverrideType.AllowOverLimit);
+			if (times == null || limits == null) continue;
+			if (times.isEmpty() || times.containsAll(limits)) {
+				if (limits.isEmpty() || limits.containsAll(times)) {
+					overrides.put(OverrideType.AllowOverLimitTimeConflict, times);
+					overrides.remove(OverrideType.AllowTimeConflict);
+					overrides.remove(OverrideType.AllowOverLimit);
+				} else {
+					overrides.put(OverrideType.AllowOverLimitTimeConflict, times);
+					overrides.remove(OverrideType.AllowTimeConflict);
+				}
+			} else if (limits.isEmpty() || limits.containsAll(times)) {
+				overrides.put(OverrideType.AllowOverLimitTimeConflict, limits);
+				overrides.remove(OverrideType.AllowOverLimit);
+			}
+		}
+	}
+	
+	protected boolean updateStudentOverrides(Student student, OnlineSectioningServer server, OnlineSectioningHelper helper) {
+		boolean changed = false;
+
+		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = getOverrides(helper);
+
+		mergeTimeAndLimitOverrides(restrictions);
 		
 		@SuppressWarnings("unchecked")
 		List<OverrideReservation> overrides = (List<OverrideReservation>)helper.getHibSession().createQuery(
@@ -754,7 +785,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return changed;
 	}
 	
-	private boolean updateClassEnrollments(Student student, Map<CourseOffering, List<Class_>> courseToClassEnrollments, OnlineSectioningHelper helper) {
+	protected boolean updateClassEnrollments(Student student, Map<CourseOffering, List<Class_>> courseToClassEnrollments, OnlineSectioningHelper helper) {
 		boolean changed = false;
 
 		Hashtable<Pair, StudentClassEnrollment> enrollments = new Hashtable<Pair, StudentClassEnrollment>();
