@@ -98,4 +98,25 @@ public class QueueOutDAO extends BaseQueueOutDAO {
         
         return null;
 	}
+	
+	public QueueOut findFirstByStatus(String status) throws LoggableException {
+		List<QueueOut> list = null;
+		Transaction tx = null;
+		try {
+			tx = getSession().beginTransaction();
+			
+			Query query = getSession().createQuery("from QueueOut where status = :status order by uniqueId");
+			query.setString("status", status);
+			query.setMaxResults(1);
+			
+			list = query.list();
+			tx.commit();
+        } catch (HibernateException e) {
+        	tx.rollback();
+        	throw new LoggableException(e);
+        } finally {
+        	getSession().close();
+        }
+		return (list == null || list.isEmpty() ? null : list.get(0));
+	}
 }

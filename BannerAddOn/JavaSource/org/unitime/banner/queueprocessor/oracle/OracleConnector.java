@@ -89,14 +89,14 @@ public class OracleConnector {
 		Debug.info("**  the stored procedure is defined by the property: 'banner.studentUpdates.storedProcedure.call'.");
 		Debug.info("**  The required format of the parameters for the Banner Stored procedure must be: ");
 		Debug.info("**");
-		Debug.info("**    out_response => ?");
+		Debug.info("**    out_response => ?, in_request => ?");
 		Debug.info("**");
-		Debug.info("**  The names of the parameters may change but the first parameter must be a CLOB input,");
-		Debug.info("**    the second parameter must be a CLOB output, and the third parameter must be a CLOB output");
+		Debug.info("**  The names of the parameters may change but the first parameter must be a CLOB output,");
+		Debug.info("**    the second parameter must be a CLOB input");
 		Debug.info("**");
 		Debug.info("**  An example of how to define a banner stored procedure call in the properties file is as follows:");
 		Debug.info("**");
-		Debug.info("**    banner.studentUpdates.storedProcedure.call=begin sz_unitime.p_request_student_updates(out_response => ?); end;");
+		Debug.info("**    banner.studentUpdates.storedProcedure.call=begin sz_unitime.p_request_student_updates(out_response => ?, in_studentList => ?); end;");
 		Debug.info("**");			
 		Debug.info("**  If you have the parameters defined correctly then possbile the error is in documentToCLOB ");
 		Debug.info("******************************************************************************************************");
@@ -178,7 +178,7 @@ public class OracleConnector {
 	}
 
 	
-	public Clob requestEnrollmentChanges() throws SQLException,
+	public Clob requestEnrollmentChanges(Document request) throws SQLException,
 	IOException {
 
 		CallableStatement stmt = null;
@@ -192,6 +192,14 @@ public class OracleConnector {
 			stmt.registerOutParameter(1, java.sql.Types.CLOB);
 		} catch (Exception e) {
 			outputStandardStudentUpdateDebugInfo(e);
+		}
+		
+		try {
+			if (stmt.getParameterMetaData().getParameterCount() == 2) {
+				stmt.setClob(2, request == null ? null : ClobTools.documentToCLOB(request, conn));
+			}
+		} catch(Exception ex) {
+			outputStandardStudentUpdateDebugInfo(ex);
 		}
 		
 		try {
