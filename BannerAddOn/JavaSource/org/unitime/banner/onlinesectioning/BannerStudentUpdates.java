@@ -232,28 +232,32 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 							case NO_CHANGE:
 							}
 						} else {
-							OnlineSectioningHelper h = new OnlineSectioningHelper(hibSession, user(), CacheMode.REFRESH);
-							h.addMessageHandler(this);
-							UpdateResult result = update.execute(sessionId, h);
-							switch (result) {
-							case OK:
-								updatedStudents.add(externalId);
-								break;
-							case FAILURE:
-								failedStudents.add(externalId);
-								break;
-							case PROBLEM:
-								problemStudents.add(externalId);
-								break;
-							case NO_CHANGE:
-							}
-							if (update.getStudentId() != null && (result == UpdateResult.OK || result == UpdateResult.PROBLEM)) {
-								Set<Long> ids = session2studentIds.get(sessionId);
-								if (ids == null) {
-									ids = new HashSet<Long>();
-									session2studentIds.put(sessionId, ids);
+							OnlineSectioningHelper h = new OnlineSectioningHelper(QueueInDAO.getInstance().createNewSession(), user(), CacheMode.REFRESH);
+							try {
+								h.addMessageHandler(this);
+								UpdateResult result = update.execute(sessionId, h);
+								switch (result) {
+								case OK:
+									updatedStudents.add(externalId);
+									break;
+								case FAILURE:
+									failedStudents.add(externalId);
+									break;
+								case PROBLEM:
+									problemStudents.add(externalId);
+									break;
+								case NO_CHANGE:
 								}
-								ids.add(update.getStudentId());
+								if (update.getStudentId() != null && (result == UpdateResult.OK || result == UpdateResult.PROBLEM)) {
+									Set<Long> ids = session2studentIds.get(sessionId);
+									if (ids == null) {
+										ids = new HashSet<Long>();
+										session2studentIds.put(sessionId, ids);
+									}
+									ids.add(update.getStudentId());
+								}
+							} finally {
+								h.getHibSession().close();
 							}
 						}
 					} catch (Exception e) {
