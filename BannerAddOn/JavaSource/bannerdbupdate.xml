@@ -110,4 +110,33 @@
 			create index idx_integrationqueuein_status on %SCHEMA%.integrationqueuein(uniqueId, status)
 		</mysql>
  	</update>
+ 	<update version="7" date="3-Nov-2014" comment="CHAR">
+ 		<plsql>drop index %SCHEMA%.idx_banner_response_crn_xlst</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override modify banner_campus_code varchar2(20 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override modify banner_campus_name varchar2(100 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_crn_provider modify term_code varchar2(20 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_cross_list_provider modify cross_list_identifier varchar2(2 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify term_code varchar2(6 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify crn varchar2(5 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify subj_code varchar2(4 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify crse_numb varchar2(5 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify seq_numb varchar2(3 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify xlst_group varchar2(2 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify external_id varchar2(50 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify action varchar2(50 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify type varchar2(50 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify message varchar2(4000 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response modify packet_id varchar2(500 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_section modify section_index varchar2(10 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_section modify cross_list_identifier varchar2(10 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_section modify link_identifier varchar2(10 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_section modify link_connector varchar2(10 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_session modify banner_campus varchar2(20 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_session modify banner_term_code varchar2(20 char)</plsql>
+		<plsql>alter table %SCHEMA%.integrationqueueerror modify errortype varchar2(2 char)</plsql>
+		<plsql>alter table %SCHEMA%.integrationqueueerror modify errortext varchar2(255 char)</plsql>
+		<plsql>alter table %SCHEMA%.integrationqueuein modify status varchar2(10 char)</plsql>
+		<plsql>alter table %SCHEMA%.integrationqueueout modify status varchar2(10 char)</plsql>
+		<plsql>create index %SCHEMA%.idx_banner_response_crn_xlst on %SCHEMA%.banner_response (term_code||crn||xlst_group)</plsql>
+	</update>
  </dbupdate>
