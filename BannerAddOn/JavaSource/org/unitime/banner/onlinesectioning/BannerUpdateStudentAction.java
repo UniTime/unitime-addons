@@ -151,8 +151,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		try {
 			iSession = SessionDAO.getInstance().get(server.getAcademicSession().getUniqueId(), helper.getHibSession());
 			
-			Student student = getStudent(helper);
-			iStudentId = student.getUniqueId();
+			iStudentId = getStudentId(helper);
 			if (iStudentId == null) changed = true;
 			
 			OnlineSectioningLog.Action.Builder action = helper.getAction();
@@ -184,6 +183,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			Lock lock = (iStudentId == null ? null : server.lockStudent(iStudentId, null, true));
 			try {
 				helper.beginTransaction();
+				Student student = getStudent(helper);
+
 				if (updateStudentDemographics(student, helper))
 					changed = true;
 				
@@ -330,6 +331,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	public Long getStudentId() { return iStudentId; }
+	
+	public Long getStudentId(OnlineSectioningHelper helper) {
+		return (Long)helper.getHibSession().createQuery("select s.uniqueId from Student s where " +
+				"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId")
+				.setLong("sessionId", iSession.getUniqueId()).setString("externalId",iExternalId)
+				.setCacheable(true).uniqueResult();
+	}
 	
 	public Student getStudent(OnlineSectioningHelper helper) {
 		Student student = Student.findByExternalIdBringBackEnrollments(helper.getHibSession(), iSession.getUniqueId(), iExternalId);
