@@ -40,6 +40,8 @@ public abstract class Queue extends BaseQueue {
 	public static final String STATUS_READY = "READY";
 	// posted message failed to be processed (outside of the queue processor)
 	public static final String STATUS_FAILED = "FAILED";
+	// posted message is being processed
+	public static final String STATUS_PROCESSING = "PROCESSING";
 
 /*[CONSTRUCTOR MARKER BEGIN]*/
 	public Queue () {

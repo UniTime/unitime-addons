@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.dom4j.Document;
 import org.dom4j.Element;
 import org.hibernate.CacheMode;
+import org.hibernate.Transaction;
 import org.unitime.banner.model.Queue;
 import org.unitime.banner.model.QueueIn;
 import org.unitime.banner.model.dao.QueueInDAO;
@@ -64,29 +66,71 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 			iContainer = ((SolverServerService)SpringApplicationContextHolder.getBean("solverServerService")).getOnlineStudentSchedulingContainer();
 	}
 	
+	protected XmlMessage getMessage() throws Exception {
+		org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
+		Transaction tx = hibSession.beginTransaction();
+		try {
+			QueueIn qi = (QueueIn)hibSession.createQuery("from QueueIn where status = :status order by uniqueId")
+					.setString("status", QueueIn.STATUS_READY)
+					.setMaxResults(1)
+					.uniqueResult();
+			
+			XmlMessage ret = null;
+			
+			if (qi != null) {
+				qi.setStatus(Queue.STATUS_PROCESSING);
+				hibSession.update(qi);
+				ret = new XmlMessage(qi.getUniqueId(), qi.getPostDate(), qi.getXml());
+			}
+
+			tx.commit();
+			
+			return ret;
+		} catch (Exception e) {
+			tx.rollback();
+			throw e;
+		} finally {
+			hibSession.close();
+		}
+	}
+	
+	protected void updateMessage(XmlMessage message, String status) throws Exception {
+		org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
+		Transaction tx = hibSession.beginTransaction();
+		try {
+			QueueIn qi = QueueInDAO.getInstance().get(message.getQueueId());
+			
+			if (qi != null) {
+				qi.setStatus(status);
+				qi.setProcessDate(new Date());
+				hibSession.update(qi);
+			}
+			
+			tx.commit();
+		} catch (Exception e) {
+			tx.rollback();
+			throw e;
+		} finally {
+			hibSession.close();
+		}
+	}
+	
 	public void pollMessage() {
 		try {
 			while (true) {
+				XmlMessage message = getMessage();
+				
+				if (message == null) break;
+				info("Processing message #" + message.getQueueId() + " posted at " + message.getCreated());
+				
 				org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
 				try {
-					QueueIn qi = (QueueIn)hibSession.createQuery("from QueueIn where status = :status order by uniqueId")
-							.setString("status", QueueIn.STATUS_READY)
-							.setMaxResults(1)
-							.uniqueResult();
-					if (qi == null) break;
-					
-					info("Processing message posted at " + qi.getPostDate());
-					try {
-						processMessage(hibSession, qi.getXml().getRootElement());
-						info("Message processed.");
-						qi.setStatus(Queue.STATUS_PROCESSED);
-					} catch (Exception e) {
-						qi.setStatus(Queue.STATUS_FAILED);
-						error("Failed to process a message: " + e.getMessage(), e);
-					}
-					qi.setProcessDate(new Date());
-					hibSession.update(qi);
-					hibSession.flush();
+					processMessage(hibSession, message.getContent().getRootElement());
+					info("Message #" + message.getQueueId() + " processed.");
+					updateMessage(message, Queue.STATUS_PROCESSED);
+				} catch (Exception e) {
+					updateMessage(message, Queue.STATUS_FAILED);
+					error("Failed to process message #" + message.getQueueId() +": " + e.getMessage(), e);
 				} finally {
 					hibSession.close();
 					_RootDAO.closeCurrentThreadSessions();
@@ -345,6 +389,22 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 	@Override
 	public boolean isDebugEnabled() {
 		return false;
+	}
+	
+	protected static class XmlMessage {
+		private Long iQueueId;
+		private Date iCreated;
+		private Document iContent;
+		
+		XmlMessage(Long queueId, Date created, Document content) {
+			iQueueId = queueId;
+			iCreated = created;
+			iContent = content;
+		}
+		
+		public Long getQueueId() { return iQueueId; }
+		public Date getCreated() { return iCreated; }
+		public Document getContent() { return iContent; }
 	}
 
 }
