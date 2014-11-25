@@ -19,24 +19,20 @@
 */
 package org.unitime.banner.onlinesectioning;
 
-import java.util.concurrent.locks.Lock;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.unitime.timetable.ApplicationProperties;
-import org.unitime.timetable.solver.jgroups.OnlineStudentSchedulingContainerRemote;
 import org.unitime.timetable.solver.jgroups.SolverServer;
 
 /**
  * @author Tomas Muller
  */
-public class BannerStudentUpdatesPoller  extends Thread {
+public class BannerStudentUpdatesPoller extends Thread {
 	protected static Log sLog = LogFactory.getLog(BannerStudentUpdatesPoller.class);
 
 	private SolverServer iServer;
 	private BannerStudentUpdates iUpdates;
 	private boolean iActive = true;
-	private Lock iLock = null;
 	
 	public BannerStudentUpdatesPoller(SolverServer server, BannerStudentUpdates updates) {
 		super("BannerStudentUpdatesPoller");
@@ -49,32 +45,9 @@ public class BannerStudentUpdatesPoller  extends Thread {
 		return 1000l * Long.parseLong(ApplicationProperties.getProperty("banner.studentUpdates.pollInterval",  isEnabled() ? "10" : "60"));
 	}
 	
-	protected void waitForLockIfNeeded() throws InterruptedException {
-		if (iLock == null) {
-			if (iServer != null && iServer.isActive() && iServer.getOnlineStudentSchedulingContainer() instanceof OnlineStudentSchedulingContainerRemote) {
-				iLock = ((OnlineStudentSchedulingContainerRemote)iServer.getOnlineStudentSchedulingContainer()).getLockService().getLock("studentUpdatesService");
-				try {
-					sLog.info("Waiting for lock...");
-					iLock.lockInterruptibly();
-					sLog.info("Lock acquired, behold the new master!");
-				} catch (InterruptedException e) {
-					iLock = null;
-					throw e;
-				}
-			}
-		}
-	}
-	
-	protected void releaseLockIfNeeded() {
-		if (iLock != null) {
-			iLock.unlock();
-			iLock = null;
-		}
-	}
-	
 	protected boolean isEnabled() {
 		if (!"true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.studentUpdates.enabled", "false"))) return false;
-		return iServer != null && iServer.isAvailable();
+		return iServer.isActive() && iServer.isCoordinator();
 	}
 	
 	@Override
@@ -85,36 +58,24 @@ public class BannerStudentUpdatesPoller  extends Thread {
 	}
 	
 	public void run() {
-		try {
-			sLog.info("Banner Student Updates Poller is up.");
-			while (true) {
+		sLog.info("Banner Student Updates Poller is up.");
+		while (true) {
+			try {
+				sleep(getSleepInterval());
+			} catch (InterruptedException e) {}
+			
+			if (!iActive) break;
+			
+			if (isEnabled()) {
 				try {
-					sleep(getSleepInterval());
-				} catch (InterruptedException e) {}
-				
-				if (!iActive) break;
-
-				if (isEnabled()) {
-					try {
-						waitForLockIfNeeded();
-					} catch (InterruptedException e) {
-						if (!iActive) break;
-					}
-				} else {
-					releaseLockIfNeeded();
-					continue;
-				}
-				
-				try {
+					sLog.info("Checking for update messages...");
 					iUpdates.pollMessage();
 				} catch (Exception e) {
 					sLog.error("Failed to process update messages:" + e.getMessage(), e);
 				}
 			}
-			sLog.info("Banner Student Updates Poller is down.");
-		} finally {
-			releaseLockIfNeeded();
 		}
+		sLog.info("Banner Student Updates Poller is down.");
 	}
-	
+
 }
