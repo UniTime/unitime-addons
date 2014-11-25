@@ -21,6 +21,7 @@ package org.unitime.banner.onlinesectioning;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -795,11 +796,21 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected boolean updateClassEnrollments(Student student, Map<CourseOffering, List<Class_>> courseToClassEnrollments, OnlineSectioningHelper helper) {
 		boolean changed = false;
+		Date ts = new Date();
 
 		Hashtable<Pair, StudentClassEnrollment> enrollments = new Hashtable<Pair, StudentClassEnrollment>();
-		if (student.getClassEnrollments() != null){
+		if (student.getClassEnrollments() != null) {
+			List<StudentClassEnrollment> duplicates = new ArrayList<StudentClassEnrollment>();
         	for (StudentClassEnrollment enrollment: student.getClassEnrollments()) {
-        		enrollments.put(new Pair(enrollment.getCourseOffering().getUniqueId(), enrollment.getClazz().getUniqueId()), enrollment);
+        		StudentClassEnrollment previous = enrollments.put(new Pair(enrollment.getCourseOffering().getUniqueId(), enrollment.getClazz().getUniqueId()), enrollment);
+        		// check for duplicate enrollments
+        		if (previous != null) duplicates.add(previous);
+        	}
+        	// remove duplicate enrollments
+        	for (StudentClassEnrollment enrollment: duplicates) {
+    			student.getClassEnrollments().remove(enrollment);
+    			helper.getHibSession().delete(enrollment);
+    			changed = true;
         	}
     	}
     	int nextPriority = 0;
@@ -808,9 +819,42 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			nextPriority = cd.getPriority() + 1;
     	Set<CourseDemand> remaining = new HashSet<CourseDemand>(student.getCourseDemands());
     	boolean fixCourseDemands = false;
+    	
+    	// populate course2request, check for course request duplicates
+    	Map<CourseOffering, CourseRequest> course2request = new Hashtable<CourseOffering, CourseRequest>();
+    	for (CourseDemand cd: student.getCourseDemands())
+    		for (CourseRequest cr: cd.getCourseRequests()) {
+    			CourseRequest previous = course2request.put(cr.getCourseOffering(), cr);
+    			if (previous != null) fixCourseDemands = true;
+    		}
 
     	for (Map.Entry<CourseOffering, List<Class_>> entry: courseToClassEnrollments.entrySet()) {
     		CourseOffering co = entry.getKey();
+    		
+    		CourseRequest cr = course2request.get(co);
+    		if (cr == null) {
+    			CourseDemand cd = new CourseDemand();
+    			cd.setTimestamp(ts);
+    			cd.setCourseRequests(new HashSet<CourseRequest>());
+    			cd.setStudent(student);
+    			student.getCourseDemands().add(cd);
+    			cd.setAlternative(false);
+    			cd.setPriority(nextPriority++);
+    			cd.setWaitlist(false);
+    			cr = new CourseRequest();
+    			cd.getCourseRequests().add(cr);
+    			cr.setCourseDemand(cd);
+    			cr.setCourseRequestOptions(new HashSet<CourseRequestOption>());
+    			cr.setAllowOverlap(false);
+    			cr.setCredit(0);
+    			cr.setOrder(0);
+    			cr.setCourseOffering(co);
+    			fixCourseDemands = true;
+        		changed = true;
+    		} else {
+    			remaining.remove(cr.getCourseDemand());
+    		}
+    		
     		for (Class_ clazz: entry.getValue()) {
     			StudentClassEnrollment enrollment = enrollments.remove(new Pair(co.getUniqueId(), clazz.getUniqueId()));
         		if (enrollment == null) {
@@ -818,47 +862,15 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
             		enrollment.setStudent(student);
             		enrollment.setClazz(clazz);
             		enrollment.setCourseOffering(co);
-            		enrollment.setTimestamp(new java.util.Date());
+            		enrollment.setTimestamp(ts);
             		student.getClassEnrollments().add(enrollment);    
             		changed = true;
         		}
-        		
-        		if (enrollment.getCourseRequest() == null) {
-            		demands: for (CourseDemand d: student.getCourseDemands()) {
-            			for (CourseRequest r: d.getCourseRequests()) {
-            				if (r.getCourseOffering().equals(co)) {
-            					enrollment.setCourseRequest(r);
-            					break demands;
-            				}
-            			}
-            		}
-            		changed = true;
-        		}
-        		
-        		if (enrollment.getCourseRequest() != null) {
-        			remaining.remove(enrollment.getCourseRequest().getCourseDemand());
-        		} else {
-        			CourseDemand cd = new CourseDemand();
-        			cd.setTimestamp(enrollment.getTimestamp());
-        			cd.setCourseRequests(new HashSet<CourseRequest>());
-        			cd.setStudent(student);
-        			student.getCourseDemands().add(cd);
-        			cd.setAlternative(false);
-        			cd.setPriority(nextPriority++);
-        			cd.setWaitlist(false);
-        			CourseRequest cr = new CourseRequest();
-        			cd.getCourseRequests().add(cr);
-        			cr.setCourseDemand(cd);
-        			cr.setCourseRequestOptions(new HashSet<CourseRequestOption>());
-        			cr.setAllowOverlap(false);
-        			cr.setCredit(0);
-        			cr.setOrder(0);
-        			cr.setCourseOffering(enrollment.getCourseOffering());
+
+        		if (enrollment.getCourseRequest() == null || !cr.equals(enrollment.getCourseRequest())) {
         			enrollment.setCourseRequest(cr);
-        			fixCourseDemands = true;
-            		
-            		changed = true;
-        		}            		
+        			changed = true;
+        		}       		
     		}
     	}
     	
