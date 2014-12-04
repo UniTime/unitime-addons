@@ -68,7 +68,7 @@ public class BannerStudentUpdatesPoller extends Thread {
 			
 			if (isEnabled()) {
 				try {
-					sLog.info("Checking for update messages...");
+					sLog.debug("Checking for update messages...");
 					iUpdates.pollMessage();
 				} catch (Exception e) {
 					sLog.error("Failed to process update messages:" + e.getMessage(), e);
