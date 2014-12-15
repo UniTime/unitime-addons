@@ -193,7 +193,7 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 		
 		@Override
 		protected void execute() throws Exception {
-		    BannerSessionRollForward sessionRollForward = new BannerSessionRollForward();
+		    BannerSessionRollForward sessionRollForward = new BannerSessionRollForward(this);
               
 	        Session toAcadSession = Session.getSessionById(iForm.getSessionToRollForwardTo());
 			if (toAcadSession == null){
@@ -209,6 +209,8 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 	        iProgress++;
 	        if (!iErrors.isEmpty()) {
 	        	setError(new Exception(((ActionMessage)iErrors.get().next()).getValues()[0].toString()));
+	        } else {
+	        	log("All done.");
 	        }
 		}
 
