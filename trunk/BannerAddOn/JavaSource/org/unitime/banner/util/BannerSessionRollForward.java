@@ -24,11 +24,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 
+import org.apache.commons.logging.Log;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.unitime.banner.form.RollForwardBannerSessionForm;
 import org.unitime.banner.interfaces.ExternalSessionRollForwardCustomizationInterface;
-import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
@@ -36,7 +36,6 @@ import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSessionDAO;
-import org.unitime.commons.Debug;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
@@ -56,8 +55,8 @@ public class BannerSessionRollForward extends SessionRollForward {
 	/**
 	 * 
 	 */
-	public BannerSessionRollForward() {
-		// do nothing
+	public BannerSessionRollForward(Log log) {
+		super(log);
 	}
 	
 	public void rollBannerSessionDataForward(ActionMessages errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
@@ -69,7 +68,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			rollForwardBannerCourseData(toSession);
 			updateClassSuffixes(toSession);
 		} catch (Exception e) {
-			Debug.error(e);
+			iLog.error("Failed to roll banner session data forward.", e);
 			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to roll banner session data forward."));
 		}
 		try {
@@ -78,7 +77,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 				customRollForwardAction.doCustomRollFowardAction(fromSession, toSession);
 			}
 		} catch (Exception e) {
-			Debug.error(e);
+			iLog.error("Failed to perform custom roll banner session data forward action.", e);
 			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to perform custom roll banner session data forward action: " + e.getMessage()));
 		}
 		
@@ -100,7 +99,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			String queryString = sb.toString();
 			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
-				Debug.info("Rolling Banner Data for Subject Area:  " + sa.getSubjectAreaAbbreviation());
+				iLog.info("Rolling Banner Data for Subject Area:  " + sa.getSubjectAreaAbbreviation());
 				Iterator fromBannerCourseIt = hibSession.createQuery(queryString)
 									.setLong("sessionId", toSessionId.longValue())
 									.setLong("subjectId", sa.getUniqueId().longValue())
@@ -117,7 +116,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 						BannerConfig toBcfg = new BannerConfig();
 						InstrOfferingConfig toIoc = InstrOfferingConfig.findByIdRolledForwardFrom(toSessionId, fromBcfg.getInstrOfferingConfigId());
 						if (toIoc == null){
-							Debug.info("Not rolling foward Banner Configuration with unique id: " + fromBcfg.getUniqueId().toString() + ", this configuration was orphaned.");		
+							iLog.info("Not rolling foward Banner Configuration with unique id: " + fromBcfg.getUniqueId().toString() + ", this configuration was orphaned.");		
 							continue;
 						}
 						toBcfg.setUniqueIdRolledForwardFrom(fromBcfg.getUniqueId());
@@ -188,7 +187,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			String queryString2 = sb2.toString();
 			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
-				Debug.info("Updating Class External Ids for Subject Area:  " + sa.getSubjectAreaAbbreviation());
+				iLog.info("Updating Class External Ids for Subject Area:  " + sa.getSubjectAreaAbbreviation());
 				Iterator bannerCourseIt = hibSession.createQuery(queryString)
 									.setLong("sessionId", toSessionId.longValue())
 									.setLong("subjectId", sa.getUniqueId().longValue())
@@ -244,16 +243,13 @@ public class BannerSessionRollForward extends SessionRollForward {
         		try {
 					externalSessionRollForwardCustomization = (ExternalSessionRollForwardCustomizationInterface) (Class.forName(className).newInstance());
 				} catch (InstantiationException e) {
-					Debug.error("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action.");
-					e.printStackTrace();
+					iLog.error("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action.", e);
 					throw (new Exception("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action."));
 				} catch (IllegalAccessException e) {
-					Debug.error("Illegal Access Exception on: " + className + " unable to perfor custom roll forward action.");
-					e.printStackTrace();
+					iLog.error("Illegal Access Exception on: " + className + " unable to perfor custom roll forward action.", e);
 					throw (new Exception("Illegal Access Exception on: " + className + " unable to perfor custom roll forward action."));
 				} catch (ClassNotFoundException e) {
-					Debug.error("Failed to find class: " + className + " using the default session element helper.");
-					e.printStackTrace();
+					iLog.error("Failed to find class: " + className + " using the default session element helper.", e);
 					throw (new Exception("Failed to find class: " + className + " using the default session element helper."));
 				}
         	} 
