@@ -30,6 +30,7 @@ import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.shared.SectioningException;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
+import org.unitime.timetable.onlinesectioning.custom.purdue.XEInterface;
 import org.unitime.timetable.onlinesectioning.custom.purdue.XEStudentEnrollment;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
 
@@ -62,6 +63,20 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 		helper.getHibSession().save(out);
 		helper.getHibSession().flush();
 		return true;
+	}
+	
+	@Override
+	protected boolean eligibilityIgnoreBannerRegistration(OnlineSectioningServer server, OnlineSectioningHelper helper, XStudent student, XEInterface.Registration reg) {
+		// ignore sections that do not exist in UniTime (and of matching campus)
+		// this is to fix synchronization issues when a class is cancelled
+		// (it does not exist in UniTime, but still contains enrolled students in Banner)
+		Number count = (Number)helper.getHibSession().createQuery(
+				"select count(bs) from BannerSession s, BannerSection bs where " +
+				"bs.session = s.session and s.bannerTermCode = :term and bs.crn = :crn")
+				.setString("term", reg.term)
+				.setString("crn", reg.courseReferenceNumber)
+				.uniqueResult();
+		return count.intValue() == 0 && getBannerCampus(server.getAcademicSession()).equals(reg.campus);
 	}
 
 }
