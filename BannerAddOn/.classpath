@@ -17,6 +17,5 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-3.4.1.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.8.4.jar"/>
 	<classpathentry kind="src" path="/UniTime"/>
-	<classpathentry kind="lib" path="/UniTime/3rd_party/ojdbc14-10.2.0.4.0.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>

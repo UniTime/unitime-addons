@@ -20,57 +20,28 @@
 
 package org.unitime.banner.queueprocessor.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
-import oracle.sql.CLOB;
 /*
  * based on code contributed by Aaron Tyler
  */
 public class ClobTools {
 
-	public static String clobToString(Clob clob) throws SQLException, IOException {
-
-		String returnStr = "";
-		
-		String aux;
-		BufferedReader br = new BufferedReader(clob.getCharacterStream());
-		while ((aux = br.readLine()) != null) {
-			returnStr += aux;
-		}
-		
-		return returnStr;
-	}
-	
-
-	public static CLOB documentToCLOB(Document document, Connection conn) throws IOException, SQLException {
-		
-		//Set up Output CLOB
-		CLOB tempClob = null;
-		tempClob = CLOB.createTemporary(conn, true, CLOB.DURATION_SESSION);
-		tempClob.open(CLOB.MODE_READWRITE);
-		Writer tempClobWriter = tempClob.getCharacterOutputStream();
-
-		//Write document text to Output CLOB
-
-		tempClobWriter.write(document.asXML());
-
-		//Finalize the Output CLOB and return it
-		tempClobWriter.flush();
-		tempClobWriter.close();
-		tempClob.close();
-
-		return tempClob;
-		
-		
+	public static Clob documentToCLOB(Document document, Connection conn) throws IOException, SQLException {
+		Clob clob = conn.createClob();
+		XMLWriter writer = new XMLWriter(clob.setCharacterStream(1l), OutputFormat.createCompactFormat());
+		writer.write(document);
+		writer.flush(); writer.close();
+		return clob;
 	}
 	
 	public static Document clobToDocument(Clob clob) throws DocumentException, SQLException{
@@ -78,28 +49,4 @@ public class ClobTools {
 		Document document = reader.read(clob.getCharacterStream());
 		return document;
 	}
-	
-	public static CLOB clobToCLOB(Clob inClob, Connection conn) throws IOException, SQLException {
-		
-		//Set up Output CLOB
-		CLOB tempClob = null;
-		tempClob = CLOB.createTemporary(conn, true, CLOB.DURATION_SESSION);
-		tempClob.open(CLOB.MODE_READWRITE);
-		Writer tempClobWriter = tempClob.getCharacterOutputStream();
-
-		//Traverse through Input Clob and write contents to Output CLOB
-		String aux;
-		BufferedReader br = new BufferedReader(inClob.getCharacterStream());
-		while ((aux = br.readLine()) != null) {
-			tempClobWriter.write(aux);
-		}
-
-		//Finalize the Output CLOB and return it
-		tempClobWriter.flush();
-		tempClobWriter.close();
-		tempClob.close();
-
-		return tempClob;
-	}
-
 }
