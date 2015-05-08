@@ -242,14 +242,15 @@ public class BannerOfferingModifyAction extends Action {
       }
 
 
-    private void loadClasses(BannerOfferingModifyForm frm, BannerSession bsess, BannerCourse bc, Set classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
+    private void loadClasses(BannerOfferingModifyForm frm, BannerSession bsess, BannerCourse bc, Set<Class_> classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
     	if (classes != null && classes.size() > 0){
-    		ArrayList classesList = new ArrayList(classes);
+    		ArrayList<Class_> classesList = new ArrayList<Class_>(classes);
             Collections.sort(classesList, new ClassComparator(ClassComparator.COMPARE_BY_ITYPE) );
 	    	Boolean readOnlyClass = new Boolean(false);
-	    	Class_ cls = null;
-	    	for(Iterator it = classesList.iterator(); it.hasNext();){
-	    		cls = (Class_) it.next();
+	    	for(Class_ cls : classesList){
+	    		if (cls.isCancelled().booleanValue()){
+	    			continue;
+	    		}
 	    		if (previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype())){
 	    			if (!isReadOnly.booleanValue()){
 		    			readOnlyClass = new Boolean(isReadOnly.booleanValue());

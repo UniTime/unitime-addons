@@ -166,6 +166,7 @@ public class BannerMessage {
 	}
 
 	public void addBannerSectionToMessage(BannerSection bannerSection, BannerMessageAction action, Session hibSession){
+		BannerMessageAction bma = action;
 		courseOffering = bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(hibSession);
 		if (courseOffering == null){
 			return;
@@ -176,11 +177,14 @@ public class BannerMessage {
 		} else {
 			clazz =  bannerSection.getClasses(hibSession).iterator().next();
 			instructionalOffering = clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalOffering();
-			courseCreditUnitConfig = courseOffering.getCredit();			
+			courseCreditUnitConfig = courseOffering.getCredit();	
+			if (bannerSection.isCanceled(hibSession)){
+				bma = BannerMessageAction.DELETE;
+			}
 		}
 		courseCreditUnitConfig = courseOffering.getCredit();
 
-		createSectionXmlForBanner(bannerSection, action, hibSession);
+		createSectionXmlForBanner(bannerSection, bma, hibSession);
 	}
 
 	public void addBannerCrossListToMessage(BannerSection bannerSection, BannerMessageAction action, Session hibSession){
@@ -221,7 +225,9 @@ public class BannerMessage {
 		HashSet<MeetingElement> hs = new HashSet<MeetingElement>();
 		for(Iterator<Class_> classIt = bannerSection.getClasses(hibSession).iterator(); classIt.hasNext();){
 			Class_ c = classIt.next();
-			hs.addAll(MeetingElement.createMeetingElementsFor(bannerSection, c, hibSession, this));
+			if (!c.isCancelled().booleanValue()){
+				hs.addAll(MeetingElement.createMeetingElementsFor(bannerSection, c, hibSession, this));
+			}
 		}
 		return(hs);
 	}

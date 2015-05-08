@@ -128,6 +128,9 @@ public class BannerSectionCrosslistHelper {
 	private void ensureAllSubpartClassesHaveBannerSection(SchedulingSubpart schedSubpart) throws Exception{
 		
 		for(Class_ c : schedSubpart.getClasses()){
+			if (c.isCancelled().booleanValue()){
+				continue;
+			}
 			List<BannerSection> bannerSections = BannerSection.findBannerSectionsForClass(c, hibSession);
 			if (bannerSections.isEmpty()){
 				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
