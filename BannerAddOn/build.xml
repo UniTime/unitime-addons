@@ -147,6 +147,16 @@
 		<property name="unitime.jsp.dir" value="${unitime.dir}/WebContent"/>
 	    <echo>the property $${unitime.jsp.dir} was set to ${unitime.jsp.dir}</echo>
 	</target>
+	
+	<target name="set_gwt_env_prod">
+		<property name="gwt_env" value="org.unitime.timetable.gwt.UniTime"/>
+	    <echo>the property $${gwt_env} was set to ${gwt_env}</echo>
+	</target>
+
+	<target name="set_gwt_env_dev">
+		<property name="gwt_env" value="org.unitime.timetable.gwt.UniTimeDev"/>
+	    <echo>the property $${gwt_env} was set to ${gwt_env}</echo>
+	</target>
 
 	<target name="clean" depends="setup-properties">
         <delete dir="${build_src.dir}" failonerror="false"/>
@@ -228,7 +238,7 @@
 			<jvmarg value="-Xmx600M"/>
 			<jvmarg value="${macJvmArgs}"/>
 			<jvmarg value="-Dgwt.persistentunitcache=false"/>
-			<arg value="org.unitime.timetable.gwt.UniTime"/>
+			<arg value="${gwt_env}"/>
 		</java>
 	</target>
 	
@@ -390,7 +400,9 @@
 		<delete dir="${temp.dir}" failonerror="false"/>
 	</target>
 
-	<target name="build" depends="setup-properties,compile-war,done" />
-	
+	<target name="build" depends="setup-properties, set_gwt_env_prod, compile-war,done" />
+
+	<target name="build_dev" depends="setup-properties, set_gwt_env_dev, compile-war,done" />
+
 	<target name="build-deploy-local" depends="build,tomcat-deploy-local" />
 </project>

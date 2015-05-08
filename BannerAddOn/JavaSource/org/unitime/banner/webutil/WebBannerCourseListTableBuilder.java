@@ -314,6 +314,9 @@ public class WebBannerCourseListTableBuilder extends
 			Class_ aClass, BannerCourse bc, String indentSpaces, SessionContext sessionContext,
 			Integer prevItype, boolean clickable) {
 		Integer currentItype = aClass.getSchedulingSubpart().getItype().getItype();
+		if (aClass.isCancelled().booleanValue()){
+			return;
+		}
 		if (prevItype == null || !prevItype.equals(currentItype)){
 			buildSectionRow(classAssignment, ct, table, aClass, bc, indentSpaces, sessionContext, clickable);
 		}

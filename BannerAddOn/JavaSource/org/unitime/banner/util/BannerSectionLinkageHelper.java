@@ -390,7 +390,6 @@ public class BannerSectionLinkageHelper {
 		hibSession.update(bs);
 		trans.commit();
 		hibSession.flush();
-		hibSession.refresh(bs);
 	}
 	
 	
