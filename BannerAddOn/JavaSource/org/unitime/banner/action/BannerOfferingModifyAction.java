@@ -312,10 +312,6 @@ public class BannerOfferingModifyAction extends Action {
 
             tx.commit();
 	        hibSession.flush();
-	        hibSession.refresh(ioc);
-	        hibSession.refresh(ioc.getInstructionalOffering());
-	        hibSession.refresh(bannerConfig);
-	        hibSession.refresh(bc);
 	        if (bannerConfig.getBannerSections() != null){
 	        	Vector<BannerSection> list = new Vector<BannerSection>();
 	        	list.addAll(bannerConfig.getBannerSections());
