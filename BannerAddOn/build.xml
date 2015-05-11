@@ -58,7 +58,7 @@
 	       <echo>the property $${unitime.dir} was set to ${unitime.dir}</echo>
 	</target>
 
-	<target name="-set-unitime-dir-first-try" if="do.unitime-dir-var-present" depends="-check-unitime-dir-first-try">
+	<target name="-set-unitime-dir-first-try" if="do.unitime-first-try-dir-found" depends="-check-unitime-dir-first-try">
 		<property name="unitime.dir" value="${basedir}/../UniTime"/>
 	</target>
 	<target name="-check-unitime-dir-first-try" if="do.unitime-dir-var-not-present">
