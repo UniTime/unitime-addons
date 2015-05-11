@@ -115,7 +115,6 @@ public class BannerInstrOffrConfigChangeAction implements
 						hibSession.update(bc);
 						trans.commit();
 						hibSession.flush();
-						hibSession.refresh(bc);
 					}
 				}
 			}
@@ -135,7 +134,6 @@ public class BannerInstrOffrConfigChangeAction implements
 			bs.updateClassSuffixForClassesIfNecessary(hibSession);
 			trans.commit();
 			hibSession.flush();
-			hibSession.refresh(bs);
 		}
 			
 	}

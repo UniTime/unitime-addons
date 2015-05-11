@@ -104,7 +104,6 @@ public class BannerSectionCrosslistHelper {
 		hibSession.update(bs);
 		trans.commit();
 		hibSession.flush();
-		hibSession.refresh(bs);
 	}
 
 	
@@ -128,8 +127,7 @@ public class BannerSectionCrosslistHelper {
 	@SuppressWarnings("unchecked")
 	private void ensureAllSubpartClassesHaveBannerSection(SchedulingSubpart schedSubpart) throws Exception{
 		
-		for(Iterator cIt = schedSubpart.getClasses().iterator(); cIt.hasNext();){
-			Class_ c = (Class_) cIt.next();
+		for(Class_ c : schedSubpart.getClasses()){
 			List<BannerSection> bannerSections = BannerSection.findBannerSectionsForClass(c, hibSession);
 			if (bannerSections.isEmpty()){
 				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
@@ -141,8 +139,7 @@ public class BannerSectionCrosslistHelper {
 						hibSession.update(bs);
 					}
 					trans.commit();
-				} else {
-					
+				} else {					
 					for (Iterator it = instructionalOffering.getCourseOfferings().iterator(); it.hasNext();){
 						CourseOffering courseOffering = (CourseOffering) it.next();
 						addBannerSectionFor(courseOffering, c);
@@ -175,7 +172,6 @@ public class BannerSectionCrosslistHelper {
 							bc.getBannerSections().remove(bs);
 							hibSession.update(bc);
 							trans.commit();
-							hibSession.refresh(bc);
 						}
 					}
 					if (!addSet.isEmpty()){
@@ -185,7 +181,6 @@ public class BannerSectionCrosslistHelper {
 							bs.addClass(c, hibSession);
 							hibSession.update(bc);
 							trans.commit();
-							hibSession.refresh(bc);
 						}
 					}
 
@@ -214,7 +209,6 @@ public class BannerSectionCrosslistHelper {
 							bc.getBannerSections().remove(bs);
 							hibSession.update(bc);
 							trans.commit();
-							hibSession.refresh(bc);
 						}
 					}
 				}
@@ -291,7 +285,6 @@ public class BannerSectionCrosslistHelper {
 		hibSession.update(bc);
 		trans.commit();
 		hibSession.flush();
-		hibSession.refresh(bc);
 	}
 	
 	@SuppressWarnings("unchecked")

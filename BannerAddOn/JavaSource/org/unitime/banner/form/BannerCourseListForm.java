@@ -66,20 +66,6 @@ public class BannerCourseListForm extends ActionForm {
 	private Boolean isControl;
 
 	private String ctrlInstrOfferingId;
-
-//TODO: Verify this is not used	
-//	private Collection controlCourseOfferings;
-
-		
-//	/**
-//	 * @param controlCourseOfferings
-//	 *            The controlCourseOfferings to set.
-//	 */
-//TODO: Verify this is not used	
-//	public void setControlCourseOfferings(Collection controlCourseOfferings) {
-//		this.controlCourseOfferings = controlCourseOfferings;
-//	}
-
 	
 	/**
 	 * @return Returns the ctrlInstrOfferingId.
@@ -250,12 +236,6 @@ public class BannerCourseListForm extends ActionForm {
 		setSubjectAreas(SubjectArea.getUserSubjectAreas(sessionContext.getUser()));
 		setInstructionalOfferings(instructionalOfferings);
 
-//TODO: Verify this is not used		
-//		if (Web.hasRole(request.getSession(), new String[] { Roles.ADMIN_ROLE }))
-//			setControlCourseOfferings(CourseOffering.getControllingCourses(sessionId));
-//		else
-//			setControlCourseOfferings(new Vector());
-
 	}
 
 
@@ -270,8 +250,6 @@ public class BannerCourseListForm extends ActionForm {
         subjectAreaAbbv=null;
         isControl=null;
         ctrlInstrOfferingId=null;
-//TODO: verify this is not used
-//        controlCourseOfferings=null;
         super.finalize();
     }
 	

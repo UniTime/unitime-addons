@@ -461,11 +461,6 @@ public class BannerSection extends BaseBannerSection {
 		Iterator it = sections.iterator();
 		while(it.hasNext()){
 			bs = (BannerSection) it.next();
-			for(Iterator cIt = bs.getClasses(hibSession).iterator(); cIt.hasNext();){
-				Class_ c = (Class_) cIt.next();
-				hibSession.refresh(c);
-			}
-			hibSession.refresh(bs);
 			hs.add(bs);
 		}
 		return(hs);
@@ -626,8 +621,8 @@ public class BannerSection extends BaseBannerSection {
 	}
 	
 	public void updateClassSuffixForClassesIfNecessary(Session hibSession){
-
-		updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, true);
+		
+		updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, false);
 
 	}
 	
@@ -696,8 +691,8 @@ public class BannerSection extends BaseBannerSection {
 		}
 		boolean sendInstructors = false;
 		for(Iterator<Class_> cIt = this.getClasses(hibSession).iterator(); cIt.hasNext();){
-			Class_ c = cIt.next();		
-			
+			Class_ c = cIt.next();
+		
 			if (c.getCommittedAssignment() != null || c.getEffectiveTimePreferences().isEmpty()){
 				sendInstructors = true;
 				if (c.getClassInstructors() != null && !c.getClassInstructors().isEmpty()){
