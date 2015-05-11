@@ -30,8 +30,133 @@
 		<loadproperties srcFile="${basedir}/build.properties" />
 		<property environment="env"/>
 	</target>
+	
+	<target name="setup-properties" depends="load-properties, -setup-missing_properties">
+	</target>
+	
+	<target name="-setup-missing_properties" depends="-setup-unitime-dir,
+		                                              -setup-lib-dir,
+													  -setup-3rd_party-dir,
+													  -setup-unitime.src-dir,
+													  -setup-unitime.jsp-dir">
+    </target>
+	 
+	<target name="-setup-unitime-dir" depends="-test-unitime-dir-var-exists, 
+		                                       -unitime-dir-var-not-present">
+	</target>
+	<target name="-test-unitime-dir-var-exists" >
+		<condition property="do.unitime-dir-var-not-present">
+			<not>
+				<isset property="unitime.dir"/>
+			</not>
+		</condition>
+	</target>
+	
+	<target name="-unitime-dir-var-not-present" if="do.unitime-dir-var-not-present" depends="-set-unitime-dir-second-try">
+	       <echo>the property $${unitime.dir} was set to ${unitime.dir}</echo>
+	</target>
 
-    <target name="clean" depends="load-properties">
+	<target name="-set-unitime-dir-first-try" if="do.unitime-dir-var-present" depends="-check-unitime-dir-first-try">
+		<property name="unitime.dir" value="${basedir}/../UniTime"/>
+	</target>
+	<target name="-check-unitime-dir-first-try" if="do.unitime-dir-var-not-present">
+        <condition property="do.unitime-first-try-dir-found">
+        	   	<resourceexists>
+        	      <file file="${basedir}/../UniTime"/>
+        		</resourceexists>
+        </condition>
+        <condition property="do.unitime-first-try-dir-not-found">
+        	 <not>
+        	 	<resourceexists>
+        	      <file file="${basedir}/../UniTime"/>
+        		</resourceexists>
+        	 </not>
+        </condition>
+	</target>
+	
+	<target name="-set-unitime-dir-second-try" if="do.unitime-first-try-dir-not-found" depends="-set-unitime-dir-first-try">
+		<property name="unitime.dir" value="${basedir}/../../UniTime"/>
+	</target>
+	
+	<target name="-setup-lib-dir" depends="-test-lib-dir-var-exists, 
+								           -lib-dir-var-not-present">
+	</target>
+
+	<target name="-test-lib-dir-var-exists" >
+		<condition property="do.lib-dir-var-not-present">
+			<not>
+				<isset property="lib.dir"/>
+			</not>
+		</condition>
+	</target>
+	
+	<target name="-lib-dir-var-not-present" if="do.lib-dir-var-not-present">
+		<property name="lib.dir" value="${unitime.dir}/WebContent/WEB-INF/lib"/>
+	    <echo>the property $${lib.dir} was set to ${lib.dir}</echo>
+	</target>
+
+	<target name="-setup-3rd_party-dir" depends="-test-3rd_party-dir-var-exists, 
+								           -3rd_party-dir-var-not-present">
+	</target>
+
+	<target name="-test-3rd_party-dir-var-exists" >
+		<condition property="do.3rd_party-dir-var-not-present">
+			<not>
+				<isset property="3rd_party.dir"/>
+			</not>
+		</condition>
+	</target>
+	
+	<target name="-3rd_party-dir-var-not-present" if="do.3rd_party-dir-var-not-present">
+		<property name="3rd_party.dir" value="${unitime.dir}/3rd_party"/>
+	    <echo>the property $${3rd_party.dir} was set to ${3rd_party.dir}</echo>
+	</target>
+
+	<target name="-setup-unitime.src-dir" depends="-test-unitime.src-dir-var-exists, 
+								           -unitime.src-dir-var-not-present">
+	</target>
+
+	<target name="-test-unitime.src-dir-var-exists" >
+		<condition property="do.unitime.src-dir-var-not-present">
+			<not>
+				<isset property="unitime.src.dir"/>
+			</not>
+		</condition>
+	</target>
+	
+	<target name="-unitime.src-dir-var-not-present" if="do.unitime.src-dir-var-not-present">
+		<property name="unitime.src.dir" value="${unitime.dir}/JavaSource"/>
+	    <echo>the property $${unitime.src.dir} was set to ${unitime.src.dir}</echo>
+	</target>
+
+	<target name="-setup-unitime.jsp-dir" depends="-test-unitime.jsp-dir-var-exists, 
+								           -unitime.jsp-dir-var-not-present">
+	</target>
+
+	<target name="-test-unitime.jsp-dir-var-exists" >
+		<condition property="do.unitime.jsp-dir-var-not-present">
+			<not>
+				<isset property="unitime.jsp.dir"/>
+			</not>
+		</condition>
+	</target>
+	
+	<target name="-unitime.jsp-dir-var-not-present" if="do.unitime.jsp-dir-var-not-present">
+		<property name="unitime.jsp.dir" value="${unitime.dir}/WebContent"/>
+	    <echo>the property $${unitime.jsp.dir} was set to ${unitime.jsp.dir}</echo>
+	</target>
+	
+	<target name="set_gwt_env_prod">
+		<property name="gwt_env" value="org.unitime.timetable.gwt.UniTime"/>
+	    <echo>the property $${gwt_env} was set to ${gwt_env}</echo>
+	</target>
+
+	<target name="set_gwt_env_dev">
+		<property name="gwt_env" value="org.unitime.timetable.gwt.UniTimeDev"/>
+	    <echo>the property $${gwt_env} was set to ${gwt_env}</echo>
+	</target>
+
+	<target name="clean" depends="setup-properties">
         <delete dir="${build_src.dir}" failonerror="false"/>
         <delete dir="${build.dir}" failonerror="false"/>
     	<delete dir="${war.dir}" failonerror="false"/>
@@ -111,7 +236,7 @@
 			<jvmarg value="-Xmx600M"/>
 			<jvmarg value="${macJvmArgs}"/>
 			<jvmarg value="-Dgwt.persistentunitcache=false"/>
-			<arg value="org.unitime.timetable.gwt.UniTime"/>
+			<arg value="${gwt_env}"/>
 		</java>
 	</target>
 	
@@ -237,7 +362,7 @@
 		</jar>
 	</target>
 	
-	<target name="check-tomcat-home" depends="load-properties" unless="env.TOMCAT_HOME">
+	<target name="check-tomcat-home" depends="setup-properties" unless="env.TOMCAT_HOME">
 		<fail>
 			Environment variable TOMCAT_HOME is not defined.
 		</fail>
@@ -251,7 +376,7 @@
 		<delete dir="${temp.dir}" />
 	</target>
 
-	<target name="create-model" depends="load-properties,init">
+	<target name="create-model" depends="setup-properties,init">
         <path id="build.classpath">
             <fileset dir="${lib.dir}">
             	<include name="*.jar"/>
@@ -273,7 +398,9 @@
 		<delete dir="${temp.dir}" failonerror="false"/>
 	</target>
 
-	<target name="build" depends="load-properties,compile-war,done" />
-	
+	<target name="build" depends="setup-properties, set_gwt_env_prod, compile-war,done" />
+
+	<target name="build_dev" depends="setup-properties, set_gwt_env_dev, compile-war,done" />
+
 	<target name="build-deploy-local" depends="build,tomcat-deploy-local" />
 </project>
