@@ -181,7 +181,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			if (iStudentId != null)
 				action.getStudentBuilder().setUniqueId(iStudentId);
 			
-			Lock lock = (iStudentId == null ? null : server.lockStudent(iStudentId, null, true));
+			Lock lock = (iStudentId == null ? null : server.lockStudent(iStudentId, null, name()));
 			try {
 				helper.beginTransaction();
 				Student student = getStudent(helper);
