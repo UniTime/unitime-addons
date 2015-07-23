@@ -19,20 +19,47 @@
 */
 package org.unitime.banner.onlinesectioning;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.QueueOut;
+import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.Pair;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.shared.SectioningException;
+import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.CourseDemand;
+import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.CourseRequest;
+import org.unitime.timetable.model.CourseRequestOption;
+import org.unitime.timetable.model.Student;
+import org.unitime.timetable.model.StudentClassEnrollment;
+import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
+import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.onlinesectioning.custom.purdue.XEInterface;
 import org.unitime.timetable.onlinesectioning.custom.purdue.XEStudentEnrollment;
+import org.unitime.timetable.onlinesectioning.model.XCourseRequest;
+import org.unitime.timetable.onlinesectioning.model.XEnrollment;
+import org.unitime.timetable.onlinesectioning.model.XOffering;
+import org.unitime.timetable.onlinesectioning.model.XRequest;
+import org.unitime.timetable.onlinesectioning.model.XSection;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
+import org.unitime.timetable.onlinesectioning.updates.NotifyStudentAction;
+import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
 
 /**
  * @author Tomas Muller
@@ -62,6 +89,207 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 		out.setPostDate(new Date());
 		helper.getHibSession().save(out);
 		helper.getHibSession().flush();
+		return true;
+	}
+	
+	protected Map<CourseOffering, List<Class_>> getEnrollments(OnlineSectioningServer server, OnlineSectioningHelper helper, List<XEInterface.Registration> registration) {
+		Map<CourseOffering, List<Class_>> enrollments = new HashMap<CourseOffering, List<Class_>>();
+		AcademicSessionInfo session = server.getAcademicSession();
+		String termCode = getBannerTerm(session);
+		for (XEInterface.Registration reg: registration) {
+			if (!reg.isRegistered()) continue;
+			CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(helper.getHibSession(), Integer.parseInt(reg.courseReferenceNumber), termCode);
+			if (co == null) {
+				helper.error("No course offering found for CRN " + reg.courseReferenceNumber + " and banner session " + termCode);
+				continue;
+			}
+			if (!session.getUniqueId().equals(co.getInstructionalOffering().getSession().getUniqueId()))
+				continue;
+			
+			boolean foundClasses = false;
+			for(Iterator<?> it = BannerSection.findAllClassesForCrnAndTermCode(helper.getHibSession(), Integer.parseInt(reg.courseReferenceNumber), termCode).iterator(); it.hasNext();) {
+				Class_ c = (Class_) it.next();
+				if (!session.getUniqueId().equals(c.getSession().getUniqueId())) continue;
+				
+				foundClasses = true;
+				List<Class_> classes = enrollments.get(co);
+				if (classes == null) {
+					classes = new ArrayList<Class_>(); enrollments.put(co, classes);
+				}
+				classes.add(c);
+			}
+			if (!foundClasses) {
+				helper.error("No classes found for CRN " + reg.courseReferenceNumber + " and banner session " + termCode);
+			}
+		}
+		return enrollments;
+	}
+	
+	protected boolean updateClassEnrollments(Student student, Map<CourseOffering, List<Class_>> courseToClassEnrollments, OnlineSectioningHelper helper) {
+		boolean changed = false;
+		Date ts = new Date();
+
+		Hashtable<Pair, StudentClassEnrollment> enrollments = new Hashtable<Pair, StudentClassEnrollment>();
+		if (student.getClassEnrollments() != null) {
+			List<StudentClassEnrollment> duplicates = new ArrayList<StudentClassEnrollment>();
+        	for (StudentClassEnrollment enrollment: student.getClassEnrollments()) {
+        		StudentClassEnrollment previous = enrollments.put(new Pair(enrollment.getCourseOffering().getUniqueId(), enrollment.getClazz().getUniqueId()), enrollment);
+        		// check for duplicate enrollments
+        		if (previous != null) duplicates.add(previous);
+        	}
+        	// remove duplicate enrollments
+        	for (StudentClassEnrollment enrollment: duplicates) {
+    			student.getClassEnrollments().remove(enrollment);
+    			helper.getHibSession().delete(enrollment);
+    			changed = true;
+        	}
+    	}
+    	int nextPriority = 0;
+    	for (CourseDemand cd: student.getCourseDemands())
+    		if (!cd.isAlternative() && cd.getPriority() >= nextPriority)
+    			nextPriority = cd.getPriority() + 1;
+    	Set<CourseDemand> remaining = new HashSet<CourseDemand>(student.getCourseDemands());
+    	boolean fixCourseDemands = false;
+    	
+    	// populate course2request, check for course request duplicates
+    	Map<CourseOffering, CourseRequest> course2request = new Hashtable<CourseOffering, CourseRequest>();
+    	for (CourseDemand cd: student.getCourseDemands())
+    		for (CourseRequest cr: cd.getCourseRequests()) {
+    			CourseRequest previous = course2request.put(cr.getCourseOffering(), cr);
+    			if (previous != null) fixCourseDemands = true;
+    		}
+
+    	for (Map.Entry<CourseOffering, List<Class_>> entry: courseToClassEnrollments.entrySet()) {
+    		CourseOffering co = entry.getKey();
+    		
+    		CourseRequest cr = course2request.get(co);
+    		if (cr == null) {
+    			CourseDemand cd = new CourseDemand();
+    			cd.setTimestamp(ts);
+    			cd.setCourseRequests(new HashSet<CourseRequest>());
+    			cd.setStudent(student);
+    			student.getCourseDemands().add(cd);
+    			cd.setAlternative(false);
+    			cd.setPriority(nextPriority++);
+    			cd.setWaitlist(false);
+    			cr = new CourseRequest();
+    			cd.getCourseRequests().add(cr);
+    			cr.setCourseDemand(cd);
+    			cr.setCourseRequestOptions(new HashSet<CourseRequestOption>());
+    			cr.setAllowOverlap(false);
+    			cr.setCredit(0);
+    			cr.setOrder(0);
+    			cr.setCourseOffering(co);
+    			fixCourseDemands = true;
+        		changed = true;
+    		} else {
+    			remaining.remove(cr.getCourseDemand());
+    		}
+    		
+    		for (Class_ clazz: entry.getValue()) {
+    			StudentClassEnrollment enrollment = enrollments.remove(new Pair(co.getUniqueId(), clazz.getUniqueId()));
+        		if (enrollment == null) {
+            		enrollment = new StudentClassEnrollment();
+            		enrollment.setStudent(student);
+            		enrollment.setClazz(clazz);
+            		enrollment.setCourseOffering(co);
+            		enrollment.setTimestamp(ts);
+            		student.getClassEnrollments().add(enrollment);    
+            		changed = true;
+        		}
+
+        		if (enrollment.getCourseRequest() == null || !cr.equals(enrollment.getCourseRequest())) {
+        			enrollment.setCourseRequest(cr);
+        			changed = true;
+        		}       		
+    		}
+    	}
+    	
+    	if (!enrollments.isEmpty()) {
+    		for (StudentClassEnrollment enrollment: enrollments.values()) {
+    			student.getClassEnrollments().remove(enrollment);
+    			helper.getHibSession().delete(enrollment);
+    		}
+    		changed = true;
+    	}
+
+    	if (fixCourseDemands && student.getUniqueId() != null) {
+    		// removed unused course demands
+    		for (CourseDemand cd: remaining) {
+    			if (cd.getFreeTime() != null)
+    				helper.getHibSession().delete(cd.getFreeTime());
+    			for (CourseRequest cr: cd.getCourseRequests())
+    				helper.getHibSession().delete(cr);
+    			student.getCourseDemands().remove(cd);
+    			helper.getHibSession().delete(cd);
+    		}
+    		int priority = 0;
+    		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
+    			cd.setPriority(priority++);
+    			helper.getHibSession().saveOrUpdate(cd);
+    		}
+    	}
+    	
+    	return changed;
+	}
+	
+	@Override
+	protected boolean updateStudentRegistration(OnlineSectioningServer server, OnlineSectioningHelper helper, XStudent s, List<XEInterface.Registration> registration) throws SectioningException {
+		if (s == null || s.getExternalId() == null) return false;
+		
+		try {
+			helper.beginTransaction();
+			
+			Student student = Student.findByExternalIdBringBackEnrollments(helper.getHibSession(), server.getAcademicSession().getUniqueId(), s.getExternalId());
+			if (student == null) {
+				helper.commitTransaction();
+				return false;
+			}
+		
+			Map<CourseOffering, List<Class_>> enrollments = getEnrollments(server, helper, registration);
+			
+			boolean changed = updateClassEnrollments(student, enrollments, helper);
+			
+			if (changed) {
+				helper.getHibSession().update(student);
+				
+				for (int i = 0; i < helper.getAction().getEnrollmentCount(); i++)
+					if (helper.getAction().getEnrollment(i).getType() == OnlineSectioningLog.Enrollment.EnrollmentType.STORED)
+						helper.getAction().getEnrollmentBuilder(i).setType(OnlineSectioningLog.Enrollment.EnrollmentType.PREVIOUS);
+
+				// Reload student
+				XStudent newStudent = ReloadAllData.loadStudent(student, null, server, helper);
+				if (newStudent != null) {
+					server.update(newStudent, true);
+					OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
+					enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.STORED);
+					helper.getAction().clearRequest();
+					for (XRequest newRequest: newStudent.getRequests()) {
+						helper.getAction().addRequest(OnlineSectioningHelper.toProto(newRequest));
+						if (newRequest instanceof XCourseRequest && ((XCourseRequest)newRequest).getEnrollment() != null) {
+							XEnrollment enrl = ((XCourseRequest)newRequest).getEnrollment();
+							XOffering offering = server.getOffering(enrl.getOfferingId());
+							for (XSection section: offering.getSections(enrl))
+								enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
+						}
+					}
+					helper.getAction().addEnrollment(enrollment);
+				}
+				
+				server.execute(server.createAction(NotifyStudentAction.class).forStudent(student.getUniqueId()).oldStudent(s), helper.getUser());
+			}
+			
+			helper.commitTransaction();
+		} catch (SectioningException e) {
+			helper.rollbackTransaction();
+			e.printStackTrace();
+			throw e;
+		} catch (Exception e) {
+			helper.rollbackTransaction();
+			e.printStackTrace();
+			throw new SectioningException(e.getMessage(), e);
+		}
+		
 		return true;
 	}
 	
