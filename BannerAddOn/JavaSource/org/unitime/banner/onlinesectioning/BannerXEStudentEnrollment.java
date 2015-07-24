@@ -205,17 +205,21 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     		}
     	}
     	
+    	Set<CourseDemand> deletes = new HashSet<CourseDemand>();
     	if (!enrollments.isEmpty()) {
     		for (StudentClassEnrollment enrollment: enrollments.values()) {
+    			CourseRequest cr = course2request.get(enrollment.getCourseOffering());
+    			if (cr != null && remaining.contains(cr.getCourseDemand()))
+    				deletes.add(cr.getCourseDemand());
     			student.getClassEnrollments().remove(enrollment);
     			helper.getHibSession().delete(enrollment);
     		}
     		changed = true;
     	}
 
-    	if (fixCourseDemands && student.getUniqueId() != null) {
+    	if ((fixCourseDemands || !deletes.isEmpty()) && student.getUniqueId() != null) {
     		// removed unused course demands
-    		for (CourseDemand cd: remaining) {
+    		for (CourseDemand cd: (fixCourseDemands ? remaining : deletes)) {
     			if (cd.getFreeTime() != null)
     				helper.getHibSession().delete(cd.getFreeTime());
     			for (CourseRequest cr: cd.getCourseRequests())
