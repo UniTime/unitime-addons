@@ -239,6 +239,8 @@
 			<jvmarg value="${macJvmArgs}"/>
 			<jvmarg value="-Dgwt.persistentunitcache=false"/>
 			<arg value="${gwt_env}"/>
+			<arg value="-localWorkers"/>
+			<arg value="4"/>
 		</java>
 	</target>
 	
