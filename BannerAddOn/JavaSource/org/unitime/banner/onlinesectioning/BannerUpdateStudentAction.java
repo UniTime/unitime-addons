@@ -49,6 +49,7 @@ import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentAccomodation;
 import org.unitime.timetable.model.StudentClassEnrollment;
+import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningAction;
@@ -836,6 +837,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			CourseDemand cd = new CourseDemand();
     			cd.setTimestamp(ts);
     			cd.setCourseRequests(new HashSet<CourseRequest>());
+    			cd.setEnrollmentMessages(new HashSet<StudentEnrollmentMessage>());
     			cd.setStudent(student);
     			student.getCourseDemands().add(cd);
     			cd.setAlternative(false);
@@ -853,6 +855,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
         		changed = true;
     		} else {
     			remaining.remove(cr.getCourseDemand());
+    			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
+					StudentEnrollmentMessage message = i.next();
+					helper.getHibSession().delete(message);
+					i.remove();
+				}
     		}
     		
     		for (Class_ clazz: entry.getValue()) {

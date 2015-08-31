@@ -46,6 +46,7 @@ import org.unitime.timetable.model.CourseRequest;
 import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
+import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
@@ -167,6 +168,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     			CourseDemand cd = new CourseDemand();
     			cd.setTimestamp(ts);
     			cd.setCourseRequests(new HashSet<CourseRequest>());
+    			cd.setEnrollmentMessages(new HashSet<StudentEnrollmentMessage>());
     			cd.setStudent(student);
     			student.getCourseDemands().add(cd);
     			cd.setAlternative(false);
@@ -184,6 +186,11 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
         		changed = true;
     		} else {
     			remaining.remove(cr.getCourseDemand());
+    			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
+					StudentEnrollmentMessage message = i.next();
+					helper.getHibSession().delete(message);
+					i.remove();
+				}
     		}
     		
     		for (Class_ clazz: entry.getValue()) {
