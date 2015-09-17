@@ -48,6 +48,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.DatePattern;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
+import org.unitime.timetable.model.InstructionalMethod;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.dao.Class_DAO;
@@ -380,7 +381,12 @@ public class BannerMessage {
 			}
 			sectionElement.addAttribute("WEB_AVAIL", clazz.isEnabledForStudentScheduling().booleanValue()?"Y":"N");
 			sectionElement.addAttribute("PRINT_IND", clazz.isEnabledForStudentScheduling().booleanValue()?"Y":"N");
-			sectionElement.addAttribute("USERID", "UniTime");			
+			sectionElement.addAttribute("USERID", "UniTime");
+			InstructionalMethod im = clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalMethod();
+			if (im != null)
+				sectionElement.addAttribute("INSTRUCTIONAL_METHOD", im.getReference());
+			else
+				sectionElement.addAttribute("INSTRUCTIONAL_METHOD", "");
 		} else {
 			sectionElement.addAttribute("ID", "***");
 		}
