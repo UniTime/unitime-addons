@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+
+<scripts created="Tue Oct 20 15:00 CEST 2015">
+<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 08:59:51 EDT 2015">
+  <description><![CDATA[<h3>Import student course requests from the given CSV file</h3>
+<b>Format:</b><ul>
+<li>There is a line for each student
+<li>PUID, Name, PIN, Course1, Course2, .... 
+<li>PIN column is optional, make sure PIN Included toggle is set accordingly
+</ul>
+<b>Parameters:</b><ul>
+<li>Input File: CSV file in the above format
+<li>PIN Included: set to true if the input file contains PIN column
+<li>Status: student status to be set (if selected)
+<li>Trim Leading Zeros: trim leading zeros from the PUID
+<li>Clear Existing Demands: replace existing student course demands with the given demands
+<li>Create Limit Overrides: create limit override reservations for the imported students
+</ul>]]></description>
+  <parameter name="clear" label="Clear Existing Demands" type="boolean" default="false"/>
+  <parameter name="override" label="Create Limit Overrides" type="boolean" default="false"/>
+  <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)"/>
+  <parameter name="pinIncluded" label="PIN Included" type="boolean" default="false"/>
+  <parameter name="trimLeadingZeros" label="Trim Leading Zeros" type="boolean" default="false"/>
+  <parameter name="file" label="Input File (CSV)" type="file"/>
+  <body><![CDATA[import csv
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.unitime.timetable.model import UserData, StudentSectioningStatus, CourseDemand, CourseRequest, OverrideReservation, StudentSectioningQueue
+from org.unitime.timetable.onlinesectioning.updates import ReloadStudent
+from java.util import HashSet, Date
+from java.lang import Long
+
+def isOverrideNeeded(offering):
+    for config in offering.getInstrOfferingConfigs():
+        canEnroll = True
+        for subpart in config.getSchedulingSubparts():
+            hasEnabledClazz = False
+            for clazz in subpart.getClasses():
+                if clazz.isEnabledForStudentScheduling():
+                    hasEnabledClazz = True
+                    break
+            if not hasEnabledClazz:
+                canEnroll = False
+                break
+        if canEnroll: return False
+    return True
+
+def getStudent(puid, name, clear):
+    student = hibSession.createQuery("from Student where session = :session and externalUniqueId = :puid"
+        ).setLong("session", session.getUniqueId()).setString("puid", puid).uniqueResult()
+    if not student:
+        log.warn("Student %s (%s) does not exist." % (name, puid))
+        return None
+    log.info("%s %s" % (student.getExternalUniqueId(), student.getName("last-first-middle")))
+    if clear:
+        offerings = HashSet()
+        for cd in student.getCourseDemands():
+            if cd.getFreeTime():
+                hibSession.delete(cd.getFreeTime())
+            for cr in cd.getCourseRequests():
+                offerings.add(cr.getCourseOffering().getInstructionalOffering())
+                hibSession.delete(cr)
+            hibSession.delete(cd)
+        student.getCourseDemands().clear()
+        for enrl in student.getClassEnrollments():
+            hibSession.delete(enrl)
+        student.getClassEnrollments().clear()
+        if override:
+            for offering in offerings:
+                reservation = hibSession.createQuery(
+                    "from OverrideReservation r where r.instructionalOffering = :offeringId and r.type = 1 and r.configurations is empty and r.classes is empty"
+                    ).setLong("offeringId", offering.getUniqueId()).setMaxResults(1).uniqueResult()
+                if reservation:
+                    reservation.getStudents().remove(student)
+                    if reservation.getStudents().isEmpty(): hibSession.delete(reservation)
+                    else: hibSession.saveOrUpdate(reservation)
+    return student
+
+
+def setPin(student, pin):
+    UserData.setProperty(student.getExternalUniqueId(), "PIN[%d]" % session.getUniqueId(), pin)
+
+def addCourse(student, cn, ts, offeringIds):
+    if not cn:
+        log.debug("Empty slot skipped.")
+        return
+    course = hibSession.createQuery("from CourseOffering where subjectArea.session = :session and subjectAreaAbbv || ' ' || courseNbr = :name"
+        ).setLong("session", session.getUniqueId()).setString("name", cn).uniqueResult()
+    if not course:
+        log.warn("Course %s does not exist." % cn)
+        return
+    log.debug(course.getCourseNameWithTitle())
+    priority = 0
+    for cd in student.getCourseDemands():
+        if priority <= cd.getPriority() and not cd.isAlternative(): priority = cd.getPriority() + 1
+        for cr in cd.getCourseRequests():
+            if course == cr.getCourseOffering():
+                log.warn("-- course is already requested")
+                return False
+    cd = CourseDemand()
+    cd.setCourseRequests(HashSet())
+    cd.setStudent(student)
+    student.getCourseDemands().add(cd)
+    cd.setAlternative(False)
+    cd.setPriority(priority)
+    cd.setWaitlist(False)
+    cd.setTimestamp(ts)
+    cr = CourseRequest()
+    cd.getCourseRequests().add(cr)
+    cr.setCourseDemand(cd)
+    cr.setAllowOverlap(False)
+    cr.setCredit(0)
+    cr.setOrder(0)
+    cr.setCourseOffering(course)
+    if override and isOverrideNeeded(course.getInstructionalOffering()):
+        log.debug("-- creating override for %s" % course.getCourseName())
+        reservation = hibSession.createQuery(
+            "from OverrideReservation r where r.instructionalOffering = :offeringId and r.type = 1 and r.configurations is empty and r.classes is empty"
+            ).setLong("offeringId", course.getInstructionalOffering().getUniqueId()).setMaxResults(1).uniqueResult()
+        if not reservation:
+            reservation = OverrideReservation()
+            reservation.setType(1)
+            reservation.setInstructionalOffering(course.getInstructionalOffering())
+            reservation.setClasses(HashSet())
+            reservation.setConfigurations(HashSet())
+            reservation.setStudents(HashSet())
+            offeringIds.add(Long(course.getInstructionalOffering().getUniqueId()))
+        reservation.getStudents().add(student)
+        hibSession.saveOrUpdate(reservation)
+    return True
+
+def setStatus(student, status):
+    student.setSectioningStatus(status)
+
+def getOnlineServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getOnlineStudentSchedulingContainer()
+    server = container.getSolver(str(session.getUniqueId()))
+    return server
+
+def execute():
+    lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+    status = None
+    if statusRef:
+        status = StudentSectioningStatus.getStatus(statusRef, session.getUniqueId(), hibSession)
+        log.info("Using status %s - %s" % (status.getReference(), status.getLabel()))
+    ts = Date()
+    studentIds = HashSet()
+    offeringIds = HashSet()
+    for line in lines:
+        if not line: continue
+        if line[0].lower() == 'puid': continue
+        puid = line[0]
+        while trimLeadingZeros and puid[0] == '0': puid = puid[1:]
+        name = line[1].strip()
+        pin = None
+        cstart = 2
+        if pinIncluded:
+            pin = line[2]
+            cstart = 3
+        student = getStudent(puid, name, clear)
+        if not student: continue
+        if pin: setPin(student, pin)
+        for course in line[cstart:]:
+            addCourse(student, course, ts, offeringIds)
+        if status:
+            setStatus(student, status)
+        studentIds.add(Long(student.getUniqueId()))
+        hibSession.saveOrUpdate(student)
+
+    StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), studentIds)
+
+    if offeringIds.size() > 0:
+        StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offeringIds)
+
+    offeringIds
+
+if not file:
+    log.error("No input file was provided.")
+else:
+    execute()]]></body>
+</script>
+<script name="Batch Student Scheduling: Data Export" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 09:00:00 EDT 2015">
+  <description><![CDATA[<h3>Export student class enrollments into a CSV file</h3>
+<b>Format:</b><ul>
+<li>There is a line for each student
+<li>PUID, Name, PIN, CRN1, CRN2, .... 
+</ul>
+<b>Parameters:</b><ul>
+<li>Status: students of this status will be exported
+<li>Add Leading Zeros: add leading zeros to the PUID
+<li>Default PIN: default PIN number to be used in the enrollment
+</ul>]]></description>
+  <parameter name="defaultPin" label="Default PIN" type="string"/>
+  <parameter name="status" label="Status" type="reference(StudentSectioningStatus)"/>
+  <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
+  <body><![CDATA[import csv
+from org.unitime.timetable.model import UserData
+
+def getPin(student):
+    pin = UserData.getProperty(student.getExternalId(), "PIN[%d]" % session.getUniqueId())
+    if pin: return pin
+    return defaultPin
+
+def getStudent(student):
+    puid = student.getExternalUniqueId()
+    if zeros: puid = puid.zfill(9)
+    log.info("%s %s" % (puid, student.getName("last-first-middle")))
+    line = [puid, student.getName("last-first-middle"), getPin(student)]
+    crns = {}
+    for enrl in student.getClassEnrollments():
+        crns[enrl.getClazz().getExternalId(enrl.getCourseOffering())] = True
+    line.extend(sorted(crns.keys()))
+    log.debug('-- %s' % ','.join(sorted(crns.keys())))
+    return line
+
+def execute():
+    students = hibSession.createQuery("from Student where session = :session and sectioningStatus.reference = :status"
+        ).setLong("session", session.getUniqueId()).setString("status", status).list()
+    
+    file = open(log.createOutput('%s_enrollments' % status,'csv').getAbsolutePath(), 'w')
+    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','PIN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
+    for student in students:
+        writer.writerow(getStudent(student))
+    writer.writerow(['EOF'])
+    file.close()
+
+if not status:
+    log.error("No student status was provided.")
+else:
+    execute()]]></body>
+</script>
+<script name="Batch Student Scheduling: Solver Enroll" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 09:00:07 EDT 2015">
+  <description><![CDATA[<h3>Used the batch student scheduling solver solution to enroll students on the online student scheduling server.</h3>
+For each student that is loaded in the solver, the appropriate Enroll action is created and executed on the online student scheduling server.<br>
+<b>Output is returned in the following CSV format:</b><ul>
+<li>There is a line for each student class enrollment
+<li>PUID, Name, PIN, Course, CRN, Result, Error Message
+</ul>
+<b>Parameters:</b><ul>
+<li>Default PIN: default PIN number to be used in the enrollment
+</ul>]]></description>
+  <parameter name="defaultPin" label="Default PIN" type="string"/>
+  <body><![CDATA[import csv
+from java.util import ArrayList, HashSet
+from java.lang import Long
+from org.unitime.timetable.model import UserData
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.unitime.timetable.onlinesectioning.match import AnyStudentMatcher
+from org.unitime.timetable.onlinesectioning.model import XCourseRequest
+from org.unitime.timetable.onlinesectioning.basic import GetRequest, GetAssignment
+from org.unitime.timetable.onlinesectioning.updates import EnrollStudent
+from org.unitime.timetable.onlinesectioning.custom import RequestStudentUpdates
+from org.unitime.timetable.onlinesectioning import OnlineSectioningLog
+from org.unitime.timetable.gwt.shared import SectioningException
+
+def getBatchServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getStudentSolverContainer()
+    server = container.getSolver(log.getOwnerId())
+    return server
+
+def getOnlineServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getOnlineStudentSchedulingContainer()
+    server = container.getSolver(str(session.getUniqueId()))
+    return server
+
+def getStudents(server):
+    m = AnyStudentMatcher()
+    m.setServer(server)
+    return server.findStudents(m)
+
+def getPin(student):
+    pin = UserData.getProperty(student.getExternalId(), "PIN[%d]" % session.getUniqueId())
+    if pin: return pin
+    return defaultPin
+
+def getUser(student):
+    user = OnlineSectioningLog.Entity.newBuilder()
+    user.setExternalId(log.getOwnerId())
+    user.setName(log.getOwnerName())
+    user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
+    if student:
+        pin = getPin(student)
+        if pin: user.addParameterBuilder().setKey("pin").setValue(pin)
+    return user.build()
+
+def generateAction(server, student):
+    log.info("%s %s" % (student.getExternalId(), student.getName()))
+    action = EnrollStudent()
+    action.forStudent(student.getStudentId())
+    
+    request = server.execute(GetRequest().forStudent(student.getStudentId()), getUser(student))
+    action.withRequest(request)
+
+    enrollment = server.execute(GetAssignment().forStudent(student.getStudentId()), getUser(student))
+    assignments = ArrayList()
+    for course in enrollment.getCourseAssignments():
+        if course.isFreeTime(): continue
+        assignments.addAll(course.getClassAssignments())
+    action.withAssignment(assignments)
+    
+    return action
+
+def failStudent(server, action, student, writer, message):
+    for assignment in action.getAssignment():
+        course = server.getCourse(assignment.getCourseId())
+        offering = server.getOffering(course.getOfferingId())
+        section = offering.getSection(assignment.getClassId())
+        writer.writerow([
+            student.getExternalId(), student.getName(), getPin(student),
+            course.getCourseName(), section.getExternalId(assignment.getCourseId()),
+            'Failed', message
+            ])
+
+def executeAction(server, action, student, writer):
+    if not action: return False
+    enrollment = None
+    try:
+        enrollment = server.execute(action, getUser(student))
+    except SectioningException, e:
+        log.error('Enrollment failed: %s' % e.getMessage())
+        failStudent(server, action, student, writer, e.getMessage())
+        # writer.writerow([ student.getExternalId(), student.getName(), getPin(student), None, None, 'Failed', e.getMessage() ])
+        return False
+    for course in enrollment.getCourseAssignments():
+        if course.isFreeTime(): continue
+        sections = HashSet()
+        for clazz in course.getClassAssignments():
+            if not sections.add(clazz.getSection()): continue
+            line = [ student.getExternalId(), student.getName(), getPin(student), '%s %s' % (course.getSubject(), course.getCourseNbr()), clazz.getSection() ]
+            if clazz.isSaved(): line.append('Enrolled')
+            else: line.append('Not Enrolled')
+            if clazz.hasError():
+                line.append(clazz.getError())
+            if clazz.hasError():
+                log.warn('%s %s %s: %s (%s)' % (course.getSubject(), course.getCourseNbr(), clazz.getSection(), clazz.getError(), line[5]))
+            else:
+                log.debug('%s %s %s' % (course.getSubject(), course.getCourseNbr(), clazz.getSection()))
+            writer.writerow(line)
+    return True
+
+def execute(batch, online):
+    file = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','PIN','Course','CRN','Status','Message'])
+    failed = ArrayList()
+    for student in getStudents(batch):
+        if not executeAction(online, generateAction(batch, student), student, writer):
+            failed.add(Long(student.getStudentId()))
+    writer.writerow(['EOF'])
+    file.close()
+    if failed.size() > 0:
+        req = RequestStudentUpdates()
+        req.forStudents(failed)
+        online.execute(req, getUser(None))
+
+batch = getBatchServer()
+online = getOnlineServer()
+if not batch:
+    log.error("Batch student scheduling solver is not loaded in.")
+elif batch.isRunning():
+    log.error("Batch student scheduling solver is running.")
+elif batch.isWorking():
+    log.error("Batch student scheduling solver is working.")
+elif not online:
+    log.error("Online student scheduling solver is not running.")
+else:
+    execute(batch, online)]]></body>
+</script>
+<script name="Batch Student Scheduling: Solver Export" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 09:00:14 EDT 2015">
+  <description><![CDATA[<h3>Export batch student scheduling solver student class enrollments data into a CSV file</h3>
+<b>Format:</b><ul>
+<li>There is a line for each student
+<li>PUID, Name, PIN, CRN1, CRN2, .... 
+</ul>
+<b>Parameters:</b><ul>
+<li>Add Leading Zeros: add leading zeros to the PUID
+<li>Default PIN: default PIN number to be used in the enrollment
+</ul>]]></description>
+  <parameter name="defaultPin" label="Default PIN" type="string"/>
+  <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
+  <body><![CDATA[import csv
+from org.unitime.timetable.model import UserData
+from org.unitime.timetable.model.dao import Class_DAO, CourseOfferingDAO
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.unitime.timetable.onlinesectioning.match import AnyStudentMatcher
+from org.unitime.timetable.onlinesectioning.model import XCourseRequest
+
+def getServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getStudentSolverContainer()
+    server = container.getSolver(log.getOwnerId())
+    return server
+
+def getStudents(server):
+    m = AnyStudentMatcher()
+    m.setServer(server)
+    return server.findStudents(m)
+
+def getPin(student):
+    pin = UserData.getProperty(student.getExternalId(), "PIN[%d]" % session.getUniqueId())
+    if pin: return pin
+    return defaultPin
+
+def generateRow(server, student):
+    puid = student.getExternalId()
+    if zeros: puid = puid.zfill(9)
+    name = student.getName()
+    log.info("%s %s" % (puid, name))
+    line = [puid, name, getPin(student)]
+    crns = {}
+    for req in server.getStudent(student.getStudentId()).getRequests():
+        if not isinstance(req, XCourseRequest): continue
+        enrl = req.getEnrollment()
+        if not enrl: continue
+        course = hibSession.createQuery("from CourseOffering where uniqueId = :id").setLong("id", enrl.getCourseId()).uniqueResult()
+        for id in enrl.getSectionIds():
+            clazz = hibSession.createQuery("from Class_ where uniqueId = :id").setLong("id", id).uniqueResult()
+            crns[clazz.getExternalId(course)] = True
+    line.extend(sorted(crns.keys()))
+    log.debug('-- %s' % ','.join(sorted(crns.keys())))
+    return line
+
+def execute(server):
+    file = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','PIN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
+    for student in getStudents(server):
+        writer.writerow(generateRow(server, student))
+    writer.writerow(['EOF'])
+    file.close()
+
+server = getServer()
+if not server:
+    log.error("Batch student scheduling solver is not loaded in.")
+elif server.isRunning():
+    log.error("Batch student scheduling solver is running.")
+elif server.isWorking():
+    log.error("Batch student scheduling solver is working.")
+else:
+    execute(server)]]></body>
+</script>
+</scripts>
