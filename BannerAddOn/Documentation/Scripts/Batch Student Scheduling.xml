@@ -22,7 +22,7 @@
  -->
 
 <scripts created="Tue Oct 20 15:00 CEST 2015">
-<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 08:59:51 EDT 2015">
+<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Wed Oct 28 10:09:21 EDT 2015">
   <description><![CDATA[<h3>Import student course requests from the given CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
@@ -36,13 +36,15 @@
 <li>Trim Leading Zeros: trim leading zeros from the PUID
 <li>Clear Existing Demands: replace existing student course demands with the given demands
 <li>Create Limit Overrides: create limit override reservations for the imported students
+<li>Name Columns: number of columns with student name
 </ul>]]></description>
   <parameter name="clear" label="Clear Existing Demands" type="boolean" default="false"/>
   <parameter name="override" label="Create Limit Overrides" type="boolean" default="false"/>
   <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)"/>
   <parameter name="pinIncluded" label="PIN Included" type="boolean" default="false"/>
-  <parameter name="trimLeadingZeros" label="Trim Leading Zeros" type="boolean" default="false"/>
+  <parameter name="trimLeadingZeros" label="Trim Leading Zeros" type="boolean" default="true"/>
   <parameter name="file" label="Input File (CSV)" type="file"/>
+  <parameter name="nameColumns" label="Name Columns" type="enum(0,1,2,3)" default="2"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.spring import SpringApplicationContextHolder
 from org.unitime.timetable.model import UserData, StudentSectioningStatus, CourseDemand, CourseRequest, OverrideReservation, StudentSectioningQueue
@@ -172,12 +174,18 @@ def execute():
         if line[0].lower() == 'puid': continue
         puid = line[0]
         while trimLeadingZeros and puid[0] == '0': puid = puid[1:]
-        name = line[1].strip()
+        name = None
         pin = None
-        cstart = 2
+        cstart = 1
+        for i in range(0, int(nameColumns)):
+            if name:
+                name = "%s %s" % (name, line[cstart].strip())
+            else:
+                name = line[cstart].strip()
+            cstart = cstart + 1
         if pinIncluded:
-            pin = line[2]
-            cstart = 3
+            pin = line[cstart]
+            cstart = cstart + 1
         student = getStudent(puid, name, clear)
         if not student: continue
         if pin: setPin(student, pin)
