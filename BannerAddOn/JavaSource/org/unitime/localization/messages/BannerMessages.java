@@ -22,8 +22,6 @@ package org.unitime.localization.messages;
 import org.unitime.banner.action.BannerCourseSearchAction;
 import org.unitime.localization.messages.CourseMessages;
 
-import com.google.gwt.i18n.client.Messages.DefaultMessage;
-
 public interface BannerMessages extends CourseMessages {
 
 	@DefaultMessage("Search")

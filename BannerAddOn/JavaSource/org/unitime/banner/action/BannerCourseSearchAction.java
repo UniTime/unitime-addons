@@ -40,7 +40,6 @@ import org.unitime.localization.impl.LocalizedLookupDispatchAction;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.Messages;
 import org.unitime.timetable.defaults.SessionAttribute;
-import org.unitime.timetable.form.InstructionalOfferingListForm;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
@@ -146,28 +145,6 @@ public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
 			HttpServletResponse response) throws Exception {
 	    
         ActionForward fwd = searchBannerCourses(mapping, form, request, response);
-        
-        InstructionalOfferingListForm frm = (InstructionalOfferingListForm) form;
-        
-//        if (getErrors(request).isEmpty()) {
-//            File pdfFile = 
-//                (new PdfInstructionalOfferingTableBuilder())
-//                .pdfTableForInstructionalOfferings(
-//                        WebSolver.getClassAssignmentProxy(request.getSession()),
-//                        WebSolver.getExamSolver(request.getSession()),
-//                        frm, 
-//                        new Long(frm.getSubjectAreaId()), 
-//                        sessionContext,  
-//                        true, 
-//                        frm.getCourseNbr()==null || frm.getCourseNbr().length()==0);
-//            
-//            if (pdfFile!=null) {
-//                request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+pdfFile.getName());
-//                //response.sendRedirect("temp/"+pdfFile.getName());
-//            } else {
-//                getErrors(request).add("searchResult", new ActionMessage("errors.generic", "Unable to create PDF file."));
-//            }
-//        }
         
         return fwd;
 	}

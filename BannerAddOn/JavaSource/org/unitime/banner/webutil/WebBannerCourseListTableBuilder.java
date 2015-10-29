@@ -71,7 +71,6 @@ public class WebBannerCourseListTableBuilder extends
 	 * 
 	 */
 	public WebBannerCourseListTableBuilder() {
-		// TODO Auto-generated constructor stub
 	}
 	
 	

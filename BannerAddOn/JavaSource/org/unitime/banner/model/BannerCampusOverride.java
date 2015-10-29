@@ -23,13 +23,9 @@ package org.unitime.banner.model;
 import java.util.Collection;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.hibernate.criterion.Order;
 import org.unitime.banner.model.base.BaseBannerCampusOverride;
 import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
-import org.unitime.timetable.model.OfferingConsentType;
-import org.unitime.timetable.model.dao.OfferingConsentTypeDAO;
 
 
 

@@ -43,7 +43,9 @@ import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.banner.util.BannerCrnValidator;
 import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
 import org.unitime.commons.Debug;
+import org.unitime.localization.impl.Localization;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.gwt.resources.GwtConstants;
 import org.unitime.timetable.model.Assignment;
 import org.unitime.timetable.model.ClassInstructor;
 import org.unitime.timetable.model.Class_;
@@ -69,7 +71,8 @@ import org.unitime.timetable.util.Constants;
  *
  */
 public class BannerSection extends BaseBannerSection {
-
+	protected static GwtConstants CONSTANTS = Localization.create(GwtConstants.class);
+	
 	/**
 	 * 
 	 */
@@ -892,9 +895,9 @@ public class BannerSection extends BaseBannerSection {
 	   					sb.append(Constants.DAY_NAMES_SHORT[e.nextElement()]);
 	   				}
 	   				sb.append(" ");
-	   				sb.append(a.getTimeLocation().getStartTimeHeader());
+	   				sb.append(a.getTimeLocation().getStartTimeHeader(CONSTANTS.useAmPm()));
 	   				sb.append("-");
-	   				sb.append(a.getTimeLocation().getEndTimeHeader());
+	   				sb.append(a.getTimeLocation().getEndTimeHeader(CONSTANTS.useAmPm()));
 	   				if (a.getRoomLocations().size() > 1){
 	   					for (int i = 1; i < a.getRoomLocations().size() ; i++){
 	   						sb.append("<BR>");

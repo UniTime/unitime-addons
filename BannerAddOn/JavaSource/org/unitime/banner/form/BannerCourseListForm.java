@@ -22,7 +22,6 @@ package org.unitime.banner.form;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,9 +30,7 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.unitime.commons.Debug;
-import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
-import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.util.Constants;

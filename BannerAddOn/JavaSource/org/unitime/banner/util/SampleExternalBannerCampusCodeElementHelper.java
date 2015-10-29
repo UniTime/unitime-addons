@@ -20,7 +20,6 @@
 
 package org.unitime.banner.util;
 
-import org.dom4j.Element;
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;

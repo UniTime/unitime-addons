@@ -31,13 +31,11 @@ import java.util.TreeSet;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.hibernate.Session;
-import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
 import org.unitime.banner.interfaces.ExternalBannerSessionElementHelperInterface;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.util.BannerMessageIdGenerator;
-import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
 import org.unitime.banner.util.DefaultExternalBannerSessionElementHelper;
 import org.unitime.banner.util.MeetingElement;
 import org.unitime.commons.Debug;
@@ -49,7 +47,6 @@ import org.unitime.timetable.model.DatePattern;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.model.InstructionalMethod;
-import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.DatePatternDAO;
@@ -65,7 +62,6 @@ public class BannerMessage {
 	private Document document;
 	private CourseOffering courseOffering;
 	private CourseCreditUnitConfig courseCreditUnitConfig;
-	private InstructionalOffering instructionalOffering;
 	private Class_ clazz;
 	
     private static SimpleDateFormat sDateFormat = new SimpleDateFormat("MM/dd/yyyy");
@@ -174,10 +170,8 @@ public class BannerMessage {
 		}
 		if (bannerSection.getClasses(hibSession).isEmpty()){
 			clazz = null;
-			instructionalOffering = courseOffering.getInstructionalOffering();
 		} else {
 			clazz =  bannerSection.getClasses(hibSession).iterator().next();
-			instructionalOffering = clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalOffering();
 			courseCreditUnitConfig = courseOffering.getCredit();	
 			if (bannerSection.isCanceled(hibSession)){
 				bma = BannerMessageAction.DELETE;

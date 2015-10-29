@@ -24,12 +24,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -212,8 +210,6 @@ public class BannerOfferingDetailAction extends Action {
             BannerOfferingDetailForm frm, 
             String bannerCourseOfferingIdStr) throws Exception {
         
-
-        HttpSession httpSession = request.getSession();
 
         // Load Instr Offering
         Long bannerCourseOfferingId = new Long(bannerCourseOfferingIdStr);

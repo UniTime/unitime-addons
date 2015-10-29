@@ -30,7 +30,6 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
-import org.apache.struts.actions.LookupDispatchAction;
 import org.hibernate.HibernateException;
 import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;

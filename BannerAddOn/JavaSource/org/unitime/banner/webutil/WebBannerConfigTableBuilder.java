@@ -35,7 +35,6 @@ import org.unitime.timetable.defaults.UserProperty;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
-import org.unitime.timetable.model.Settings;
 import org.unitime.timetable.model.UserData;
 import org.unitime.timetable.model.comparators.ClassCourseComparator;
 import org.unitime.timetable.model.comparators.InstrOfferingConfigComparator;
@@ -43,7 +42,6 @@ import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
-import org.unitime.timetable.util.Constants;
 import org.unitime.timetable.webutil.Navigation;
 
 
@@ -58,7 +56,6 @@ public class WebBannerConfigTableBuilder extends
 	 * 
 	 */
 	public WebBannerConfigTableBuilder() {
-		// TODO Auto-generated constructor stub
 	}
 
     public void htmlConfigTablesForBannerOffering(
