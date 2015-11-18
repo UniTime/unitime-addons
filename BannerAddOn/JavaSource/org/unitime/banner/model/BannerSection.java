@@ -22,6 +22,7 @@ package org.unitime.banner.model;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -333,19 +334,24 @@ public class BannerSection extends BaseBannerSection {
 	
 	public static Integer findNextUnusedCrnInUniTimeFor(org.unitime.timetable.model.Session acadSession, Session hibSession) {
 		Integer nextCrn = null;
+		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+		Connection connection = null;
 	   	try {
     		String nextCrnSql = ApplicationProperties.getProperty("banner.crn.generator","{?=call timetable.crn_processor.get_crn(?)}");
-    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
-            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
+            connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextCrnSql);
             call.registerOutParameter(1, java.sql.Types.INTEGER);
             call.setLong(2, acadSession.getUniqueId().longValue());
             call.execute();
             nextCrn = call.getInt(1);
             call.close();
-            session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (connection != null)
+					session.getJdbcConnectionAccess().releaseConnection(connection);
+			} catch (SQLException e) {}
 		}
 		return(nextCrn);
 	}
@@ -354,11 +360,11 @@ public class BannerSection extends BaseBannerSection {
 	public static boolean isSectionIndexUniqueForCourse(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,
 			Session hibSession, String sectionId) {
 		int sectionExists = 0;
+		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+        Connection connection = null;
 	   	try {
     		String sectionExistsSql = ApplicationProperties.getProperty("banner.section_id.validator");
-    		
-    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
-            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
+            connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(sectionExistsSql);
             call.registerOutParameter(1, java.sql.Types.INTEGER);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -371,18 +377,24 @@ public class BannerSection extends BaseBannerSection {
             session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} 
+		} finally {
+			try {
+				if (connection != null)
+					session.getJdbcConnectionAccess().releaseConnection(connection);
+			} catch (SQLException e) {}
+		}
 		return(sectionExists != 1);
 	}
 	
 	public static String findNextUnusedSectionIndexFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,
 			Session hibSession) {
 		String nextSectionId = null;
-	   	try {
+		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+		Connection connection = null;
+		try {
 //    		String nextSectionIdSql = ApplicationProperties.getProperty("banner.section_id.generator","{?= call timetable.section_processor.get_section(?,?,?)}");
     		String nextSectionIdSql = ApplicationProperties.getProperty("banner.section_id.generator");
-    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
-            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
+            connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextSectionIdSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -394,19 +406,23 @@ public class BannerSection extends BaseBannerSection {
             session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} 
+		} finally {
+			try {
+				if (connection != null)
+					session.getJdbcConnectionAccess().releaseConnection(connection);
+			} catch (SQLException e) {}
+		}
 
 		return(nextSectionId);
 	}
 
-	public static String findNextUnusedLinkIdentifierFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,
-			Session hibSession) {
+	public static String findNextUnusedLinkIdentifierFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering, Session hibSession) {
 		String nextLinkId = null;
+		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+		Connection connection = null;
 	   	try {
     		String nextLinkIdSql = ApplicationProperties.getProperty("banner.link_id.generator","{?= call timetable.section_processor.get_link_identifier(?,?,?)}");
-    		
-    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
-            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
+            connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextLinkIdSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -418,7 +434,12 @@ public class BannerSection extends BaseBannerSection {
             session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} 
+		} finally {
+			try {
+				if (connection != null)
+					session.getJdbcConnectionAccess().releaseConnection(connection);
+			} catch (SQLException e) {}
+		}
 
 		return(nextLinkId);
 	}
