@@ -23,6 +23,7 @@ package org.unitime.banner.util;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -303,13 +304,13 @@ public class BannerSectionCrosslistHelper {
 		}
 	}
 
-	public static String findNextUnusedCrosslistIdForSession(
-			org.unitime.timetable.model.Session acadSession) {
+	public static String findNextUnusedCrosslistIdForSession(org.unitime.timetable.model.Session acadSession) {
 		String nextCrosslistId = null;
+		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
+		Connection connection = null;
 	   	try {
     		String nextXlistSql = ApplicationProperties.getProperty("banner.crosslist_id.generator", "{?= call timetable.cross_list_processor.get_cross_list_id(?)}");
-    		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
-            Connection connection = session.getJdbcConnectionAccess().obtainConnection();
+    		connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextXlistSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
@@ -319,7 +320,12 @@ public class BannerSectionCrosslistHelper {
             session.getJdbcConnectionAccess().releaseConnection(connection);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} 
+		} finally {
+			try {
+				if (connection != null)
+					session.getJdbcConnectionAccess().releaseConnection(connection);
+			} catch (SQLException e) {}
+		}
 
 		return(nextCrosslistId);
 	}
