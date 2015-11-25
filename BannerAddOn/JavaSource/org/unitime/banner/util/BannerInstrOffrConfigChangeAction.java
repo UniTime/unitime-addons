@@ -25,16 +25,19 @@ import java.util.Set;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
+import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.interfaces.ExternalInstrOffrConfigChangeAction;
+import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.ItypeDesc;
 import org.unitime.timetable.model.SchedulingSubpart;
+import org.unitime.commons.Debug;
 
 
 /**
@@ -137,5 +140,42 @@ public class BannerInstrOffrConfigChangeAction implements
 		}
 			
 	}
+
+	@Override
+	public boolean validateConfigChangeCanOccur(
+			InstructionalOffering instructionalOffering, Session hibSession) {
+		int maxNumClassesAllowed = ApplicationProperty.SubpartMaxNumClasses.intValue();
+		boolean canOccur = true;	
+		
+		if (BannerSession.shouldGenerateBannerDataFieldsForSession(instructionalOffering.getSession(), hibSession)){
+			// Validate number of classes for a course offering does not exceed max defined in parameter
+			String query = "select count(c) " 
+			             + "from BannerSession bsCo, BannerSession bsOrigIo, "
+			             + "     Class_ c inner join c.schedulingSubpart.instrOfferingConfig.instructionalOffering.courseOfferings as co "
+					     + "where co.subjectArea.subjectAreaAbbreviation = :subject"
+			             + "  and co.courseNbr like :crsNbrBase "
+					     + "  and bsOrigIo.session.uniqueId = :sessionId"
+			             + "  and bsCo.bannerTermCode = bsOrigIo.bannerTermCode"
+			             + "  and c.schedulingSubpart.instrOfferingConfig.instructionalOffering.session.uniqueId = bsCo.session.uniqueId "
+					     ;
+			for (CourseOffering co : instructionalOffering.getCourseOfferings()){
+				//count all classes that match this course number minus any suffix in all matching academic terms
+				int count = Integer.parseInt(hibSession.createQuery(query)
+				          .setString("subject", co.getSubjectAreaAbbv())
+				          .setString("crsNbrBase", (co.getCourseNbr().substring(0, 5) + "%"))
+				          .setLong("sessionId",	instructionalOffering.getSession().getUniqueId().longValue())
+				          .uniqueResult().toString())
+				          ;
+				if (count > maxNumClassesAllowed) {
+					canOccur = false;
+					Debug.info(co.getCourseName() + " has more than " + maxNumClassesAllowed + " classes, not generating Banner Sections");
+					break;
+				}
+			}
+		}
+		
+		return(canOccur);
+	}
+
 
 }
