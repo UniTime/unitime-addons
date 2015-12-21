@@ -378,9 +378,9 @@ public class BannerMessage {
 			sectionElement.addAttribute("USERID", "UniTime");
 			InstructionalMethod im = clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalMethod();
 			if (im != null)
-				sectionElement.addAttribute("INSTRUCTIONAL_METHOD", im.getReference());
+				sectionElement.addAttribute("INSM_CODE", im.getReference());
 			else
-				sectionElement.addAttribute("INSTRUCTIONAL_METHOD", "");
+				sectionElement.addAttribute("INSM_CODE", "");
 		} else {
 			sectionElement.addAttribute("ID", "***");
 		}
