@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+ 
+<script name="Roll Forward Individual Course" permission="Session Roll Forward" engine="ECMAScript" created="Mon Dec 21 15:28:23 EST 2015">
+  <description><![CDATA[This script will roll forward an individual course from the previous like academic session to the current one.]]></description>
+  <parameter name="name" label="Course name" type="text"/>
+  <parameter name="rollClassInstructors" label="Roll forward class instructors" type="boolean" default="true"/>
+  <parameter name="rollBannerCourse" label="Roll forward Banner course data" type="boolean" default="false"/>
+  <parameter name="rollFinalExam" label="Roll forward related final exams" type="boolean" default="true"/>
+  <parameter name="classPrefs" label="Promote appropriate class level preferences to subparts" type="boolean" default="false"/>
+  <parameter name="subpartTimePrefs" label="Roll forward scheduling subpart time preferences" type="boolean" default="true"/>
+  <parameter name="subpartLocationPrefs" label="Roll forward scheduling subpart location preferences" type="boolean" default="true"/>
+  <body><![CDATA[function rollClassInstructors(io) {
+	var pairs = hibSession.createQuery("select c, d from Class_ c, Class_ d where c.schedulingSubpart.instrOfferingConfig.instructionalOffering = :offeringId and d.schedulingSubpart.instrOfferingConfig.instructionalOffering.session.uniqueId=:sessionId and d.uniqueIdRolledForwardFrom=c.uniqueId")
+		.setLong("offeringId", io.getUniqueId()).setLong("sessionId", session.getUniqueId()).list();
+	for (var i = pairs.iterator(); i.hasNext();) {
+		var pair = i.next();
+		var fromClass = pair[0];
+		var toClass = pair[1]
+		for (var ciIt = fromClass.getClassInstructors().iterator(); ciIt.hasNext();) {
+			var fromClassInstr = ciIt.next();
+			var toDeptInstr = fromClassInstr.getInstructor().findThisInstructorInSession(session.getUniqueId(), hibSession);
+			if (toDeptInstr != null) {
+				var toClassInstr = new org.unitime.timetable.model.ClassInstructor();
+				toClassInstr.setClassInstructing(toClass);
+				toClassInstr.setInstructor(toDeptInstr);
+				toClassInstr.setLead(fromClassInstr.isLead());
+				toClassInstr.setPercentShare(fromClassInstr.getPercentShare());
+				toClass.addToclassInstructors(toClassInstr);
+				toDeptInstr.addToclasses(toClassInstr);
+			}
+		}
+		hibSession.update(toClass);
+	}
+}
+
+function rollBannerCourses(io) {
+	for (var i = io.getCourseOfferings().iterator(); i.hasNext();) {
+		var c = i.next();
+		var fromBc = org.unitime.banner.model.BannerCourse.findBannerCourseForCourseOffering(c.getUniqueId(), hibSession);
+		if (fromBc == null) continue;
+		var toBc = new org.unitime.banner.model.BannerCourse();
+		var toCo = org.unitime.timetable.model.CourseOffering.findByIdRolledForwardFrom(session.getUniqueId(), fromBc.getCourseOfferingId());
+		toBc.setCourseOfferingId(toCo.getUniqueId());
+		for (var fromBannerConfigsIt = fromBc.getBannerConfigs().iterator(); fromBannerConfigsIt.hasNext();) {
+			var fromBcfg = fromBannerConfigsIt.next();
+			var toBcfg = new org.unitime.banner.model.BannerConfig();
+			var toIoc = org.unitime.timetable.model.InstrOfferingConfig.findByIdRolledForwardFrom(session.getUniqueId(), fromBcfg.getInstrOfferingConfigId());
+			if (toIoc == null) {
+				log.info("Not rolling foward Banner Configuration with unique id: " + fromBcfg.getUniqueId().toString() + ", this configuration was orphaned.");
+				continue;
+			}
+			toBcfg.setUniqueIdRolledForwardFrom(fromBcfg.getUniqueId());
+			toBcfg.setInstrOfferingConfigId(toIoc.getUniqueId());
+			toBcfg.setBannerCourse(toBc);
+			toBcfg.setGradableItype(fromBcfg.getGradableItype());
+			toBc.addTobannerConfigs(toBcfg);
+			for (var fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();) {
+				var fromBs = fromBannerSectionsIt.next();
+				var toBs = new org.unitime.banner.model.BannerSection();
+				toBs.setCrossListIdentifier(fromBs.getCrossListIdentifier());
+				toBs.setLinkIdentifier(fromBs.getLinkIdentifier());
+				toBs.setLinkConnector(fromBs.getLinkConnector());
+				toBs.setCrn(fromBs.getCrn());
+				toBs.setSectionIndex(fromBs.getSectionIndex());
+				toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueIdRolledForwardFrom());
+				toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
+				toBs.setOverrideLimit(fromBs.getOverrideLimit());
+				toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
+				for (var fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();) {
+					var fromBsc = fromBannerSectionToClassIt.next();
+					var toClass = org.unitime.timetable.model.Class_.findByIdRolledForwardFrom(session.getUniqueId(), fromBsc.getClassId());
+					if (toClass != null) {
+						var toBsc = new org.unitime.banner.model.BannerSectionToClass();
+						toBsc.setBannerSection(toBs);
+						toBs.addTobannerSectionToClasses(toBsc);
+						toBsc.setClassId(toClass.getUniqueId());
+					}
+				}
+				if (toBs.getBannerSectionToClasses() != null) {
+					toBs.setBannerConfig(toBcfg);
+					toBcfg.addTobannerSections(toBs);
+					toBs.setConsentType(fromBs.getConsentType());
+					toBs.setSession(session);
+				}
+			}
+		}
+		hibSession.save(toBc);
+	}
+}
+
+function updateClassSuffixes(io) {
+	var courses = hibSession.createQuery("select bc from BannerCourse bc, CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId and co.instructionalOffering.uniqueIdRolledForwardFrom = :offeringId and bc.courseOfferingId = co.uniqueId")
+		.setLong("sessionId", session.getUniqueId()).setLong("offeringId", io.getUniqueId()).list();
+	for (var i = courses.iterator(); i.hasNext(); ) {
+		var bc = i.next();
+		for (var bannerConfigsIt = bc.getBannerConfigs().iterator(); bannerConfigsIt.hasNext();) {
+			var bcfg = bannerConfigsIt.next();
+			for (var bannerSectionsIt = bcfg.getBannerSections().iterator(); bannerSectionsIt.hasNext();) {
+				var bannerSection = bannerSectionsIt.next();
+				bannerSection.updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, false);
+			}
+		}
+	}
+}
+
+function rollFinalExams(io) {
+	var exams = org.unitime.timetable.model.Exam.findAllRelated("InstructionalOffering", io.getUniqueId());
+	for (var i = exams.iterator(); i.hasNext(); ) {
+		var fromExam = i.next();
+		if (fromExam.getExamType().getType() != 0) continue;
+		var toExam = org.unitime.timetable.model.Exam.findByIdRolledForwardFrom(session.getUniqueId(), fromExam.getUniqueId());
+		if (toExam == null) {
+			toExam = new org.unitime.timetable.model.Exam();
+			toExam.setExamType(fromExam.getExamType());
+			toExam.setLength(fromExam.getLength());
+			toExam.setMaxNbrRooms(fromExam.getMaxNbrRooms());
+			toExam.setNote(fromExam.getNote());
+			toExam.setSeatingType(fromExam.getSeatingType());
+			toExam.setSession(session);
+			toExam.setUniqueIdRolledForwardFrom(fromExam.getUniqueId());
+			if (fromExam.getAveragePeriod() != null && fromExam.getAssignedPeriod() != null) {
+				toExam.setAvgPeriod(new Integer((fromExam.getAvgPeriod().intValue() + fromExam.getAssignedPeriod().getIndex())/2));
+			} else if (fromExam.getAveragePeriod() != null){
+				toExam.setAvgPeriod(fromExam.getAvgPeriod());
+			} else if (fromExam.getAssignedPeriod() != null){
+				toExam.setAvgPeriod(fromExam.getAssignedPeriod().getIndex());
+			}
+		}
+		for(var oIt = fromExam.getOwners().iterator(); oIt.hasNext();) {
+			var fromOwner = oIt.next();
+			var toOwner = new org.unitime.timetable.model.ExamOwner();
+			if (toExam.getUniqueId() != null && !fromExam.getCourseOffering().getInstructionalOffering().equals(io)) continue;
+			if (fromOwner.getOwnerType() == 3) {
+				var toClass = org.unitime.timetable.model.Class_.findByIdRolledForwardFrom(session.getUniqueId(), fromOwner.getOwnerId());
+				if (toClass != null) toOwner.setOwner(toClass);
+			} else if (fromOwner.getOwnerType() == 2) {
+				var toIoc = org.unitime.timetable.model.InstrOfferingConfig.findByIdRolledForwardFrom(session.getUniqueId(), fromOwner.getOwnerId());
+				if (toIoc != null) toOwner.setOwner(toIoc);
+			} else if (fromOwner.getOwnerType() == 0) {
+				var toIo = org.unitime.timetable.model.InstructionalOffering.findByIdRolledForwardFrom(session.getUniqueId(), fromOwner.getOwnerId());
+				if (toIo != null) toOwner.setOwner(toIo);
+			} else if (fromOwner.getOwnerType() == 1) {
+				var toCo = org.unitime.timetable.model.CourseOffering.findByIdRolledForwardFrom(session.getUniqueId(), fromOwner.getOwnerId());
+				if (toCo != null) toOwner.setOwner(toCo);
+			}
+			if (toOwner.getOwnerType() != null) {
+				toOwner.setExam(toExam);
+				toExam.addToowners(toOwner);
+			}
+		}
+		if (toExam.getOwners() != null && toExam.getOwners().size() > 0)
+			hibSession.saveOrUpdate(toExam);
+	}
+}
+
+if (name == null || name == "") {
+  throw new java.lang.RuntimeException("Course name was not provided.");
+}
+
+if (session.getStatusType() == null || !session.getStatusType().isAllowRollForward()) {
+  log.warn("Roll forward is not allowed for " + session + " due to its status " + (session.getStatusType() == null ? "null" : session.getStatusType().getLabel()) + ".");
+  log.warn("You need to change the status of the academic session first.");
+  throw new java.lang.RuntimeException("Roll forward not allowed for " + session + ".");
+}
+
+var previousSessionId = hibSession.createQuery("select max(s.uniqueId) from Session s where s.academicInitiative = :initiative and s.academicTerm = :term and s.uniqueId < :uniqueId").setString("initiative", session.getAcademicInitiative()).setString("term", session.getAcademicTerm()).setLong("uniqueId", session.getUniqueId()).uniqueResult();
+
+if (previousSessionId == null) {
+  throw new java.lang.RuntimeException("No previous academic session was found.");
+}
+
+var previousSession = new org.unitime.timetable.model.dao.SessionDAO().get(previousSessionId);
+
+log.info("Previous session: " + previousSession);
+
+var prevCourse = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session = :sessionId and (lower(co.subjectAreaAbbv || ' ' || co.courseNbr) = :name or lower(co.subjectAreaAbbv || co.courseNbr) = :name)").setLong("sessionId", previousSession.getUniqueId()).setString("name", name.toLowerCase()).uniqueResult();
+
+if (prevCourse == null) {
+  throw new java.lang.RuntimeException("Course " + name + " not found in " + previousSession + ".");
+}
+
+log.info("Previous course: " + prevCourse.getCourseNameWithTitle());
+
+var course = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session = :sessionId and (lower(co.subjectAreaAbbv || ' ' || co.courseNbr) = :name or lower(co.subjectAreaAbbv || co.courseNbr) = :name)").setLong("sessionId", session.getUniqueId()).setString("name", name.toLowerCase()).uniqueResult();
+
+if (course != null) {
+  throw new java.lang.RuntimeException("Course " + name + " already exists in " + session + ".");
+}
+
+var roll = new org.unitime.timetable.util.InstructionalOfferingRollForward(log);
+roll.setClassPrefRollForwardParameter(classPrefs ? "pushUp" : "doNotRoll");
+roll.setSubpartLocationPrefRollForwardParameters(subpartLocationPrefs ? "rollUnchanged" : "doNotRoll");
+roll.setSubpartTimePrefRollForwardParameters(subpartTimePrefs ? "rollUnchanged" : "doNotRoll");
+
+roll.rollForwardInstructionalOffering(prevCourse.getInstructionalOffering(), previousSession, session);
+
+if (rollClassInstructors)
+  rollClassInstructors(prevCourse.getInstructionalOffering());
+
+if (rollBannerCourse) {
+	rollBannerCourses(prevCourse.getInstructionalOffering());
+	updateClassSuffixes(prevCourse.getInstructionalOffering());
+}
+
+if (rollFinalExams)
+  rollFinalExams(prevCourse.getInstructionalOffering());
+]]></body>
+</script>
