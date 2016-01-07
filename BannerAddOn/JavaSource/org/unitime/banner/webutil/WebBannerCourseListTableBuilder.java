@@ -274,8 +274,9 @@ public class WebBannerCourseListTableBuilder extends
 	        TableCell cell = null;
     	    if (configName==null || configName.trim().length()==0)
     	        configName = ioc.getUniqueId().toString();
-    	    cell = this.initNormalCell(indent + "Configuration " + configName, isEditable);
-    	    cell.setNoWrap(true);
+    	    cell = this.initNormalCell("Configuration " + configName, isEditable);
+    	    cell.setStyle("padding-left: " + indent + "px;");
+        	cell.setNoWrap(true);
     	    row.addContent(cell);
     	    cell = this.initCell(" &nbsp;", 17, false);
     	    row.addContent(cell);    
@@ -296,7 +297,7 @@ public class WebBannerCourseListTableBuilder extends
 					Class_ c = null;
 					while (cIt.hasNext()) {
 						c = (Class_) cIt.next();
-						buildSectionRows(classAssignment, ++ct, table, c, bc, indent, sessionContext, null, clickable);
+						buildSectionRows(classAssignment, ++ct, table, c, bc, 1, sessionContext, null, clickable);
 					}
 				}
 			}
@@ -310,7 +311,7 @@ public class WebBannerCourseListTableBuilder extends
 
 	private void buildSectionRows(ClassAssignmentProxy classAssignment,
 			int ct, TableStream table,
-			Class_ aClass, BannerCourse bc, String indentSpaces, SessionContext sessionContext,
+			Class_ aClass, BannerCourse bc, int indentSpaces, SessionContext sessionContext,
 			Integer prevItype, boolean clickable) {
 		Integer currentItype = aClass.getSchedulingSubpart().getItype().getItype();
 		if (aClass.isCancelled().booleanValue()){
@@ -330,7 +331,7 @@ public class WebBannerCourseListTableBuilder extends
             Class_ child = null;
             while (it.hasNext()){              
                 child = (Class_) it.next();
-                buildSectionRows(classAssignment, ct, table, child, bc, indentSpaces + (prevItype != null && prevItype.equals(currentItype)?"":indent), sessionContext, currentItype, clickable);
+                buildSectionRows(classAssignment, ct, table, child, bc, indentSpaces + (prevItype != null && prevItype.equals(currentItype) ? 0 : 1), sessionContext, currentItype, clickable);
             }
         }
 		
@@ -338,7 +339,7 @@ public class WebBannerCourseListTableBuilder extends
 	
 	private void buildSectionRow(ClassAssignmentProxy classAssignment,
 			int ct, TableStream table,
-			Class_ c, BannerCourse bc, String indentSpaces, SessionContext sessionContext, boolean clickable) {
+			Class_ c, BannerCourse bc, int indentSpaces, SessionContext sessionContext, boolean clickable) {
 
 		org.hibernate.Session hibSession = Class_DAO.getInstance().getSession();
     	boolean isHeaderRow = false;
@@ -351,7 +352,11 @@ public class WebBannerCourseListTableBuilder extends
 		if (bs == null){
 			return;
 		}
-    	TableCell cell = initNormalCell(indentSpaces + bs.bannerSectionLabel(), isEditable);
+    	TableCell cell = initNormalCell(bs.bannerSectionLabel(), isEditable);
+    	if (indentSpaces > 0) {
+    		int pad = indentSpaces * indent;
+    		cell.setStyle("padding-left: " + pad + "px;");
+    	}
     	cell.setNoWrap(true);
     	row.addContent(cell);
     	cell = initNormalCell(c.getSchedulingSubpart().getItype().getSis_ref(), isEditable);
@@ -452,8 +457,7 @@ public class WebBannerCourseListTableBuilder extends
         while(it.hasNext()){
             tempCo = (org.unitime.timetable.model.CourseOffering) it.next();
             addlCos.append("<br>"); 
-            addlCos.append(indent);
-            addlCos.append("<span title='" + tempCo.getCourseNameWithTitle() + "'>");
+            addlCos.append("<span title='" + tempCo.getCourseNameWithTitle() + "' style='padding-left: " + indent + "px;'>");
             addlCos.append(tempCo.getCourseNameWithTitle());
             addlCos.append("</span>");
         }
