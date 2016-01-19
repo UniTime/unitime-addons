@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ -->
+ <struts-config>
+
+   <form-beans>
+   		<!-- Custom forms -->
+      <form-bean name="rollForwardColleagueSessionForm" type="org.unitime.colleague.form.RollForwardColleagueSessionForm" />
+      <form-bean name="colleagueMessageResponsesForm" type="org.unitime.colleague.form.ColleagueMessageResponsesForm" />
+	  <form-bean name="colleagueOfferingListForm" type="org.unitime.colleague.form.ColleagueCourseListForm" />
+	  <form-bean name="colleagueOfferingDetailForm" type="org.unitime.colleague.form.ColleagueOfferingDetailForm" />
+      <form-bean name="sectionRestrictionAssignmentForm" type="org.unitime.colleague.form.SectionRestrictionAssignmentForm" />
+
+   		<!-- End of custom forms -->
+   </form-beans>
+
+   <action-mappings>
+   	<!-- Custom actions -->
+	  <action
+      attribute="rollForwardColleagueSessionForm"
+      input="rollForwardColleagueSessionTile"
+      name="rollForwardColleagueSessionForm"
+      path="/rollForwardColleagueSession"
+      scope="request"
+      validate="false"
+      type="org.springframework.web.struts.DelegatingActionProxy" >
+       <forward 
+       		name="displayRollForwardColleagueSessionForm" 
+       		path="rollForwardColleagueSessionTile" />
+       <forward 
+       		name="submit" 
+       		path="/rollForwardColleagueSession.do" />
+      </action>
+
+	  <action
+      attribute="colleagueMessageResponsesForm"
+      input="colleagueMessageResponsesTile"
+      name="colleagueMessageResponsesForm"
+      path="/colleagueMessageResponses"
+      scope="request"
+      validate="false"
+      type="org.springframework.web.struts.DelegatingActionProxy" >
+       <forward 
+       		name="displayColleagueMessageResponsesForm" 
+       		path="colleagueMessageResponsesTile" />
+       <forward 
+       		name="submit" 
+       		path="/colleagueMessageResponses.do" />
+      </action>
+
+      <action
+         path="/colleagueOfferingSearch"
+         attribute="colleagueOfferingListForm"
+         input="colleagueOfferingSearchTile"
+         name="colleagueOfferingListForm"
+         parameter="doit"
+         scope="request"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         validate="false">
+        <forward 
+        	name="showColleagueOfferingList" 
+        	path="colleagueOfferingListTile" />
+        <forward 
+        	name="showColleagueOfferingSearch" 
+        	path="colleagueOfferingSearchTile" />
+        <forward 
+        	name="showColleagueOfferingDetail" 
+        	path="/colleagueOfferingDetail.do" />
+        <forward 
+        	name="editColleagueOffering" 
+        	path="colleagueOfferingEditTile" />
+      </action>
+      
+      <action
+         path="/colleagueOfferingShowSearch"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         attribute="colleagueOfferingListForm"
+         input="colleagueOfferingSearchTile"
+         name="colleagueOfferingListForm"
+         scope="request"
+         validate="false">
+        <forward 
+        	name="showColleagueOfferingList" 
+        	path="colleagueOfferingListTile" />
+        <forward 
+        	name="showColleagueOfferingSearch" 
+        	path="colleagueOfferingSearchTile" />
+      </action>
+
+      <action
+         path="/colleagueOfferingChange"
+         attribute="colleagueOfferingListForm"
+         input="colleagueOfferingListTile"
+         name="colleagueOfferingListForm"
+         parameter="doit"
+         scope="request"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         validate="false">
+        <forward 
+        	name="showColleagueOfferingList" 
+        	path="colleagueOfferingListTile" />
+        <forward 
+        	name="showColleagueOfferingSearch" 
+        	path="colleagueOfferingSearchTile" />
+      </action>
+
+     <action
+         path="/colleagueOfferingList"
+         attribute="colleagueOfferingListForm"
+         input="colleagueOfferingListTile"
+         name="colleagueOfferingListForm"
+         scope="request"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         validate="false">
+         <forward 
+         	name="showColleagueOfferingList" 
+         	path="colleagueOfferingListTile" />
+      </action>
+
+      	<action
+          path="/colleagueOfferingDetail"
+          type="org.springframework.web.struts.DelegatingActionProxy"
+          attribute="colleagueOfferingDetailForm"
+          input="colleagueOfferingDetailTile"
+          name="colleagueOfferingDetailForm"
+          scope="request"
+          validate="false">
+	      <forward
+	        name="showColleagueOfferings" 
+	        path="/colleagueOfferingShowSearch.do" />
+	      <forward
+	        name="showColleagueConfigDetail" 
+	        path="colleagueOfferingDetailTile" />
+	    </action>
+
+      <action
+         path="/sectionRestrictionAssignment"
+         type="org.springframework.web.struts.DelegatingActionProxy"
+         attribute="sectionRestrictionAssignmentForm"
+         input="sectionRestrictionAssignmentTile"
+         name="sectionRestrictionAssignmentForm"
+         scope="request"
+         validate="false">
+        <forward 
+        	name="sectionRestrictionAssignment" 
+        	path="sectionRestrictionAssignmentTile" />
+        <forward 
+        	name="colleagueOfferingDetail" 
+        	path="/colleagueOfferingDetail.do" />
+      </action>
+
+	
+    <!-- End of custom actions -->
+   </action-mappings>
+
+</struts-config>
