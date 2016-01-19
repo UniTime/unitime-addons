@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+
+<!-- 
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ -->
+
+<hibernate-mapping package="org.unitime.colleague.model">
+	<class
+		name="ColleagueSession"
+		table="colleague_session">
+
+ 		<cache include="non-lazy" usage="read-write"/>
+ 		
+        <id
+            name="uniqueId"
+            column="UNIQUEID"
+            type="java.lang.Long"
+        >
+            <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">
+                <param name="sequence">pref_group_seq</param>
+            </generator>
+        </id>
+        
+		<property
+			name="colleagueCampus"
+			column="colleague_campus"
+			type="java.lang.String"
+			not-null="true"
+			length="20"
+		/>
+		
+		<property
+			name="colleagueTermCode"
+			column="colleague_term_code"
+			type="java.lang.String"
+			not-null="true"
+			length="20"
+		/>
+
+		<property
+			name="storeDataForColleague"
+			column="store_data_for_colleague"
+			type="java.lang.Boolean"
+			not-null="true"
+		/>
+
+		<property
+			name="sendDataToColleague"
+			column="send_data_to_colleague"
+			type="java.lang.Boolean"
+			not-null="true"
+		/>
+		
+		<property
+			name="loadingOfferingsFile"
+			column="loading_offerings_file"
+			type="java.lang.Boolean"
+			not-null="true"
+		/>
+		
+		<many-to-one 
+			name="session" 
+			class="org.unitime.timetable.model.Session" 
+			column="session_id" 
+			not-null="true"
+			insert="true"
+			update="true"
+			lazy="false"
+			foreign-key="fk_colleague_session_session"
+		/>
+		
+		<property
+			name="uniqueIdRolledForwardFrom"
+			column="uid_rolled_fwd_from"
+			type="java.lang.Long"
+			not-null="false"
+			length="20"
+		/>
+		
+	</class>
+
+</hibernate-mapping>
