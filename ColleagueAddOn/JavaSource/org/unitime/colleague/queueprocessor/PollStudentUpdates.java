@@ -29,10 +29,14 @@ import java.util.Date;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.unitime.colleague.dataexchange.ReceiveColleagueResponseMessage;
+import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueIn;
 import org.unitime.colleague.model.QueueOut;
 import org.unitime.colleague.model.dao.QueueInDAO;
 import org.unitime.colleague.model.dao.QueueOutDAO;
+import org.unitime.colleague.onlinesectioning.ColleagueStudentUpdates;
 import org.unitime.colleague.queueprocessor.exception.LoggableException;
 import org.unitime.colleague.queueprocessor.https.HttpsConnector;
 import org.unitime.colleague.queueprocessor.oracle.OracleConnector;
@@ -76,6 +80,23 @@ public class PollStudentUpdates extends ColleagueCaller {
 			qi.setXml(result);
 
 			qid.save(qi);
+			
+			if (!"true".equalsIgnoreCase(getColleagueStudentInterfaceProcessInStudentSectioningSolverServer())){
+				Element rootElement = qi.getXml().getRootElement();
+				if (rootElement.getName().equalsIgnoreCase("studentUpdates")){
+					try {
+						ColleagueStudentUpdates csu = new ColleagueStudentUpdates();
+						csu.loadXml(rootElement);
+						qi.setProcessDate(new Date());
+						qi.setStatus(Queue.STATUS_PROCESSED);
+						QueueInDAO.getInstance().getSession().update(qi);
+					} catch (Exception e) {
+						LoggableException le = new LoggableException(e, qi);
+						le.logError();
+						throw le;
+					}
+				} 
+			}
 		} catch (Exception ex) {
 			LoggableException le = new LoggableException(ex, qi);
 			le.logError();
@@ -109,7 +130,7 @@ public class PollStudentUpdates extends ColleagueCaller {
 			}
 
 			Document result = null;
-			String connectionType = getColleagueSectionInterfaceConnectionType();
+			String connectionType = getColleagueStudentInterfaceConnectionType();
 			if (CONNECTION_TYPES.ORACLE.toString().equals(connectionType.toUpperCase())) {
 				result = callOracleProcess(qo == null ? null : qo.getXml());
 				markQueueOutAsProcessed(qod, qo);
@@ -141,7 +162,9 @@ public class PollStudentUpdates extends ColleagueCaller {
 	}
 	
 	private ArrayList<File> callFileProcess(Document document) throws Exception {
-		documentToFile(createNewFileOfType(FILE_TYPES.STUDENT), document);
+		if (document != null){
+			documentToFile(createNewFileOfType(FILE_TYPES.STUDENT), document);
+		}
 		return(filesToProcess(getColleagueStudentInterfaceConnectionFileDirectory(), getColleagueStudentInterfaceConnectionIncomingFileBaseFilename()));
 	}
 

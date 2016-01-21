@@ -143,12 +143,18 @@ public abstract class ColleagueCaller {
 	public static String getColleagueSectionInterfaceConnectionType() throws Exception {
 		String colleagueInterfaceConnectionType = ApplicationProperties.getProperty("colleague.interface.section.connection.type");
         if (colleagueInterfaceConnectionType == null || colleagueInterfaceConnectionType.trim().length() == 0){
+        	Debug.info("unknown connection type");
         	throw new Exception("Missing required custom application property:  'colleague.interface.section.connection.type', this property must be set to either ORACLE or HTTPS.  It defines how to transfer the section data to Colleague.");
         }
-        if (!CONNECTION_TYPES.HTTPS.equals(colleagueInterfaceConnectionType) && !CONNECTION_TYPES.ORACLE.equals(colleagueInterfaceConnectionType)){
+        if (!CONNECTION_TYPES.HTTPS.toString().equals(colleagueInterfaceConnectionType) && !CONNECTION_TYPES.ORACLE.toString().equals(colleagueInterfaceConnectionType)){
+        	Debug.info("wrong connection type");
         	throw new Exception("Required custom application property:  'colleague.interface.section.connection.type', this property must be set to either ORACLE or HTTPS.  It defines how to transfer the section data to Colleague.");
         }
 		return colleagueInterfaceConnectionType;
+	}
+	
+	public static String getColleagueStudentInterfaceProcessInStudentSectioningSolverServer() throws Exception {
+		return(ApplicationProperties.getProperty("colleague.interface.student.processOnSolverServer", "false"));
 	}
 	
 	public static String getColleagueStudentInterfaceConnectionType() throws Exception {
@@ -162,7 +168,7 @@ public abstract class ColleagueCaller {
 
 	public static String getColleagueStudentInterfaceConnectionFileDirectory() throws Exception {
 		String colleagueInterfaceConnectionDirectory = ApplicationProperties.getProperty("colleague.interface.student.connection.file.directory");
-        if (CONNECTION_TYPES.FILE.equals(getColleagueStudentInterfaceConnectionType())) {
+        if (CONNECTION_TYPES.FILE.toString().equals(getColleagueStudentInterfaceConnectionType())) {
 	        if (colleagueInterfaceConnectionDirectory == null || colleagueInterfaceConnectionDirectory.trim().length() == 0){
 	        	throw new Exception("Missing required custom application property:  'colleague.interface.student.connection.file.directory', this property must be set when the property 'colleague.interface.student.connection.type' is set to file FILE.  It defines where to look for the student data from Colleague.");
 	        }
@@ -172,7 +178,7 @@ public abstract class ColleagueCaller {
 
 	public static String getColleagueStudentInterfaceConnectionIncomingFileBaseFilename() throws Exception {
 		String colleagueInterfaceConnectionIncomingBaseFilename = ApplicationProperties.getProperty("colleague.interface.student.connection.file.incomingBaseFilename");
-        if (CONNECTION_TYPES.FILE.equals(getColleagueStudentInterfaceConnectionType())) {
+        if (CONNECTION_TYPES.FILE.toString().equals(getColleagueStudentInterfaceConnectionType())) {
 	        if (colleagueInterfaceConnectionIncomingBaseFilename == null || colleagueInterfaceConnectionIncomingBaseFilename.trim().length() == 0){
 	        	throw new Exception("Missing required custom application property:  'colleague.interface.student.connection.file.incomingBaseFilename', this property must be set when the property 'colleague.interface.student.connection.type' is set to file FILE.  It defines the base file name used for the student data from Colleague.");
 	        }
@@ -182,7 +188,7 @@ public abstract class ColleagueCaller {
 
 	public static String getColleagueStudentInterfaceConnectionOutgoingFileBaseFilename() throws Exception {
 		String colleagueInterfaceOutgoingBaseFilename = ApplicationProperties.getProperty("colleague.interface.student.connection.file.outgoingBaseFilename");
-        if (CONNECTION_TYPES.FILE.equals(getColleagueStudentInterfaceConnectionType())) {
+        if (CONNECTION_TYPES.FILE.toString().equals(getColleagueStudentInterfaceConnectionType())) {
 	        if (colleagueInterfaceOutgoingBaseFilename == null || colleagueInterfaceOutgoingBaseFilename.trim().length() == 0){
 	        	throw new Exception("Missing required custom application property:  'colleague.interface.student.connection.file.outgoingBaseFilename', this property must be set when the property 'colleague.interface.student.connection.type' is set to file FILE.  It defines the base file name used for the student data to Colleague.");
 	        }
@@ -192,7 +198,7 @@ public abstract class ColleagueCaller {
 
 	public static String getColleagueSectionInterfaceConnectionFileDirectory() throws Exception {
 		String colleagueInterfaceConnectionDirectory = ApplicationProperties.getProperty("colleague.interface.section.connection.file.directory");
-        if (CONNECTION_TYPES.FILE.equals(getColleagueSectionInterfaceConnectionType())) {
+        if (CONNECTION_TYPES.FILE.toString().equals(getColleagueSectionInterfaceConnectionType())) {
 	        if (colleagueInterfaceConnectionDirectory == null || colleagueInterfaceConnectionDirectory.trim().length() == 0){
 	        	throw new Exception("Missing required custom application property:  'colleague.interface.section.connection.file.directory', this property must be set when the property 'colleague.interface.section.connection.type' is set to file FILE.  It defines where to look for the section data from Colleague.");
 	        }
@@ -202,7 +208,7 @@ public abstract class ColleagueCaller {
 
 	public static String getColleagueSectionInterfaceConnectionIncomingFileBaseFilename() throws Exception {
 		String colleagueInterfaceConnectionIncomingBaseFilename = ApplicationProperties.getProperty("colleague.interface.section.connection.file.incomingBaseFilename");
-        if (CONNECTION_TYPES.FILE.equals(getColleagueSectionInterfaceConnectionType())) {
+        if (CONNECTION_TYPES.FILE.toString().equals(getColleagueSectionInterfaceConnectionType())) {
 	        if (colleagueInterfaceConnectionIncomingBaseFilename == null || colleagueInterfaceConnectionIncomingBaseFilename.trim().length() == 0){
 	        	throw new Exception("Missing required custom application property:  'colleague.interface.section.connection.file.incomingBaseFilename', this property must be set when the property 'colleague.interface.section.connection.type' is set to file FILE.  It defines the base file name used for the section data from Colleague.");
 	        }
@@ -212,7 +218,7 @@ public abstract class ColleagueCaller {
 
 	public static String getColleagueSectionInterfaceConnectionOutgoingFileBaseFilename() throws Exception {
 		String colleagueInterfaceOutgoingBaseFilename = ApplicationProperties.getProperty("colleague.interface.section.connection.file.outgoingBaseFilename");
-        if (CONNECTION_TYPES.FILE.equals(getColleagueSectionInterfaceConnectionType())) {
+        if (CONNECTION_TYPES.FILE.toString().equals(getColleagueSectionInterfaceConnectionType())) {
 	        if (colleagueInterfaceOutgoingBaseFilename == null || colleagueInterfaceOutgoingBaseFilename.trim().length() == 0){
 	        	throw new Exception("Missing required custom application property:  'colleague.interface.section.connection.file.outgoingBaseFilename', this property must be set when the property 'colleague.interface.section.connection.type' is set to file FILE.  It defines the base file name used for the section data to Colleague.");
 	        }
@@ -313,11 +319,11 @@ public abstract class ColleagueCaller {
 	}
 	
 	protected void renameFileSuccess(File file) {
-			renameFile(file, "success_");
+			renameFile(file, FILE_PROCESS_STATUS.SUCCESS.toString());
 	}
 	
 	protected void renameFileError(File file) {
-		renameFile(file, "error_");
+		renameFile(file, FILE_PROCESS_STATUS.FAILED.toString());
 	}
 
 	protected Document documentFromFile(File file) {

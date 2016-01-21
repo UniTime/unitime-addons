@@ -499,7 +499,7 @@ public class ColleagueSection extends BaseColleagueSection {
 			}
 		}
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.getColleagueId().toString())
+		sb.append(this.getColleagueId())
 		  .append("-")
 		  .append(this.getSectionIndex().trim());
 		
@@ -518,7 +518,7 @@ public class ColleagueSection extends BaseColleagueSection {
 			}
 		}
 
-		return(this.getColleagueId().toString());
+		return(this.getColleagueId());
 	}
 
 	public void assignNewSectionIndex(Session hibSession) throws Exception{

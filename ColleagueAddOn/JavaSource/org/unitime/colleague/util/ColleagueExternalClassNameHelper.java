@@ -50,7 +50,7 @@ public class ColleagueExternalClassNameHelper implements
 			ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, ColleagueSectionDAO.getInstance().getSession());
 			if (cs != null){
 				if (cs.getColleagueId() != null){
-					return courseOffering.getCourseName()+" "+clazz.getItypeDesc().trim()+" "+ cs.getColleagueId().toString();
+					return courseOffering.getCourseName()+" "+clazz.getItypeDesc().trim()+" "+ cs.getColleagueId();
 				} else {
 					return courseOffering.getCourseName()+" "+clazz.getItypeDesc().trim();					
 				}
@@ -70,7 +70,7 @@ public class ColleagueExternalClassNameHelper implements
 		} else {
 			ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, ColleagueSectionDAO.getInstance().getSession());
 	    	if (cs != null) {
-	    		return courseOffering.getCourseNameWithTitle()+" "+clazz.getItypeDesc().trim()+" "+cs.getColleagueId().toString();
+	    		return courseOffering.getCourseNameWithTitle()+" "+clazz.getItypeDesc().trim()+" "+cs.getColleagueId();
 	    	} else {
 	    		return(clazz.getClassLabelWithTitle());
 	    	}
@@ -91,9 +91,9 @@ public class ColleagueExternalClassNameHelper implements
 				} else if (cs.getColleagueId() == null && cs.getSectionIndex() != null) {
 					return(cs.getSectionIndex());
 				} else if (cs.getColleagueId() != null && cs.getSectionIndex() == null) {
-					return(cs.getColleagueId().toString());
+					return(cs.getColleagueId());
 				} else {
-					return cs.getColleagueId().toString() + '-' + cs.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+					return cs.getColleagueId() + '-' + cs.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
 				}
 			} else {
 				return(clazz.getClassSuffix());
@@ -113,7 +113,7 @@ public class ColleagueExternalClassNameHelper implements
 				if(cs.getColleagueId() == null){
 					return(null);
 				} else {
-					return cs.getColleagueId().toString();
+					return cs.getColleagueId();
 				}
 			} else {
 				return(clazz.getExternalUniqueId());

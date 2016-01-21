@@ -24,6 +24,7 @@ import java.util.Properties;
 import org.dom4j.Document;
 import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
 import org.unitime.timetable.model.Session;
+import org.unitime.timetable.model.dao.SessionDAO;
 
 
 /**
@@ -45,11 +46,15 @@ public class ColleagueSectionAuditExport extends BaseCollegueSectionExport {
 	@Override
 	public void saveXml(Document document, Session session,
 			Properties parameters) throws Exception {
+		Long sessionId = session.getUniqueId();
 		beginTransaction();
-		ColleagueMessage cm = new ColleagueMessage(session, MessageAction.AUDIT, false, getHibSession(), document);
+		Session acadSession = SessionDAO.getInstance().get(sessionId, getHibSession());
+		ColleagueMessage cm = new ColleagueMessage(acadSession, MessageAction.AUDIT, false, getHibSession(), document);
 		addAllColleagueSections(cm, MessageAction.AUDIT, session);
 		commitTransaction();
 	
 	}
+	
+	
 	
 }

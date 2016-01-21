@@ -22,13 +22,17 @@ package org.unitime.colleague.dataexchange;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
 import org.dom4j.Element;
+import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
 import org.unitime.colleague.model.ColleagueResponse;
+import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueIn;
+import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.colleague.model.dao.QueueInDAO;
 import org.unitime.colleague.queueprocessor.exception.LoggableException;
 import org.unitime.timetable.dataexchange.BaseImport;
@@ -45,7 +49,7 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 	private static String rootName = "SCHEDULE_RESPONSE";
 	private static String colleagueResponseName = "MESSAGE";
 	private Long queueId;
-
+	private boolean sync;
 	public Long getQueueId() {
 		return queueId;
 	}
@@ -54,11 +58,15 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 		this.queueId = queueId;
 	}
 
+	public void setSync(boolean sync) {
+		this.sync = sync;
+	}
+
 	public ReceiveColleagueResponseMessage() {
 		super();
 	}
 
-	public static void receiveResponseDocument(QueueIn queueIn) throws LoggableException  {
+	public static void receiveResponseDocument(QueueIn queueIn, boolean sync) throws LoggableException  {
 		Element rootElement = queueIn.getXml().getRootElement();
 		if (rootElement.getName().equalsIgnoreCase(rootName)){
 			try {
@@ -76,37 +84,65 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 		} 
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void loadXml(Element rootElement) throws Exception {
 		if (rootElement.getName().equalsIgnoreCase(rootName)) {
-			beginTransaction();
-			for (Iterator eIt = rootElement.elementIterator(colleagueResponseName); eIt.hasNext();) {
-				Element colleagueResponseElement = (Element) eIt.next();
-				ColleagueResponse resp = new ColleagueResponse();
-				String dateStr = getRequiredStringAttribute(colleagueResponseElement, "ACTIVITY_DATE", colleagueResponseName);
-				DateFormat df = new SimpleDateFormat("MM/dd/yyyy H:m:s");
-				try {
-					Date aDate = df.parse(dateStr);
-					resp.setActivityDate(aDate);
-				} catch (ParseException e) {
-					e.printStackTrace();
+			ArrayList<ColleagueSection> syncSections = new ArrayList<ColleagueSection>();
+			try {
+				beginTransaction();
+				ColleagueSectionDAO csDao = ColleagueSectionDAO.getInstance();
+				for (@SuppressWarnings("rawtypes")
+				Iterator eIt = rootElement.elementIterator(colleagueResponseName); eIt.hasNext();) {
+					Element colleagueResponseElement = (Element) eIt.next();
+					ColleagueResponse resp = new ColleagueResponse();
+					String dateStr = getRequiredStringAttribute(colleagueResponseElement, "ACTIVITY_DATE", colleagueResponseName);
+					DateFormat df = new SimpleDateFormat("MM/dd/yyyy H:m:s");
+					try {
+						Date aDate = df.parse(dateStr);
+						resp.setActivityDate(aDate);
+					} catch (ParseException e) {
+						e.printStackTrace();
+					}
+					resp.setSequenceNumber(getRequiredIntegerAttribute(colleagueResponseElement, "SEQNO", colleagueResponseName));
+					resp.setTermCode(getRequiredStringAttribute(colleagueResponseElement, "TERM_CODE", colleagueResponseName));
+					resp.setColleagueId(getOptionalStringAttribute(colleagueResponseElement, "COLLEAGUE_SYNONYM"));
+					resp.setSubjectCode(getOptionalStringAttribute(colleagueResponseElement, "SUBJ_CODE"));
+					resp.setCourseNumber(getOptionalStringAttribute(colleagueResponseElement, "CRSE_NUMB"));
+					resp.setSectionNumber(getOptionalStringAttribute(colleagueResponseElement, "ID"));
+					resp.setExternalId(getOptionalStringAttribute(colleagueResponseElement, "UNITIME_UID"));
+					resp.setAction(getOptionalStringAttribute(colleagueResponseElement, "ACTION"));
+					resp.setType(getOptionalStringAttribute(colleagueResponseElement, "TYPE"));
+					resp.setMessage(getRequiredStringAttribute(colleagueResponseElement, "MESSAGE", colleagueResponseName));
+					resp.setPacketId(getRequiredStringAttribute(colleagueResponseElement, "PACKET_ID", colleagueResponseName));
+					resp.setQueueId(queueId);
+					getHibSession().save(resp);
+					
+					ColleagueSection colleagueSection = csDao.get(new Long(resp.getExternalId()), getHibSession());
+					if (colleagueSection != null){
+						if ((colleagueSection.getColleagueId() == null) && (resp.getColleagueId() != null)){
+							colleagueSection.setColleagueId(resp.getColleagueId());
+							csDao.update(colleagueSection, getHibSession());
+						}
+					}
+					if (sync){
+						if ("ERROR".equals(resp.getType()) && colleagueSection != null) {
+							syncSections.add(colleagueSection);
+						}
+					}
 				}
-				resp.setSequenceNumber(getRequiredIntegerAttribute(colleagueResponseElement, "SEQNO", colleagueResponseName));
-				resp.setTermCode(getRequiredStringAttribute(colleagueResponseElement, "TERM_CODE", colleagueResponseName));
-				resp.setColleagueId(getOptionalStringAttribute(colleagueResponseElement, "COLLEAGUE_SYNONYM"));
-				resp.setSubjectCode(getOptionalStringAttribute(colleagueResponseElement, "SUBJ_CODE"));
-				resp.setCourseNumber(getOptionalStringAttribute(colleagueResponseElement, "CRSE_NUMB"));
-				resp.setSectionNumber(getOptionalStringAttribute(colleagueResponseElement, "SEQ_NUMB"));
-				resp.setExternalId(getOptionalStringAttribute(colleagueResponseElement, "EXTERNAL_ID"));
-				resp.setAction(getOptionalStringAttribute(colleagueResponseElement, "ACTION"));
-				resp.setType(getOptionalStringAttribute(colleagueResponseElement, "TYPE"));
-				resp.setMessage(getRequiredStringAttribute(colleagueResponseElement, "MESSAGE", colleagueResponseName));
-				resp.setPacketId(getRequiredStringAttribute(colleagueResponseElement, "PACKET_ID", colleagueResponseName));
-				resp.setQueueId(queueId);
-				getHibSession().save(resp);
+				commitTransaction();
+				if (sync){
+					if (!syncSections.isEmpty()){
+						SendColleagueMessage.sendColleagueMessage(syncSections, MessageAction.UPDATE, getHibSession());
+					}
+				}
 			}
-			commitTransaction();
+			catch (Exception e) {
+				e.printStackTrace();
+				rollbackTransaction();
+				throw(e);
+			}
+
 		}
 	}
 

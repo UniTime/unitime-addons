@@ -21,6 +21,7 @@
 package org.unitime.colleague.util;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -95,11 +96,7 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 	 */
 	public void performExternalCourseOfferingEditAction(
 			InstructionalOffering instructionalOffering, Session hibSession) {
-		//TODO: check if colleague course number changed, make appropriate updates
-		
-		//TODO: check if section index is still valid, make appropriate updates
-		
-		
+			
 		SendColleagueMessage.sendColleagueMessage(ColleagueSection.findColleagueSectionsForInstructionalOffering(instructionalOffering, hibSession), MessageAction.UPDATE, hibSession);
 	}
 
@@ -192,8 +189,12 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 	public void performExternalCourseOfferingRemoveAction(
 			CourseOffering courseOffering, Session hibSession) {
 		if (ColleagueSession.shouldCreateColleagueDataForSession(courseOffering.getSubjectArea().getSession(), hibSession)){
-			//TODO: find all colleague sections that belong to the course offering, send a delete
-			//   message for those sections to colleague, delete the sections
+			List<ColleagueSection> sections = ColleagueSection.findColleagueSectionsForCourseOfferingId(courseOffering.getUniqueId(), hibSession);
+			for(ColleagueSection cs : sections){
+				cs.setDeleted(new Boolean(true));
+				hibSession.update(cs);
+			}
+			SendColleagueMessage.sendColleagueMessage(sections, MessageAction.DELETE, hibSession);
 		}
 	}
 

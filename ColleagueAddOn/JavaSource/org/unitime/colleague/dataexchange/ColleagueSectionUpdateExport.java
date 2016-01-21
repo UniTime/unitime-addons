@@ -25,7 +25,6 @@ import org.dom4j.Document;
 import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.dao.SessionDAO;
-import org.unitime.timetable.model.dao._RootDAO;
 
 
 /**
@@ -56,19 +55,6 @@ public class ColleagueSectionUpdateExport extends BaseCollegueSectionExport {
 	
 	}
 	
-	@SuppressWarnings("rawtypes")
-	@Override
-    public boolean beginTransaction() {
-        try {
-            iHibSession = new _RootDAO().createNewSession();
-            iTx = iHibSession.beginTransaction();
-            debug("Transaction started.");
-            return true;
-        } catch (Exception e) {
-            fatal("Unable to begin transaction, reason: "+e.getMessage(),e);
-            return false;
-        }
-    }
     
 
 }

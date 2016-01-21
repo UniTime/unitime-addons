@@ -1,5 +1,6 @@
 package org.unitime.colleague.dataexchange;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
@@ -7,6 +8,7 @@ import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.colleague.model.ColleagueSession;
 import org.unitime.timetable.dataexchange.BaseExport;
 import org.unitime.timetable.model.Session;
+import org.unitime.timetable.model.dao._RootDAO;
 
 public abstract class BaseCollegueSectionExport extends BaseExport {
 
@@ -30,8 +32,11 @@ public abstract class BaseCollegueSectionExport extends BaseExport {
 			     "order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, co.title";
 			
 				Iterator subjectIt = getHibSession().createQuery(subjectQuery).setString("termCode", s.getColleagueTermCode()).iterate();
+				ArrayList<String> subjectAreaAbbreviations = new ArrayList<String>();
 				while (subjectIt.hasNext()){
-					String subjectAbbv = (String) subjectIt.next();
+					subjectAreaAbbreviations.add((String) subjectIt.next());
+				}
+				for(String subjectAbbv : subjectAreaAbbreviations) {
 					Iterator it = getHibSession().createQuery(qs)
 					.setString("termCode", s.getColleagueTermCode())
 					.setString("subjectAbbv", subjectAbbv)
@@ -48,5 +53,19 @@ public abstract class BaseCollegueSectionExport extends BaseExport {
 					getHibSession().clear();
 				}
 			}
+
+	@SuppressWarnings("rawtypes")
+	@Override
+    public boolean beginTransaction() {
+        try {
+            iHibSession = new _RootDAO().createNewSession();
+            iTx = iHibSession.beginTransaction();
+            debug("Transaction started.");
+            return true;
+        } catch (Exception e) {
+            fatal("Unable to begin transaction, reason: "+e.getMessage(),e);
+            return false;
+        }
+    }
 
 }

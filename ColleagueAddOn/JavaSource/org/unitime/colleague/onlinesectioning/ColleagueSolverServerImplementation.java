@@ -40,12 +40,12 @@ public class ColleagueSolverServerImplementation {
 				((RemoteSolverContainer<OnlineSectioningServer>)server.getOnlineStudentSchedulingContainer()),
 				false);
 				
-		final ColleagueStudentUpdatesPoller pooler = new ColleagueStudentUpdatesPoller(server, new ColleagueStudentUpdates(container));
-		pooler.start();
+		final ColleagueStudentUpdatesPoller poller = new ColleagueStudentUpdatesPoller(server, new ColleagueStudentUpdates(container));
+		poller.start();
 		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
-				pooler.interrupt();
+				poller.interrupt();
 			}
 		});
 	}
