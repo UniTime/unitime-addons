@@ -63,7 +63,6 @@ public class QueuedItem extends ColleagueCaller {
 
 			item.setPickupDate(new Date());
 			item.setStatus(QueueOut.STATUS_POSTED);
-
 			qod.update(item);
 
 			Document result = null;
@@ -89,18 +88,21 @@ public class QueuedItem extends ColleagueCaller {
 				qid.save(qi);
 				
 				// Process in UniTime
-				ReceiveColleagueResponseMessage.receiveResponseDocument(qi);
+				boolean sync = ("TRUE".equalsIgnoreCase(item.getXml().getRootElement().attributeValue("SYNC")));
+				ReceiveColleagueResponseMessage.receiveResponseDocument(qi, sync);
 				
 			} catch (Exception ex) {
 				LoggableException le = new LoggableException(ex, qi);
 				le.logError();
 				throw le;
 			}
-
+Debug.info("received response for item");
 			item.setProcessDate(new Date());
 			item.setStatus(QueueOut.STATUS_PROCESSED);
+Debug.info("update item process state, before save");
 
 			qod.update(item);
+Debug.info("update item process state, after save");
 
 		} catch(SQLException sqlEx) {
 			throw sqlEx;				

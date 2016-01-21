@@ -32,7 +32,7 @@ public abstract class BaseColleagueSection implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long iUniqueId;
-	private Integer iColleagueId;
+	private String iColleagueId;
 	private String iSectionIndex;
 	private Boolean iDeleted;
 	private Long iCourseOfferingId;
@@ -70,8 +70,8 @@ public abstract class BaseColleagueSection implements Serializable {
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
-	public Integer getColleagueId() { return iColleagueId; }
-	public void setColleagueId(Integer colleagueId) { iColleagueId = colleagueId; }
+	public String getColleagueId() { return iColleagueId; }
+	public void setColleagueId(String colleagueId) { iColleagueId = colleagueId; }
 
 	public String getSectionIndex() { return iSectionIndex; }
 	public void setSectionIndex(String sectionIndex) { iSectionIndex = sectionIndex; }

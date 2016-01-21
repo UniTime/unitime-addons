@@ -157,7 +157,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 				this.showDisplay.add(new Boolean(true));
 				this.times.add(section.buildAssignedTimeHtml(getProxy()));
 				this.rooms.add(section.buildAssignedRoomHtml(getProxy()));
-				this.externalIds.add(section.getColleagueId() == null?"":section.getColleagueId().toString());
+				this.externalIds.add(section.getColleagueId() == null?"":section.getColleagueId());
 			}
 			else {
 				this.sectionLabels.add("");

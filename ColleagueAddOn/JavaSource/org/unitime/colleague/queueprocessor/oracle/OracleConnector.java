@@ -137,8 +137,6 @@ public class OracleConnector {
 			outputStandardDebugInfo(e1);
 		}
 
-		//TODO:  if sync message, then look at response to generate update message, if a section has a response then generate an update for it.
-		//          if no response then two systems match
 		try {
 		stmt.setClob(1, ClobTools.documentToCLOB(in_clob, conn));
 		} catch(Exception ex) {

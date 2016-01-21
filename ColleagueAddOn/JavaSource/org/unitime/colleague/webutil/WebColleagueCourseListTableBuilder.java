@@ -352,7 +352,7 @@ public class WebColleagueCourseListTableBuilder extends
     	row.addContent(cell);
     	cell = initNormalCell(cs.getSectionIndex(), isEditable);
     	row.addContent(cell);
-    	cell = initNormalCell((cs.getColleagueId() == null?"": cs.getColleagueId().toString()), isEditable);
+    	cell = initNormalCell((cs.getColleagueId() == null?"": cs.getColleagueId()), isEditable);
     	row.addContent(cell);
     	cell = initNormalCell(Integer.toString(cs.calculateMaxEnrl(hibSession)), isEditable);
     	cell.setAlign("right");

@@ -64,7 +64,7 @@ public class SendColleagueAuditXml {
 
 		HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
-		ColleagueSectionAuditExport bsea = new ColleagueSectionAuditExport();
+		ColleagueSectionAuditExport csea = new ColleagueSectionAuditExport();
 		Session session = Session.getSessionUsingInitiativeYearTerm(args[0],
 				args[1], args[2]);
 
@@ -80,7 +80,7 @@ public class SendColleagueAuditXml {
 			Debug.error("   valid values are:  TRUE, FALSE");
 			throw(new Exception("ERROR:  Invalid value for Syncronize."));
 		}
-		Document document = bsea.saveXml(session, new Properties());
+		Document document = csea.saveXml(session, new Properties());
 		Element root = document.getRootElement();
 		root.addAttribute("SYNC", args[3].toUpperCase());
 		

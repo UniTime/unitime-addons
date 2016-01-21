@@ -285,7 +285,6 @@ public class ColleagueOfferingDetailAction extends Action {
         
         
 	    InstructionalOffering next = io.getNextInstructionalOffering(sessionContext);
-	    //TODO: need more logic here to deal properly with crosslists
         frm.setNextId(next==null?null:next.getControllingCourseOffering().getUniqueId().toString());
         InstructionalOffering previous = io.getPreviousInstructionalOffering(sessionContext);
         frm.setPreviousId(previous==null?null:previous.getControllingCourseOffering().getUniqueId().toString());

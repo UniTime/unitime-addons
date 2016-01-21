@@ -213,7 +213,6 @@ public class ColleagueSectionCrosslistHelper {
 		try {
 			ensureAllClassesHaveColleagueSection();
 		} catch (Exception e) {
-			// TODO decide how to handle a failure to ensure all classes have at least one colleague section
 			e.printStackTrace();
 		}
 

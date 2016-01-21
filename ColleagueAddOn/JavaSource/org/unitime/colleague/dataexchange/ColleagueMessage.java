@@ -260,7 +260,7 @@ public class ColleagueMessage {
 		if (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1){			
 			Element crosslistElement = sectionElement.addElement("CROSSLIST");
 			ColleagueSection ctrlSection = ColleagueSection.findColleagueSectionForClassAndCourseOffering(clazz, courseOffering.getInstructionalOffering().getControllingCourseOffering(), hibSession);
-			crosslistElement.addAttribute("PRIMARY_COLLEAGUE_SYNONYM", (ctrlSection.getColleagueId() == null ? "" : ctrlSection.getColleagueId().toString()));	
+			crosslistElement.addAttribute("PRIMARY_COLLEAGUE_SYNONYM", (ctrlSection.getColleagueId() == null ? "" : ctrlSection.getColleagueId()));	
 			crosslistElement.addAttribute("PRIMARY_UNITIME_UID", ctrlSection.getUniqueId().toString());	
 			crosslistElement.addAttribute("PRIMARY_CRS_SUBJECT", courseOffering.getInstructionalOffering().getControllingCourseOffering().getSubjectAreaAbbv());	
 			crosslistElement.addAttribute("PRIMARY_CRS_NUMBER", ctrlSection.getColleagueCourseNumber());	
@@ -296,10 +296,10 @@ public class ColleagueMessage {
 			subjectArea = courseOffering.getSubjectArea();
 		}
 		Element sectionElement = root.addElement("SECTION");
-		Debug.info((section.getColleagueId()==null?"":section.getColleagueId().toString()) + " - " + subjectArea.getSubjectAreaAbbreviation() + " " + section.getColleagueCourseNumber());
+		Debug.info((section.getColleagueId()==null?"":section.getColleagueId()) + " - " + subjectArea.getSubjectAreaAbbreviation() + " " + section.getColleagueCourseNumber());
 		sectionElement.addAttribute("ACTION", xmlAction.toString());
 		sectionElement.addAttribute("EXTERNAL_ID", section.getUniqueId().toString());
-		sectionElement.addAttribute("COLLEAGUE_SYNONYM", (section.getColleagueId()==null?"":section.getColleagueId().toString()));
+		sectionElement.addAttribute("COLLEAGUE_SYNONYM", (section.getColleagueId()==null?"":section.getColleagueId()));
 		sectionElement.addAttribute("SUBJ_CODE", subjectArea.getSubjectAreaAbbreviation());
 		sectionElement.addAttribute("CRSE_NUMB", section.getColleagueCourseNumber());
 		if (section.getSectionIndex() != null && !section.getSectionIndex().trim().isEmpty()){
@@ -320,6 +320,9 @@ public class ColleagueMessage {
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(section.calculateMaxEnrl(hibSession))).toString()));
 
 			CourseCreditUnitConfig courseCreditUnitConfig = courseOffering.getCredit();
+			if (courseCreditUnitConfig == null && !courseOffering.isIsControl().booleanValue()){
+				courseCreditUnitConfig = courseOffering.getInstructionalOffering().getControllingCourseOffering().getCredit();
+			}
 			if (courseCreditUnitConfig != null) {
 				if (courseCreditUnitConfig instanceof FixedCreditUnitConfig) {
 					FixedCreditUnitConfig fixed = (FixedCreditUnitConfig) courseCreditUnitConfig;
