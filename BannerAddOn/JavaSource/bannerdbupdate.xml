@@ -140,4 +140,13 @@
 		<plsql>alter table %SCHEMA%.integrationqueueout modify status varchar2(10 char)</plsql>
 		<plsql>create index %SCHEMA%.idx_banner_response_crn_xlst on %SCHEMA%.banner_response (term_code||crn||xlst_group)</plsql>
 	</update>
+	<update version="8" date="19-Jan-2015" comment="Add Banner Section Lab Hours">
+	 	<plsql>
+	 		alter table %SCHEMA%.banner_config add lab_hours float
+	 	</plsql>
+		<mysql>
+			alter table %SCHEMA%.banner_config add lab_hours double
+		</mysql>
+ 	</update>
+	
  </dbupdate>

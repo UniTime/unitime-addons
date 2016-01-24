@@ -85,8 +85,14 @@
 			<cache include="non-lazy" usage="read-write"/>
 			<key column="banner_config_id" foreign-key="fk_banner_sec_banner_cfg"/>
 			<one-to-many class="org.unitime.banner.model.BannerSection"/>
-		</set>			
-
+		</set>
+					
+		<property
+			name="labHours"
+			column="lab_hours"
+			type="java.lang.Float"
+			not-null="false"
+		/>
 
 	</class>
 

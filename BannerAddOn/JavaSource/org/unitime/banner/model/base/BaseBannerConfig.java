@@ -34,6 +34,7 @@ public abstract class BaseBannerConfig implements Serializable {
 	private Long iUniqueId;
 	private Long iInstrOfferingConfigId;
 	private Long iUniqueIdRolledForwardFrom;
+	private Float iLabHours;
 
 	private ItypeDesc iGradableItype;
 	private BannerCourse iBannerCourse;
@@ -42,6 +43,7 @@ public abstract class BaseBannerConfig implements Serializable {
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_INSTR_OFFR_CONFIG_ID = "instrOfferingConfigId";
 	public static String PROP_UID_ROLLED_FWD_FROM = "uniqueIdRolledForwardFrom";
+	public static String PROP_LAB_HOURS = "labHours";
 
 	public BaseBannerConfig() {
 		initialize();
@@ -75,6 +77,10 @@ public abstract class BaseBannerConfig implements Serializable {
 		if (iBannerSections == null) iBannerSections = new HashSet<BannerSection>();
 		iBannerSections.add(bannerSection);
 	}
+	
+	public Float getLabHours() { return iLabHours; }
+	public void setLabHours(Float labHours) { iLabHours = labHours; }
+
 
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerConfig)) return false;

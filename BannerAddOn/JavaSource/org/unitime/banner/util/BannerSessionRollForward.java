@@ -123,6 +123,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 						toBcfg.setInstrOfferingConfigId(toIoc.getUniqueId());
 						toBcfg.setBannerCourse(toBc);
 						toBcfg.setGradableItype(fromBcfg.getGradableItype());
+						toBcfg.setLabHours(fromBcfg.getLabHours());
 						toBc.addTobannerConfigs(toBcfg);
 						for(Iterator fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
 							BannerSection fromBs = (BannerSection) fromBannerSectionsIt.next();

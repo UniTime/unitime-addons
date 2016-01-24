@@ -67,10 +67,12 @@ public class BannerOfferingModifyForm extends ActionForm {
 	private Long instrOfferingId;
     private String instrOfferingName;
 	private Integer itypeId;
+	private Float labHours;
 	private Long instrOffrConfigId;
 	private String origSubparts;
 	private Boolean configIsEditable;
 	private Boolean showLimitOverride;
+	private Boolean showLabHours;
 	
 	private List bannerSectionIds;
 	private List itypes;
@@ -250,11 +252,13 @@ public class BannerOfferingModifyForm extends ActionForm {
     	bannerConfigId = null;
     	instrOfferingId = null;
     	itypeId = null;
+    	labHours = null;
     	instrOffrConfigId = null;
     	instrOfferingName = "";
     	origSubparts = "";
     	configIsEditable = new Boolean(false);
     	showLimitOverride = new Boolean(false);
+    	showLabHours = new Boolean(false);
     	resetLists();
     }
     
@@ -325,6 +329,12 @@ public class BannerOfferingModifyForm extends ActionForm {
 	public void setItypeId(Integer itypeId) {
 		this.itypeId = itypeId;
 	}
+	public Float getLabHours() {
+		return labHours;
+	}
+	public void setLabHours(Float labHours) {
+		this.labHours = labHours;
+	}
 	public String getOp() {
 		return op;
 	}
@@ -358,7 +368,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 
 	    
 	public void addToBannerSections(BannerSession bsess, BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent){
-		showLimitOverride = new Boolean(bs.isCrossListedSection(null));
+		this.showLimitOverride = new Boolean(bs.isCrossListedSection(null));
 		this.bannerSectionLabels.add(bs.bannerSectionLabel());
 		this.bannerSectionLabelIndents.add(indent);
 		this.bannerSectionIds.add(bs.getUniqueId().toString());
@@ -479,6 +489,14 @@ public class BannerOfferingModifyForm extends ActionForm {
 
 	public void setConfigIsEditable(Boolean configIsEditable) {
 		this.configIsEditable = configIsEditable;
+	}
+
+	public Boolean getShowLabHours() {
+		return showLabHours;
+	}
+
+	public void setShowLabHours(Boolean showLabHours) {
+		this.showLabHours = showLabHours;
 	}
 
 	public Boolean getShowLimitOverride() {

@@ -317,6 +317,13 @@ public class BannerMessage {
 			addCampusCodeElement(sectionElement, bannerSection, bs, clazz);
 			sectionElement.addAttribute("SCHD_CODE", clazz.getSchedulingSubpart().getItype().getSis_ref());
 			sectionElement.addAttribute("GRADABLE", (bannerSection.getBannerConfig().getGradableItype()==null?"N":(clazz.getSchedulingSubpart().getItype().getItype().equals(bannerSection.getBannerConfig().getGradableItype().getItype())?"Y":"N")));
+			if (bannerSection.getBannerConfig().getGradableItype()!=null 
+					&& clazz.getSchedulingSubpart().getItype().getItype()
+					        .equals(bannerSection.getBannerConfig().getGradableItype().getItype())) {
+				if (BannerSection.displayLabHours() && bannerSection.getBannerConfig().getLabHours() != null) {
+					sectionElement.addAttribute("LAB_HRS", (bannerSection.getBannerConfig().getLabHours().toString()));
+				}
+			}
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(bannerSection.calculateMaxEnrl(hibSession))).toString()));
 
 			sectionElement.addAttribute("CREDIT_HRS", "");

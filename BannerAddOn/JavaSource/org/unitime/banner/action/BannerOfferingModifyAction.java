@@ -28,6 +28,7 @@ import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -215,6 +216,8 @@ public class BannerOfferingModifyAction extends Action {
         frm.setBannerCourseOfferingId(bc.getUniqueId());
         frm.setBannerConfigId(bannerConfig.getUniqueId());
         frm.setItypeId(bannerConfig.getGradableItype() != null?bannerConfig.getGradableItype().getItype():null);
+        frm.setShowLabHours(BannerSection.displayLabHours());
+        frm.setLabHours(bannerConfig.getLabHours());
         frm.setConfigIsEditable(sessionContext.hasPermission(ioc, Right.MultipleClassSetup));
 
         String name = bc.getCourseOffering(bcDao.getSession()).getCourseNameWithTitle();
@@ -296,6 +299,15 @@ public class BannerOfferingModifyAction extends Action {
 	        		itype = ItypeDescDAO.getInstance().get(frm.getItypeId());
 	        	}
 	        	bannerConfig.setGradableItype(itype);
+	        	hibSession.update(bannerConfig);
+	        }
+
+	        // If the banner offering config gradable itype has changed update it.
+	        if ((frm.getLabHours() == null && bannerConfig.getLabHours() != null)  
+	        		|| (frm.getLabHours() != null && bannerConfig.getLabHours() == null)
+	        		|| (frm.getLabHours() != null && !frm.getLabHours().equals(bannerConfig.getLabHours()))){
+	        	
+	        	bannerConfig.setLabHours(frm.getLabHours());
 	        	hibSession.update(bannerConfig);
 	        }
 

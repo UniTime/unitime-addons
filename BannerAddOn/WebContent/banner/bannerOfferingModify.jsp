@@ -126,8 +126,34 @@
 		<TR>
 		<TD align="left" colspan="2">
 			Configuration Gradable Itype:
-					<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="true" ><html:select style="width:200;" property='<%= "itypeId" %>' tabindex="<%=java.lang.Integer.toString(9000)%>"><html:option value="-1">No Itype</html:option><html:options collection="availableItypes" property="itype" labelProperty="desc" /></html:select></logic:equal><logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="false" ><logic:iterate scope="request" name="availableItypes" id="ityp"><logic:equal name="<%=frmName%>" property='<%= "itypeId" %>' value="<%=((ItypeDesc)ityp).getItype().toString()%>"><bean:write name="ityp" property="desc" /></logic:equal></logic:iterate><html:hidden property='<%= "itypeId" %>'/></logic:equal>
+					<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="true" >
+						<html:select style="width:200;" property='<%= "itypeId" %>' tabindex="<%=java.lang.Integer.toString(9000)%>">
+							<html:option value="-1">No Itype</html:option>
+							<html:options collection="availableItypes" property="itype" labelProperty="desc" />
+						</html:select>
+					</logic:equal>
+					<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="false" >
+						<logic:iterate scope="request" name="availableItypes" id="ityp">
+							<logic:equal name="<%=frmName%>" property='<%= "itypeId" %>' value="<%=((ItypeDesc)ityp).getItype().toString()%>">
+								<bean:write name="ityp" property="desc" />
+							</logic:equal>
+						</logic:iterate>
+						<html:hidden property='<%= "itypeId" %>'/>
+					</logic:equal>
 			
+<!-- 	</TD>
+		<TD align="left" colspan="2">
+-->	
+					<logic:equal name="<%=frmName%>" property='<%="showLabHours"%>' value="true">
+					&nbsp;&nbsp;&nbsp;&nbsp;Lab Hours:
+						<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="true" >
+							<html:text name="<%=frmName%>" property='<%= "labHours" %>' maxlength="10" size="10"/>
+						</logic:equal>
+						<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="false" >
+                     		   <bean:write name="<%=frmName%>" property='<%= "labHours" %>'/>
+                      		   <html:hidden property='<%= "labHours" %>'/>
+						</logic:equal>		
+					</logic:equal>			
 		</TD>
 		</TR>
 		<TR>

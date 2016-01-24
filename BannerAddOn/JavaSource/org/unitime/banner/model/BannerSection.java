@@ -565,6 +565,12 @@ public class BannerSection extends BaseBannerSection {
 
 	}
 	
+	public static boolean displayLabHours(){
+
+		return("true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.lab_hours.display", "false")));
+
+	}
+	
 	public String bannerSectionLabel(){
 		CourseOffering co = getBannerConfig().getBannerCourse().getCourseOffering(null);
 		StringBuilder sb = new StringBuilder();

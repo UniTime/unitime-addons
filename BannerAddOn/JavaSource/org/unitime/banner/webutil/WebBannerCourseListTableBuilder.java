@@ -369,7 +369,12 @@ public class WebBannerCourseListTableBuilder extends
 		cell = initNormalCell((bs.getBannerConfig().getGradableItype() != null && bs.getBannerConfig().getGradableItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype()))?"<IMG border='0' alt='Yes' title='Section is gradable.' align='absmiddle' src='images/accept.png'>":"", isEditable);
 		cell.setAlign("center");
 	   	row.addContent(cell);
-		cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/accept.png'>":""), isEditable);
+		if (BannerSection.displayLabHours()){
+	     	cell = initNormalCell((bs.getBannerConfig().getLabHours() != null && bs.getBannerConfig().getGradableItype() != null && bs.getBannerConfig().getGradableItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype()))?bs.getBannerConfig().getLabHours().toString():"", isEditable);
+	     	cell.setAlign("right");
+	     	row.addContent(cell);
+		}
+	   	cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/accept.png'>":""), isEditable);
 		cell.setAlign("center");
 		row.addContent(cell);
 		cell = initNormalCell(bs.getCrossListIdentifier(), isEditable);
@@ -379,6 +384,8 @@ public class WebBannerCourseListTableBuilder extends
 		cell = initNormalCell(bs.getLinkConnector(), isEditable);
 		row.addContent(cell);
      	cell = initNormalCell(bs.consentLabel(), isEditable);
+     	row.addContent(cell);
+     	cell = initNormalCell((c.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalMethod() == null?"":c.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalMethod().getReference()), isEditable);
      	row.addContent(cell);
      	String credit = bs.bannerCourseCreditStr(c);
      	cell = initNormalCell(credit, isEditable);
@@ -470,7 +477,7 @@ public class WebBannerCourseListTableBuilder extends
         return (cell);
     }  
 
-    protected void buildTableHeader(TableStream table, Long sessionId){  
+    protected void buildTableHeader(TableStream table, Long sessionId, String durationColName){  
     	TableRow row = new TableRow();
     	TableRow row2 = new TableRow();
     	TableHeaderCell cell = null;
@@ -489,6 +496,11 @@ public class WebBannerCourseListTableBuilder extends
 		cell = this.headerCell("Grade", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
+		if (BannerSection.displayLabHours()){
+			cell = this.headerCell("Lab Hours", 2, 1);
+			cell.addContent("<hr>");
+			row.addContent(cell);
+		}
 		cell = this.headerCell("Print", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
@@ -502,6 +514,9 @@ public class WebBannerCourseListTableBuilder extends
 		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Consent", 2, 1);
+		cell.addContent("<hr>");
+		row.addContent(cell);
+		cell = this.headerCell("Instr. Method", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Credit", 2, 1);
