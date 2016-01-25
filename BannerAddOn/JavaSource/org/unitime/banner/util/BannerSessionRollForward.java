@@ -133,7 +133,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 							toBs.setLinkConnector(fromBs.getLinkConnector());
 							toBs.setCrn(fromBs.getCrn());
 							toBs.setSectionIndex(fromBs.getSectionIndex());
-							toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueIdRolledForwardFrom());
+							toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueId());
 							toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
 							toBs.setOverrideLimit(fromBs.getOverrideLimit());
 							toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
