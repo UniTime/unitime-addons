@@ -326,7 +326,7 @@ public class SectionRestrictionAssignmentAction extends Action {
         	}
 
 	    	for(ColleagueSection cs : sectionList){
-	    		if (!cs.isDeleted()){
+	    		if (!cs.isDeleted() && !cs.isCanceled(ColleagueSectionDAO.getInstance().getSession())){
 		    		frm.addToSections(cs, !sessionContext.hasPermission(cs.getFirstClass(), Right.ClassEdit), indent);
 		    		loadSections(frm, cs.getColleagueSectionToChildSections(), indent + "&nbsp;&nbsp;&nbsp;&nbsp;");
 	    		}

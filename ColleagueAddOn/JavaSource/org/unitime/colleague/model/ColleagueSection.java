@@ -587,7 +587,9 @@ public class ColleagueSection extends BaseColleagueSection {
 		boolean sendInstructors = false;
 		for(Iterator<Class_> cIt = this.getClasses(hibSession).iterator(); cIt.hasNext();){
 			Class_ c = cIt.next();
-		
+			if (c.isCancelled().booleanValue()){
+				continue;
+			}
 			if (c.getCommittedAssignment() != null || c.getEffectiveTimePreferences().isEmpty()){
 				sendInstructors = true;
 				if (c.getClassInstructors() != null && !c.getClassInstructors().isEmpty()){
@@ -1083,6 +1085,17 @@ public class ColleagueSection extends BaseColleagueSection {
 			trans.commit();
 		}
 		hibSession.flush();
+	}
+
+	public boolean isCanceled(Session hibSession){
+		boolean allClassesCanceled = true;
+		for(Class_ c : this.getClasses(hibSession)){
+			if (!c.isCancelled().booleanValue()){
+				allClassesCanceled = false;
+				break;
+			}
+		}
+		return(allClassesCanceled);
 	}
 
 

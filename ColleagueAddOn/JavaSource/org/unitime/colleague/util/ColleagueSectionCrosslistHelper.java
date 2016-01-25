@@ -55,6 +55,9 @@ public class ColleagueSectionCrosslistHelper {
 	private void ensureAllSubpartClassesHaveColleagueSection(SchedulingSubpart schedSubpart) throws Exception{
 		
 		for(Class_ c : schedSubpart.getClasses()){
+			if (c.isCancelled().booleanValue()){
+				continue;
+			}
 			List<ColleagueSection> colleagueSections = ColleagueSection.findNotDeletedColleagueSectionsForClass(c, hibSession);
 			if (colleagueSections.isEmpty()){
 				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){

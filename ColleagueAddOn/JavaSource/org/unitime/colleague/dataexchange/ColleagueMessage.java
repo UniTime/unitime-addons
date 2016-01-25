@@ -160,6 +160,7 @@ public class ColleagueMessage {
 	public void addSectionToMessage(ColleagueSection section, MessageAction action, Session hibSession){
 		Class_ clazz;
 		CourseOffering courseOffering = section.getCourseOffering(hibSession);
+		MessageAction cma = action;
 
 		
 		if (!MessageAction.DELETE.equals(action) && courseOffering == null){
@@ -171,7 +172,10 @@ public class ColleagueMessage {
 			clazz =  section.getClasses(hibSession).iterator().next();
 		}
 
-		createSectionXml(section, clazz, courseOffering, action, hibSession);
+		if (section.isCanceled(hibSession)){
+			cma = MessageAction.DELETE;
+		}
+		createSectionXml(section, clazz, courseOffering, cma, hibSession);
 	}
 
 	public String asXmlString(){
