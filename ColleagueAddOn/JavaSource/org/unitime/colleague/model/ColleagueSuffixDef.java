@@ -229,7 +229,9 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
     }
     
     public boolean isAllNumbers() {
-    	return(this.getItypePrefix() == null && this.getPrefix() == null && this.getSuffix() == null);
+    	return((this.getItypePrefix() == null || this.getItypePrefix().isEmpty()) 
+    			&& (this.getPrefix() == null || this.getPrefix().isEmpty())
+    			&& (this.getSuffix() == null || this.getSuffix().isEmpty()));
     }
     
     public boolean isValidColleagueSuffixDef() {
@@ -276,17 +278,18 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
         		if (next.length() == 1){
         			next = "0" + next;
         		}
-    		} else if (this.getItypePrefix() != null && (this.getPrefix() != null || this.getSuffix() != null)){
+    		} else if ((this.getItypePrefix() != null && !this.getItypePrefix().isEmpty()) 
+    				&& ((this.getPrefix() != null && !this.getPrefix().isEmpty()) || (this.getSuffix() != null && !this.getSuffix().isEmpty()))){
     			next = this.getItypePrefix();
-    			if (this.getPrefix() != null){
+    			if (this.getPrefix() != null && !this.getPrefix().isEmpty()){
     				next += this.getPrefix();
     			} else {
     				next += this.getSuffix();
     			}
-    		} else if (this.getItypePrefix() != null){
+    		} else if (this.getItypePrefix() != null && !this.getItypePrefix().isEmpty()){
     			next = this.getItypePrefix();
     			next += this.getMinSectionNum().toString();
-    		} else if (this.getPrefix() != null){
+    		} else if (this.getPrefix() != null && !this.getPrefix().isEmpty()){
     			next = this.getPrefix();
     			next += this.getMinSectionNum().toString();
     		} else {
@@ -298,17 +301,17 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
     		if (next.length() == 1){
     			next = "0" + next;
     		}
-    	} else if (this.getItypePrefix() != null) {
+    	} else if (this.getItypePrefix() != null && !this.getItypePrefix().isEmpty()) {
     		String sec = sectionIndex.substring(1);
     		next = this.getItypePrefix();
-    		if (this.getPrefix() != null){
+    		if (this.getPrefix() != null && !this.getPrefix().isEmpty()){
     			next += this.getPrefix();
     			if (sec.length() == 1){
     				next += this.getMinSectionNum().toString();
     			} else {
     				next += nextNum(sec.substring(1));
     			}
-    		} else if (this.getSuffix() != null){
+    		} else if (this.getSuffix() != null && !this.getSuffix().isEmpty()){
     			if (sec.length() == 1){
     				next += this.getMinSectionNum().toString();
     			} else {
@@ -318,7 +321,7 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
     		} else {
 				next += nextNum(sec);
     		}
-    	} else if (this.getPrefix() != null) {
+    	} else if (this.getPrefix() != null && !this.getPrefix().isEmpty()) {
     		next = this.getPrefix();
     		next += nextNum(sectionIndex.substring(1));
     	} else {
