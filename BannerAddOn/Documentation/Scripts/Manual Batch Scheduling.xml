@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+
+<scripts created="Tue Nov 10 13:38:47 EST 2015">
+<script name="Manual Student Scheduling: CSV Export Enrollments" permission="Student Sectioning Solver" engine="python" created="Thu Nov 12 13:14:25 EST 2015">
+  <description><![CDATA[<h3>Export student class enrollments of a course into a CSV file</h3>
+<b>Format:</b><ul>
+<li>There is a line for each student
+<li>PUID, Name, CRN1, CRN2, .... 
+</ul>
+<b>Parameters:</b><ul>
+<li>Course: students of this course offering will be exported
+<li>Add Leading Zeros: add leading zeros to the PUID
+<li>All Enrollments: include enrollments of other courses (checked) or just the entered course (unchecked)
+<li>Drop Students: whether to drop the students from the course
+</ul>]]></description>
+  <parameter name="course" label="Course Offering" type="text"/>
+  <parameter name="all" label="All Enrollments" type="boolean" default="false"/>
+  <parameter name="drop" label="Drop Students" type="boolean" default="false"/>
+  <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
+  <body><![CDATA[import csv
+from java.util import ArrayList, HashSet
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.unitime.banner.model import BannerSession, BannerSection
+from org.unitime.timetable.onlinesectioning.basic import GetRequest, GetAssignment
+from org.unitime.timetable.onlinesectioning.updates import EnrollStudent
+from org.unitime.timetable.onlinesectioning import OnlineSectioningLog
+from org.unitime.timetable.gwt.shared import SectioningException
+
+def getStudent(student):
+    puid = student.getExternalUniqueId()
+    if zeros: puid = puid.zfill(9)
+    log.info("%s %s" % (puid, student.getName("last-first-middle")))
+    line = [puid, student.getName("last-first-middle")]
+    crns = {}
+    for enrl in student.getClassEnrollments():
+        if all or enrl.getCourseOffering().getCourseName().lower() == course.lower():
+            crns[enrl.getClazz().getExternalId(enrl.getCourseOffering())] = True
+    line.extend(sorted(crns.keys()))
+    log.debug('-- %s' % ','.join(sorted(crns.keys())))
+    return line
+
+def getOnlineServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getOnlineStudentSchedulingContainer()
+    server = container.getSolver(str(session.getUniqueId()))
+    return server
+
+def getTermCode():
+    return BannerSession.findBannerSessionForSession(session.getUniqueId(), hibSession).getBannerTermCode()
+
+def getUser():
+    user = OnlineSectioningLog.Entity.newBuilder()
+    user.setExternalId(log.getOwnerId())
+    user.setName(log.getOwnerName())
+    user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
+    return user.build()
+
+def generateDropAction(online, student):
+    action = EnrollStudent()
+    action.forStudent(student.getUniqueId())
+    
+    request = online.execute(GetRequest().forStudent(student.getUniqueId()), getUser())
+    assignments = ArrayList()
+    enrollment = online.execute(GetAssignment().forStudent(student.getUniqueId()), getUser())
+    for ca in enrollment.getCourseAssignments():
+        if ca.isFreeTime() or ca.getCourseName().lower() == course.lower(): continue
+        assignments.addAll(ca.getClassAssignments())
+
+    action.withRequest(request)
+    action.withAssignment(assignments)
+    
+    return action
+
+def executeAction(server, action, student):
+    if not action: return False
+    enrollment = None
+    try:
+        enrollment = server.execute(action, getUser())
+    except SectioningException, e:
+        log.error('Drop failed: %s' % e.getMessage())
+        return False
+    for ca in enrollment.getCourseAssignments():
+        if ca.isFreeTime(): continue
+        sections = HashSet()
+        for clazz in ca.getClassAssignments():
+            if not sections.add(clazz.getSection()): continue
+            if clazz.hasError():
+                log.warn('%s %s: %s' % (ca.getCourseName(), clazz.getSection(), clazz.getError()))
+    return True
+
+def execute(online):
+    students = hibSession.createQuery("select distinct e.student from StudentClassEnrollment e where e.student.session = :session and lower(e.courseOffering.subjectAreaAbbv || ' ' || e.courseOffering.courseNbr) = :course"
+        ).setLong("session", session.getUniqueId()).setString("course", course.lower()).list()
+    
+    file = open(log.createOutput('%s_enrollments' % course,'csv').getAbsolutePath(), 'w')
+    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
+    for student in students:
+        writer.writerow(getStudent(student))
+        if online and drop:
+            executeAction(online, generateDropAction(online, student), student)
+    writer.writerow(['EOF'])
+    file.close()
+
+online = getOnlineServer()
+if not course:
+    log.error("No course offering was provided.")
+else:
+    execute(online)]]></body>
+</script>
+<script name="Manual Student Scheduling: CSV File Enroll" permission="Student Sectioning Solver" engine="python" created="Thu Nov 12 13:14:10 EST 2015">
+  <description><![CDATA[<h3>Used the provided CSV file to enroll students on the online student scheduling server.</h3>
+For each student that is included in the file, the appropriate Enroll action is created and executed on the online student scheduling server.<br>
+<b>Input is expected in the following CSV format:</b><ul>
+<li>There is a line for each student class enrollment
+<li>PUID, Name, CRN1, CRN2, CRN3, ...
+</ul>
+<b>Output is returned in the following CSV format:</b><ul>
+<li>There is a line for each student class enrollment
+<li>PUID, Name, Course, CRN, Result, Error Message
+</ul>
+<b>Parameters:</b><ul>
+<li>Class Enrollments: input file in the above format
+<li>Clear Existing Enrollments: when true student enrollments are reset to what is in the file, otherwise the existing enrollments are extended with the enrollments in the file
+<li>Name Columns: number of columns with student name
+<li>Trim Leading Zeros: trim leading zeros from the PUID
+</ul>]]></description>
+  <parameter name="infile" label="Class Enrollments" type="file"/>
+  <parameter name="trimLeadingZeros" label="Trim Leading Zeroes" type="boolean" default="false"/>
+  <parameter name="clear" label="Clear Existing Enrollments" type="boolean" default="false"/>
+  <parameter name="nameColumns" label="Name Columns" type="integer" default="1"/>
+  <body><![CDATA[import csv
+from java.util import ArrayList, HashSet
+from java.lang import Long
+from org.unitime.banner.model import BannerSection, BannerSession
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.unitime.timetable.onlinesectioning.basic import GetRequest, GetAssignment
+from org.unitime.timetable.onlinesectioning.updates import EnrollStudent
+from org.unitime.timetable.onlinesectioning.custom import RequestStudentUpdates
+from org.unitime.timetable.onlinesectioning import OnlineSectioningLog
+from org.unitime.timetable.gwt.shared import SectioningException, CourseRequestInterface, ClassAssignmentInterface
+from org.unitime.timetable.model import CourseDemand
+
+def getOnlineServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getOnlineStudentSchedulingContainer()
+    server = container.getSolver(str(session.getUniqueId()))
+    return server
+
+def getStudent(puid, name):
+    student = hibSession.createQuery("from Student where session = :session and externalUniqueId = :puid"
+        ).setLong("session", session.getUniqueId()).setString("puid", puid).uniqueResult()
+    if not student:
+        log.warn("Student %s (%s) does not exist." % (name, puid))
+        return None
+    return student
+
+def getTermCode():
+    return BannerSession.findBannerSessionForSession(session.getUniqueId(), hibSession).getBannerTermCode()
+
+def getCourse(crn, term):
+    co = BannerSection.findCourseOfferingForCrnAndTermCode(hibSession, int(crn), term)
+    if not co:
+        info.warn("No course offering found for CRN %s and banner session %s" % (crn, term))
+    return co
+
+def getClasses(crn, term):
+    classes = HashSet()
+    for clazz in BannerSection.findAllClassesForCrnAndTermCode(hibSession, int(crn), term):
+        if session.equals(clazz.getSession()):
+            classes.add(clazz)
+    return classes
+
+def getUser():
+    user = OnlineSectioningLog.Entity.newBuilder()
+    user.setExternalId(log.getOwnerId())
+    user.setName(log.getOwnerName())
+    user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
+    return user.build()
+
+def requestAddCourse(request, course):
+    for r in request.getCourses():
+        if r.hasRequestedFreeTime(): continue
+        if r.getRequestedCourse() == course or r.getFirstAlternative() == course or r.getSecondAlternative() == course:
+            return
+    for r in request.getAlternatives():
+        if r.getRequestedCourse() == course or r.getFirstAlternative() == course or r.getSecondAlternative() == course:
+            return
+    r = CourseRequestInterface.Request()
+    r.setRequestedCourse(course)
+    request.getCourses().add(r)
+    
+def assignmentsAddClass(assignments, course, clazz):
+    for a in assignments:
+        if a.isFreeTime(): continue
+        if a.getCourseId() == course.getUniqueId() and a.getClassId() == clazz.getUniqueId(): return 
+    a = ClassAssignmentInterface.ClassAssignment()
+    a.setCourseId(course.getUniqueId())
+    a.setClassId(clazz.getUniqueId())
+    a.setSection(clazz.getClassSuffix(course))
+    a.setClassNumber(clazz.getSectionNumberString(hibSession))
+    assignments.add(a)
+
+def assignmentsDropClasses(assignments, courseId):
+    i = assignments.iterator()
+    while i.hasNext():
+        a = i.next()
+        if not a.isFreeTime() and a.getCourseId() == courseId:
+            i.remove()
+
+def generateAction(online, student, crns):
+    log.info("%s %s" % (student.getExternalUniqueId(), student.getName("last-first-middle")))
+    action = EnrollStudent()
+    action.forStudent(student.getUniqueId())
+    
+    request = None
+    assignments = ArrayList()
+    if clear:
+        request = CourseRequestInterface()
+    else:
+        request = online.execute(GetRequest().forStudent(student.getUniqueId()), getUser())
+        enrollment = online.execute(GetAssignment().forStudent(student.getUniqueId()), getUser())
+        for course in enrollment.getCourseAssignments():
+            if course.isFreeTime(): continue
+            assignments.addAll(course.getClassAssignments())
+
+    term = getTermCode()
+    courses = HashSet()
+    for crn in crns:
+        course = getCourse(crn, term)
+        if not course: continue
+        if course not in courses:
+            courses.add(course)
+            assignmentsDropClasses(assignments, course.getUniqueId())
+        requestAddCourse(request, course.getCourseName())
+        classes = getClasses(crn, term)
+        for clazz in classes:
+            assignmentsAddClass(assignments, course, clazz)
+
+    action.withRequest(request)
+    action.withAssignment(assignments)
+    
+    return action
+
+def failStudent(server, action, student, writer, message):
+    for assignment in action.getAssignment():
+        course = server.getCourse(assignment.getCourseId())
+        offering = server.getOffering(course.getOfferingId())
+        section = offering.getSection(assignment.getClassId())
+        writer.writerow([
+            student.getExternalUniqueId(), student.getName("last-first-middle"),
+            course.getCourseName(), section.getExternalId(assignment.getCourseId()),
+            'Failed', message
+            ])
+
+def executeAction(server, action, student, writer):
+    if not action: return False
+    enrollment = None
+    try:
+        enrollment = server.execute(action, getUser())
+    except SectioningException, e:
+        log.error('Enrollment failed: %s' % e.getMessage())
+        failStudent(server, action, student, writer, e.getMessage())
+        return False
+    for course in enrollment.getCourseAssignments():
+        if course.isFreeTime(): continue
+        sections = HashSet()
+        for clazz in course.getClassAssignments():
+            if not sections.add(clazz.getSection()): continue
+            line = [ student.getExternalUniqueId(), student.getName("last-first-middle"), '%s %s' % (course.getSubject(), course.getCourseNbr()), clazz.getSection() ]
+            if clazz.isSaved(): line.append('Enrolled')
+            else: line.append('Not Enrolled')
+            if clazz.hasError():
+                line.append(clazz.getError())
+            if clazz.hasError():
+                log.warn('%s %s %s: %s (%s)' % (course.getSubject(), course.getCourseNbr(), clazz.getSection(), clazz.getError(), line[5]))
+            else:
+                log.debug('%s %s %s' % (course.getSubject(), course.getCourseNbr(), clazz.getSection()))
+            writer.writerow(line)
+    return True
+
+def execute(online):
+    lines = csv.reader(infile.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+    outfile = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','Course','CRN','Status','Message'])
+    failed = ArrayList()
+    for line in lines:
+        if not line: continue
+        if line[0].lower() == 'puid' or line[0].lower() == 'eof': continue
+        puid = line[0]
+        while trimLeadingZeros and puid[0] == '0': puid = puid[1:]
+        name = None
+        cstart = 1
+        for i in range(0, int(nameColumns)):
+            if name:
+                name = "%s %s" % (name, line[cstart].strip())
+            else:
+                name = line[cstart].strip()
+            cstart = cstart + 1
+        student = getStudent(puid, name)
+        if not student: continue
+        if not executeAction(online, generateAction(online, student, line[cstart:]), student, writer):
+            failed.add(Long(student.getUniqueId()))
+    writer.writerow(['EOF'])
+    outfile.close()
+    if failed.size() > 0:
+        req = RequestStudentUpdates()
+        req.forStudents(failed)
+        online.execute(req, getUser())
+
+online = getOnlineServer()
+if not infile:
+    log.error("Student file not provided.")
+elif not online:
+    log.error("Online student scheduling solver is not running.")
+else:
+    execute(online)]]></body>
+</script>
+</scripts>
