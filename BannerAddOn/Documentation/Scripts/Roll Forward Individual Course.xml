@@ -21,12 +21,13 @@
  *
  -->
  
-<script name="Roll Forward Individual Course" permission="Session Roll Forward" engine="ECMAScript" created="Mon Dec 21 15:28:23 EST 2015">
+<script name="Roll Forward Individual Course" permission="Session Roll Forward" engine="ECMAScript" created="Wed Jan 27 21:22:49 CET 2016">
   <description><![CDATA[This script will roll forward an individual course from the previous like academic session to the current one.]]></description>
   <parameter name="name" label="Course name" type="text"/>
   <parameter name="rollClassInstructors" label="Roll forward class instructors" type="boolean" default="true"/>
   <parameter name="rollBannerCourse" label="Roll forward Banner course data" type="boolean" default="false"/>
   <parameter name="rollFinalExam" label="Roll forward related final exams" type="boolean" default="true"/>
+  <parameter name="cancelledClassAction" label="Cancelled Classes" type="enum(KEEP,REOPEN,SKIP)" default="REOPEN"/>
   <parameter name="classPrefs" label="Promote appropriate class level preferences to subparts" type="boolean" default="false"/>
   <parameter name="subpartTimePrefs" label="Roll forward scheduling subpart time preferences" type="boolean" default="true"/>
   <parameter name="subpartLocationPrefs" label="Roll forward scheduling subpart location preferences" type="boolean" default="true"/>
@@ -83,7 +84,7 @@ function rollBannerCourses(io) {
 				toBs.setLinkConnector(fromBs.getLinkConnector());
 				toBs.setCrn(fromBs.getCrn());
 				toBs.setSectionIndex(fromBs.getSectionIndex());
-				toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueIdRolledForwardFrom());
+				toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueId());
 				toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
 				toBs.setOverrideLimit(fromBs.getOverrideLimit());
 				toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
@@ -140,7 +141,7 @@ function rollFinalExams(io) {
 			toExam.setSession(session);
 			toExam.setUniqueIdRolledForwardFrom(fromExam.getUniqueId());
 			if (fromExam.getAveragePeriod() != null && fromExam.getAssignedPeriod() != null) {
-				toExam.setAvgPeriod(new Integer((fromExam.getAvgPeriod().intValue() + fromExam.getAssignedPeriod().getIndex())/2));
+				toExam.setAvgPeriod(new java.lang.Integer((fromExam.getAvgPeriod().intValue() + fromExam.getAssignedPeriod().getIndex())/2));
 			} else if (fromExam.getAveragePeriod() != null){
 				toExam.setAvgPeriod(fromExam.getAvgPeriod());
 			} else if (fromExam.getAssignedPeriod() != null){
@@ -212,6 +213,7 @@ var roll = new org.unitime.timetable.util.InstructionalOfferingRollForward(log);
 roll.setClassPrefRollForwardParameter(classPrefs ? "pushUp" : "doNotRoll");
 roll.setSubpartLocationPrefRollForwardParameters(subpartLocationPrefs ? "rollUnchanged" : "doNotRoll");
 roll.setSubpartTimePrefRollForwardParameters(subpartTimePrefs ? "rollUnchanged" : "doNotRoll");
+roll.setCancelledClassActionRollForwardParameter(cancelledClassAction);
 
 roll.rollForwardInstructionalOffering(prevCourse.getInstructionalOffering(), previousSession, session);
 
