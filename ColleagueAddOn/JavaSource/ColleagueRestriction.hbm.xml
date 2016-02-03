@@ -52,7 +52,7 @@
 				column="code"
 				type="java.lang.String"
 				not-null="true"
-				length="6"
+				length="8"
 			/>
 		</properties>
 

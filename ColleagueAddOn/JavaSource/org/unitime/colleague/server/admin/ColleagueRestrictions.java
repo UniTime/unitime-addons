@@ -60,7 +60,7 @@ public class ColleagueRestrictions implements AdminTable {
 	@PreAuthorize("checkPermission('AcademicSessions')")
 	public SimpleEditInterface load(SessionContext context, Session hibSession) {
 		SimpleEditInterface data = new SimpleEditInterface(
-				new Field(MESSAGES.fieldCode(), FieldType.text, 60, 6, Flag.NOT_EMPTY),
+				new Field(MESSAGES.fieldCode(), FieldType.text, 60, 8, Flag.NOT_EMPTY),
 				new Field(MESSAGES.fieldName(), FieldType.text, 150, 30, Flag.NOT_EMPTY),
 				new Field(MESSAGES.fieldNote(), FieldType.text, 300, 500, Flag.NOT_EMPTY)
 				);

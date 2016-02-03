@@ -81,7 +81,7 @@ ENGINE = INNODB;
 CREATE TABLE colleague_restriction (
   uniqueid DECIMAL(20, 0) NOT NULL,
   term_code VARCHAR(20) BINARY NOT NULL,
-  code VARCHAR(6) BINARY NOT NULL,
+  code VARCHAR(8) BINARY NOT NULL,
   name VARCHAR(30) BINARY NOT NULL,
   description VARCHAR(500) BINARY NULL,
   PRIMARY KEY (uniqueid),
