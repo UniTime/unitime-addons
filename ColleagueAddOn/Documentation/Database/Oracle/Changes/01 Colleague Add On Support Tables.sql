@@ -87,7 +87,7 @@ alter table colleague_section_join_class
 create table colleague_restriction (
   uniqueid      number(20) not null,
   term_code       varchar2(20 char) not null,
-  code varchar2(6 char) not null,
+  code varchar2(8 char) not null,
   name varchar2(30 char) not null,
   description varchar2(500 char)
 );
