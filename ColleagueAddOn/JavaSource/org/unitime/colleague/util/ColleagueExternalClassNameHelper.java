@@ -86,15 +86,7 @@ public class ColleagueExternalClassNameHelper implements
 		} else {
 			ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, ColleagueSectionDAO.getInstance().getSession());
 			if (cs != null){
-				if (cs.getColleagueId() == null  && cs.getSectionIndex() == null){
-					return(clazz.getClassSuffix());
-				} else if (cs.getColleagueId() == null && cs.getSectionIndex() != null) {
-					return(cs.getSectionIndex());
-				} else if (cs.getColleagueId() != null && cs.getSectionIndex() == null) {
-					return(cs.getColleagueId());
-				} else {
-					return cs.getColleagueId() + '-' + cs.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
-				}
+				return(cs.classSuffixFor(clazz));		
 			} else {
 				return(clazz.getClassSuffix());
 			}

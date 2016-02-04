@@ -490,23 +490,16 @@ public class ColleagueSection extends BaseColleagueSection {
 		
 	}
 		
-	public String classSuffixFor(Class_ clazz, Session hibSession){
-		if (this.getColleagueId() == null || this.getSectionIndex() == null){
-			if (clazz != null && clazz.getClassSuffix() != null){
+	public String classSuffixFor(Class_ clazz){
+			if (this.getColleagueId() == null  && this.getSectionIndex() == null){
 				return(clazz.getClassSuffix());
+			} else if (this.getColleagueId() == null && this.getSectionIndex() != null) {
+				return(this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
+			} else if (this.getColleagueId() != null && this.getSectionIndex() == null) {
+				return(this.getColleagueId() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
 			} else {
-				return("");
+				return this.getColleagueId() + '-' + this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
 			}
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.getColleagueId())
-		  .append("-")
-		  .append(this.getSectionIndex().trim());
-		
-		if (clazz != null && clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalOffering().getCourseOfferings() != null && clazz.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalOffering().getCourseOfferings().size() > 1){
-			sb.append("*");
-		}
-		return(sb.toString());
 	}
 	
 	public String externalUniqueIdFor(Class_ clazz, Session hibSession){
@@ -549,7 +542,7 @@ public class ColleagueSection extends BaseColleagueSection {
 				ColleagueSectionToClass bsc = (ColleagueSectionToClass) it.next();
 				Class_ clazz = Class_DAO.getInstance().get(bsc.getClassId(), hibSession);
 				if (clazz != null){
-					String classSuffix = this.classSuffixFor(clazz, hibSession);
+					String classSuffix = this.classSuffixFor(clazz);
 					if(clazz.getClassSuffix() == null || !clazz.getClassSuffix().equals(classSuffix)){
 						clazz.setClassSuffix(classSuffix);
 						clazz.setExternalUniqueId(this.externalUniqueIdFor(clazz, hibSession));
