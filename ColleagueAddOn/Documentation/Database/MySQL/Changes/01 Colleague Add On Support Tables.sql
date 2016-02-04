@@ -161,6 +161,7 @@ ENGINE = INNODB;
 CREATE TABLE colleague_course_suffix_def (
   uniqueid DECIMAL(20, 0) NOT NULL,
   term_code VARCHAR(20) BINARY NOT NULL,
+  subject_area_id DECIMAL(20, 0) NULL,
   itype_id INT(2) NULL,
   course_suffix VARCHAR(5) BINARY NULL,
   campus_code VARCHAR(20) BINARY NULL,

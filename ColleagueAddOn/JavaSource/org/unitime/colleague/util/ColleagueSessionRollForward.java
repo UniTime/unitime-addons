@@ -210,7 +210,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 				.setString("termCode", fromCs.getColleagueTermCode())
 				.list();
 		for (ColleagueSuffixDef fromDef : fromSuffixes){
-			ColleagueSuffixDef toDef = ColleagueSuffixDef.findColleagueSuffixDefForTermCodeItypeSuffix(toCs.getColleagueTermCode(), fromDef.getItypeId(), fromDef.getCourseSuffix());
+			ColleagueSuffixDef toDef = ColleagueSuffixDef.findColleagueSuffixDefForTermCodeItypeSuffix(toCs.getColleagueTermCode(), fromDef.getSubjectAreaId(), fromDef.getItypeId(), fromDef.getCourseSuffix());
 			if (toDef == null) {
 				toDef = fromDef.clone();
 				toDef.setTermCode(toCs.getColleagueTermCode());
