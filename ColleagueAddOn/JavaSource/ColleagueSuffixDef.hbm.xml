@@ -56,6 +56,13 @@
 			/>
 			
 			<property
+				name="subjectAreaId"
+				column="subject_area_id"
+				type="java.lang.Long"
+				not-null="false"
+			/>
+
+			<property
 				name="courseSuffix"
 				column="course_suffix"
 				type="java.lang.String"

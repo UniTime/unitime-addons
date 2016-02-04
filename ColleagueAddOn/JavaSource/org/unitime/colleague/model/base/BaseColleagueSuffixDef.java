@@ -29,6 +29,7 @@ public abstract class BaseColleagueSuffixDef implements Serializable {
 
 	private Long iUniqueId;
 	private String iTermCode;
+	private Long iSubjectAreaId;
 	private Integer iItypeId;
 	private String iCourseSuffix;
 	private String iCampusCode;
@@ -42,6 +43,7 @@ public abstract class BaseColleagueSuffixDef implements Serializable {
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_TERM_CODE = "termCode";
+	public static String PROP_SUBJECT_AREA_ID = "iSubjectAreaId";
 	public static String PROP_ITYPE_ID = "itypeId";
 	public static String PROP_COURSE_SUFFIX = "courseSuffix";
 	public static String PROP_CAMPUS_CODE = "campusCode";
@@ -67,6 +69,9 @@ public abstract class BaseColleagueSuffixDef implements Serializable {
 
 	public String getTermCode() { return iTermCode; }
 	public void setTermCode(String termCode) { iTermCode = termCode; }
+
+	public Long getSubjectAreaId() { return iSubjectAreaId; }
+	public void setSubjectAreaId(Long subjectAreaId) { iSubjectAreaId = subjectAreaId; }
 
 	public Integer getItypeId() { return iItypeId; }
 	public void setItypeId(Integer itypeId) { iItypeId = itypeId; }
@@ -113,6 +118,7 @@ public abstract class BaseColleagueSuffixDef implements Serializable {
 	public String toDebugString() {
 		return "ColleagueSuffixDef[" +
 			"\n	TermCode: " + getTermCode() +
+			"\n	SubjectAreaId: " + getSubjectAreaId() +
 			"\n	ItypeId: " + getItypeId() +
 			"\n	CourseSuffix: " + getCourseSuffix() +
 			"\n	CampusCode: " + getCampusCode() +

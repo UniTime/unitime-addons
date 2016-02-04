@@ -71,9 +71,14 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 	}
 
    
-	public static ColleagueSuffixDef findColleagueSuffixDefForTermCodeItypeSuffix(String termCode, Integer itypeId, String suffix){
+	public static ColleagueSuffixDef findColleagueSuffixDefForTermCodeItypeSuffix(String termCode, Long subjectAreaId, Integer itypeId, String suffix){
 		StringBuilder sb = new StringBuilder();
 		sb.append("from ColleagueSuffixDef csd where csd.termCode = :termCode");
+		if (subjectAreaId == null){
+			sb.append(" and csd.subjectAreaId is null");			
+		} else {
+			sb.append(" and csd.subjectAreaId = :subjectAreaId");			
+		}
 		if (itypeId == null){
 			sb.append(" and csd.itypeId is null");
 		} else {
@@ -86,6 +91,9 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 		}
 		Query query = ColleagueSuffixDefDAO.getInstance().getQuery(sb.toString());
 		query.setString("termCode", termCode);
+		if (subjectAreaId != null){
+			query.setLong("subjectAreaId", subjectAreaId.longValue());
+		}
 		if (itypeId != null){
 			query.setInteger("itypeId", itypeId.intValue());
 		}
@@ -100,24 +108,48 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 			String termCode, Session session) {
 
 		String courseSuffix = findCourseSuffix(courseOffering);
-		ColleagueSuffixDef csd = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, (itype == null?null:itype.getItype()), courseSuffix);
-		if (courseSuffix != null) {} else {}
+		ColleagueSuffixDef csd = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, courseOffering.getSubjectArea().getUniqueId(), (itype == null?null:itype.getItype()), courseSuffix);
 		if (csd == null) {
-			ColleagueSuffixDef csdItype = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, (itype == null?null:itype.getItype()), null);
+
+			ColleagueSuffixDef csdSubjectArea = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, courseOffering.getSubjectArea().getUniqueId(), null, null);
+
+			ColleagueSuffixDef csdItypeCourseSuffix = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, (itype == null?null:itype.getItype()), courseSuffix);
+
+			ColleagueSuffixDef csdItype = null;
+			ColleagueSuffixDef csdCourseSuffix = null;
+			if (csdItypeCourseSuffix == null) {
+				csdItype = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, (itype == null?null:itype.getItype()), null);
+				csdCourseSuffix = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, null, courseSuffix);
+			} else {
+				csdItype = new ColleagueSuffixDef();
+				csdItype.setItypeId(csdItypeCourseSuffix.getItypeId());
+				csdItype.setItypePrefix(csdItypeCourseSuffix.getItypePrefix());
+				csdItype.setCampusCode(csdItypeCourseSuffix.getCampusCode());
+				csdItype.setMinSectionNum(csdItypeCourseSuffix.getMinSectionNum());
+				csdItype.setMaxSectionNum(csdItypeCourseSuffix.getMaxSectionNum());
+				
+				csdCourseSuffix = new ColleagueSuffixDef();				
+				csdCourseSuffix.setPrefix(csdItypeCourseSuffix.getPrefix());
+				csdCourseSuffix.setSuffix(csdItypeCourseSuffix.getSuffix());
+				csdCourseSuffix.setCampusCode(csdItypeCourseSuffix.getCampusCode());
+				csdCourseSuffix.setMinSectionNum(csdItypeCourseSuffix.getMinSectionNum());
+				csdCourseSuffix.setMaxSectionNum(csdItypeCourseSuffix.getMaxSectionNum());
+			}
 					
-			ColleagueSuffixDef csdCourseSuffix = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, courseSuffix);
-			if (csdItype == null && csdCourseSuffix == null){
-				csd = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, null);
+			if (csdSubjectArea == null && csdItype == null && csdCourseSuffix == null){
+				csd = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, null, null);
 				if (csd == null){
 					csd = new ColleagueSuffixDef();
 					csd.setMinSectionNum(new Integer(1));
 					csd.setMaxSectionNum(new Integer(99));
 				}
-			} else if (csdItype == null && csdCourseSuffix != null) {
+			} else if (csdSubjectArea == null && csdItype == null && csdCourseSuffix != null) {
 				csd = csdCourseSuffix;
-			} else if (csdItype != null && csdCourseSuffix == null) {
+			} else if (csdSubjectArea == null && csdItype != null && csdCourseSuffix == null) {
 				csd = csdItype;
-			} else {
+			} else if (csdSubjectArea != null && csdItype == null && csdCourseSuffix == null) {
+				csd = csdSubjectArea;
+			} else if (csdSubjectArea == null && csdItype != null && csdCourseSuffix != null ){
 				// Combine the two defs
 				csd = new ColleagueSuffixDef();
 				csd.setItypeId(csdItype.getItypeId());
@@ -148,9 +180,104 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 						csd.setMaxSectionNum(new Integer(10));
 					}
 				}
+			} else if (csdSubjectArea != null && csdItype == null && csdCourseSuffix != null ) {
+				// Combine the two defs
+				csd = new ColleagueSuffixDef();
+				csd.setItypeId(null);
+				csd.setCourseSuffix(csdCourseSuffix.getCourseSuffix());
+				csd.setItypePrefix(csdCourseSuffix.getItypePrefix());
+				csd.setPrefix(csdCourseSuffix.getPrefix());
+				csd.setSuffix(csdCourseSuffix.getSuffix());
+				if (csdSubjectArea.getCampusCode() != null && csdCourseSuffix.getCampusCode() == null) {
+					csd.setCampusCode(csdSubjectArea.getCampusCode());
+				} else if (csdSubjectArea.getCampusCode() == null && csdCourseSuffix.getCampusCode() != null) {
+					csd.setCampusCode(csdCourseSuffix.getCampusCode());
+				} else if (csdSubjectArea.getCampusCode() != null && csdCourseSuffix.getCampusCode() != null) {
+					if(csdSubjectArea.getCampusCode() == csdCourseSuffix.getCampusCode()){
+						csd.setCampusCode(csdSubjectArea.getCampusCode());
+					} else {
+						csd.setCampusCode(csdSubjectArea.getCampusCode());
+					}
+				}
+				csd.setMinSectionNum(csdCourseSuffix.getMinSectionNum());
+				csd.setMaxSectionNum(csdCourseSuffix.getMaxSectionNum());
+				if (csd.getItypePrefix() != null && (csd.getPrefix() != null || csd.getSuffix() != null)){
+					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
+					//  only one character is left to be used so the min/max cannot exceed 9
+					if (csd.getMinSectionNum().intValue() > 10){
+						csd.setMinSectionNum(new Integer(1));
+					}
+					if (csd.getMaxSectionNum().intValue() > 10){
+						csd.setMaxSectionNum(new Integer(10));
+					}
+				}			
+			} else if (csdSubjectArea != null && csdItype != null && csdCourseSuffix == null ) {
+				// Combine the two defs
+				csd = new ColleagueSuffixDef();
+				csd.setItypeId(csdItype.getItypeId());
+				csd.setCourseSuffix(null);
+				csd.setItypePrefix(csdItype.getItypePrefix());
+				csd.setPrefix(csdItype.getPrefix());
+				csd.setSuffix(csdItype.getSuffix());
+				if (csdSubjectArea.getCampusCode() != null && csdItype.getCampusCode() == null) {
+					csd.setCampusCode(csdSubjectArea.getCampusCode());
+				} else if (csdSubjectArea.getCampusCode() == null && csdItype.getCampusCode() != null) {
+					csd.setCampusCode(csdItype.getCampusCode());
+				} else if (csdSubjectArea.getCampusCode() != null && csdItype.getCampusCode() != null) {
+					if(csdSubjectArea.getCampusCode() == csdItype.getCampusCode()){
+						csd.setCampusCode(csdSubjectArea.getCampusCode());
+					} else {
+						csd.setCampusCode(csdSubjectArea.getCampusCode());
+					}
+				}
+				csd.setMinSectionNum(csdItype.getMinSectionNum());
+				csd.setMaxSectionNum(csdItype.getMaxSectionNum());
+				if (csd.getItypePrefix() != null && (csd.getPrefix() != null || csd.getSuffix() != null)){
+					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
+					//  only one character is left to be used so the min/max cannot exceed 9
+					if (csd.getMinSectionNum().intValue() > 10){
+						csd.setMinSectionNum(new Integer(1));
+					}
+					if (csd.getMaxSectionNum().intValue() > 10){
+						csd.setMaxSectionNum(new Integer(10));
+					}
+				}			
+			} else {
+				// Combine the three defs
+				csd = new ColleagueSuffixDef();
+				csd.setItypeId(csdItype.getItypeId());
+				csd.setCourseSuffix(csdCourseSuffix.getCourseSuffix());
+				csd.setItypePrefix(csdItype.getItypePrefix());
+				csd.setPrefix(csdCourseSuffix.getPrefix());
+				csd.setSuffix(csdCourseSuffix.getSuffix());
+				if (csdSubjectArea.getCampusCode() != null) {
+					csd.setCampusCode(csdSubjectArea.getCampusCode());
+				} else if (csdCourseSuffix.getCampusCode() != null && csdItype.getCampusCode() == null) {
+					csd.setCampusCode(csdCourseSuffix.getCampusCode());
+				} else if (csdCourseSuffix.getCampusCode() == null && csdItype.getCampusCode() != null) {
+					csd.setCampusCode(csdItype.getCampusCode());
+				} else if (csdCourseSuffix.getCampusCode() != null && csdItype.getCampusCode() != null) {
+					if(csdCourseSuffix.getCampusCode() == csdItype.getCampusCode()){
+						csd.setCampusCode(csdCourseSuffix.getCampusCode());
+					} else {
+						csd.setCampusCode(csdCourseSuffix.getCampusCode());
+					}
+				}
+				csd.setMinSectionNum(csdCourseSuffix.getMinSectionNum());
+				csd.setMaxSectionNum(csdCourseSuffix.getMaxSectionNum());
+				if (csd.getItypePrefix() != null && (csd.getPrefix() != null || csd.getSuffix() != null)){
+					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
+					//  only one character is left to be used so the min/max cannot exceed 9
+					if (csd.getMinSectionNum().intValue() > 10){
+						csd.setMinSectionNum(new Integer(1));
+					}
+					if (csd.getMaxSectionNum().intValue() > 10){
+						csd.setMaxSectionNum(new Integer(10));
+					}
+				}			
 			}
-			
 		}
+			
 		return(csd);
 	}
 	
@@ -172,62 +299,7 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 				.getQuery("from ColleagueSuffixDef csd where csd.termCode = :termCode")
 				.setString("termCode", cSession.getColleagueTermCode()).list());
 	}
-
-	public String sectionIdSearchString() {
-    	StringBuilder sb = new StringBuilder();
-    	if (this.getItypePrefix() != null) {
-    		sb.append(this.getItypePrefix());
-    	}
-    	if (this.getPrefix() != null){
-    		sb.append(this.getPrefix());
-    	}
-    	sb.append("%");
-    	if (this.getSuffix() != null){
-    		sb.append(this.getSuffix());
-    	}
-    	return(sb.toString());
-    }
-    
-    public String sectionIdRegexSearchString() {
-    	StringBuilder sb = new StringBuilder();
-    	if (this.getItypePrefix() != null) {
-    		sb.append(this.getItypePrefix());
-    		if (this.getPrefix() == null){
-    			sb.append("[0-9]");
-    			if (this.getSuffix() != null){
-        			sb.append("?");
-        		}
-    		}  
-    		if (this.getSuffix() == null){
-    			sb.append("[0-9]");
-    			if (this.getPrefix() != null){
-        			sb.append("?");
-        		} 			
-    		}
-    	}
-    	if (this.getPrefix() != null){
-    		sb.append(this.getPrefix());
-			sb.append("[0-9]");
-   		if (this.getItypePrefix() == null) {
-			sb.append("+");    			
-    		}
-    	}
-    	if (this.getSuffix() != null){
-			sb.append("[0-9]");
-       		if (this.getItypePrefix() == null) {
-    			sb.append("+");    			
-        	} else {
-        		sb.append(".");
-        	}
-    		sb.append(this.getSuffix());
-    	}
-    	if (this.isAllNumbers()){
-    		sb.append("[0-9]+");
-    	}
-    	return(sb.toString());
-	
-    }
-    
+        
     public boolean isAllNumbers() {
     	return((this.getItypePrefix() == null || this.getItypePrefix().isEmpty()) 
     			&& (this.getPrefix() == null || this.getPrefix().isEmpty())
@@ -336,6 +408,7 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
     
     public ColleagueSuffixDef clone() {
     	ColleagueSuffixDef csd = new ColleagueSuffixDef();
+    	csd.setSubjectAreaId(this.getSubjectAreaId());
     	csd.setItypeId(this.getItypeId());
     	csd.setCourseSuffix(this.getCourseSuffix());
     	csd.setCampusCode(this.getCampusCode());

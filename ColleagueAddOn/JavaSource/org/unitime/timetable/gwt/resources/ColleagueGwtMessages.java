@@ -43,6 +43,9 @@ public interface ColleagueGwtMessages extends GwtMessages {
 	@DefaultMessage("Instructional Method")
 	String fieldInstructionalMethod();
 	
+	@DefaultMessage("Subject Area")
+	String fieldSubjectArea();
+
 	@DefaultMessage("Course Suffix")
 	String fieldCourseSuffix();
 

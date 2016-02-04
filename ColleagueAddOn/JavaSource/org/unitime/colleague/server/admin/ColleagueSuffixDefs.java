@@ -42,7 +42,9 @@ import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.ChangeLog.Operation;
 import org.unitime.timetable.model.ChangeLog.Source;
 import org.unitime.timetable.model.ItypeDesc;
+import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.dao.ItypeDescDAO;
+import org.unitime.timetable.model.dao.SubjectAreaDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.server.admin.AdminTable;
@@ -66,7 +68,12 @@ public class ColleagueSuffixDefs implements AdminTable {
 		for (ItypeDesc itype: ItypeDescDAO.getInstance().findAll(hibSession)) {
 			itypes.add(new ListItem(itype.getItype().toString(), itype.getAbbv() + " - " + itype.getDesc()));
 		}
+		List<ListItem> subjectAreas = new ArrayList<ListItem>();
+		for (SubjectArea sa: SubjectAreaDAO.getInstance().findBySession(hibSession, context.getUser().getCurrentAcademicSessionId())) {
+			subjectAreas.add(new ListItem(sa.getUniqueId().toString(), sa.getSubjectAreaAbbreviation()));
+		}
 		SimpleEditInterface data = new SimpleEditInterface(
+				new Field(MESSAGES.fieldSubjectArea(), FieldType.list, 300, subjectAreas),
 				new Field(MESSAGES.fieldInstructionalMethod(), FieldType.list, 300, itypes),
 				new Field(MESSAGES.fieldCourseSuffix(), FieldType.text, 80, 5),
 				new Field(MESSAGES.fieldMethodPrefix(), FieldType.text, 20, 1),
@@ -79,15 +86,16 @@ public class ColleagueSuffixDefs implements AdminTable {
 		data.setSortBy(1,2);
 		for (ColleagueSuffixDef suffixDef: ColleagueSuffixDef.getAllColleagueSuffixDefsForSession(hibSession, context.getUser().getCurrentAcademicSessionId())) {
 			Record r = data.addRecord(suffixDef.getUniqueId());
-			r.setField(0, (suffixDef.getItypeId() == null?null:suffixDef.getItypeId().toString()));
-			r.setField(1, suffixDef.getCourseSuffix());
-			r.setField(2, suffixDef.getItypePrefix());
-			r.setField(3, suffixDef.getPrefix());
-			r.setField(4, suffixDef.getSuffix());
-			r.setField(5, suffixDef.getMinSectionNum().toString());
-			r.setField(6, suffixDef.getMaxSectionNum().toString());
-			r.setField(7, suffixDef.getCampusCode());
-			r.setField(8, suffixDef.getNote());
+			r.setField(0, (suffixDef.getSubjectAreaId() == null?null:suffixDef.getSubjectAreaId().toString()));
+			r.setField(1, (suffixDef.getItypeId() == null?null:suffixDef.getItypeId().toString()));
+			r.setField(2, suffixDef.getCourseSuffix());
+			r.setField(3, suffixDef.getItypePrefix());
+			r.setField(4, suffixDef.getPrefix());
+			r.setField(5, suffixDef.getSuffix());
+			r.setField(6, suffixDef.getMinSectionNum().toString());
+			r.setField(7, suffixDef.getMaxSectionNum().toString());
+			r.setField(8, suffixDef.getCampusCode());
+			r.setField(9, suffixDef.getNote());
 			r.setDeletable(true);
 		}
 		data.setEditable(context.hasPermission(Right.AcademicSessionEdit));
@@ -112,22 +120,23 @@ public class ColleagueSuffixDefs implements AdminTable {
 	@PreAuthorize("checkPermission('AcademicSessionEdit')")
 	public void save(Record record, SessionContext context, Session hibSession) {
 		ColleagueSuffixDef suffix = new ColleagueSuffixDef();
-		suffix.setItypeId(record.getField(0)== null?null:new Integer(record.getField(0)));
-		suffix.setCourseSuffix(record.getField(1));
-		suffix.setItypePrefix(record.getField(2));
-		suffix.setPrefix(record.getField(3));
-		suffix.setSuffix(record.getField(4));
-		suffix.setMinSectionNum(new Integer(record.getField(5)));
-		suffix.setMaxSectionNum(new Integer(record.getField(6)));
-		suffix.setCampusCode(record.getField(7));
-		suffix.setNote(record.getField(8));
+		suffix.setSubjectAreaId(record.getField(0)== null?null:new Long(record.getField(0)));
+		suffix.setItypeId(record.getField(1)== null?null:new Integer(record.getField(1)));
+		suffix.setCourseSuffix(record.getField(2));
+		suffix.setItypePrefix(record.getField(3));
+		suffix.setPrefix(record.getField(4));
+		suffix.setSuffix(record.getField(5));
+		suffix.setMinSectionNum(new Integer(record.getField(6)));
+		suffix.setMaxSectionNum(new Integer(record.getField(7)));
+		suffix.setCampusCode(record.getField(8));
+		suffix.setNote(record.getField(9));
 		ColleagueSession collSession = ColleagueSession.findColleagueSessionForSession(context.getUser().getCurrentAcademicSessionId(), hibSession);
 		suffix.setTermCode(collSession.getColleagueTermCode());
 		record.setUniqueId((Long)hibSession.save(suffix));
 		ChangeLog.addChange(hibSession,
 				context,
 				suffix,
-				(suffix.getItypeId() == null?"":(suffix.getItypeId().toString() + " ")) + suffix.getCourseSuffix(),
+				(suffix.getSubjectAreaId() == null?"":suffix.getSubjectAreaId().toString() + " ")+(suffix.getItypeId() == null?"":(suffix.getItypeId().toString() + " ")) + suffix.getCourseSuffix(),
 				Source.SIMPLE_EDIT, 
 				Operation.CREATE,
 				null,
@@ -137,31 +146,33 @@ public class ColleagueSuffixDefs implements AdminTable {
 	protected void update(ColleagueSuffixDef suffix, Record record, SessionContext context, Session hibSession) {
 		if (suffix == null) return;
 		boolean changed =
-				!ToolBox.equals(suffix.getItypeId(), record.getField(0)) ||
-				!ToolBox.equals(suffix.getCourseSuffix(), record.getField(1)) ||
-				!ToolBox.equals(suffix.getItypePrefix(), record.getField(2)) ||
-				!ToolBox.equals(suffix.getPrefix(), record.getField(3)) ||
-				!ToolBox.equals(suffix.getSuffix(), record.getField(4)) ||
-				!ToolBox.equals(suffix.getMinSectionNum(), record.getField(5)) ||
-				!ToolBox.equals(suffix.getMaxSectionNum(), record.getField(6)) ||
-				!ToolBox.equals(suffix.getCampusCode(), record.getField(7)) ||
-				!ToolBox.equals(suffix.getNote(), record.getField(8))
+				!ToolBox.equals(suffix.getSubjectAreaId(), record.getField(0)) ||
+				!ToolBox.equals(suffix.getItypeId(), record.getField(1)) ||
+				!ToolBox.equals(suffix.getCourseSuffix(), record.getField(2)) ||
+				!ToolBox.equals(suffix.getItypePrefix(), record.getField(3)) ||
+				!ToolBox.equals(suffix.getPrefix(), record.getField(4)) ||
+				!ToolBox.equals(suffix.getSuffix(), record.getField(5)) ||
+				!ToolBox.equals(suffix.getMinSectionNum(), record.getField(6)) ||
+				!ToolBox.equals(suffix.getMaxSectionNum(), record.getField(7)) ||
+				!ToolBox.equals(suffix.getCampusCode(), record.getField(8)) ||
+				!ToolBox.equals(suffix.getNote(), record.getField(9))
 				;
-			suffix.setItypeId(record.getField(0) == null?null:new Integer(record.getField(0)));
-			suffix.setCourseSuffix(record.getField(1));
-			suffix.setItypePrefix(record.getField(2));
-			suffix.setPrefix(record.getField(3));
-			suffix.setSuffix(record.getField(4));
-			suffix.setMinSectionNum(new Integer(record.getField(5)));
-			suffix.setMaxSectionNum(new Integer(record.getField(6)));
-			suffix.setCampusCode(record.getField(7));
-			suffix.setNote(record.getField(8));
+			suffix.setSubjectAreaId(record.getField(0) == null?null:new Long(record.getField(0)));
+			suffix.setItypeId(record.getField(1) == null?null:new Integer(record.getField(1)));
+			suffix.setCourseSuffix(record.getField(2));
+			suffix.setItypePrefix(record.getField(3));
+			suffix.setPrefix(record.getField(4));
+			suffix.setSuffix(record.getField(5));
+			suffix.setMinSectionNum(new Integer(record.getField(6)));
+			suffix.setMaxSectionNum(new Integer(record.getField(7)));
+			suffix.setCampusCode(record.getField(8));
+			suffix.setNote(record.getField(9));
 			hibSession.saveOrUpdate(suffix);
 			if (changed)
 				ChangeLog.addChange(hibSession,
 						context,
 						suffix,
-						(suffix.getItypeId() == null?"":(suffix.getItypeId().toString() + " ")) + suffix.getCourseSuffix(),
+						(suffix.getSubjectAreaId() == null?"":suffix.getSubjectAreaId().toString() + " ")+(suffix.getItypeId() == null?"":(suffix.getItypeId().toString() + " ")) + suffix.getCourseSuffix(),
 						Source.SIMPLE_EDIT, 
 						Operation.UPDATE,
 						null,
@@ -179,7 +190,7 @@ public class ColleagueSuffixDefs implements AdminTable {
 		ChangeLog.addChange(hibSession,
 				context,
 				suffix,
-				(suffix.getItypeId() == null?"":(suffix.getItypeId().toString() + " ")) + suffix.getCourseSuffix(),
+				(suffix.getSubjectAreaId() == null?"":suffix.getSubjectAreaId().toString() + " ")+(suffix.getItypeId() == null?"":(suffix.getItypeId().toString() + " ")) + suffix.getCourseSuffix(),
 				Source.SIMPLE_EDIT, 
 				Operation.DELETE,
 				null,

@@ -199,6 +199,7 @@ create table colleague_course_suffix_def
 (
   uniqueid    number(20) not null,
   term_code   varchar2(20 char) not null,
+  subject_area_id number(20) null,
   itype_id    number(2),
   course_suffix varchar2(5 char),
   campus_code varchar2(20 char),
