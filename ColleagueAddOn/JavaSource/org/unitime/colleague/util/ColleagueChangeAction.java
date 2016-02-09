@@ -191,6 +191,7 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 		if (ColleagueSession.shouldCreateColleagueDataForSession(courseOffering.getSubjectArea().getSession(), hibSession)){
 			List<ColleagueSection> sections = ColleagueSection.findColleagueSectionsForCourseOfferingId(courseOffering.getUniqueId(), hibSession);
 			for(ColleagueSection cs : sections){
+				SendColleagueMessage.sendColleagueMessage(cs, MessageAction.DELETE, hibSession);
 				cs.setDeleted(new Boolean(true));
 				hibSession.update(cs);
 			}
