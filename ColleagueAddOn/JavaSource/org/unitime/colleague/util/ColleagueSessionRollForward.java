@@ -37,6 +37,7 @@ import org.unitime.colleague.model.ColleagueSession;
 import org.unitime.colleague.model.ColleagueSuffixDef;
 import org.unitime.colleague.model.dao.ColleagueRestrictionDAO;
 import org.unitime.colleague.model.dao.ColleagueSectionDAO;
+import org.unitime.colleague.model.dao.ColleagueSessionDAO;
 import org.unitime.colleague.model.dao.ColleagueSuffixDefDAO;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Class_;
@@ -247,6 +248,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			toCs.setLoadingOfferingsFile(new Boolean(false));
 			toCs.setSession(toSession);
 			toCs.setUniqueIdRolledForwardFrom(fromSession.getUniqueId());
+			ColleagueSessionDAO.getInstance().save(toCs);
 		}
 	}
 
