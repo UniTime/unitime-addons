@@ -44,6 +44,7 @@ import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.SubjectArea;
+import org.unitime.timetable.model.dao.SubjectAreaDAO;
 import org.unitime.timetable.util.SessionRollForward;
 
 
@@ -211,9 +212,24 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 				.setString("termCode", fromCs.getColleagueTermCode())
 				.list();
 		for (ColleagueSuffixDef fromDef : fromSuffixes){
-			ColleagueSuffixDef toDef = ColleagueSuffixDef.findColleagueSuffixDefForTermCodeItypeSuffix(toCs.getColleagueTermCode(), fromDef.getSubjectAreaId(), fromDef.getItypeId(), fromDef.getCourseSuffix());
+			SubjectArea fromSa = null;
+			SubjectArea toSa = null;
+			if (fromDef.getSubjectAreaId() != null){
+				fromSa = SubjectAreaDAO.getInstance().get(fromDef.getSubjectAreaId());
+				toSa = SubjectArea.findByAbbv(toSession.getUniqueId(), fromSa.getSubjectAreaAbbreviation());
+			}
+			if (fromSa != null && toSa == null){
+				if (toSa == null) {
+					iLog.warn("Failed to roll forward Colleague Suffix Def with uniqueId:  " + fromDef.getUniqueId().toString() + " due to missing subject area:  " + fromSa.getSubjectAreaAbbreviation());
+					continue;
+				}
+			}
+			ColleagueSuffixDef toDef = ColleagueSuffixDef.findColleagueSuffixDefForTermCodeItypeSuffix(toCs.getColleagueTermCode(), (toSa == null?null:toSa.getUniqueId()), fromDef.getItypeId(), fromDef.getCourseSuffix());
 			if (toDef == null) {
 				toDef = fromDef.clone();
+				if (fromDef.getSubjectAreaId() != null ){				
+					toDef.setSubjectAreaId(toSa.getUniqueId());
+				}
 				toDef.setTermCode(toCs.getColleagueTermCode());
 				ColleagueSuffixDefDAO.getInstance().save(toDef);
 			}
