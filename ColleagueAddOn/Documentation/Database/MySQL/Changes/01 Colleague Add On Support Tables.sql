@@ -105,7 +105,7 @@ CREATE TABLE colleague_response (
   seqno DECIMAL(22, 0) NOT NULL,
   activity_date DATETIME NOT NULL,
   term_code VARCHAR(20) BINARY NOT NULL,
-  colleague_id VARCHAR(5) BINARY NULL,
+  colleague_id VARCHAR(20) BINARY NULL,
   subj_code VARCHAR(4) BINARY NULL,
   crse_numb VARCHAR(5) BINARY NULL,
   sec_numb VARCHAR(3) BINARY NULL,
