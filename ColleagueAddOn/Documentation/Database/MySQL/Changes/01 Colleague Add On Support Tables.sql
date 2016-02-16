@@ -106,7 +106,7 @@ CREATE TABLE colleague_response (
   activity_date DATETIME NOT NULL,
   term_code VARCHAR(20) BINARY NOT NULL,
   colleague_id VARCHAR(20) BINARY NULL,
-  subj_code VARCHAR(4) BINARY NULL,
+  subj_code VARCHAR(10) BINARY NULL,
   crse_numb VARCHAR(5) BINARY NULL,
   sec_numb VARCHAR(3) BINARY NULL,
   external_id VARCHAR(50) BINARY NULL,
@@ -116,7 +116,7 @@ CREATE TABLE colleague_response (
   packet_id VARCHAR(500) BINARY NOT NULL,
   queue_id DECIMAL(20, 0) NULL,
   PRIMARY KEY (uniqueid),
-  INDEX colleague_message_idx1 (term_code(6), subj_code(4), crse_numb(5))
+  INDEX colleague_message_idx1 (term_code(6), subj_code(10), crse_numb(5))
 )
 ENGINE = INNODB;
 
