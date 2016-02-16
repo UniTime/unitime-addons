@@ -116,7 +116,7 @@ create table colleague_response
   activity_date date not null,
   term_code     varchar2(20 char) not null,
   colleague_id  varchar2(20 char),
-  subj_code     varchar2(4 char),
+  subj_code     varchar2(10 char),
   crse_numb     varchar2(5 char),
   seq_numb      varchar2(3 char),
   external_id   varchar2(50 char),

@@ -39,7 +39,7 @@
   <property column="colleague_id" generated="never" lazy="false"
    length="20" name="colleagueId" not-null="false" type="java.lang.String"/>
   <property column="subj_code" generated="never" lazy="false"
-   length="4" name="subjectCode" not-null="false" type="java.lang.String"/>
+   length="10" name="subjectCode" not-null="false" type="java.lang.String"/>
   <property column="crse_numb" generated="never" lazy="false"
    length="5" name="courseNumber" not-null="false" type="java.lang.String"/>
   <property column="sec_numb" generated="never" lazy="false"
