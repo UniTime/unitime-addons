@@ -123,6 +123,7 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 							colleagueSection.setColleagueId(resp.getColleagueId());
 							csDao.update(colleagueSection, getHibSession());
 						}
+						colleagueSection.updateClassSuffixForClassesIfNecessary(getHibSession());
 					}
 					if (sync){
 						if ("ERROR".equals(resp.getType()) && colleagueSection != null) {
