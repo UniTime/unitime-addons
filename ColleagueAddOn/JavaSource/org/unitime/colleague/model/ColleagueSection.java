@@ -475,7 +475,8 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(sb.toString());
 	}
 	
-	public List colleagueSectionsCrosslistedWithThis(){
+	@SuppressWarnings("unchecked")
+	public List<ColleagueSection> colleagueSectionsCrosslistedWithThis(){
 		if (!getClasses(null).isEmpty()){
 		Class_ c = (Class_)getClasses(null).iterator().next();
 		String qs = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.class_id = :classId and csc.colleagueSection.uniqueId != :sectionId";
@@ -485,7 +486,7 @@ public class ColleagueSection extends BaseColleagueSection {
 				               .setLong("sectionId", getUniqueId().longValue())
 				               .list());
 		} else {
-			return(new Vector());
+			return(new Vector<ColleagueSection>());
 		}
 		
 	}
@@ -498,7 +499,12 @@ public class ColleagueSection extends BaseColleagueSection {
 			} else if (this.getColleagueId() != null && this.getSectionIndex() == null) {
 				return(this.getColleagueId() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
 			} else {
-				return this.getColleagueId() + '-' + this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+				if ((this.getColleagueId().length() + this.getSectionIndex().length() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"").length()) >= 10){
+					String str = this.getColleagueId() + '-' + this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+					return (str.substring(str.length() - 10));
+				} else {
+					return (this.getColleagueId() + '-' + this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
+				}
 			}
 	}
 	
@@ -558,7 +564,6 @@ public class ColleagueSection extends BaseColleagueSection {
 
 	}
 		
-	@SuppressWarnings("unchecked")
 	public TreeMap<DepartmentalInstructor, Integer> findInstructorsWithPercents(Session hibSession){
 
 		int numClassesWithInstructors = 0;
@@ -588,9 +593,7 @@ public class ColleagueSection extends BaseColleagueSection {
 				if (c.getClassInstructors() != null && !c.getClassInstructors().isEmpty()){
 					int totalPercent = 0;
 					int instructorCount = 0;
-					Iterator ciIt  = c.getClassInstructors().iterator();
-					while(ciIt.hasNext()){
-						ClassInstructor ci = (ClassInstructor)ciIt.next();
+					for (ClassInstructor ci : c.getClassInstructors()){
 						totalPercent += (ci.getPercentShare() != null?(ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue()):0);
 						instructorCount++;
 					}
@@ -599,9 +602,7 @@ public class ColleagueSection extends BaseColleagueSection {
 					} else {
 						continue;
 					}
-					ciIt = c.getClassInstructors().iterator();
-					while(ciIt.hasNext()){
-						ClassInstructor ci = (ClassInstructor)ciIt.next();
+					for (ClassInstructor ci : c.getClassInstructors()){
 						if (ci.getInstructor().getExternalUniqueId() != null){
 							if (instructorPercents.containsKey(ci.getInstructor()) && totalPercent > 0){
 								int pct = instructorPercents.get(ci.getInstructor()).intValue();
@@ -640,7 +641,8 @@ public class ColleagueSection extends BaseColleagueSection {
 	
 	}
 
-    public String buildDatePatternHtml(ClassAssignmentProxy classAssignment){
+    @SuppressWarnings("unchecked")
+	public String buildDatePatternHtml(ClassAssignmentProxy classAssignment){
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
 		for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
@@ -670,8 +672,7 @@ public class ColleagueSection extends BaseColleagueSection {
 	     		}   else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
-							RoomPref rp = (RoomPref) rmPrefIt.next();
+		    			for(RoomPref rp : (Set<RoomPref>)aClass.getEffectiveRoomPreferences()){
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 			    				if (firstReqRoomPref){
 			    					firstReqRoomPref = false;
@@ -770,7 +771,8 @@ public class ColleagueSection extends BaseColleagueSection {
      	}
      	return(instructorString.toString());
     }
-    public String buildAssignedTimeHtml(ClassAssignmentProxy classAssignment){
+    @SuppressWarnings("unchecked")
+	public String buildAssignedTimeHtml(ClassAssignmentProxy classAssignment){
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
     	for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
@@ -792,9 +794,9 @@ public class ColleagueSection extends BaseColleagueSection {
 	   					sb.append(Constants.DAY_NAMES_SHORT[e.nextElement()]);
 	   				}
 	   				sb.append(" ");
-	   				sb.append(a.getTimeLocation().getStartTimeHeader());
+	   				sb.append(a.getTimeLocation().getStartTimeHeader(true));
 	   				sb.append("-");
-	   				sb.append(a.getTimeLocation().getEndTimeHeader());
+	   				sb.append(a.getTimeLocation().getEndTimeHeader(true));
 	   				if (a.getRoomLocations().size() > 1){
 	   					for (int i = 1; i < a.getRoomLocations().size() ; i++){
 	   						sb.append("<BR>");
@@ -803,8 +805,7 @@ public class ColleagueSection extends BaseColleagueSection {
 	     		}  else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
-							RoomPref rp = (RoomPref) rmPrefIt.next();
+		    			for(RoomPref rp : (Set<RoomPref>)aClass.getEffectiveRoomPreferences()){
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 			    				if (firstReqRoomPref){
 			    					firstReqRoomPref = false;
@@ -824,7 +825,8 @@ public class ColleagueSection extends BaseColleagueSection {
         return(sb.toString());
     }
    
-    public String  buildAssignedRoomHtml(ClassAssignmentProxy classAssignment) {
+    @SuppressWarnings("unchecked")
+	public String  buildAssignedRoomHtml(ClassAssignmentProxy classAssignment) {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
     	for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
@@ -841,19 +843,19 @@ public class ColleagueSection extends BaseColleagueSection {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-		    		Iterator it2 = a.getRooms().iterator();
-		    		while (it2.hasNext()){
-		    			Location room = (Location)it2.next();
+	    			boolean brk = false;
+		    		for (Location room  : a.getRooms()){
+		    			if (brk){
+		        			sb.append("<BR>");		    				
+		    			} else {
+		    				brk = true;
+		    			}
 		    			sb.append(room.getLabel());
-		    			if (it2.hasNext()){
-		        			sb.append("<BR>");
-		        		} 
 		    		}	
 	    		} else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
-							RoomPref rp = (RoomPref) rmPrefIt.next();
+		    			for(RoomPref rp : (Set<RoomPref>)aClass.getEffectiveRoomPreferences()){
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 			    				if (firstReqRoomPref){
 			    					firstReqRoomPref = false;
@@ -874,7 +876,8 @@ public class ColleagueSection extends BaseColleagueSection {
        return(sb.toString());
     }
 
-    public String  buildAssignedRoomCapacityHtml(ClassAssignmentProxy classAssignment) {
+    @SuppressWarnings("unchecked")
+	public String  buildAssignedRoomCapacityHtml(ClassAssignmentProxy classAssignment) {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
 		for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
@@ -891,24 +894,24 @@ public class ColleagueSection extends BaseColleagueSection {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-		    		Iterator it2 = a.getRooms().iterator();
-		    		while (it2.hasNext()){
-		    			Location room = (Location)it2.next();
+		    		boolean brk = false;
+		    		for (Location room : a.getRooms()){
+		    			if (brk){
+		        			sb.append("<BR>");		    				
+		    			} else {
+		    				brk = true;
+		    			}
 		    			sb.append(room.getCapacity());
-		    			if (it2.hasNext()){
-		        			sb.append("<BR>");
-		        		} 
 		    		}	
 	    		} else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+		    			for(RoomPref rp : (Set<RoomPref>) aClass.getEffectiveRoomPreferences()){
 		    				if (firstReqRoomPref){
 		    					firstReqRoomPref = false;
 		    				} else {
 		    					sb.append("<BR>");
 		    				}
-							RoomPref rp = (RoomPref) rmPrefIt.next();
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 								sb.append(rp.getRoom().getCapacity());	
 							}
@@ -924,7 +927,8 @@ public class ColleagueSection extends BaseColleagueSection {
        return(sb.toString());
     }
 
-    public static List findAll(Long sessionId) {
+    @SuppressWarnings("unchecked")
+	public static List<ColleagueSection> findAll(Long sessionId) {
     	return (new ColleagueSectionDAO()).
     		getSession().
     		createQuery("select distinct cs from ColleagueSection cs where " +
@@ -933,11 +937,12 @@ public class ColleagueSection extends BaseColleagueSection {
     		list();
     }
 
-    public static List findAllClassesForColleagueIdAndTermCode(Integer collegueId, String termCode){
+    public static List<Class_> findAllClassesForColleagueIdAndTermCode(Integer collegueId, String termCode){
     	return(findAllClassesForColleagueIdAndTermCode((new ColleagueSectionDAO()).getSession(), collegueId, termCode));
     }
     
-    public static List findAllClassesForColleagueIdAndTermCode(Session hibSession, Integer colleagueId, String termCode){
+    @SuppressWarnings("unchecked")
+	public static List<Class_> findAllClassesForColleagueIdAndTermCode(Session hibSession, Integer colleagueId, String termCode){
     	return (hibSession.
 			createQuery("select distinct c from ColleagueSession csess, ColleagueSection cs inner join cs.colleagueSectionToClasses as cstc, Class_ c where " +
 					"cs.session.uniqueId=csess.session.uniqueId and csess.colleagueTermCode = :termCode and cs.colleagueId = :colleagueId and cstc.classId = c.uniqueId").
@@ -1057,7 +1062,6 @@ public class ColleagueSection extends BaseColleagueSection {
 					cls.getSchedulingSubpart().getItype(), 
 					hibSession));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		cs.setDeleted(new Boolean(false));
