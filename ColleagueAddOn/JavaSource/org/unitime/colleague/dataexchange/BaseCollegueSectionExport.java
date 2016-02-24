@@ -16,43 +16,58 @@ public abstract class BaseCollegueSectionExport extends BaseExport {
 		super();
 	}
 
+	@SuppressWarnings("rawtypes")
+	protected void addColleagueSections(ColleagueMessage message, MessageAction action,
+			ColleagueSession colleagueSession, boolean isControl){
+		
+		String subjectQuery = "select distinct sa.subjectAreaAbbreviation from SubjectArea sa, ColleagueSession cs " +
+				"where cs.colleagueTermCode = :termCode and sa.session.uniqueId = cs.session.uniqueId" +
+				" order by sa.subjectAreaAbbreviation";
+		StringBuilder sb = new StringBuilder();
+		sb.append("select cs from ColleagueSection cs, CourseOffering co, ColleagueSession b ")
+		  .append("where cs.session.uniqueId = b.session.uniqueId and b.colleagueTermCode = :termCode ")
+		  .append("and cs.courseOfferingId = co.uniqueId ");
+		if (isControl){
+			sb.append("and co.isControl = true ");
+		} else {
+			sb.append("and co.isControl = false ");			
+		}
+		sb.append("and (cs.deleted = false or (cs.deleted = true and cs.sectionIndex is not null)) ")
+		  .append("and co.subjectArea.subjectAreaAbbreviation = :subjectAbbv ")
+		  .append("order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, co.title");
+		String qs = sb.toString();
+	
+		Iterator subjectIt = getHibSession().createQuery(subjectQuery).setString("termCode", colleagueSession.getColleagueTermCode()).iterate();
+		ArrayList<String> subjectAreaAbbreviations = new ArrayList<String>();
+		while (subjectIt.hasNext()){
+			subjectAreaAbbreviations.add((String) subjectIt.next());
+		}
+		for(String subjectAbbv : subjectAreaAbbreviations) {
+			Iterator it = getHibSession().createQuery(qs)
+			.setString("termCode", colleagueSession.getColleagueTermCode())
+			.setString("subjectAbbv", subjectAbbv)
+			.iterate();
+			while(it.hasNext()){
+				ColleagueSection cs = (ColleagueSection) it.next();
+				ColleagueSession colleagueSessionForColleagueSection = ColleagueSession.findColleagueSessionForSession(cs.getSession().getUniqueId(), getHibSession());
+				if (colleagueSessionForColleagueSection.isSendDataToColleague()){
+					message.addSectionToMessage(cs, action, getHibSession());
+				}
+				getHibSession().evict(cs);
+			}
+			getHibSession().flush();
+			getHibSession().clear();
+		}
+	
+	}
 	protected void addAllColleagueSections(ColleagueMessage message, MessageAction action,
 			Session session) {
-				ColleagueSession s = ColleagueSession.findColleagueSessionForSession(session.getUniqueId(), getHibSession());
-				
-				
-				String subjectQuery = "select distinct sa.subjectAreaAbbreviation from SubjectArea sa, ColleagueSession cs " +
-						"where cs.colleagueTermCode = :termCode and sa.session.uniqueId = cs.session.uniqueId" +
-						" order by sa.subjectAreaAbbreviation";
-				String qs = "select cs from ColleagueSection cs, CourseOffering co, ColleagueSession b " +
-			     "where cs.session.uniqueId = b.session.uniqueId and b.colleagueTermCode = :termCode " +
-			     "and cs.courseOfferingId = co.uniqueId " +
-			     "and (cs.deleted = false or (cs.deleted = true and cs.sectionIndex is not null))" +
-			     "and co.subjectArea.subjectAreaAbbreviation = :subjectAbbv " +
-			     "order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, co.title";
-			
-				Iterator subjectIt = getHibSession().createQuery(subjectQuery).setString("termCode", s.getColleagueTermCode()).iterate();
-				ArrayList<String> subjectAreaAbbreviations = new ArrayList<String>();
-				while (subjectIt.hasNext()){
-					subjectAreaAbbreviations.add((String) subjectIt.next());
-				}
-				for(String subjectAbbv : subjectAreaAbbreviations) {
-					Iterator it = getHibSession().createQuery(qs)
-					.setString("termCode", s.getColleagueTermCode())
-					.setString("subjectAbbv", subjectAbbv)
-					.iterate();
-					while(it.hasNext()){
-						ColleagueSection cs = (ColleagueSection) it.next();
-						ColleagueSession colleagueSessionForColleagueSection = ColleagueSession.findColleagueSessionForSession(cs.getSession().getUniqueId(), getHibSession());
-						if (colleagueSessionForColleagueSection.isSendDataToColleague()){
-							message.addSectionToMessage(cs, action, getHibSession());
-						}
-						getHibSession().evict(cs);
-					}
-					getHibSession().flush();
-					getHibSession().clear();
-				}
-			}
+		ColleagueSession colleagueSession = ColleagueSession.findColleagueSessionForSession(session.getUniqueId(), getHibSession());
+		
+		addColleagueSections(message, action, colleagueSession, true);
+		addColleagueSections(message, action, colleagueSession, false);
+		
+	}
 
 	@SuppressWarnings("rawtypes")
 	@Override

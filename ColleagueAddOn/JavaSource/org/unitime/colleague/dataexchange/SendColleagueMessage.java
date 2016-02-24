@@ -19,6 +19,7 @@
 */
 package org.unitime.colleague.dataexchange;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,6 +36,7 @@ import org.unitime.colleague.model.ColleagueSession;
 import org.unitime.colleague.model.QueueOut;
 import org.unitime.colleague.model.dao.QueueOutDAO;
 import org.unitime.commons.Debug;
+import org.unitime.timetable.model.CourseOffering;
 
 
 /**
@@ -58,10 +60,22 @@ public class SendColleagueMessage {
         ColleagueSection cs = sections.get(0);
         ColleagueSession colleagueSession = ColleagueSession.findColleagueSessionForSession(cs.getSession(), hibSession);
         if (ColleagueSession.shouldSendDataToColleagueForSession(cs.getSession(), hibSession) || (colleagueSession.isStoreDataForColleague().booleanValue() && MessageAction.AUDIT.equals(messageAction))){
-			HashMap<String, ColleagueSection> crosslistMap = new HashMap<String, ColleagueSection>();
-			for(Iterator<ColleagueSection> it = sections.iterator(); it.hasNext();){
-				cs = it.next();
-				message.addSectionToMessage(cs, messageAction, hibSession);
+			ArrayList<ColleagueSection> controlSections = new ArrayList<ColleagueSection>();
+			ArrayList<ColleagueSection> notControlSections = new ArrayList<ColleagueSection>();
+			for(ColleagueSection colleagueSection : sections){
+				CourseOffering co = colleagueSection.getCourseOffering(hibSession);
+				if (co != null && co.isIsControl()){
+					controlSections.add(colleagueSection);
+				} else {
+					notControlSections.add(colleagueSection);
+				}
+			}
+			
+			for(ColleagueSection colleagueSection : controlSections){
+				message.addSectionToMessage(colleagueSection, messageAction, hibSession);
+			}
+			for(ColleagueSection colleagueSection : notControlSections){
+				message.addSectionToMessage(colleagueSection, messageAction, hibSession);
 			}
         }
 	}
@@ -93,17 +107,6 @@ public class SendColleagueMessage {
         }
 	}
 	
-	public static void sendAllColleagueSectionsForSession(org.unitime.timetable.model.Session academicSession){
-		ColleagueSectionUpdateExport csue = new ColleagueSectionUpdateExport();
-		try {
-			Document document = csue.saveXml(academicSession, new Properties());
-			writeOutMessage(document);
-		} catch (Exception e) {
-			Debug.info("Failed to send all Colleague sections to Colleague:  " + e.getMessage());
-		}
-		
-
-	}
 	public static void writeOutMessage(Document document){
 		QueueOut outQ = new QueueOut();
 		if (document.getRootElement().element("SECTION") == null){
