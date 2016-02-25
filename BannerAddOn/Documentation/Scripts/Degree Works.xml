@@ -21,9 +21,10 @@
  *
  -->
 
-<scripts created="January 22, 2016">
-<script name="DegreeWorks: Import Templates as Curricula" permission="Script Edit" engine="python" created="Fri Jan 22 09:43:08 EST 2016">
+<scripts created="February 25, 2016">
+<script name="DegreeWorks: Import Templates as Curricula" permission="Script Edit" engine="python" created="Thu Feb 25 06:58:54 EST 2016">
   <parameter name="file" label="Input File" type="file"/>
+  <parameter name="classifications" label="Classifications" type="text"/>
   <body><![CDATA[import re
 import csv
 from org.unitime.timetable.model import Curriculum, AcademicArea, PosMajor, CurriculumClassification, CurriculumCourse, CurriculumCourseGroup
@@ -562,6 +563,10 @@ for template in sorted(id2temp.values(), key=lambda x: x.sortKey()):
     if curriculum:
         for classification in curriculum.getClassifications():
             skip[classification.getAcademicClassification().getCode()] = True
+    if classifications:
+        for clasf in template.classifications:
+            if not clasf.isEmpty() and clasf.code not in classifications.split(","):
+                skip[clasf.code] = True
     #    log.info('Skipping %s' % str(template))
     #    continue
     log.info('Importing %s' % str(template))
