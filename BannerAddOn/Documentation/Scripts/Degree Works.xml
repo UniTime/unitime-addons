@@ -22,8 +22,9 @@
  -->
 
 <scripts created="February 25, 2016">
-<script name="DegreeWorks: Import Templates as Curricula" permission="Script Edit" engine="python" created="Thu Feb 25 06:58:54 EST 2016">
+<script name="DegreeWorks: Import Templates as Curricula" permission="Script Edit" engine="python" created="Thu Feb 25 07:30:36 EST 2016">
   <parameter name="file" label="Input File" type="file"/>
+  <parameter name="studentType" label="Requested Enrollment" type="enum(LastLike,Projected,Enrolled,None)" default="Projected"/>
   <parameter name="classifications" label="Classifications" type="text"/>
   <body><![CDATA[import re
 import csv
@@ -172,11 +173,32 @@ class Classification:
     def __str__(self):
         return '%s: %s' % (self.code, '; '.join([str(g) for g in self.groups]))
     
-    def countStudents(self, template):
+    def countEnrolledStudents(self, template):
         return hibSession.createQuery(
             'select count(distinct s) from StudentClassEnrollment e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where s.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and aac.academicClassification.code = :classfication and m.code = :major'
             ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
         
+    def countLastLikeStudents(self, template):
+        return hibSession.createQuery(
+            'select count(distinct s) from LastLikeCourseDemand e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where e.subjectArea.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and aac.academicClassification.code = :classfication and m.code = :major'
+            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+            
+    def countProjectedStudents(self, template):
+        projection = 1.0
+        rule = hibSession.createQuery(
+            'from CurriculumProjectionRule r where r.academicArea.session.uniqueId = :sessionId and r.academicArea.academicAreaAbbreviation = :area and r.academicClassification.code = :classfication and r.major.code = :major'
+            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+        if rule:
+            projection = rule.getProjection()
+        else:
+            ruleNoMajor = hibSession.createQuery(
+                'from CurriculumProjectionRule r where r.academicArea.session.uniqueId = :sessionId and r.academicArea.academicAreaAbbreviation = :area and r.academicClassification.code = :classfication and r.major is null'
+                ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('classfication', self.code).uniqueResult()
+            if ruleNoMajor: projection = ruleNoMajor.getProjection()
+        nrStudents = hibSession.createQuery(
+            'select count(distinct s) from LastLikeCourseDemand e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where e.subjectArea.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and aac.academicClassification.code = :classfication and m.code = :major'
+            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+        return int(round(projection * nrStudents))
     
     def generateClassification(self, template, curriculum):
         acadClasf = hibSession.createQuery(
@@ -422,9 +444,14 @@ def getBannerTerm():
     if session.getAcademicTerm().lower().startswith("fal"): return '%02d10' % (int(session.getAcademicYear()) + 1)
     return '%s%s' % (session.getAcademicYear(), session.getAcademicTerm().lower())
 
-def countStudents(area, major):
+def countEnrolledStudents(area, major):
     return hibSession.createQuery(
         'select count(distinct s) from StudentClassEnrollment e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where s.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and m.code = :major'
+    ).setLong('sessionId', session.getUniqueId()).setString('area', area).setString('major', major).uniqueResult()
+
+def countLastLikeStudents(area, major):
+    return hibSession.createQuery(
+        'select count(distinct s) from LastLikeCourseDemand e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where e.subjectArea.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and m.code = :major'
     ).setLong('sessionId', session.getUniqueId()).setString('area', area).setString('major', major).uniqueResult()
 
 log.info('Current Term: %s' % getBannerTerm())        
@@ -512,10 +539,17 @@ for template in templates:
 for template in templates:
     for clasf in template.classifications:
         id = '%s/%s %s' % (template.area, template.major, clasf.code)
+        studentCount = 0
+        if studentType == "Enrolled":
+            studentCount = clasf.countEnrolledStudents(template)
+        elif studentType == "LastLike":
+            studentCount = clasf.countLastLikeStudents(template)
+        elif studentType == "Projected":
+            studentCount = clasf.countProjectedStudents(template)
         if id in div:
-            clasf.students = clasf.countStudents(template) / div[id]
+            clasf.students = studentCount / div[id]
         else:
-            clasf.students = clasf.countStudents(template)
+            clasf.students = studentCount
 
 for template in templates:
     for other in templates:
