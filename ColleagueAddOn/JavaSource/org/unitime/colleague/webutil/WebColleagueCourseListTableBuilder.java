@@ -361,6 +361,9 @@ public class WebColleagueCourseListTableBuilder extends
     	cell = initNormalCell(Integer.toString(cs.calculateMaxEnrl(hibSession)), isEditable);
     	cell.setAlign("right");
     	row.addContent(cell);
+    	cell = initNormalCell(cs.findNumWeeks(), isEditable);
+    	cell.setAlign("right");
+    	row.addContent(cell);
 		cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/accept.png'>":""), isEditable);
 		cell.setAlign("center");
 		row.addContent(cell);
@@ -485,6 +488,9 @@ public class WebColleagueCourseListTableBuilder extends
 		cell.addContent("<hr>");
 		row.addContent(cell);
     	cell = this.headerCell("Limit", 2, 1);
+		cell.addContent("<hr>");
+		row.addContent(cell);
+    	cell = this.headerCell("Num Weeks", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Print", 2, 1);

@@ -322,6 +322,7 @@ public class ColleagueMessage {
 			addCampusCodeElement(sectionElement, section, cSession, clazz);
 			sectionElement.addAttribute("INSTRUCTIONAL_METHOD", clazz.getSchedulingSubpart().getItype().getSis_ref());
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(section.calculateMaxEnrl(hibSession))).toString()));
+			sectionElement.addAttribute("NUM_WEEKS", ((new Integer(section.findNumWeeks())).toString()));
 
 			CourseCreditUnitConfig courseCreditUnitConfig = courseOffering.getCredit();
 			if (courseCreditUnitConfig == null && !courseOffering.isIsControl().booleanValue()){
