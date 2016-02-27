@@ -638,6 +638,57 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(instructorPercents);
 	
 	}
+	
+	public int findWkNumInString(String name){
+		int wks = 0;
+		if (name == null){
+			return(wks);
+		}
+		
+		int endIndex = -2;
+		if (name.contains("-Week")){
+			endIndex = name.indexOf("-Week");
+		}
+		if (endIndex <= 0){
+			return(wks);
+		}
+		int i = endIndex - 1;
+		int beginIndex = i;
+		while(i >= 0 && !name.substring(i, i+1).equals(" ")){
+			beginIndex = i;
+			i--;
+		}
+		if (beginIndex < 0){
+			return(wks);
+		}
+		wks = Integer.parseInt(name.substring(beginIndex, endIndex));
+		
+		return wks;
+	}
+	
+	public String findNumWeeks(){
+		int num = 0;
+		for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+			Assignment a = aClass.getCommittedAssignment();
+			if (a != null){
+				if (a.getDatePattern() != null){
+					int n = findWkNumInString(a.getDatePattern().getName());
+					if (n > num){
+						num = n;
+					}
+				}
+			} else {
+				if (aClass.effectiveDatePattern() != null){
+					int n = findWkNumInString(aClass.effectiveDatePattern().getName());
+					if (n > num){
+						num = n;
+					}
+				}
+			}
+		}
+        return(Integer.toString(num));
+    	
+	}
 
     @SuppressWarnings("unchecked")
 	public String buildDatePatternHtml(ClassAssignmentProxy classAssignment){
