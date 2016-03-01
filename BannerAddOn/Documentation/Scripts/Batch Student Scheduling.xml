@@ -471,4 +471,294 @@ elif server.isWorking():
 else:
     execute(server)]]></body>
 </script>
+<script name="Batch Student Scheduling: Solver Enroll [XE Experiment]" permission="Student Sectioning Solver" engine="python" created="Tue Mar 01 09:26:05 EST 2016">
+  <body><![CDATA[import csv
+from java.lang import Long
+from java.util import ArrayList, HashSet
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.restlet import Client
+from org.restlet.data import Protocol, ChallengeScheme, MediaType
+from org.restlet.resource import ClientResource, ResourceException
+from org.unitime.timetable.onlinesectioning import AcademicSessionInfo
+from org.unitime.banner.onlinesectioning import BannerTermProvider
+from org.unitime.timetable import ApplicationProperties
+from com.google.gson import Gson, GsonBuilder
+from org.unitime.timetable.onlinesectioning.custom.purdue import GsonRepresentation, XEInterface
+from org.unitime.timetable.gwt.shared import SectioningException
+from org.unitime.timetable.onlinesectioning.match import AnyStudentMatcher
+from org.unitime.timetable.onlinesectioning.custom import RequestStudentUpdates
+from org.unitime.timetable.onlinesectioning.basic import GetRequest, GetAssignment
+from org.unitime.timetable.onlinesectioning.updates import EnrollStudent
+from org.unitime.timetable.onlinesectioning import OnlineSectioningLog
+
+def getBatchServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getStudentSolverContainer()
+    server = container.getSolver(log.getOwnerId())
+    return server
+
+def getOnlineServer():
+    service = SpringApplicationContextHolder.getBean("solverServerService")
+    container = service.getOnlineStudentSchedulingContainer()
+    server = container.getSolver(str(session.getUniqueId()))
+    return server
+
+
+def getGson():
+    builder = GsonBuilder()
+    builder.setPrettyPrinting()
+    return builder.create()
+
+def getClient():
+    protocols = ArrayList()
+    protocols.add(Protocol.HTTP)
+    protocols.add(Protocol.HTTPS)
+    return Client(protocols)
+
+def getResource(client):
+    resource = ClientResource(ApplicationProperties.getProperty("banner.xe.site"))
+    resource.setNext(client)
+    resource.setChallengeResponse(ChallengeScheme.HTTP_BASIC, ApplicationProperties.getProperty("banner.xe.admin.user"), ApplicationProperties.getProperty("banner.xe.admin.password"))
+    return resource
+
+def getBannerId(student):
+    return student.getExternalId().zfill(9)
+
+def getStudents(server):
+    m = AnyStudentMatcher()
+    m.setServer(server)
+    return server.findStudents(m)
+
+def generateAction(server, student):
+    log.info("%s %s" % (student.getExternalId(), student.getName()))
+    action = EnrollStudent()
+    action.forStudent(student.getStudentId())
+    
+    request = server.execute(GetRequest().forStudent(student.getStudentId()), getUser())
+    action.withRequest(request)
+
+    enrollment = server.execute(GetAssignment().forStudent(student.getStudentId()), getUser())
+    assignments = ArrayList()
+    for course in enrollment.getCourseAssignments():
+        if course.isFreeTime(): continue
+        assignments.addAll(course.getClassAssignments())
+    action.withAssignment(assignments)
+    
+    return action
+
+def enroll(client, student, action, writer):
+    resource = getResource(client)
+
+    info = AcademicSessionInfo(session)
+    bt = BannerTermProvider()
+    term = bt.getExternalTerm(info)
+    campus = bt.getExternalCampus(info)
+    
+    gson = getGson()
+    
+    resource.addQueryParameter("term", term)
+    resource.addQueryParameter("bannerId", getBannerId(student))
+    resource.addQueryParameter("persona", "SB")
+    try:
+        resource.get(MediaType.APPLICATION_JSON)
+    except ResourceException, e:
+        response = GsonRepresentation(resource.getResponseEntity(), XEInterface.ErrorResponse).getObject()
+        error = response.getError()
+        if error and error.message:            
+            raise SectioningException(error.message)
+        if error and error.description:
+            raise SectioningException(error.description)
+        if error and error.errorMessage:
+            raise SectioningException(error.errorMessage)
+        raise SectioningException(e.getMessage())
+    
+    current = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse.TYPE_LIST).getObject()
+    original = None
+    if current and not current.isEmpty():
+        original = current.get(0)
+        #log.debug("Current registration: %s" % gson.toJson(original))
+    
+    if not original or not original.validStudent:
+        reason = None
+        if not original and original.failureReasons:
+            for m in original.failureReasons:
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+                raise SectioningException(reason)
+        raise SectioningException("Failed to check student registration status.")
+    
+    noadd = HashSet()
+    nodrop = HashSet()
+    notregistered = HashSet()
+    registered = {}
+    if original.registrations:
+        for reg in original.registrations:
+            if reg.isRegistered():
+                registered[reg.courseReferenceNumber] = reg
+                if not reg.canDrop(True):
+                    nodrop.add(reg.courseReferenceNumber)
+            else:
+                notregistered.add(reg.courseReferenceNumber)
+                if not reg.canAdd(True):
+                    noadd.add(reg.courseReferenceNumber)
+    
+    added = HashSet()
+    req = XEInterface.RegisterRequest(term, getBannerId(student), None, True)
+    for assignment in action.getAssignment():
+        id = assignment.getSection()
+        if not id in registered and noadd.contains(id):
+            writer.writerow([
+                student.getExternalId(), student.getName(),
+                '%s %s' % (assignment.getSubject(), assignment.getCourseNbr()), id,
+                'Failed', 'Action RE is not allowed.'
+            ])
+        else:
+            if id in registered:
+                if added.add(id): req.keep(id)
+            else:
+                if added.add(id): req.add(id, notregistered.contains(id))
+    for id in registered.keys():
+        if added.contains(id): continue
+        reg = registered[id]
+        if not campus == reg.campus:
+            if added.add(id): req.keep(id)
+        elif nodrop.contains(id):
+            writer.writerow([
+                student.getExternalId(), student.getName(),
+                '%s %s' % (reg.subject, reg.courseNumber), id,
+                'Failed', 'Action DDD is not allowed.'
+            ])
+            if added.add(id): req.keep(id)
+        else:
+            req.drop(id)
+    
+    #log.debug("Request: %s" % gson.toJson(req))
+    
+    try:
+        resource.post(GsonRepresentation(req))
+    except ResourceException, e:
+        response = GsonRepresentation(resource.getResponseEntity(), XEInterface.ErrorResponse).getObject()
+        error = response.getError()
+        if error and error.message:            
+            raise SectioningException(error.message)
+        if error and error.description:
+            raise SectioningException(error.description)
+        if error and error.errorMessage:
+            raise SectioningException(error.errorMessage)
+        raise SectioningException(e.getMessage())
+    
+    response = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse).getObject()
+    #log.debug("Response: %s" % gson.toJson(response))
+
+    if not response:
+        raise SectioningException("Failed to enroll student.")
+    elif not response.validStudent:
+        reason = None
+        if response.failureReasons:
+            for m in response.failureReasons:
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+                raise SectioningException(reason)
+        raise SectioningException("Failed to enroll student.")
+    
+    checked = HashSet()
+    if response.registrations:
+        for reg in response.registrations:
+            id = reg.courseReferenceNumber
+            checked.add(id)
+            op = None
+            if added.contains(id): op = "Add"
+            else: op = "Drop"
+            error = None
+            if reg.crnErrors:
+                for e in reg.crnErrors:
+                    if not error:
+                        error = e.message
+                    else:
+                        error = "%s\n%s" % (error, e.message)
+            writer.writerow([
+                student.getExternalId(), student.getName(),
+                '%s %s' % (reg.subject, reg.courseNumber), id,
+                op, reg.statusDescription, error
+            ])
+    
+    ex = False
+    for assignment in action.getAssignment():
+        id = assignment.getSection()
+        if checked.contains(id): continue
+        op = None
+        if added.contains(id): op = "Add"
+        else: op = "Drop"
+        ex = True
+        writer.writerow([
+            student.getExternalId(), student.getName(),
+            '%s %s' % (assignment.getSubject(), assignment.getCourseNbr()), id,
+            op, 'Exception', response.registrationException])
+        
+    if response.registrationException and not ex:
+        writer.writerow([
+            student.getExternalId(), student.getName(),
+            None, None,
+            None, 'Exception', response.registrationException])
+    
+    resource.release()
+    
+
+def getUser():
+    user = OnlineSectioningLog.Entity.newBuilder()
+    user.setExternalId(log.getOwnerId())
+    user.setName(log.getOwnerName())
+    user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
+    return user.build()
+
+def failStudent(server, action, student, writer, message):
+    for assignment in action.getAssignment():
+        course = server.getCourse(assignment.getCourseId())
+        offering = server.getOffering(course.getOfferingId())
+        section = offering.getSection(assignment.getClassId())
+        writer.writerow([
+            student.getExternalId(), student.getName(),
+            course.getCourseName(), section.getExternalId(assignment.getCourseId()),
+            'Add', 'Failed', message
+            ])
+
+def execute(batch, online):
+    file = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','Course','CRN','Request','Status','Message'])
+    client = getClient()
+    ids = ArrayList()
+    for student in getStudents(batch):
+        ids.add(Long(student.getStudentId()))
+        action = generateAction(batch, student)
+        try:
+            enroll(client, student, action, writer)
+        except SectioningException, e:
+            log.error('Enrollment failed: %s' % e.getMessage())
+            failStudent(batch, action, student, writer, e.getMessage())
+    writer.writerow(['EOF'])
+    file.close()
+    client.stop()
+    #if ids.size() > 0:
+    #    req = RequestStudentUpdates()
+    #    req.forStudents(ids)
+    #    online.execute(req, getUser())
+
+batch = getBatchServer()
+online = getOnlineServer()
+if not batch:
+    log.error("Batch student scheduling solver is not loaded in.")
+elif batch.isRunning():
+    log.error("Batch student scheduling solver is running.")
+elif batch.isWorking():
+    log.error("Batch student scheduling solver is working.")
+elif not online:
+    log.error("Online student scheduling solver is not running.")
+else:
+    execute(batch, online)]]></body>
+</script>
 </scripts>
