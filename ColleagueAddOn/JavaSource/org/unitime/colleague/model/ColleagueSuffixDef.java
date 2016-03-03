@@ -355,7 +355,9 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
     			next = this.getItypePrefix();
     			if (this.getPrefix() != null && !this.getPrefix().isEmpty()){
     				next += this.getPrefix();
+    				next += this.getMinSectionNum().toString();;
     			} else {
+    				next += this.getMinSectionNum().toString();;
     				next += this.getSuffix();
     			}
     		} else if (this.getItypePrefix() != null && !this.getItypePrefix().isEmpty()){
