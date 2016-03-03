@@ -358,6 +358,8 @@ public class WebColleagueCourseListTableBuilder extends
     	row.addContent(cell);
     	cell = initNormalCell((cs.getColleagueId() == null?"": cs.getColleagueId()), isEditable);
     	row.addContent(cell);
+    	cell = initNormalCell((cs.findSchedType() == null?"": cs.findSchedType()), isEditable);
+    	row.addContent(cell);
     	cell = initNormalCell(Integer.toString(cs.calculateMaxEnrl(hibSession)), isEditable);
     	cell.setAlign("right");
     	row.addContent(cell);
@@ -485,6 +487,9 @@ public class WebColleagueCourseListTableBuilder extends
 		cell.addContent("<hr>");
 		row.addContent(cell);
     	cell = this.headerCell("Colleague Synonym", 2, 1);
+		cell.addContent("<hr>");
+		row.addContent(cell);
+    	cell = this.headerCell("Sched Type", 2, 1);
 		cell.addContent("<hr>");
 		row.addContent(cell);
     	cell = this.headerCell("Limit", 2, 1);

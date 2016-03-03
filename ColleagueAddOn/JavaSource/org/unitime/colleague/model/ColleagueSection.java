@@ -691,6 +691,15 @@ public class ColleagueSection extends BaseColleagueSection {
         return(Integer.toString(num));
     	
 	}
+	
+	public String findSchedType() {
+		String schedType = null;
+		Class_ c = getFirstClass();
+		if (c != null && c.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalMethod() != null){
+			schedType = c.getSchedulingSubpart().getInstrOfferingConfig().getInstructionalMethod().getReference();
+		}
+		return(schedType);
+	}
 
     @SuppressWarnings("unchecked")
 	public String buildDatePatternHtml(ClassAssignmentProxy classAssignment){

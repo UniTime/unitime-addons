@@ -321,6 +321,9 @@ public class ColleagueMessage {
 			sectionElement.addAttribute("LOCATION_CODE", (csd.getCampusCode() == null?cSess.getColleagueCampus():csd.getCampusCode()));
 			addCampusCodeElement(sectionElement, section, cSession, clazz);
 			sectionElement.addAttribute("INSTRUCTIONAL_METHOD", clazz.getSchedulingSubpart().getItype().getSis_ref());
+			if (section.findSchedType() != null){
+				sectionElement.addAttribute("SCHED_TYPE", section.findSchedType());
+			}
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(section.calculateMaxEnrl(hibSession))).toString()));
 			sectionElement.addAttribute("NUM_WEEKS", ((new Integer(section.findNumWeeks())).toString()));
 
