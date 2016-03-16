@@ -128,8 +128,8 @@ for line in lines:
         group = None
         continue
     if header:
-        if "Learning Community" == line[0]: header = False
-        continue
+        header = False
+        if "Learning Community" == line[0]: continue
     if not group and line[0]:
         group = getGroup(line[0])
         course2classes = {}
@@ -276,8 +276,8 @@ for line in lines:
     for crn in line[4:]:
         if crn.strip(): crns.append(crn.strip())
     if header:
-        if "LC" == lcAbbv: header = False
-        continue
+        header = False
+        if "LC" == lcAbbv: continue
     
     if not lcAbbv: lcAbbv = last[0]
     if not lcName: lcName = last[1]
@@ -365,8 +365,8 @@ for line in lines:
     
     lc = line[0].strip()
     if header:
-        if "LC" == lc: header = False
-        continue
+        header = False
+        if "LC" == lc: continue
     
     if not lc: lc = last
     last = lc
@@ -396,6 +396,15 @@ if statusRef:
 ts = Date()
 
 students = HashSet()
+
+if status:
+   for student in hibSession.createQuery(
+        "from Student where sectioningStatus.uniqueId = :statusId and session = :sessionId"
+        ).setLong("sessionId", session.getUniqueId()).setLong("statusId", status.getUniqueId()).list():
+       student.setSectioningStatus(None);
+       students.add(Long(student.getUniqueId()))
+       hibSession.saveOrUpdate(student);
+       
 
 for group in groups:
     reservations = hibSession.createQuery("from StudentGroupReservation where group = :gid order by uniqueId").setLong("gid", group.getUniqueId()).list()
