@@ -59,6 +59,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 	private boolean sunday;
 	private Date startDate;
 	private Date endDate;
+	private boolean alternatingWeeks;
 	private String beginTime;
 	private String endTime;
 	private String bldgCode;
@@ -83,7 +84,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 	}
 	
 	public MeetingElement(Date startDate, Date endDate, String beginTime, String endTime, IntEnumeration days,
-						String bldgCode, String roomCode, String hoursToArrange, ColleagueSection colleagueSection, Class_ clazz) {
+						String bldgCode, String roomCode, String hoursToArrange, ColleagueSection colleagueSection, Class_ clazz, boolean alternatingWeeks) {
 		this.monday = false;
 		this.tuesday = false;
 		this.wednesday = false;
@@ -95,6 +96,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		this.endDate = endDate;
 		this.beginTime = beginTime;
 		this.endTime = endTime;
+		this.alternatingWeeks = alternatingWeeks;
 		setDaysOfWeek(days);
 		this.bldgCode = bldgCode;
 		this.roomCode = roomCode;
@@ -123,6 +125,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		Assignment a = clazz.getCommittedAssignment();
 		if (a != null){
 			TreeMap<Date, Date> dates = colleagueMessage.findDatesFor(a.getDatePattern());
+			boolean alternatingWeeks = DatePattern.sTypeAlternate == (a.getDatePattern() == null ? -1: (a.getDatePattern().getType() == null? -1 : a.getDatePattern().getType().intValue()));
 			String beginTime = getStartTimeForAssignment(a);
 			String endTime = getEndTimeForAssignment(a);
 			String bldgAbbv = null;
@@ -144,7 +147,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 					Date startDate = dateIt.next();
 					Date endDate = dates.get(startDate);				
-					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz);
+					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz, alternatingWeeks);
 					elements.add(me);
 				}
 			}
@@ -152,7 +155,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 					Date startDate = dateIt.next();
 					Date endDate = dates.get(startDate);				
-					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz);
+					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz, alternatingWeeks);
 					elements.add(me);
 				}
 			}
@@ -168,8 +171,10 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				if (dp != null) {
 					dates = colleagueMessage.findDatesFor(dp);
 				} else {
+					dp = colleagueSection.getSession().getDefaultDatePattern();
 					dates = colleagueMessage.findDatesFor(colleagueMessage.findDefaultDatePatternFor(colleagueSection.getSession()));
 				}
+				boolean alternatingWeeks = DatePattern.sTypeAlternate == (dp == null ? -1: (dp.getType() == null? -1 : dp.getType().intValue()));
 				boolean createdMeetingElement = false;				
 				
 				for(Iterator rmPrefIt = clazz.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
@@ -191,7 +196,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 						for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 							Date startDate = dateIt.next();
 							Date endDate = dates.get(startDate);				
-							MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, bldgAbbv, roomNbr, new Double(hours).toString(), colleagueSection, clazz);
+							MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, bldgAbbv, roomNbr, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
 							elements.add(me);
 						}
 					}
@@ -200,7 +205,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 						Date startDate = dateIt.next();
 						Date endDate = dates.get(startDate);				
-						MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, null, null, new Double(hours).toString(), colleagueSection, clazz);
+						MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, null, null, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
 						elements.add(me);
 					}
 				}
@@ -296,6 +301,13 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		java.util.Date meetingEndDate;
 		if (!datePattern.getPattern().contains("0")){
 			//If the date pattern does not have any days off return dates that cover the full period.
+			aCalendarDate.add(Calendar.DAY_OF_MONTH, (datePattern.getPattern().length() - 1));
+			meetingEndDate = aCalendarDate.getTime();
+			tm.put(meetingStartDate, meetingEndDate);
+			return(tm);
+		}
+		if (datePattern.getType() != null && DatePattern.sTypeAlternate == datePattern.getType().intValue()){
+			//If the date pattern is an alternating date pattern return dates that cover the full period.
 			aCalendarDate.add(Calendar.DAY_OF_MONTH, (datePattern.getPattern().length() - 1));
 			meetingEndDate = aCalendarDate.getTime();
 			tm.put(meetingStartDate, meetingEndDate);
@@ -403,6 +415,11 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		} else {
 			meetingElement.addAttribute("END_DATE", "");
 		}
+		if (alternatingWeeks){
+			meetingElement.addAttribute("ALT_WEEKS", "TRUE");			
+		} else {
+			meetingElement.addAttribute("ALT_WEEKS", "FALSE");
+		}
 		if (beginTime != null){
 			meetingElement.addAttribute("BEGIN_TIME", beginTime);
 		} else {
@@ -497,6 +514,14 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		this.sunday = sunday;
 	}
 
+	public boolean isAlternatingWeeks() {
+		return alternatingWeeks;
+	}
+
+
+	public void setAlternatingWeeks(boolean alternatingWeeks) {
+		this.alternatingWeeks = alternatingWeeks;
+	}
 
 	public Date getStartDate() {
 		return startDate;
