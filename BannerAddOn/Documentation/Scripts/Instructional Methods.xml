@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+<script name="Instructional Methods: Import" permission="Instr Offering Config Edit Department" engine="python" created="Tue Mar 22 16:37:54 EDT 2016">
+  <description><![CDATA[Import instructional methods from a CSV file.<br>
+Each line contains a subject area, a course number, a CRN, and an instructional method reference.<br><br>
+Example:<ul><pre>
+Subj,Course,CRN  ,IM
+AAE ,69000 ,11170,DO
+AAE ,56800 ,11166,DO
+AT  ,48700 ,18619,B/H
+</pre></ul>]]></description>
+  <parameter name="file" label="CSV File" type="file"/>
+  <body><![CDATA[import csv
+
+def lookupConfig(subject, courseNbr, crn):
+    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
+    if clazz and course:
+        if not course.getSubjectAreaAbbv() == subject or not course.getCourseNbr().startswith(courseNbr):
+            log.error("Class %s %s %d is wrong (found %s)." % (subject, courseNbr, crn, course.getCourseNameWithTitle()))
+            return None
+        return clazz.getSchedulingSubpart().getInstrOfferingConfig()
+    else:
+        log.error("Class %s %s %d not found." % (subject, courseNbr, crn))
+        return None
+
+methods = {}
+for m in hibSession.createQuery("from InstructionalMethod").list():
+    methods[m.getReference()] = m
+
+lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+header = True
+for line in lines:
+    if not line: continue
+    subject = line[0].strip()
+    course = line[1].strip()
+    crn = line[2].strip()
+    im = line[3].strip()
+    if header:
+        header = False
+        if "Subject" == subject or "Subj" == subject: continue
+    
+    config = lookupConfig(subject, course, int(crn))
+    if not config: continue
+    if not im in methods:
+        log.error("Instructional method %s does not exist." % im)
+    log.debug("%s [%s] set to %s - %s" % (config.getCourseName(), config.getName(), im, methods[im].getLabel()))    
+    config.setInstructionalMethod(methods[im])
+    hibSession.saveOrUpdate(config)]]></body>
+</script>
