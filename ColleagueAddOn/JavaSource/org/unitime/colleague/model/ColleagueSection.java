@@ -541,9 +541,17 @@ public class ColleagueSection extends BaseColleagueSection {
 
 	}
 	
-	public void updateClassSuffixForClassesIfNecessaryRefreshClasses(Session hibSession, boolean refresh){
-		Boolean control = this.getCourseOffering(hibSession).isIsControl();
+	public void updateClassSuffixForClassesIfNecessaryRefreshClasses(Session hibSession, boolean refresh){	
+		
+		CourseOffering co = this.getCourseOffering(hibSession);
+		if (co == null){
+			return;
+		}
+		Boolean control = co.isIsControl();
 		if (control.booleanValue()){
+			if (this.getColleagueSectionToClasses() == null || this.getColleagueSectionToClasses().isEmpty()){
+				return;
+			}
 			for (Iterator<?> it = this.getColleagueSectionToClasses().iterator(); it.hasNext();){
 				ColleagueSectionToClass bsc = (ColleagueSectionToClass) it.next();
 				Class_ clazz = Class_DAO.getInstance().get(bsc.getClassId(), hibSession);
