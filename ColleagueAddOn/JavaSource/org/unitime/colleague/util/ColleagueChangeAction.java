@@ -30,6 +30,7 @@ import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
 import org.unitime.colleague.dataexchange.SendColleagueMessage;
 import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.colleague.model.ColleagueSession;
+import org.unitime.commons.Debug;
 import org.unitime.timetable.interfaces.ExternalClassEditAction;
 import org.unitime.timetable.interfaces.ExternalCourseCrosslistAction;
 import org.unitime.timetable.interfaces.ExternalCourseOfferingEditAction;
@@ -96,8 +97,25 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 	 */
 	public void performExternalCourseOfferingEditAction(
 			InstructionalOffering instructionalOffering, Session hibSession) {
-			
-		SendColleagueMessage.sendColleagueMessage(ColleagueSection.findColleagueSectionsForInstructionalOffering(instructionalOffering, hibSession), MessageAction.UPDATE, hibSession);
+		List<ColleagueSection> sections = ColleagueSection.findColleagueSectionsForInstructionalOffering(instructionalOffering, hibSession);
+		for (ColleagueSection colleagueSection : sections){
+			if (colleagueSection.isDeleted().booleanValue()){
+				continue;
+			}
+			if (!colleagueSection.isSectionIndexStillValid(hibSession)){
+				try {
+					colleagueSection.setSectionIndex(ColleagueSection.findNextUnusedActiveSectionIndexFor(colleagueSection.getSession(), colleagueSection.getCourseOffering(hibSession), colleagueSection.getFirstClass().getSchedulingSubpart().getItype(), hibSession));
+					hibSession.update(colleagueSection);
+					hibSession.flush();
+					hibSession.refresh(colleagueSection);
+					colleagueSection.updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, true);
+				} catch (Exception e) {
+					Debug.info("failed to generate a new section index");
+					e.printStackTrace();
+				}
+			}
+		}
+		SendColleagueMessage.sendColleagueMessage(sections, MessageAction.UPDATE, hibSession);
 	}
 
 	/* (non-Javadoc)
@@ -191,11 +209,9 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 		if (ColleagueSession.shouldCreateColleagueDataForSession(courseOffering.getSubjectArea().getSession(), hibSession)){
 			List<ColleagueSection> sections = ColleagueSection.findColleagueSectionsForCourseOfferingId(courseOffering.getUniqueId(), hibSession);
 			for(ColleagueSection cs : sections){
-				SendColleagueMessage.sendColleagueMessage(cs, MessageAction.DELETE, hibSession);
-				cs.setDeleted(new Boolean(true));
-				hibSession.update(cs);
+				ColleagueSection.deleteSection(hibSession, cs);
 			}
-			SendColleagueMessage.sendColleagueMessage(sections, MessageAction.DELETE, hibSession);
+//			SendColleagueMessage.sendColleagueMessage(sections, MessageAction.DELETE, hibSession);
 		}
 	}
 

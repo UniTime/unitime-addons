@@ -93,9 +93,7 @@ public class ColleagueSectionCrosslistHelper {
 						for(ColleagueSection cs : removeSet){
 							if (!cs.isDeleted()){
 								Transaction trans = hibSession.beginTransaction();
-								SendColleagueMessage.sendColleagueMessage(cs, MessageAction.DELETE, hibSession);
-								cs.setDeleted(new Boolean(true));
-								hibSession.update(cs);
+								ColleagueSection.deleteSection(hibSession, cs);
 								trans.commit();
 							}
 						}
@@ -129,9 +127,7 @@ public class ColleagueSectionCrosslistHelper {
 					if (!removeSet.isEmpty()){
 						for(ColleagueSection cs : removeSet){
 							Transaction trans = hibSession.beginTransaction();
-							SendColleagueMessage.sendColleagueMessage(cs, MessageAction.DELETE, hibSession);
-							cs.setDeleted(new Boolean(true));
-							hibSession.update(cs);
+							ColleagueSection.deleteSection(hibSession, cs);
 							trans.commit();
 						}
 					}
