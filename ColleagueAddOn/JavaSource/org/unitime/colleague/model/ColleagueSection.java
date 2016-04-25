@@ -244,37 +244,207 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(sectionExists < 1);
 	}
 	
-	public static String findNextUnusedSectionIndexFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,  ItypeDesc itype,
+	public static String findNextUnusedDeletedSectionIndexFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering, 
 			Session hibSession) throws Exception {
+   		ColleagueSession colleagueSession = ColleagueSession.findColleagueSessionForSession(acadSession.getUniqueId(), hibSession);
+   		if (!colleagueSession.isSendDataToColleague()){
+   			return(null);
+   		}
+   		ColleagueSuffixDef suffix = new ColleagueSuffixDef();
+   		suffix.setMinSectionNum(new Integer(1));
+   		suffix.setMaxSectionNum(new Integer(99));
+   		suffix.setPrefix("X");
+   		String sectionIndex = null;
+   		try {
+   			sectionIndex = findNextUnusedSectionIndexFor(colleagueSession, courseOffering, hibSession, suffix);
+   		} catch (Exception e1) {
+   	   		suffix.setPrefix("Y");
+   	   		try {
+   	   			sectionIndex = findNextUnusedSectionIndexFor(colleagueSession, courseOffering, hibSession, suffix);
+   	   		} catch (Exception e2) {
+   	   	   		suffix.setPrefix("Z");
+   	    		try {
+   	    			sectionIndex = findNextUnusedSectionIndexFor(colleagueSession, courseOffering, hibSession, suffix);
+   	    		} catch (Exception e3) {
+   	    	   		throw(e3);  	    			
+   	    		}
+   	   		}	
+   		}
+   		return(sectionIndex);
+	}
+	
+	public static String findNextUnusedSectionIndexFor(ColleagueSession colleagueSession, CourseOffering courseOffering,
+			Session hibSession, ColleagueSuffixDef suffix) throws Exception {
+   		// find the min and max section number for the suffix
 		String nextSectionId = null;
-	   		ColleagueSession colleagueSession = ColleagueSession.findColleagueSessionForSession(acadSession.getUniqueId(), hibSession);
-	   		if (!colleagueSession.isSendDataToColleague()){
-	   			return(null);
+   		List<String> existingSectionIds = findExistingSectionIds(colleagueSession, suffix, courseOffering, hibSession);
+   		if (existingSectionIds == null || existingSectionIds.isEmpty()){
+   			nextSectionId = suffix.findNextSectionIndex(null);
+   		} else {
+	   		String secIdx = null;
+	   		String firstIdx = null;
+	   		boolean foundIdx = false;
+	   		boolean checkedAllPossible = false;
+	   		while (!foundIdx && !checkedAllPossible){
+		   		secIdx = suffix.findNextSectionIndex(secIdx);
+	   			if (firstIdx == null){
+	   				firstIdx = secIdx;
+	   			} else if (secIdx == firstIdx) {
+	   				checkedAllPossible = true;
+	   			}
+	   			if (!existingSectionIds.contains(secIdx)){
+	   				foundIdx = true;
+	   				nextSectionId=secIdx;
+	   			}
 	   		}
-	   		ColleagueSuffixDef suffix = ColleagueSuffixDef.findColleagueSuffixDefForTermCode(itype, courseOffering, colleagueSession.getColleagueTermCode(), hibSession);
-	   		// find the min and max section number for the suffix
-	   		List<String> existingSectionIds = findExistingSectionIds(colleagueSession, suffix, courseOffering, hibSession);
-	   		if (existingSectionIds == null || existingSectionIds.isEmpty()){
-	   			nextSectionId = suffix.findNextSectionIndex(null);
-	   		} else {
-		   		String secIdx = null;
-		   		String firstIdx = null;
-		   		boolean foundIdx = false;
-		   		boolean checkedAllPossible = false;
-		   		while (!foundIdx && !checkedAllPossible){
-			   		secIdx = suffix.findNextSectionIndex(secIdx);
-		   			if (firstIdx == null){
-		   				firstIdx = secIdx;
-		   			} else if (secIdx == firstIdx) {
-		   				checkedAllPossible = true;
-		   			}
-		   			if (!existingSectionIds.contains(secIdx)){
-		   				foundIdx = true;
-		   				nextSectionId=secIdx;
-		   			}
-		   		}
-	   		}
-		return(nextSectionId);
+   		}
+	return(nextSectionId);
+
+	}
+
+	public boolean isSectionIndexStillValid(Session hibSession) {
+		if (this.isDeleted().booleanValue()){
+			return(true);
+		}
+   		ColleagueSession colleagueSession = ColleagueSession.findColleagueSessionForSession(this.getSession().getUniqueId(), hibSession);
+   		if (!colleagueSession.isStoreDataForColleague().booleanValue()) {
+   			return(true);
+   		}
+   		if (this.getSectionIndex() == null){
+   			return(false);
+   		}
+   		ColleagueSuffixDef suffix = ColleagueSuffixDef.findColleagueSuffixDefForTermCode(this.getFirstClass().getSchedulingSubpart().getItype(), this.getCourseOffering(hibSession), colleagueSession.getColleagueTermCode(), hibSession);
+   		if (suffix.getItypePrefix() != null && !suffix.getItypePrefix().isEmpty()) {
+   			if (this.getSectionIndex().substring(0, 1).equals(suffix.getItypePrefix())){
+   				if (suffix.getPrefix() != null && !suffix.getPrefix().isEmpty()){
+   					if (this.getSectionIndex().substring(1,2).equals(suffix.getPrefix())){
+   						if(this.getSectionIndex().length() != 3){
+   							return(false);
+   						}
+   						int i;
+   						try {
+   							i = Integer.parseInt(this.getSectionIndex().substring(2,3));
+   						} catch (Exception e) {
+   							return(false);
+   						}
+   						if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+   							return(true);
+   						} else {
+   							return(false);
+   						}
+   					} else {
+   						return(false);
+   					}
+   				} else if (suffix.getSuffix() != null && !suffix.getSuffix().isEmpty()) {
+   					if(this.getSectionIndex().length() != 3){
+							return(false);
+					}
+   					if (this.getSectionIndex().substring(2, 3).equals(suffix.getSuffix())){
+   						int i;
+   						try {
+   							i = Integer.parseInt(this.getSectionIndex().substring(1,2));
+   						} catch (Exception e) {
+   							return(false);
+   						}
+   						if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+   							return(true);
+   						} else {
+   							return(false);
+   						}
+   					} else {
+   						return(false);
+   					}
+   				} else {
+   					int i;
+   					try {
+   						i = Integer.parseInt(this.getSectionIndex().substring(1));
+   					} catch (Exception e) {
+   						return(false);
+   					}
+					if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+						return(true);
+					} else {
+						return(false);
+					}
+   				}
+   			} else {
+   				return(false);
+   			}
+   		} else if (suffix.getPrefix() != null && !suffix.getPrefix().isEmpty()) {
+   			if (this.getSectionIndex().substring(0, 1).equals(suffix.getPrefix())){
+   				if (suffix.getSuffix() != null && !suffix.getSuffix().isEmpty()) {
+   					if(this.getSectionIndex().length() != 3){
+							return(false);
+					}
+   					if (this.getSectionIndex().substring(2, 3).equals(suffix.getSuffix())){
+   						int i;
+   						try {
+   							i = Integer.parseInt(this.getSectionIndex().substring(1,2));
+   						} catch (Exception e) {
+   							return(false);
+   						}
+   						if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+   							return(true);
+   						} else {
+   							return(false);
+   						}
+   					} else {
+   						return(false);
+   					}
+   				} else {
+   					int i;
+   					try {
+   						i = Integer.parseInt(this.getSectionIndex().substring(1));
+   					} catch (Exception e) {
+   						return(false);
+   					}
+					if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+						return(true);
+					} else {
+						return(false);
+					}
+   				}
+   			} else {
+   				return(false);
+   			}	
+   		} else if (suffix.getSuffix() != null && !suffix.getSuffix().isEmpty()) {
+   			if (this.getSectionIndex().substring((this.getSectionIndex().length() - 1), this.getSectionIndex().length()).equals(suffix.getSuffix())) {
+   				int i;
+   				try {
+   					i = Integer.parseInt(this.getSectionIndex().substring(0, (this.getSectionIndex().length() - 1)));
+   				} catch (Exception e) {
+   					return(false);
+   				}
+				if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+					return(true);
+				} else {
+					return(false);
+				}  				
+   			} else {
+   				return(false);
+   			}
+   		} else {
+				int i;
+				try {
+					i = Integer.parseInt(this.getSectionIndex());
+				} catch (Exception e) {
+					return(false);
+				}
+				if (i >= suffix.getMinSectionNum().intValue() && i <= suffix.getMaxSectionNum().intValue()){
+					return(true);
+				} else {
+					return(false);
+				}  				
+   		}
+	}
+	public static String findNextUnusedActiveSectionIndexFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,  ItypeDesc itype,
+			Session hibSession) throws Exception {
+   		ColleagueSession colleagueSession = ColleagueSession.findColleagueSessionForSession(acadSession.getUniqueId(), hibSession);
+   		if (!colleagueSession.isSendDataToColleague()){
+   			return(null);
+   		}
+   		ColleagueSuffixDef suffix = ColleagueSuffixDef.findColleagueSuffixDefForTermCode(itype, courseOffering, colleagueSession.getColleagueTermCode(), hibSession);
+   		return(findNextUnusedSectionIndexFor(colleagueSession, courseOffering, hibSession, suffix));
 	}
 
 	
@@ -295,7 +465,7 @@ public class ColleagueSection extends BaseColleagueSection {
    		return (List<String>)hibSession.createQuery(sb.toString())
           .setString("termCode", colleagueSession.getColleagueTermCode())
           .setString("subject", courseOffering2.getSubjectArea().getSubjectAreaAbbreviation())
-          .setString("colleagueCourseNumber", colleagueCourseNumber).list();
+          .setString("colleagueCourseNumber", colleagueCourseNumber).setCacheable(false).list();
 	}
 
 
@@ -379,11 +549,25 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		return(hs);
 	}
+	
+	public static void deleteSection(Session hibSession, ColleagueSection colleagueSection) {
+		try {			
+			CourseOffering courseOffering = new CourseOffering();
+			courseOffering.setSubjectArea(colleagueSection.getSubjectArea(hibSession));
+			courseOffering.setCourseNbr(colleagueSection.getColleagueCourseNumber());
+			colleagueSection.setSectionIndex(ColleagueSection.findNextUnusedDeletedSectionIndexFor(colleagueSection.getSession(), courseOffering, hibSession));
+		} catch (Exception e) {
+			Debug.info("failed to find a deleted section index");
+			e.printStackTrace();
+		}
+		SendColleagueMessage.sendColleagueMessage(colleagueSection, MessageAction.DELETE, hibSession);
+		colleagueSection.setDeleted(new Boolean(true));
+		hibSession.update(colleagueSection);
+	}
 
 	private static void removeOrphanedColleagueSections(Session hibSession, List<ColleagueSection> orphanedSections){
 		for(ColleagueSection cs : orphanedSections){
 			Debug.info("removing orphaned colleague section");
-			SendColleagueMessage.sendColleagueMessage(cs, MessageAction.DELETE, hibSession);
 			if (cs.getParentColleagueSection() != null){
 				ColleagueSection pCs = cs.getParentColleagueSection();
 				pCs.getColleagueSectionToChildSections().remove(cs);
@@ -395,8 +579,7 @@ public class ColleagueSection extends BaseColleagueSection {
 					hibSession.update(cCs);
 				}
 			}
-			cs.setDeleted(new Boolean(true));
-			hibSession.update(cs);
+			deleteSection(hibSession, cs);
 			hibSession.flush();
 		}		
 	}
@@ -528,7 +711,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		ColleagueSession cSess = ColleagueSession.findColleagueSessionForSession(this.getSession().getUniqueId(), hibSession);
 		if (cSess.isSendDataToColleague() && this.getSectionIndex() == null) {
-			this.setSectionIndex(ColleagueSection.findNextUnusedSectionIndexFor(this.getSession(), this.getCourseOffering(hibSession), itype, hibSession));
+			this.setSectionIndex(ColleagueSection.findNextUnusedActiveSectionIndexFor(this.getSession(), this.getCourseOffering(hibSession), itype, hibSession));
 			hibSession.update(this);
 			updateClassSuffixForClassesIfNecessary(hibSession);
 		}
@@ -1125,7 +1308,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		cs.setCourseOffering(courseOffering);
 		cs.setCourseOfferingId(courseOffering.getUniqueId());
 		try {
-			cs.setSectionIndex(ColleagueSection.findNextUnusedSectionIndexFor(courseOffering.getInstructionalOffering().getSession(), 
+			cs.setSectionIndex(ColleagueSection.findNextUnusedActiveSectionIndexFor(courseOffering.getInstructionalOffering().getSession(), 
 					courseOffering, 
 					cls.getSchedulingSubpart().getItype(), 
 					hibSession));
