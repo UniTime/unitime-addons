@@ -208,7 +208,7 @@ if not file:
 else:
     execute()]]></body>
 </script>
-<script name="Batch Student Scheduling: Data Export" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 09:00:00 EDT 2015">
+<script name="Batch Student Scheduling: Data Export [Class Enrollments]" permission="Student Sectioning Solver" engine="python" created="Thu Apr 28 02:00:42 EDT 2016">
   <description><![CDATA[<h3>Export student class enrollments into a CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
@@ -226,7 +226,7 @@ else:
 from org.unitime.timetable.model import UserData
 
 def getPin(student):
-    pin = UserData.getProperty(student.getExternalId(), "PIN[%d]" % session.getUniqueId())
+    pin = UserData.getProperty(student.getExternalUniqueId(), "PIN[%d]" % session.getUniqueId())
     if pin: return pin
     return defaultPin
 
@@ -249,6 +249,62 @@ def execute():
     file = open(log.createOutput('%s_enrollments' % status,'csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['PUID','Name','PIN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
+    for student in students:
+        writer.writerow(getStudent(student))
+    writer.writerow(['EOF'])
+    file.close()
+
+if not status:
+    log.error("No student status was provided.")
+else:
+    execute()]]></body>
+</script>
+<script name="Batch Student Scheduling: Data Export [Courses]" permission="Student Sectioning Solver" engine="python" created="Thu Apr 28 02:00:34 EDT 2016">
+  <description><![CDATA[<h3>Export student course demands into a CSV file</h3>
+<b>Format:</b><ul>
+<li>There is a line for each student
+<li>PUID, Name, PIN, Course1, Course2, .... 
+</ul>
+<b>Parameters:</b><ul>
+<li>Status: students of this status will be exported
+<li>Add Leading Zeros: add leading zeros to the PUID
+<li>Default PIN: default PIN number to be used in the enrollment
+</ul>]]></description>
+  <parameter name="defaultPin" label="Default PIN" type="string"/>
+  <parameter name="status" label="Status" type="reference(StudentSectioningStatus)"/>
+  <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
+  <body><![CDATA[import csv
+from org.unitime.timetable.model import UserData
+
+def getPin(student):
+    pin = UserData.getProperty(student.getExternalUniqueId(), "PIN[%d]" % session.getUniqueId())
+    if pin: return pin
+    return defaultPin
+
+def getStudent(student):
+    puid = student.getExternalUniqueId()
+    if zeros: puid = puid.zfill(9)
+    log.info("%s %s" % (puid, student.getName("last-first-middle")))
+    line = [puid, student.getName("last-first-middle"), getPin(student)]
+    courses = {}
+    for enrl in student.getClassEnrollments():
+        courses[enrl.getCourseOffering().getCourseName()] = True
+    for cd in student.getCourseDemands():
+        if cd.isAlternative(): continue
+        for cr in cd.getCourseRequests():
+            if cr.getOrder() == 0:
+                courses[cr.getCourseOffering().getCourseName()] = True
+    line.extend(sorted(courses.keys()))
+    log.debug('-- %s' % ','.join(sorted(courses.keys())))
+    return line
+
+def execute():
+    students = hibSession.createQuery("from Student where session = :session and sectioningStatus.reference = :status"
+        ).setLong("session", session.getUniqueId()).setString("status", status).list()
+    
+    file = open(log.createOutput('%s_courses' % status,'csv').getAbsolutePath(), 'w')
+    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','Course','Course','Course','Course'])
     for student in students:
         writer.writerow(getStudent(student))
     writer.writerow(['EOF'])
@@ -471,7 +527,17 @@ elif server.isWorking():
 else:
     execute(server)]]></body>
 </script>
-<script name="Batch Student Scheduling: Solver Enroll [XE Experiment]" permission="Student Sectioning Solver" engine="python" created="Tue Mar 01 09:26:05 EST 2016">
+<script name="Batch Student Scheduling: Solver Enroll [XE Experiment]" permission="Student Sectioning Solver" engine="python" created="Thu Apr 28 03:14:26 EDT 2016">
+  <description><![CDATA[<h3>Use the batch student scheduling solver solution and the XE Student API to push the enrollments to Banner.</h3>
+For each student that is loaded in the solver, the appropriate registration message is created and passed on the Student API.<br>
+<b>Output is returned in the following CSV format:</b><ul>
+<li>There is a line for each student class enrollment
+<li>PUID, Name, PIN, Course, CRN, Result, Error Message
+</ul>
+<b>Parameters:</b><ul>
+<li>Admin Parameter: change to <b>systemIn</b> when Student API 9.5 is used
+</ul>]]></description>
+  <parameter name="persona" label="Admin Parameter" type="text" default="persona"/>
   <body><![CDATA[import csv
 from java.lang import Long
 from java.util import ArrayList, HashSet
@@ -490,6 +556,7 @@ from org.unitime.timetable.onlinesectioning.custom import RequestStudentUpdates
 from org.unitime.timetable.onlinesectioning.basic import GetRequest, GetAssignment
 from org.unitime.timetable.onlinesectioning.updates import EnrollStudent
 from org.unitime.timetable.onlinesectioning import OnlineSectioningLog
+from org.unitime.timetable.model.dao import CourseOfferingDAO, Class_DAO
 
 def getBatchServer():
     service = SpringApplicationContextHolder.getBean("solverServerService")
@@ -558,7 +625,7 @@ def enroll(client, student, action, writer):
     
     resource.addQueryParameter("term", term)
     resource.addQueryParameter("bannerId", getBannerId(student))
-    resource.addQueryParameter("persona", "SB")
+    resource.addQueryParameter(persona, "SB")
     try:
         resource.get(MediaType.APPLICATION_JSON)
     except ResourceException, e:
@@ -580,13 +647,13 @@ def enroll(client, student, action, writer):
     
     if not original or not original.validStudent:
         reason = None
-        if not original and original.failureReasons:
+        if original and original.failureReasons:
             for m in original.failureReasons:
                 if not reason:
                     reason = m
                 else:
                     reason = '%s\n%s' % (reason, m)
-                raise SectioningException(reason)
+        if reason: raise SectioningException(reason)
         raise SectioningException("Failed to check student registration status.")
     
     noadd = HashSet()
@@ -717,14 +784,18 @@ def getUser():
 
 def failStudent(server, action, student, writer, message):
     for assignment in action.getAssignment():
-        course = server.getCourse(assignment.getCourseId())
-        offering = server.getOffering(course.getOfferingId())
-        section = offering.getSection(assignment.getClassId())
-        writer.writerow([
-            student.getExternalId(), student.getName(),
-            course.getCourseName(), section.getExternalId(assignment.getCourseId()),
-            'Add', 'Failed', message
-            ])
+        course = CourseOfferingDAO.getInstance().get(Long(assignment.getCourseId()))
+        clazz = Class_DAO.getInstance().get(Long(assignment.getClassId()))
+        if course and clazz:
+            writer.writerow([
+                student.getExternalId(), student.getName(),
+                course.getCourseName(), clazz.getExternalId(course), 'Add', 'Failed', message
+                ])
+        else:
+            writer.writerow([
+                student.getExternalId(), student.getName(),
+                str(assignment.getCourseId()), str(assignment.getClassId()), 'Add', 'Failed', message
+                ])
 
 def execute(batch, online):
     file = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
