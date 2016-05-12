@@ -338,4 +338,418 @@ elif not online:
 else:
     execute(online)]]></body>
 </script>
+<script name="Manual Student Scheduling: CSV File Enroll [XE]" permission="Student Sectioning Solver" engine="python" created="Wed May 11 13:59:57 EDT 2016">
+  <description><![CDATA[<h3>Use the provided CSV file to enroll students via the Banner XE API.</h3>
+<p>Input is expected in the CSV format.<br>There is a line for each student class enrollment:<br>PUID, Name, CRN1, CRN2, CRN3, ...</p>
+<p>Output is returned in the CSV format.<br>There is a line for each student class enrollment:<br>PUID, Name, Course, CRN, Request, Registration Status, Error Message, Used Override</p>
+<p><b>Parameters:</b><ul>
+<li>Class Enrollments: input file in the above format
+<li>Name Columns: number of columns with student name
+<li>Automatic Overrides: check to use automatic overrides
+<li>Allowed Overrides: list of overrides that can be used (when enabled)
+<li>Manual Overrides: list of overrides that are manually put in
+<li>Conditional Add Drop: check if conditional add drop is to be enabled
+<li>Hold Password: enter hold password if students with hold should be enrolled
+<li>Registration Date: for back-dating enter registration date (in yyyy-mm-dd format)
+</ul></p>]]></description>
+  <parameter name="registrationDate" label="8. Registration Date (yyyy-mm-dd)" type="text"/>
+  <parameter name="allowedOverrides" label="4. Allowed Overrides" type="text" default="CAMPUS,CLASS,CLOSED,COLLEGE,CO-REQ,DEGREE,DPT-PERMIT,INST-PERMT,HONORS,DUP-CRSE,LEVEL,MAJOR,PRE-REQ,PROGRAM,TIME-CNFLT"/>
+  <parameter name="input" label="1. Class Enrollments" type="file"/>
+  <parameter name="autoOverrides" label="3. Automatic Overrides" type="boolean" default="false"/>
+  <parameter name="holdPassword" label="7. Hold Password" type="text"/>
+  <parameter name="overrides" label="5. Manual Overrides" type="textarea" default="PUID,CRN,Override (one override per line)"/>
+  <parameter name="nameColumns" label="2. Name Columns" type="enum(0,1,2,3)" default="1"/>
+  <parameter name="conditionalAddDrop" label="6. Conditional Add Drop" type="boolean" default="true"/>
+  <body><![CDATA[import csv
+from xml.dom import minidom
+from java.lang import Long
+from java.util import ArrayList, HashSet, Date
+from java.io import StringReader
+from org.dom4j.io import SAXReader
+from org.restlet import Client
+from org.restlet.data import Protocol, ChallengeScheme, MediaType
+from org.restlet.resource import ClientResource, ResourceException
+from org.unitime.timetable import ApplicationProperties
+from org.unitime.timetable.onlinesectioning import AcademicSessionInfo
+from org.unitime.timetable.onlinesectioning.custom.purdue import GsonRepresentation, XEInterface
+from org.unitime.timetable.gwt.shared import SectioningException
+from org.unitime.banner.onlinesectioning import BannerTermProvider
+from org.unitime.banner.model import BannerSession, QueueOut
+
+def getClient():
+    protocols = ArrayList()
+    protocols.add(Protocol.HTTP)
+    protocols.add(Protocol.HTTPS)
+    return Client(protocols)
+
+def getResource(client):
+    resource = ClientResource(ApplicationProperties.getProperty("banner.xe.site"))
+    resource.setNext(client)
+    resource.setChallengeResponse(ChallengeScheme.HTTP_BASIC, ApplicationProperties.getProperty("banner.xe.admin.user"), ApplicationProperties.getProperty("banner.xe.admin.password"))
+    return resource
+
+def getCourseNameForCrn(crn):
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+    if course:
+        return course.getCourseName()
+    return None
+
+def getConsent(crn):
+    return hibSession.createQuery(
+        "select co.consentType.reference from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId"
+        ).setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+
+def getDefaultOverride(crn, messageType):
+    if messageType == 'DEPT' or messageType == 'SAPR':
+        consent = getConsent(crn)
+        if consent == "IN": return "INST-PERMT"
+        elif consent == "DP": return "DPT-PERMIT"
+        else: return "HONORS"
+    elif messageType in defaultOverrides:
+        return defaultOverrides[messageType]
+    else:
+        return None
+
+def getManualOverride(puid, crn, manualOverrides):
+    if not manualOverrides: return None
+    for line in manualOverrides:
+        if not line: continue
+        if not line[0] or line[0].strip().zfill(9) == puid:
+            if line[1] and line[1].strip() == crn:
+                return line[2].strip()
+    return None
+
+def addOverride(req, id, override, overrides):
+    for crn in req.courseReferenceNumbers:
+        if crn.courseReferenceNumber == id:
+            log.debug('Adding override %s for %s' % (override, id))
+            crn.courseOverride = override
+            if id not in overrides:
+                overrides[id] = [override]
+            else:
+                overrides[id].append(override)
+            return True
+    log.warn('Failed to add override %s for %s' % (override, id))
+    return False
+
+def getOverride(req, id, overrides):
+    if overrides and id in overrides:
+        return ','.join(overrides[id])
+    else:
+        for crn in req.courseReferenceNumbers:
+            if crn.courseReferenceNumber == id:
+                return crn.courseOverride
+    return None
+
+def handleError(resource, e):
+    error = None
+    if resource.getResponseEntity():
+        response = GsonRepresentation(resource.getResponseEntity(), XEInterface.ErrorResponse).getObject()
+        if response: error = response.getError()
+    if error and error.message:            
+        raise SectioningException(error.message)
+    if error and error.description:
+        raise SectioningException(error.description)
+    if error and error.errorMessage:
+        raise SectioningException(error.errorMessage)
+    raise SectioningException(e.getMessage())
+
+def getSchedule(resource):
+    try:
+        resource.get(MediaType.APPLICATION_JSON)
+    except ResourceException, e: handleError(resource, e)
+    
+    current = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse.TYPE_LIST).getObject()
+    original = None
+    if current and not current.isEmpty():
+        original = current.get(0)
+    
+    if not original or not original.validStudent:
+        reason = None
+        if original and original.failureReasons:
+            for m in original.failureReasons:
+                if m == "Holds prevent registration." and holdPassword:
+                    return getHoldSchedule(resource)
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+        if reason: raise SectioningException(reason)
+        raise SectioningException("Failed to check student registration status.")
+    
+    return original
+
+def getHoldSchedule(resource):
+    log.debug("Using hold password...")
+    term = resource.getQueryValue("term")
+    puid = resource.getQueryValue("bannerId")
+    req = XEInterface.RegisterRequest(term, puid, None, True)
+    req.empty()
+    if holdPassword:
+        req.holdPassword = holdPassword
+    
+    try:
+        resource.post(GsonRepresentation(req))
+    except ResourceException, e: handleError(resource, e)
+    
+    response = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse).getObject()
+    
+    if not response:
+        raise SectioningException("Failed to check student registration status.")
+    elif not response.validStudent:
+        reason = None
+        if response.failureReasons:
+            for m in response.failureReasons:
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+                raise SectioningException(reason)
+        raise SectioningException("Failed to check student registration status.")
+    
+    return response
+
+def postChanges(resource, req):
+    try:
+        resource.post(GsonRepresentation(req))
+    except ResourceException, e: handleError(resource, e)
+    
+    response = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse).getObject()
+    
+    if not response:
+        raise SectioningException("Failed to enroll student.")
+    elif not response.validStudent:
+        reason = None
+        if response.failureReasons:
+            for m in response.failureReasons:
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+                raise SectioningException(reason)
+        raise SectioningException("Failed to enroll student.")
+
+    return response
+
+def enroll(client, puid, name, crns, writer, manualOverrides):
+    log.info('%s: %s [%s]' % (puid, name, ','.join(crns)))
+    resource = getResource(client)
+
+    info = AcademicSessionInfo(session)
+    bt = BannerTermProvider()
+    term = bt.getExternalTerm(info)
+    campus = bt.getExternalCampus(info)
+    puid = puid.zfill(9)
+    
+    resource.addQueryParameter("term", term)
+    resource.addQueryParameter("bannerId", puid)
+    resource.addQueryParameter("systemIn", "SB")
+    resource.addQueryParameter("persona", "SB")
+    if holdPassword:
+        resource.addQueryParameter("holdPassword", holdPassword)
+
+    original = getSchedule(resource)
+    
+    noadd = HashSet()
+    nodrop = HashSet()
+    notregistered = HashSet()
+    registered = {}
+    if original.registrations:
+        for reg in original.registrations:
+            if reg.isRegistered():
+                registered[reg.courseReferenceNumber] = reg
+                if not reg.canDrop(True):
+                    nodrop.add(reg.courseReferenceNumber)
+            else:
+                notregistered.add(reg.courseReferenceNumber)
+                if not reg.canAdd(True):
+                    noadd.add(reg.courseReferenceNumber)
+    
+    added = HashSet()
+    req = XEInterface.RegisterRequest(term, puid, None, True)
+    if holdPassword:
+        req.holdPassword = holdPassword
+    for id in crns:
+        if not id: continue
+        if not id in registered and noadd.contains(id):
+            writer.writerow([
+                puid, name,
+                getCourseNameForCrn(id), id,
+                'Failed', 'Action RE is not allowed.'
+            ])
+        else:
+            if id in registered:
+                if added.add(id): req.keep(id)
+            else:
+                if added.add(id): req.add(id, notregistered.contains(id))
+    for id in registered.keys():
+        if added.contains(id): continue
+        reg = registered[id]
+        if not campus == reg.campus:
+            if added.add(id): req.keep(id)
+        elif nodrop.contains(id):
+            writer.writerow([
+                puid, name,
+                '%s %s' % (reg.subject, reg.courseNumber), id,
+                'Failed', 'Action DDD is not allowed.'
+            ])
+            if added.add(id): req.keep(id)
+        else:
+            req.drop(id)
+            
+    appliedOverrides = {}
+    for id in crns:
+        override = getManualOverride(puid, id, manualOverrides)
+        if override: addOverride(req, id, override, appliedOverrides)
+    
+    if registrationDate:
+        req.registrationDate = registrationDate
+    if conditionalAddDrop:
+        req.conditionalAddDrop = "Y"
+
+    response = postChanges(resource, req)
+    
+    while autoOverrides and response.registrations:
+        changed = False
+        for reg in response.registrations:
+            id = reg.courseReferenceNumber
+            if reg.crnErrors:
+                for e in reg.crnErrors:
+                    override = getDefaultOverride(id, e.messageType)
+                    if override and (not allowedOverrides or override in allowedOverrides.split(',')):
+                        if addOverride(req, id, override, appliedOverrides):
+                            changed = True
+                        break
+        
+        if not changed: break
+        response = postChanges(resource, req)
+    
+    checked = HashSet()
+    if response.registrations:
+        for reg in response.registrations:
+            id = reg.courseReferenceNumber
+            checked.add(id)
+            op = None
+            if added.contains(id): op = "Add"
+            else: op = "Drop"
+            error = None
+            errorType = []
+            if reg.crnErrors:
+                for e in reg.crnErrors:
+                    if not error:
+                        error = '%s: %s' % (e.messageType, e.message)
+                    else:
+                        error = "%s\n%s: %s" % (error, e.messageType, e.message)
+            writer.writerow([
+                puid, name,
+                '%s %s' % (reg.subject, reg.courseNumber), id,
+                op, reg.statusDescription, error, getOverride(req, id, appliedOverrides)
+            ])
+            if error: log.warn('%s: %s' % (id, error))
+    
+    ex = False
+    for id in crns:
+        if not id: continue
+        if checked.contains(id): continue
+        op = None
+        if added.contains(id): op = "Add"
+        else: op = "Drop"
+        ex = True
+        writer.writerow([
+            puid, name,
+            getCourseNameForCrn(id), id,
+            op, 'Exception', response.registrationException])
+        
+    if response.registrationException and not ex:
+        writer.writerow([
+            puid, name,
+            None, None,
+            None, 'Exception', response.registrationException])
+        
+    if response.registrationException: log.warn(response.registrationException)
+    
+    resource.release()
+
+def failStudent(puid, name, crns, writer, message):
+    for id in crns:
+        if not id: continue
+        writer.writerow([puid, name, getCourseNameForCrn(id), id, 'Add', 'Failed', message])
+
+def createStudentRequestUpdateMessage(puids):
+    term = BannerTermProvider().getExternalTerm(AcademicSessionInfo(session))
+    doc = minidom.getDOMImplementation().createDocument(None, "studentUpdateRequest", None)
+    root = doc.documentElement
+    for puid in puids:
+        studentEl = doc.createElement("student")
+        studentEl.setAttribute("externalId", puid.zfill(9))
+        studentEl.setAttribute("session", term)
+        root.appendChild(studentEl)
+    return doc.toprettyxml()
+
+def requestStudentUpdate(puids):
+    log.info('Requesting student update...')
+    message = createStudentRequestUpdateMessage(puids)
+    out = QueueOut()
+    out.setXml(SAXReader().read(StringReader(message)))
+    out.setStatus(QueueOut.STATUS_READY)
+    out.setPostDate(Date())
+    hibSession.save(out)
+
+defaultOverrides = {
+    'CAMP': 'CAMPUS',
+    'CLAS': 'CLASS',
+    'CLOS': 'CLOSED',
+    'COLL': 'COLLEGE',
+    'CORQ': 'CO-REQ',
+    'DEGR': 'DEGREE',
+    'DEPT': 'DPT-PERMIT',
+    'DUPL': 'DUP-CRSE',
+    'LEVL': 'LEVEL',
+    'MAJR': 'MAJOR',
+    'PREQ': 'PRE-REQ',
+    'PROG': 'PROGRAM',
+    'TIME': 'TIME-CNFLT',
+    }
+
+def execute():
+    manualOverrides = None
+    if overrides:
+        manualOverrides = []
+        for line in csv.reader(overrides.split('\n'), delimiter=",", quotechar='"'):
+            manualOverrides.append(line)
+    lines = csv.reader(input.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+    output = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['PUID','Name','Course','CRN','Request','Status','Message','Used Override'])
+    client = getClient()
+    puids = []
+    for line in lines:
+        if not line: continue
+        if line[0].lower() == 'puid' or line[0].lower() == 'eof': continue
+        puid = line[0]
+        name = None
+        cstart = 1
+        for i in range(0, int(nameColumns)):
+            if name:
+                name = "%s %s" % (name, line[cstart].strip())
+            else:
+                name = line[cstart].strip()
+            cstart = cstart + 1
+        puids.append(puid)
+        try:
+            enroll(client, puid, name, line[cstart:], writer, manualOverrides)
+        except SectioningException, e:
+            log.error('Enrollment failed: %s' % e.getMessage())
+            failStudent(puid, name, line[cstart:], writer, e.getMessage())
+    writer.writerow(['EOF'])
+    output.close()
+    client.stop()
+    if puids:
+        requestStudentUpdate(puids)
+    
+if not input:
+    log.error("Class enrollments file not provided.")
+else:
+    execute()]]></body>
+</script>
 </scripts>
