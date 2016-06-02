@@ -22,16 +22,14 @@
  -->
 
 <scripts created="Tue Oct 20 15:00 CEST 2015">
-<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Wed Oct 28 10:09:21 EDT 2015">
+<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Thu Jun 02 15:04:10 EDT 2016">
   <description><![CDATA[<h3>Import student course requests from the given CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
-<li>PUID, Name, PIN, Course1, Course2, .... 
-<li>PIN column is optional, make sure PIN Included toggle is set accordingly
+<li>PUID, Name, Course1, Course2, .... 
 </ul>
 <b>Parameters:</b><ul>
 <li>Input File: CSV file in the above format
-<li>PIN Included: set to true if the input file contains PIN column
 <li>Status: student status to be set (if selected)
 <li>Trim Leading Zeros: trim leading zeros from the PUID
 <li>Clear Existing Demands: replace existing student course demands with the given demands
@@ -39,12 +37,11 @@
 <li>Name Columns: number of columns with student name
 </ul>]]></description>
   <parameter name="clear" label="Clear Existing Demands" type="boolean" default="false"/>
+  <parameter name="file" label="Input File (CSV)" type="file"/>
   <parameter name="override" label="Create Limit Overrides" type="boolean" default="false"/>
   <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)"/>
-  <parameter name="pinIncluded" label="PIN Included" type="boolean" default="false"/>
   <parameter name="trimLeadingZeros" label="Trim Leading Zeros" type="boolean" default="true"/>
-  <parameter name="file" label="Input File (CSV)" type="file"/>
-  <parameter name="nameColumns" label="Name Columns" type="enum(0,1,2,3)" default="2"/>
+  <parameter name="nameColumns" label="Name Columns" type="enum(0,1,2,3)" default="1"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.spring import SpringApplicationContextHolder
 from org.unitime.timetable.model import UserData, StudentSectioningStatus, CourseDemand, CourseRequest, OverrideReservation, StudentSectioningQueue
@@ -98,9 +95,6 @@ def getStudent(puid, name, clear):
                     else: hibSession.saveOrUpdate(reservation)
     return student
 
-
-def setPin(student, pin):
-    UserData.setProperty(student.getExternalUniqueId(), "PIN[%d]" % session.getUniqueId(), pin)
 
 def addCourse(student, cn, ts, offeringIds):
     if not cn:
@@ -171,11 +165,10 @@ def execute():
     offeringIds = HashSet()
     for line in lines:
         if not line: continue
-        if line[0].lower() == 'puid': continue
+        if line[0].lower() == 'puid' or line[0].lower() == 'eof': continue
         puid = line[0]
         while trimLeadingZeros and puid[0] == '0': puid = puid[1:]
         name = None
-        pin = None
         cstart = 1
         for i in range(0, int(nameColumns)):
             if name:
@@ -183,12 +176,8 @@ def execute():
             else:
                 name = line[cstart].strip()
             cstart = cstart + 1
-        if pinIncluded:
-            pin = line[cstart]
-            cstart = cstart + 1
         student = getStudent(puid, name, clear)
         if not student: continue
-        if pin: setPin(student, pin)
         for course in line[cstart:]:
             addCourse(student, course, ts, offeringIds)
         if status:
@@ -208,33 +197,26 @@ if not file:
 else:
     execute()]]></body>
 </script>
-<script name="Batch Student Scheduling: Data Export [Class Enrollments]" permission="Student Sectioning Solver" engine="python" created="Thu Apr 28 02:00:42 EDT 2016">
+<script name="Batch Student Scheduling: Data Export [Class Enrollments]" permission="Student Sectioning Solver" engine="python" created="Thu Jun 02 15:01:29 EDT 2016">
   <description><![CDATA[<h3>Export student class enrollments into a CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
-<li>PUID, Name, PIN, CRN1, CRN2, .... 
+<li>PUID, Name, CRN1, CRN2, .... 
 </ul>
 <b>Parameters:</b><ul>
 <li>Status: students of this status will be exported
 <li>Add Leading Zeros: add leading zeros to the PUID
-<li>Default PIN: default PIN number to be used in the enrollment
 </ul>]]></description>
-  <parameter name="defaultPin" label="Default PIN" type="string"/>
   <parameter name="status" label="Status" type="reference(StudentSectioningStatus)"/>
   <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import UserData
 
-def getPin(student):
-    pin = UserData.getProperty(student.getExternalUniqueId(), "PIN[%d]" % session.getUniqueId())
-    if pin: return pin
-    return defaultPin
-
 def getStudent(student):
     puid = student.getExternalUniqueId()
     if zeros: puid = puid.zfill(9)
     log.info("%s %s" % (puid, student.getName("last-first-middle")))
-    line = [puid, student.getName("last-first-middle"), getPin(student)]
+    line = [puid, student.getName("last-first-middle")]
     crns = {}
     for enrl in student.getClassEnrollments():
         crns[enrl.getClazz().getExternalId(enrl.getCourseOffering())] = True
@@ -248,7 +230,7 @@ def execute():
     
     file = open(log.createOutput('%s_enrollments' % status,'csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['PUID','Name','PIN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
+    writer.writerow(['PUID','Name','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
     for student in students:
         writer.writerow(getStudent(student))
     writer.writerow(['EOF'])
@@ -259,7 +241,7 @@ if not status:
 else:
     execute()]]></body>
 </script>
-<script name="Batch Student Scheduling: Data Export [Courses]" permission="Student Sectioning Solver" engine="python" created="Thu Apr 28 02:00:34 EDT 2016">
+<script name="Batch Student Scheduling: Data Export [Courses]" permission="Student Sectioning Solver" engine="python" created="Thu Jun 02 15:01:17 EDT 2016">
   <description><![CDATA[<h3>Export student course demands into a CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
@@ -270,22 +252,16 @@ else:
 <li>Add Leading Zeros: add leading zeros to the PUID
 <li>Default PIN: default PIN number to be used in the enrollment
 </ul>]]></description>
-  <parameter name="defaultPin" label="Default PIN" type="string"/>
   <parameter name="status" label="Status" type="reference(StudentSectioningStatus)"/>
   <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import UserData
 
-def getPin(student):
-    pin = UserData.getProperty(student.getExternalUniqueId(), "PIN[%d]" % session.getUniqueId())
-    if pin: return pin
-    return defaultPin
-
 def getStudent(student):
     puid = student.getExternalUniqueId()
     if zeros: puid = puid.zfill(9)
     log.info("%s %s" % (puid, student.getName("last-first-middle")))
-    line = [puid, student.getName("last-first-middle"), getPin(student)]
+    line = [puid, student.getName("last-first-middle")]
     courses = {}
     for enrl in student.getClassEnrollments():
         courses[enrl.getCourseOffering().getCourseName()] = True
@@ -315,17 +291,13 @@ if not status:
 else:
     execute()]]></body>
 </script>
-<script name="Batch Student Scheduling: Solver Enroll" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 09:00:07 EDT 2015">
+<script name="Batch Student Scheduling: Solver Enroll" permission="Student Sectioning Solver" engine="python" created="Thu Jun 02 15:09:18 EDT 2016">
   <description><![CDATA[<h3>Used the batch student scheduling solver solution to enroll students on the online student scheduling server.</h3>
 For each student that is loaded in the solver, the appropriate Enroll action is created and executed on the online student scheduling server.<br>
 <b>Output is returned in the following CSV format:</b><ul>
 <li>There is a line for each student class enrollment
-<li>PUID, Name, PIN, Course, CRN, Result, Error Message
-</ul>
-<b>Parameters:</b><ul>
-<li>Default PIN: default PIN number to be used in the enrollment
+<li>PUID, Name, Course, CRN, Result, Error Message
 </ul>]]></description>
-  <parameter name="defaultPin" label="Default PIN" type="string"/>
   <body><![CDATA[import csv
 from java.util import ArrayList, HashSet
 from java.lang import Long
@@ -356,19 +328,11 @@ def getStudents(server):
     m.setServer(server)
     return server.findStudents(m)
 
-def getPin(student):
-    pin = UserData.getProperty(student.getExternalId(), "PIN[%d]" % session.getUniqueId())
-    if pin: return pin
-    return defaultPin
-
 def getUser(student):
     user = OnlineSectioningLog.Entity.newBuilder()
     user.setExternalId(log.getOwnerId())
     user.setName(log.getOwnerName())
     user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
-    if student:
-        pin = getPin(student)
-        if pin: user.addParameterBuilder().setKey("pin").setValue(pin)
     return user.build()
 
 def generateAction(server, student):
@@ -394,7 +358,7 @@ def failStudent(server, action, student, writer, message):
         offering = server.getOffering(course.getOfferingId())
         section = offering.getSection(assignment.getClassId())
         writer.writerow([
-            student.getExternalId(), student.getName(), getPin(student),
+            student.getExternalId(), student.getName(),
             course.getCourseName(), section.getExternalId(assignment.getCourseId()),
             'Failed', message
             ])
@@ -407,14 +371,14 @@ def executeAction(server, action, student, writer):
     except SectioningException, e:
         log.error('Enrollment failed: %s' % e.getMessage())
         failStudent(server, action, student, writer, e.getMessage())
-        # writer.writerow([ student.getExternalId(), student.getName(), getPin(student), None, None, 'Failed', e.getMessage() ])
+        # writer.writerow([ student.getExternalId(), student.getName(), None, None, 'Failed', e.getMessage() ])
         return False
     for course in enrollment.getCourseAssignments():
         if course.isFreeTime(): continue
         sections = HashSet()
         for clazz in course.getClassAssignments():
             if not sections.add(clazz.getSection()): continue
-            line = [ student.getExternalId(), student.getName(), getPin(student), '%s %s' % (course.getSubject(), course.getCourseNbr()), clazz.getSection() ]
+            line = [ student.getExternalId(), student.getName(), '%s %s' % (course.getSubject(), course.getCourseNbr()), clazz.getSection() ]
             if clazz.isSaved(): line.append('Enrolled')
             else: line.append('Not Enrolled')
             if clazz.hasError():
@@ -429,7 +393,7 @@ def executeAction(server, action, student, writer):
 def execute(batch, online):
     file = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['PUID','Name','PIN','Course','CRN','Status','Message'])
+    writer.writerow(['PUID','Name','Course','CRN','Status','Message'])
     failed = ArrayList()
     for student in getStudents(batch):
         if not executeAction(online, generateAction(batch, student), student, writer):
@@ -454,17 +418,15 @@ elif not online:
 else:
     execute(batch, online)]]></body>
 </script>
-<script name="Batch Student Scheduling: Solver Export" permission="Student Sectioning Solver" engine="python" created="Tue Oct 20 09:00:14 EDT 2015">
+<script name="Batch Student Scheduling: Solver Export" permission="Student Sectioning Solver" engine="python" created="Thu Jun 02 15:06:03 EDT 2016">
   <description><![CDATA[<h3>Export batch student scheduling solver student class enrollments data into a CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
-<li>PUID, Name, PIN, CRN1, CRN2, .... 
+<li>PUID, Name, CRN1, CRN2, .... 
 </ul>
 <b>Parameters:</b><ul>
 <li>Add Leading Zeros: add leading zeros to the PUID
-<li>Default PIN: default PIN number to be used in the enrollment
 </ul>]]></description>
-  <parameter name="defaultPin" label="Default PIN" type="string"/>
   <parameter name="zeros" label="Add Leading Zeros" type="boolean" default="false"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import UserData
@@ -484,17 +446,12 @@ def getStudents(server):
     m.setServer(server)
     return server.findStudents(m)
 
-def getPin(student):
-    pin = UserData.getProperty(student.getExternalId(), "PIN[%d]" % session.getUniqueId())
-    if pin: return pin
-    return defaultPin
-
 def generateRow(server, student):
     puid = student.getExternalId()
     if zeros: puid = puid.zfill(9)
     name = student.getName()
     log.info("%s %s" % (puid, name))
-    line = [puid, name, getPin(student)]
+    line = [puid, name]
     crns = {}
     for req in server.getStudent(student.getStudentId()).getRequests():
         if not isinstance(req, XCourseRequest): continue
@@ -511,7 +468,7 @@ def generateRow(server, student):
 def execute(server):
     file = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['PUID','Name','PIN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
+    writer.writerow(['PUID','Name','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN','CRN'])
     for student in getStudents(server):
         writer.writerow(generateRow(server, student))
     writer.writerow(['EOF'])
@@ -527,7 +484,7 @@ elif server.isWorking():
 else:
     execute(server)]]></body>
 </script>
-<script name="Batch Student Scheduling: Solver Enroll [XE]" permission="Student Sectioning Solver" engine="python" created="Wed May 11 13:59:45 EDT 2016">
+<script name="Batch Student Scheduling: Solver Enroll [XE]" permission="Student Sectioning Solver" engine="python" created="Thu Jun 02 13:47:53 EDT 2016">
   <description><![CDATA[<h3>Enroll students from the batch studeht scheduling solver using the Banner XE API.</h3>
 <p>Output is returned in the CSV format.<br>There is a line for each student class enrollment:<br>PUID, Name, Course, CRN, Request, Registration Status, Error Message, Used Override</p>
 <p><b>Parameters:</b><ul>
@@ -540,11 +497,27 @@ else:
 <li>Registration Date: for back-dating enter registration date (in yyyy-mm-dd format)
 </ul></p>]]></description>
   <parameter name="autoOverrides" label="1. Automatic Overrides" type="boolean" default="false"/>
-  <parameter name="holdPassword" label="5. Hold Password" type="text"/>
+  <parameter name="ovCampus" label="2a. Allow Override CAMPUS" type="boolean" default="true"/>
+  <parameter name="ovClass" label="2b. Allow Override CLASS" type="boolean" default="true"/>
+  <parameter name="ovClosed" label="2c. Allow Override CLOSED" type="boolean" default="false"/>
+  <parameter name="ovCoReq" label="2d. Allow Override CO-REQ" type="boolean" default="true"/>
+  <parameter name="ovCollege" label="2e. Allow Override COLLEGE" type="boolean" default="true"/>
+  <parameter name="ovDegree" label="2f. Allow Override DEGREE" type="boolean" default="true"/>
+  <parameter name="ovDptPermit" label="2g. Allow Override DPT-PERMIT" type="boolean" default="true"/>
+  <parameter name="ovDupCrse" label="2h. Allow Override DUP-CRSE" type="boolean" default="true"/>
+  <parameter name="ovHonors" label="2i. Allow Override HONORS" type="boolean" default="true"/>
+  <parameter name="ovInstPermit" label="2j. Allow Override INST-PERMIT" type="boolean" default="true"/>
+  <parameter name="ovLevel" label="2k. Allow Override LEVEL" type="boolean" default="true"/>
+  <parameter name="ovMajor" label="2l. Allow Override MAJOR" type="boolean" default="true"/>
+  <parameter name="ovPreReq" label="2m. Allow Override PRE-REQ" type="boolean" default="false"/>
+  <parameter name="ovProgram" label="2n. Allow Override PROGRAM" type="boolean" default="true"/>
+  <parameter name="ovTimeCnflt" label="2o. Allow Override TIME-CNFLT" type="boolean" default="false"/>
   <parameter name="overrides" label="3. Manual Overrides" type="textarea" default="PUID,CRN,Override (one override per line)"/>
-  <parameter name="registrationDate" label="6. Registration Date (yyyy-mm-dd)" type="text"/>
-  <parameter name="allowedOverrides" label="2. Allowed Overrides" type="text" default="CAMPUS,CLASS,CLOSED,COLLEGE,CO-REQ,DEGREE,DPT-PERMIT,INST-PERMT,HONORS,DUP-CRSE,LEVEL,MAJOR,PRE-REQ,PROGRAM,TIME-CNFLT"/>
   <parameter name="conditionalAddDrop" label="4. Conditional Add Drop" type="boolean" default="true"/>
+  <parameter name="holdPassword" label="5. Hold Password" type="text"/>
+  <parameter name="registrationDate" label="6. Registration Date (yyyy-mm-dd)" type="text"/>
+  <parameter name="actionAdd" label="7a. Registration Status ADD" type="enum(RE,RW)" default="RE"/>
+  <parameter name="actionDrop" label="7b. Registration Status DROP" type="enum(DD,DW,DDD,CA)" default="DDD"/>
   <body><![CDATA[import csv
 from xml.dom import minidom
 from java.lang import Long
@@ -624,7 +597,7 @@ def addOverride(req, id, override, overrides):
 def getOverride(req, id, overrides):
     if overrides and id in overrides:
         return ','.join(overrides[id])
-    else:
+    elif req.courseReferenceNumbers:
         for crn in req.courseReferenceNumbers:
             if crn.courseReferenceNumber == id:
                 return crn.courseOverride
@@ -635,7 +608,7 @@ def handleError(resource, e):
     if resource.getResponseEntity():
         response = GsonRepresentation(resource.getResponseEntity(), XEInterface.ErrorResponse).getObject()
         if response: error = response.getError()
-    if error and error.message:            
+    if error and error.message:
         raise SectioningException(error.message)
     if error and error.description:
         raise SectioningException(error.description)
@@ -647,17 +620,19 @@ def getSchedule(resource):
     try:
         resource.get(MediaType.APPLICATION_JSON)
     except ResourceException, e: handleError(resource, e)
-    
+
     current = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse.TYPE_LIST).getObject()
     original = None
     if current and not current.isEmpty():
         original = current.get(0)
-    
+
     if not original or not original.validStudent:
         reason = None
         if original and original.failureReasons:
             for m in original.failureReasons:
                 if m == "Holds prevent registration." and holdPassword:
+                    return getHoldSchedule(resource)
+                if m == "Invalid or undefined Enrollment Status or date range invalid." and registrationDate:
                     return getHoldSchedule(resource)
                 if not reason:
                     reason = m
@@ -665,24 +640,29 @@ def getSchedule(resource):
                     reason = '%s\n%s' % (reason, m)
         if reason: raise SectioningException(reason)
         raise SectioningException("Failed to check student registration status.")
-    
+
     return original
 
 def getHoldSchedule(resource):
-    log.debug("Using hold password...")
+    if holdPassword:
+        log.debug("Using hold password...")
+    elif registrationDate:
+        log.debug("Using registration date...")
     term = resource.getQueryValue("term")
     puid = resource.getQueryValue("bannerId")
     req = XEInterface.RegisterRequest(term, puid, None, True)
     req.empty()
     if holdPassword:
         req.holdPassword = holdPassword
-    
+    if registrationDate:
+        req.registrationDate = registrationDate
+
     try:
         resource.post(GsonRepresentation(req))
     except ResourceException, e: handleError(resource, e)
-    
+
     response = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse).getObject()
-    
+
     if not response:
         raise SectioningException("Failed to check student registration status.")
     elif not response.validStudent:
@@ -695,16 +675,18 @@ def getHoldSchedule(resource):
                     reason = '%s\n%s' % (reason, m)
                 raise SectioningException(reason)
         raise SectioningException("Failed to check student registration status.")
-    
+
     return response
 
 def postChanges(resource, req):
+    if req.isEmpty(): req.empty()
+
     try:
         resource.post(GsonRepresentation(req))
     except ResourceException, e: handleError(resource, e)
-    
+
     response = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse).getObject()
-    
+
     if not response:
         raise SectioningException("Failed to enroll student.")
     elif not response.validStudent:
@@ -719,6 +701,44 @@ def postChanges(resource, req):
         raise SectioningException("Failed to enroll student.")
 
     return response
+
+def isAllowedOverride(override):
+    if override == 'CAMPUS': return ovCampus
+    if override == 'CLASS': return ovClass
+    if override == 'CLOSED': return ovClosed
+    if override == 'COLLEGE': return ovCollege
+    if override == 'CO-REQ': return ovCoReq
+    if override == 'DEGREE': return ovDegree
+    if override == 'DPT-PERMIT': return ovDptPermit
+    if override == 'INST-PERMT': return ovInstPermit
+    if override == 'HONORS': return ovHonors
+    if override == 'DUP-CRSE': return ovDupCrse
+    if override == 'LEVEL': return ovLevel
+    if override == 'MAJOR': return ovMajor
+    if override == 'PRE-REQ': return ovPreReq
+    if override == 'PROGRAM': return ovProgram
+    if override == 'TIME-CNFLT': return ovTimeCnflt
+    return False
+
+def add(req, id, changeStatus):
+    if not actionAdd:
+        req.add(id, changeStatus)
+    elif changeStatus:
+        if not req.actionsAndOptions: req.actionsAndOptions = ArrayList()
+        req.actionsAndOptions.add(XEInterface.RegisterAction(actionAdd, id))
+    else:
+        if not req.courseReferenceNumbers: req.courseReferenceNumbers = ArrayList()
+        req.courseReferenceNumbers.add(XEInterface.CourseReferenceNumber(id, actionAdd))
+
+def keep(req, id):
+    req.keep(id)
+
+def drop(req, id):
+    if not actionDrop:
+        req.drop(id)
+    else:
+        if not req.actionsAndOptions: req.actionsAndOptions = ArrayList()
+        req.actionsAndOptions.add(XEInterface.RegisterAction(actionDrop, id))
 
 def enroll(client, puid, name, crns, writer, manualOverrides):
     log.info('%s: %s [%s]' % (puid, name, ','.join(crns)))
@@ -729,7 +749,7 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
     term = bt.getExternalTerm(info)
     campus = bt.getExternalCampus(info)
     puid = puid.zfill(9)
-    
+
     resource.addQueryParameter("term", term)
     resource.addQueryParameter("bannerId", puid)
     resource.addQueryParameter("systemIn", "SB")
@@ -738,7 +758,7 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
         resource.addQueryParameter("holdPassword", holdPassword)
 
     original = getSchedule(resource)
-    
+
     noadd = HashSet()
     nodrop = HashSet()
     notregistered = HashSet()
@@ -747,13 +767,13 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
         for reg in original.registrations:
             if reg.isRegistered():
                 registered[reg.courseReferenceNumber] = reg
-                if not reg.canDrop(True):
+                if not reg.can(actionDrop):
                     nodrop.add(reg.courseReferenceNumber)
             else:
                 notregistered.add(reg.courseReferenceNumber)
-                if not reg.canAdd(True):
+                if not reg.can(actionAdd):
                     noadd.add(reg.courseReferenceNumber)
-    
+
     added = HashSet()
     req = XEInterface.RegisterRequest(term, puid, None, True)
     if holdPassword:
@@ -764,40 +784,40 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
             writer.writerow([
                 puid, name,
                 getCourseNameForCrn(id), id,
-                'Failed', 'Action RE is not allowed.'
+                'Failed', 'Action %s is not allowed.' % actionAdd
             ])
         else:
             if id in registered:
-                if added.add(id): req.keep(id)
+                if added.add(id): keep(req, id)
             else:
-                if added.add(id): req.add(id, notregistered.contains(id))
+                if added.add(id): add(req, id, notregistered.contains(id))
     for id in registered.keys():
         if added.contains(id): continue
         reg = registered[id]
         if not campus == reg.campus:
-            if added.add(id): req.keep(id)
+            if added.add(id): keep(req, id)
         elif nodrop.contains(id):
             writer.writerow([
                 puid, name,
                 '%s %s' % (reg.subject, reg.courseNumber), id,
-                'Failed', 'Action DDD is not allowed.'
+                'Failed', 'Action %s is not allowed.' % actionDrop
             ])
-            if added.add(id): req.keep(id)
+            if added.add(id): keep(req, id)
         else:
-            req.drop(id)
-            
+            drop(req, id)
+
     appliedOverrides = {}
     for id in crns:
         override = getManualOverride(puid, id, manualOverrides)
         if override: addOverride(req, id, override, appliedOverrides)
-    
+
     if registrationDate:
         req.registrationDate = registrationDate
     if conditionalAddDrop:
         req.conditionalAddDrop = "Y"
 
     response = postChanges(resource, req)
-    
+
     while autoOverrides and response.registrations:
         changed = False
         for reg in response.registrations:
@@ -805,22 +825,25 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
             if reg.crnErrors:
                 for e in reg.crnErrors:
                     override = getDefaultOverride(id, e.messageType)
-                    if override and (not allowedOverrides or override in allowedOverrides.split(',')):
+                    if override and isAllowedOverride(override):
                         if addOverride(req, id, override, appliedOverrides):
                             changed = True
                         break
-        
+
         if not changed: break
         response = postChanges(resource, req)
-    
+
     checked = HashSet()
     if response.registrations:
         for reg in response.registrations:
             id = reg.courseReferenceNumber
             checked.add(id)
             op = None
-            if added.contains(id): op = "Add"
-            else: op = "Drop"
+            if added.contains(id):
+                op = "Add"
+            else:
+                op = "Drop"
+                if id in notregistered: continue
             error = None
             errorType = []
             if reg.crnErrors:
@@ -835,7 +858,23 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
                 op, reg.statusDescription, error, getOverride(req, id, appliedOverrides)
             ])
             if error: log.warn('%s: %s' % (id, error))
-    
+
+    if response.failedRegistrations:
+        for reg in response.failedRegistrations:
+            if not reg.failedCRN or not reg.failure: continue
+            id = reg.failedCRN
+            checked.add(id)
+            op = None
+            if added.contains(id): op = "Add"
+            else: op = "Drop"
+            error = reg.failure
+            writer.writerow([
+                puid, name,
+                getCourseNameForCrn(id), id,
+                op, 'Failed', error, getOverride(req, id, appliedOverrides)
+            ])
+            log.warn('%s: %s' % (id, error))
+
     ex = False
     for id in crns:
         if not id: continue
@@ -848,15 +887,15 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
             puid, name,
             getCourseNameForCrn(id), id,
             op, 'Exception', response.registrationException])
-        
+
     if response.registrationException and not ex:
         writer.writerow([
             puid, name,
             None, None,
             None, 'Exception', response.registrationException])
-        
+
     if response.registrationException: log.warn(response.registrationException)
-    
+
     resource.release()
 
 def failStudent(puid, name, crns, writer, message):
@@ -931,15 +970,15 @@ def getStudents(server):
 def execute(batch):
     manualOverrides = None
     if overrides:
-        manualOverrides = []
-        for line in csv.reader(overrides.split('\n'), delimiter=",", quotechar='"'):
-            manualOverrides.append(line)
+        manualOverrides = csv.reader(overrides.split('\n'), delimiter=",", quotechar='"')
     output = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
     writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['PUID','Name','Course','CRN','Request','Status','Message','Used Override'])
     client = getClient()
     puids = []
-    for student in getStudents(batch):
+    students = getStudents(batch)
+    log.setStatus('Enrolling students', students.size())
+    for student in students:
         puid = student.getExternalId()
         name = student.getName()
         crns = getCrns(batch, student.getStudentId())
@@ -949,6 +988,7 @@ def execute(batch):
         except SectioningException, e:
             log.error('Enrollment failed: %s' % e.getMessage())
             failStudent(puid, name, crns, writer, e.getMessage())
+        log.incProgress()
     writer.writerow(['EOF'])
     output.close()
     client.stop()
@@ -961,5 +1001,44 @@ if not batch:
 else:
     execute(batch)
 ]]></body>
+</script>
+<script name="Batch Student Scheduling: Undo Data Import" permission="Student Sectioning Solver" engine="python" created="Tue May 31 10:19:49 EDT 2016">
+  <description><![CDATA[Remove all course requests that the students of the given student group are not enrolled in.]]></description>
+  <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)"/>
+  <body><![CDATA[from org.unitime.timetable.model import StudentSectioningQueue
+from java.util import HashSet, ArrayList
+from java.lang import Long
+    
+def execute():
+    studentIds = HashSet()
+    for student in hibSession.createQuery(
+        "from Student where session = :sessionId and sectioningStatus.reference = :status"
+        ).setLong('sessionId', session.getUniqueId()).setString('status', statusRef).list():
+        log.info(student.getName('last-first-middle'))
+        changed = False
+        for cd in ArrayList(student.getCourseDemands()):
+            enrolled = False
+            for cr in cd.getCourseRequests():
+                log.debug('-- checking %s' % cr.getCourseOffering().getCourseName())
+                for enrl in student.getClassEnrollments():
+                    if enrl.getCourseOffering() == cr.getCourseOffering(): enrolled = True
+            if not enrolled:
+                for cr in cd.getCourseRequests():
+                    log.debug('-- removing %s' % cr.getCourseOffering().getCourseName())
+                    hibSession.delete(cr)
+                student.getCourseDemands().remove(cd)
+                hibSession.delete(cd)
+                changed = True
+        if changed:
+            hibSession.update(student)
+            studentIds.add(Long(student.getUniqueId()))
+
+    if studentIds.size() > 0:
+        StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), studentIds)
+    
+if not statusRef:
+    log.error("A student status must be selected.")
+else:
+    execute()]]></body>
 </script>
 </scripts>
