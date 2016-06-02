@@ -335,7 +335,7 @@ def lookupStudent(puid):
     return student
 
 def enroll(students, lcAbbv, puids):
-    group = hibSession.createQuery("from StudentGroup where groupAbbreviation = :abbv and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
+    group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
         return
