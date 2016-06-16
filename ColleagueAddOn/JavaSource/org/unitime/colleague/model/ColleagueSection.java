@@ -678,15 +678,15 @@ public class ColleagueSection extends BaseColleagueSection {
 			if (this.getColleagueId() == null  && this.getSectionIndex() == null){
 				return(clazz.getClassSuffix());
 			} else if (this.getColleagueId() == null && this.getSectionIndex() != null) {
-				return(this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
+				return(this.getSectionIndex() + (getCourseOffering().getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
 			} else if (this.getColleagueId() != null && this.getSectionIndex() == null) {
-				return(this.getColleagueId() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
+				return(this.getColleagueId() + (getCourseOffering().getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
 			} else {
-				if ((this.getColleagueId().length() + this.getSectionIndex().length() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"").length()) >= 10){
-					String str = this.getColleagueId() + '-' + this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+				if ((this.getColleagueId().length() + this.getSectionIndex().length() + (getCourseOffering().getInstructionalOffering().getCourseOfferings().size() > 1?"*":"").length()) >= 10){
+					String str = this.getColleagueId() + '-' + this.getSectionIndex() + (getCourseOffering().getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
 					return (str.substring(str.length() - 10));
 				} else {
-					return (this.getColleagueId() + '-' + this.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
+					return (this.getColleagueId() + '-' + this.getSectionIndex() + (getCourseOffering().getInstructionalOffering().getCourseOfferings().size() > 1?"*":""));
 				}
 			}
 	}
@@ -1226,6 +1226,9 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(getCampusCode(colleagueSession, clazz));
 	}
 	
+	public CourseOffering getCourseOffering() {
+		return(getCourseOffering(null));
+	}
 	public CourseOffering getCourseOffering(Session hibSession) {
 		if (courseOffering == null && getCourseOfferingId() != null){
 			Session querySession = hibSession;
