@@ -46,6 +46,7 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.ItypeDesc;
 import org.unitime.timetable.model.Location;
+import org.unitime.timetable.model.OfferingCoordinator;
 import org.unitime.timetable.model.PreferenceLevel;
 import org.unitime.timetable.model.RoomPref;
 import org.unitime.timetable.model.SchedulingSubpart;
@@ -768,9 +769,9 @@ public class ColleagueSection extends BaseColleagueSection {
 			Debug.error("No instructional offering found for colleague section uniqueId:  " + getUniqueId() + ".");
 			// no instructional offering found no course coordinators to be sent.
 		}
-		if (io != null && io.getCoordinators() != null){
-			for (DepartmentalInstructor di : io.getCoordinators()){
-				instructorPercents.put(di, new Integer(0));
+		if (io != null && io.getOfferingCoordinators() != null){
+			for (OfferingCoordinator oc : io.getOfferingCoordinators()){
+				instructorPercents.put(oc.getInstructor(), new Integer(0));
 			}
 		}
 		boolean sendInstructors = false;
@@ -1008,9 +1009,11 @@ public class ColleagueSection extends BaseColleagueSection {
          		} else {
          			instructorString.append("<br>");
          		}
-     			if (io != null && io.getCoordinators() != null){
-     				if (io.getCoordinators().contains(di)){
-     					instructorString.append("*");
+     			if (io != null && io.getOfferingCoordinators() != null){
+     				for (OfferingCoordinator oc: io.getOfferingCoordinators()) {
+     					if (oc.getInstructor().equals(di)) {
+     						instructorString.append("*"); break;
+     					}
      				}
      			}
      			Integer pct = instructors.get(di);

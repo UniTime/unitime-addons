@@ -57,6 +57,7 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.Location;
 import org.unitime.timetable.model.OfferingConsentType;
+import org.unitime.timetable.model.OfferingCoordinator;
 import org.unitime.timetable.model.PreferenceLevel;
 import org.unitime.timetable.model.RoomPref;
 import org.unitime.timetable.model.SchedulingSubpart;
@@ -714,9 +715,9 @@ public class BannerSection extends BaseBannerSection {
 			Debug.error("No instructional offering found for banner section uniqueId:  " + getUniqueId() + ".");
 			// no instructional offering found no course coordinators to be sent.
 		}
-		if (io != null && io.getCoordinators() != null){
-			for (DepartmentalInstructor di : io.getCoordinators()){
-				instructorPercents.put(di, new Integer(0));
+		if (io != null && io.getOfferingCoordinators() != null){
+			for (OfferingCoordinator di : io.getOfferingCoordinators()){
+				instructorPercents.put(di.getInstructor(), new Integer(0));
 			}
 		}
 		boolean sendInstructors = false;
@@ -886,9 +887,12 @@ public class BannerSection extends BaseBannerSection {
          		} else {
          			instructorString.append("<br>");
          		}
-     			if (io != null && io.getCoordinators() != null){
-     				if (io.getCoordinators().contains(di)){
-     					instructorString.append("*");
+     			if (io != null && io.getOfferingCoordinators() != null){
+     				for (OfferingCoordinator oc: io.getOfferingCoordinators()) {
+     					if (oc.getInstructor().equals(di)) {
+     						instructorString.append("*");
+     						break;
+     					}
      				}
      			}
      			Integer pct = instructors.get(di);
