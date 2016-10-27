@@ -20,16 +20,23 @@
 package org.unitime.banner.onlinesectioning;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
+import org.unitime.timetable.gwt.server.DayCode;
+import org.unitime.timetable.gwt.shared.ClassAssignmentInterface;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.CourseAssignment;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.onlinesectioning.basic.ListCourseOfferings;
 import org.unitime.timetable.onlinesectioning.model.XCourse;
 import org.unitime.timetable.onlinesectioning.model.XCourseId;
+import org.unitime.timetable.onlinesectioning.model.XInstructor;
+import org.unitime.timetable.onlinesectioning.model.XOffering;
+import org.unitime.timetable.onlinesectioning.model.XRoom;
+import org.unitime.timetable.onlinesectioning.model.XSection;
+import org.unitime.timetable.onlinesectioning.model.XSubpart;
 
 /**
  * @author Tomas Muller
@@ -41,27 +48,75 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 	protected List<CourseAssignment> listCourses(OnlineSectioningServer server, OnlineSectioningHelper helper) {
 		List<CourseAssignment> ret = new ArrayList<CourseAssignment>();
 		
-		Set<Long> courseIds = null;
+		Map<Long, CourseAssignment> courses = null;
 		if (iQuery != null && iQuery.length() >= 3) {
-			try {
-				for (Long courseId: (List<Long>)helper.getHibSession().createQuery(
-						"select distinct bc.courseOfferingId " +
-						"from BannerSection bs inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
-						"where bs.crn like :crn || '%' and co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId "
-						).setInteger("crn", Integer.parseInt(iQuery)).setLong("sessionId", server.getAcademicSession().getUniqueId()).setCacheable(true).list()) {
-					XCourse course = server.getCourse(courseId);
-					if (course != null && (iMatcher == null || iMatcher.match(course))) {
-						if (courseIds == null) courseIds = new HashSet<Long>();
-						courseIds.add(courseId);
-						ret.add(convert(course, server));
+			for (Object[] courseClassId: (List<Object[]>)helper.getHibSession().createQuery(
+					"select distinct bc.courseOfferingId, bsc.classId " +
+					"from BannerSection bs inner join bs.bannerConfig.bannerCourse bc inner join bs.bannerSectionToClasses bsc, CourseOffering co " +
+					"where co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId and co.subjectArea.department.allowStudentScheduling = true " +
+					"and ((:q like lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' %') and " +
+					"(lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' ' || bs.crn || '-' || bs.sectionIndex) like :q || '%' or " +
+					"lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' ' || bs.sectionIndex) like :q || '%')) " +
+					"or bs.crn || '-' || bs.sectionIndex like :q || '%') " +
+					"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn"
+					).setString("q", iQuery).setLong("sessionId", server.getAcademicSession().getUniqueId()).setCacheable(true).list()) {
+				Long courseId = (Long)courseClassId[0];
+				Long sectionId = (Long)courseClassId[1];
+				XCourse course = server.getCourse(courseId);
+				if (course != null && (iMatcher == null || iMatcher.match(course))) {
+					XOffering offering = server.getOffering(course.getOfferingId());
+					XSection section = (offering == null ? null : offering.getSection(sectionId));
+					if (section != null) {
+						XSection parent = (section.getParentId() == null ? null : offering.getSection(section.getParentId()));
+						if (parent != null && parent.getName(courseId).equals(section.getName(courseId)))
+							continue;
+						if (courses == null) courses = new HashMap<Long, CourseAssignment>();
+						CourseAssignment ca = courses.get(courseId);
+						if (ca == null) {
+							ca = convert(course, server);
+							courses.put(courseId, ca);
+							ret.add(ca);
+						}
+						ClassAssignmentInterface.ClassAssignment a = ca.addClassAssignment();
+						a.setClassId(section.getSectionId());
+						XSubpart subpart = offering.getSubpart(section.getSubpartId());
+						a.setSubpart(subpart.getName());
+						a.setSection(section.getName(courseId));
+						a.setClassNumber(section.getName(-1l));
+						a.setCancelled(section.isCancelled());
+						a.addNote(course.getNote());
+						a.addNote(section.getNote());
+						a.setCredit(subpart.getCredit(courseId));
+						if (section.getTime() != null) {
+							for (DayCode d: DayCode.toDayCodes(section.getTime().getDays()))
+								a.addDay(d.getIndex());
+							a.setStart(section.getTime().getSlot());
+							a.setLength(section.getTime().getLength());
+							a.setBreakTime(section.getTime().getBreakTime());
+							a.setDatePattern(section.getTime().getDatePatternName());
+						}
+						if (section.getRooms() != null) {
+							for (XRoom rm: section.getRooms()) {
+								a.addRoom(rm.getName());
+							}
+						}
+						for (XInstructor instructor: section.getInstructors()) {
+							a.addInstructor(instructor.getName());
+							a.addInstructoEmail(instructor.getEmail() == null ? "" : instructor.getEmail());
+						}
+						if (section.getParentId() != null)
+							a.setParentSection(offering.getSection(section.getParentId()).getName(courseId));
+						a.setSubpartId(subpart.getSubpartId());
+						if (a.getParentSection() == null)
+							a.setParentSection(course.getConsentLabel());
 					}
-					if (iLimit != null && iLimit > 0 && ret.size() == iLimit) break;
 				}
-			} catch (NumberFormatException e) {}
+				if (iLimit != null && iLimit > 0 && ret.size() == iLimit) break;
+			}
 		}
 		
 		for (XCourseId id: server.findCourses(iQuery, iLimit, iMatcher)) {
-			if (courseIds != null && courseIds.contains(id.getCourseId())) continue;
+			if (courses != null && courses.containsKey(id.getCourseId())) continue;
 			XCourse course = server.getCourse(id.getCourseId());
 			if (course != null)
 				ret.add(convert(course, server));
