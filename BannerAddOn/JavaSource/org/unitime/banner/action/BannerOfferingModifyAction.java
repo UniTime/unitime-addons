@@ -28,7 +28,6 @@ import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -55,6 +54,7 @@ import org.unitime.commons.Debug;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.Department;
+import org.unitime.timetable.model.DepartmentStatusType;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.ItypeDesc;
@@ -66,6 +66,7 @@ import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 import org.unitime.timetable.model.dao.ItypeDescDAO;
 import org.unitime.timetable.model.dao.OfferingConsentTypeDAO;
 import org.unitime.timetable.security.SessionContext;
+import org.unitime.timetable.security.permissions.Permission.PermissionDepartment;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.solver.WebSolver;
@@ -79,6 +80,8 @@ import org.unitime.timetable.util.LookupTables;
 public class BannerOfferingModifyAction extends Action {
 
 	@Autowired SessionContext sessionContext;
+	
+	@Autowired PermissionDepartment permissionDepartment;
 
 	/**
      * Method execute
@@ -94,16 +97,6 @@ public class BannerOfferingModifyAction extends Action {
         HttpServletRequest request,
         HttpServletResponse response) throws Exception {
     	
-		LookupTables.setupExternalDepts(request, sessionContext.getUser().getCurrentAcademicSessionId());
-		TreeSet<Department> ts = new TreeSet<Department>();
-		for (@SuppressWarnings("unchecked")
-		Iterator<Department> it = ((TreeSet<Department>) request.getAttribute(Department.EXTERNAL_DEPT_ATTR_NAME)).iterator(); it.hasNext();){
-			Department d = it.next();
-			if (sessionContext.hasPermission(d, Right.MultipleClassSetupDepartment))
-				ts.add(d);
-		}
-		request.setAttribute((Department.EXTERNAL_DEPT_ATTR_NAME + "list"), ts);
-
         MessageResources rsc = getResources(request);
         BannerOfferingModifyForm frm = (BannerOfferingModifyForm) form;
 		LookupTables.setupConsentType(request);
@@ -148,8 +141,17 @@ public class BannerOfferingModifyAction extends Action {
             setupItypeChoices(request, frm);
         }
 
-
- 
+		LookupTables.setupExternalDepts(request, sessionContext.getUser().getCurrentAcademicSessionId());
+		Department contrDept = InstrOfferingConfigDAO.getInstance().get(frm.getInstrOffrConfigId()).getInstructionalOffering().getControllingCourseOffering().getSubjectArea().getDepartment();
+		TreeSet<Department> ts = new TreeSet<Department>();
+		for (@SuppressWarnings("unchecked")
+		Iterator<Department> it = ((TreeSet<Department>) request.getAttribute(Department.EXTERNAL_DEPT_ATTR_NAME)).iterator(); it.hasNext();){
+			Department d = it.next();
+			if (sessionContext.hasPermission(d, Right.MultipleClassSetupDepartment) &&
+				permissionDepartment.check(sessionContext.getUser(), contrDept, DepartmentStatusType.Status.OwnerEdit, d, DepartmentStatusType.Status.ManagerEdit))
+				ts.add(d);
+		}
+		request.setAttribute((Department.EXTERNAL_DEPT_ATTR_NAME + "list"), ts);
  
         // Update the classes
         if(op.equalsIgnoreCase(rsc.getMessage("button.update"))) {
