@@ -185,12 +185,13 @@ def getGroup(abbv, name):
         log.info("Found group %s - %s" % (group.getGroupAbbreviation(), group.getGroupName()))
     return group
 
-def addClass(course2classes, group, subject, courseNbr, crn):
+def addClass(course2classes, group, subject, courseNbr, crn, writer):
     clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
     course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
     if clazz and course:
         if not course.getSubjectAreaAbbv() == subject or not course.getCourseNbr().startswith(courseNbr):
             log.error("Class %s %s %d is wrong (found %s)." % (subject, courseNbr, crn, course.getCourseNameWithTitle()))
+            writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, crn, "Class %s %s %d is wrong (found %s)." % (subject, courseNbr, crn, course.getCourseNameWithTitle())])
             return
         log.debug(clazz.getClassLabelWithTitle(course))
         classes = None
@@ -200,18 +201,22 @@ def addClass(course2classes, group, subject, courseNbr, crn):
             classes = []
             course2classes[course] = classes
         classes.append(clazz)
+        writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, crn])
     else:
         log.error("Class %s %s %d not found." % (subject, courseNbr, crn))
+        writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, crn, "Class %s %s %d not found." % (subject, courseNbr, crn)])
 
-def addCourse(course2classes, group, subject, courseNbr):
+def addCourse(course2classes, group, subject, courseNbr, writer):
     course = hibSession.createQuery("from CourseOffering co where co.subjectArea.session = :sessionId and co.subjectAreaAbbv = :subject and co.courseNbr = :courseNbr"
                                     ).setLong("sessionId", session.getUniqueId()).setString("subject", subject).setString("courseNbr", courseNbr).setMaxResults(1).uniqueResult()
     if course:
         log.debug(course.getCourseNameWithTitle())
         if course not in course2classes:
             course2classes[course] = []
+        writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, None])
     else:
         log.error("Course %s %s not found." % (subject, courseNbr))
+        writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, None, "Course %s %s not found." % (subject, courseNbr)])
         
 def isParent(c1, c2):
     if c2.getParentClass():
@@ -258,6 +263,9 @@ def createReservations(offerings, group, course2classes):
     hibSession.flush()
 
 lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+output = open(log.createOutput('lc-import-results','csv').getAbsolutePath(), 'w')
+writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+writer.writerow(['LC','Name','Subject','Course','CRN','Error'])
 
 groups = {}
 header = True
@@ -291,9 +299,11 @@ for line in lines:
     
     if crns:
         for crn in crns:
-            addClass(course2classes[lcAbbv], groups[lcAbbv], subject, courseNbr, int(crn))
+            addClass(course2classes[lcAbbv], groups[lcAbbv], subject, courseNbr, int(crn), writer)
     else:
-        addCourse(course2classes[lcAbbv], groups[lcAbbv], subject, courseNbr)
+        addCourse(course2classes[lcAbbv], groups[lcAbbv], subject, courseNbr, writer)
+writer.writerow(['EOF'])
+output.close()
 
 offerings = HashSet()
 for lcAbbv in groups.keys():
@@ -334,10 +344,16 @@ def lookupStudent(puid):
         log.debug("%s (%s)" % (student.getName("last-first-middle"), puid))
     return student
 
-def enroll(students, lcAbbv, puids):
+def enroll(students, lcAbbv, puids, writer):
     group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
+        for puid in puids:
+            student = lookupStudent(puid.lstrip("0"))
+            if student:
+                writer.writerow([lcAbbv, puid, student.getName("last-first-middle"), student.getEmail(), "Student group %s does not exist." % lcAbbv])
+            else:
+                writer.writerow([lcAbbv, puid, None, None, "Student group %s does not exist.\nStudent %s not found." % (lcAbbv, puid)])
         return
     log.info("%s - %s" % (group.getGroupAbbreviation(), group.getGroupName()))
     group.getStudents().clear()
@@ -346,6 +362,9 @@ def enroll(students, lcAbbv, puids):
         if student:
             group.getStudents().add(student)
             students.add(Long(student.getUniqueId()))
+            writer.writerow([group.getGroupAbbreviation(), puid, student.getName("last-first-middle"), student.getEmail()])
+        else:
+            writer.writerow([group.getGroupAbbreviation(), puid, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
     if updateSpace:
         for r in hibSession.createQuery("from StudentGroupReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
@@ -374,8 +393,13 @@ for line in lines:
     for puid in line[1:]:
         if puid.strip(): groups[lc].append(puid.strip())
 
+output = open(log.createOutput('lc-enrollment-results','csv').getAbsolutePath(), 'w')
+writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+writer.writerow(['LC','PUID','Name','Email','Error'])
 for lc in groups.keys():
-    enroll(students, lc, groups[lc])
+    enroll(students, lc, groups[lc], writer)
+writer.writerow(['EOF'])
+output.close()
 
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
