@@ -19,6 +19,7 @@
 */
 package org.unitime.banner.action;
 
+import java.net.URLEncoder;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -112,7 +113,7 @@ public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
 
 				BackTracker.markForBack(
 						request, 
-						"bannerOfferingSearch.do?op=Back&doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+frm.getCourseNbr(), 
+						"bannerOfferingSearch.do?op=Back&doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+URLEncoder.encode(frm.getCourseNbr(), "utf-8"), 
 						"Banner Offerings ("+
 							(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 							(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
