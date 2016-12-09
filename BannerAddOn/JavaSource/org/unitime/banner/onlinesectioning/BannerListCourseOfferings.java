@@ -97,7 +97,7 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 						}
 						if (section.getRooms() != null) {
 							for (XRoom rm: section.getRooms()) {
-								a.addRoom(rm.getName());
+								a.addRoom(rm.getUniqueId(), rm.getName());
 							}
 						}
 						for (XInstructor instructor: section.getInstructors()) {
