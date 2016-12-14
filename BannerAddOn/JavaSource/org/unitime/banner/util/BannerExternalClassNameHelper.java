@@ -22,16 +22,15 @@ package org.unitime.banner.util;
 
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerSectionDAO;
-import org.unitime.timetable.interfaces.ExternalClassNameHelperInterface;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.util.DefaultExternalClassNameHelper;
 
 /**
  * @author says
  *
  */
-public class BannerExternalClassNameHelper implements
-		ExternalClassNameHelperInterface {
+public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelper {
 
 	/**
 	 * 
@@ -43,15 +42,16 @@ public class BannerExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getClassLabel(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
+	@Override
 	public String getClassLabel(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
-			return(clazz.getClassLabel());
+			return super.getClassLabel(clazz, courseOffering);
 		} else {
 			BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, BannerSectionDAO.getInstance().getSession());
 			if (bs != null){
 				return courseOffering.getCourseName()+" "+clazz.getItypeDesc().trim()+" "+ bs.getCrn().toString();
 			} else {
-				return(clazz.getClassLabel());
+				return super.getClassLabel(clazz, courseOffering);
 			}
 		}
 	}
@@ -59,16 +59,16 @@ public class BannerExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getClassLabelWithTitle(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
-	public String getClassLabelWithTitle(Class_ clazz,
-			CourseOffering courseOffering) {
+	@Override
+	public String getClassLabelWithTitle(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
-			return(clazz.getClassLabelWithTitle());
+			return super.getClassLabelWithTitle(clazz, courseOffering);
 		} else {
 			BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, BannerSectionDAO.getInstance().getSession());
 	    	if (bs != null) {
 	    		return courseOffering.getCourseNameWithTitle()+" "+clazz.getItypeDesc().trim()+" "+bs.getCrn().toString();
 	    	} else {
-	    		return(clazz.getClassLabelWithTitle());
+	    		return super.getClassLabelWithTitle(clazz, courseOffering);
 	    	}
 		}
 	}
@@ -76,6 +76,7 @@ public class BannerExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getClassSuffix(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
+	@Override
 	public String getClassSuffix(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
 			return(clazz.getClassSuffix());			
@@ -92,6 +93,7 @@ public class BannerExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getExternalId(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
+	@Override
 	public String getExternalId(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
 			return(clazz.getExternalUniqueId());
