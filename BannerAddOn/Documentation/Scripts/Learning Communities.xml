@@ -144,7 +144,7 @@ if group: createReservations(offerings, group, course2classes)
 if offerings:    
     StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings);]]></body>
 </script>
-<script name="Learning Communities: Course Matrix Import [simplified]" permission="Student Group Edit" engine="python" created="Mon Mar 14 11:22:39 EDT 2016">
+<script name="Learning Communities: Course Matrix Import [simplified]" permission="Student Group Edit" engine="python" created="Wed Feb 08 07:48:53 EST 2017">
   <description><![CDATA[This script creates student groups and student group reservations according to the CSV input file  in one of the following formats:<ol><li>One line per class:<pre>
 LC, Name            , Subj, Course, CRN
 G1, Learning Group 1, ENGL, 10600 , 12345
@@ -166,11 +166,13 @@ G1, Learning Group 1, ENGL, 10600R
 G2, Learning Group 2, ENGL, 10600R
   ,                 , MATH, 20100
 </pre></li></ol>]]></description>
+  <parameter name="expirationDate" label="Reservation Expiration Date (yyyy-mm-dd)" type="text"/>
   <parameter name="file" label="Input File" type="file"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import StudentGroup, StudentGroupReservation, StudentSectioningQueue
 from java.util import HashSet
 from java.lang import Long
+from java.text import SimpleDateFormat
 
 def getGroup(abbv, name):
     group = hibSession.createQuery("from StudentGroup where groupAbbreviation = :abbv and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", abbv).setMaxResults(1).uniqueResult();
@@ -246,6 +248,10 @@ def createReservations(offerings, group, course2classes):
             reservation.setInstructionalOffering(course.getInstructionalOffering())
             reservation.setClasses(HashSet())
             reservation.getInstructionalOffering().getReservations().add(reservation)
+        if expirationDate:
+            reservation.setExpirationDate(SimpleDateFormat("y-M-d").parse(expirationDate))
+        else:
+            reservation.setExpirationDate(None)
         classes = course2classes[course]
         for clazz in classes:
             if not hasChild(clazz, classes):
@@ -546,6 +552,121 @@ for group in groups:
         students.add(Long(student.getUniqueId()))
         hibSession.saveOrUpdate(student);
         
+if students:
+    StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
+</script>
+<script name="Learning Communities: Student Import [with Names]" permission="Student Group Edit" engine="python" created="Mon Feb 06 08:34:54 EST 2017">
+  <description><![CDATA[This script imports students of one or more student groups according to the input CSV file in the following formats:
+<ol><li>One line per student:<pre>
+LC, PUID     , Name
+G1, 752297072, John Snow
+G1, 670857846, Abe Cam Street
+  , 110163506, Will Smith
+  , 685497415, Carl Kirk Nixon
+G2, 565607184, Paul Ch Armstrong
+  , 288674378, Al Roger Northrop
+  , 845738199, Pat Oliver
+  , 139074464, Evelyn Byron Fishman
+</pre></li><li>One line per group:<pre>
+LC, PUID1    , Name1            , PUID2    , Name2         , PUID3    , Name3     , ...
+G1, 752297072, John Snow        , 670857846, Abe Cam Street, 110163506, Will Smith, 685497415
+G2, 565607184, Paul Ch Armstrong, 288674378, Al R Northrop , 845738199, Pat Oliver, 139074464
+</pre></li></ol>]]></description>
+  <parameter name="nameColumns" label="Name Columns" type="enum(0,1,2,3,4)" default="1"/>
+  <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
+  <parameter name="file" label="Input File" type="file"/>
+  <body><![CDATA[import csv
+from org.unitime.timetable.model import StudentSectioningQueue
+from difflib import SequenceMatcher
+from java.util import HashSet
+from java.lang import Long
+from __builtin__ import None
+
+def lookupStudent(puid):
+    student = hibSession.createQuery("from Student where session = :sessionId and externalUniqueId = :puid").setLong("sessionId", session.getUniqueId()).setString("puid", puid).setMaxResults(1).uniqueResult()
+    if not student:
+        log.warn("Student %s not found." % puid)
+    else:
+        log.debug("%s (%s)" % (student.getName("last-first-middle"), puid))
+    return student
+
+def match(name, student):
+    if not name: return "N/A"
+    nameFormats = ['first-last', 'last-first', 'first-middle-last', 'last-first-middle', 'initial-last', 'last-initial']
+    ratio = 0.0
+    for nf in nameFormats:
+        r = SequenceMatcher(None, name, student.getName(nf)).ratio()
+        if r > ratio: ratio = r
+    return 100.0 * ratio
+
+def enroll(students, lcAbbv, puids, writer):
+    group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
+    if not group:
+        log.error("Student group %s does not exist." % lcAbbv)
+        for (puid, name) in puids:
+            student = lookupStudent(puid.lstrip("0"))
+            if student:
+                m = match(name, student)
+                if m < 80.0: log.warn("Student %s has a weak match of %.2f%%: %s (import) versus %s (on file)" % (puid, m, name, student.getName("last-first-middle")))
+                writer.writerow([lcAbbv, puid, name, student.getName("last-first-middle"), '%.2f' % m, student.getEmail(), "Student group %s does not exist." % lcAbbv])
+            else:
+                writer.writerow([lcAbbv, puid, name, None, None, None, "Student group %s does not exist.\nStudent %s not found." % (lcAbbv, puid)])
+        return
+    log.info("%s - %s" % (group.getGroupAbbreviation(), group.getGroupName()))
+    group.getStudents().clear()
+    for (puid, name) in puids:
+        student = lookupStudent(puid.lstrip("0"))
+        if student:
+            group.getStudents().add(student)
+            students.add(Long(student.getUniqueId()))
+            m = match(name, student)
+            if m < 80.0: log.warn("Student %s has a weak match of %.2f%%: %s (import) versus %s (on file)" % (puid, m, name, student.getName("last-first-middle")))
+            writer.writerow([group.getGroupAbbreviation(), puid, name, student.getName("last-first-middle"), '%.2f' % m, student.getEmail()])
+        else:
+            writer.writerow([group.getGroupAbbreviation(), puid, name, None, None, None, "Student %s not found." % puid])
+    hibSession.saveOrUpdate(group)
+    if updateSpace:
+        for r in hibSession.createQuery("from StudentGroupReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+            r.setLimit(len(puids))
+            hibSession.saveOrUpdate(r)
+
+lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+
+groups = {}
+header = True
+last = None
+students = HashSet()
+for line in lines:
+    if not line:
+        last = None
+        continue
+
+    lc = line[0].strip()
+    if header:
+        header = False
+        if "LC" == lc: continue
+
+    if not lc: lc = last
+    last = lc
+    if lc not in groups: groups[lc] = []
+    idx = 1
+    while idx < len(line):
+        puid = line[idx]
+        name = None
+        if int(nameColumns) > 0:
+            name = (' '.join(line[idx + 1: idx + int(nameColumns) + 1])).strip()
+        if puid.strip():
+             groups[lc].append((puid.strip(), name))
+        idx = idx + 1 + int(nameColumns)
+
+output = open(log.createOutput('lc-enrollment-results','csv').getAbsolutePath(), 'w')
+writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+writer.writerow(['LC','PUID','Name (import)','Name (on file)','Name Match [%]','Email','Error'])
+for lc in groups.keys():
+    enroll(students, lc, groups[lc], writer)
+writer.writerow(['EOF'])
+output.close()
+
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
