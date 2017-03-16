@@ -22,7 +22,7 @@
  -->
 
 <scripts created="Tue Oct 20 15:00 CEST 2015">
-<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Mon Mar 13 10:53:22 EDT 2017">
+<script name="Batch Student Scheduling: Data Import" permission="Student Sectioning Solver" engine="python" created="Thu Mar 16 16:53:05 CET 2017">
   <description><![CDATA[<h3>Import student course requests from the given CSV file</h3>
 <b>Format:</b><ul>
 <li>There is a line for each student
@@ -89,8 +89,8 @@ def getStudent(puid, name, clear):
         if override:
             for offering in offerings:
                 reservation = hibSession.createQuery(
-                    "from OverrideReservation r where r.instructionalOffering = :offeringId and r.type = 1 and r.configurations is empty and r.classes is empty"
-                    ).setLong("offeringId", offering.getUniqueId()).setMaxResults(1).uniqueResult()
+                    "select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId and r.instructionalOffering = :offeringId and r.type = 1 and r.configurations is empty and r.classes is empty"
+                    ).setLong("offeringId", offering.getUniqueId()).setLong("studentId", student.getUniqueId()).setMaxResults(1).uniqueResult()
                 if reservation:
                     reservation.getStudents().remove(student)
                     if reservation.getStudents().isEmpty(): hibSession.delete(reservation)
@@ -194,10 +194,10 @@ def lookupCourse(cn, courses, restrictions):
         crn = int(cn)
         clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
         course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-        log.debug(clazz.getClassLabelWithTitle(course))
         if not course or not clazz:
             log.error("Class %d not found." % crn)
             return
+        log.debug(clazz.getClassLabelWithTitle(course))
         if course not in courses:
             courses.append(course)
         if course not in restrictions:
