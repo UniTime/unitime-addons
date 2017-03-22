@@ -34,7 +34,6 @@ import java.util.TreeSet;
 import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.model.AcademicArea;
-import org.unitime.timetable.model.AcademicAreaClassification;
 import org.unitime.timetable.model.AcademicClassification;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
@@ -48,6 +47,7 @@ import org.unitime.timetable.model.PosMajor;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentAccomodation;
+import org.unitime.timetable.model.StudentAreaClassificationMajor;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
@@ -79,10 +79,8 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 	private static final long serialVersionUID = 1L;
 	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail;
 	private List<String[]> iGroups = new ArrayList<String[]>();
-	private List<String[]> iAcadAreaClasf = new ArrayList<String[]>();
-	private boolean iUpdateAcadAreaClasf = false;
-	private List<String[]> iAcadAreaMajor = new ArrayList<String[]>();
-	private boolean iUpdateAcadeAreaMajor = false;
+	private List<String[]> iAcadAreaClasfMj = new ArrayList<String[]>();
+	private boolean iUpdateAcadAreaClasfMj = false;
 	private List<String[]> iOverrides = new ArrayList<String[]>();
 	private Set<Integer> iColleagueIds = new TreeSet<Integer>();
 	private Long iStudentId;
@@ -107,31 +105,18 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 		return this;
 	}
 	
-	public ColleagueUpdateStudentAction withAcadAreaClassification(String academicArea, String classification) {
-		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty()) return this;
-		iUpdateAcadAreaClasf = true;
-		iAcadAreaClasf.add(new String[] {academicArea, classification});
+	public ColleagueUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major) {
+		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty() || major == null || major.isEmpty()) return this;
+		iUpdateAcadAreaClasfMj = true;
+		iAcadAreaClasfMj.add(new String[] {academicArea, classification, major});
 		return this;
 	}
 	
-	public ColleagueUpdateStudentAction updateAcadAreaClassifications(boolean update) {
-		iUpdateAcadAreaClasf = update;
+	public ColleagueUpdateStudentAction updateAcadAreaClassificationMajors(boolean update) {
+		iUpdateAcadAreaClasfMj = update;
 		return this;
 	}
 	
-	public ColleagueUpdateStudentAction withAcadAreaMajor(String academicArea, String major) {
-		if (academicArea == null || academicArea.isEmpty() || major == null || major.isEmpty()) return this;
-		iUpdateAcadeAreaMajor = true;
-		iAcadAreaMajor.add(new String[] {academicArea, major});
-		return this;
-	}
-	
-	public ColleagueUpdateStudentAction updateAcadAreaMajors(boolean update) {
-		iUpdateAcadeAreaMajor = update;
-		return this;
-	}
-
-
 	public ColleagueUpdateStudentAction withGroup(String externalId, String campus, String abbreviation, String name) {
 		iGroups.add(new String[] {externalId, campus, abbreviation, name});
 		return this;
@@ -167,15 +152,9 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			helper.getAction().addOptionBuilder().setKey("ColleagueIds").setValue(iColleagueIds.toString());
 			if (iEmail != null)
 				helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
-			if (!iAcadAreaClasf.isEmpty()) {
-				if (iAcadAreaClasf.isEmpty()) return null;
-				String[] areaClasf = iAcadAreaClasf.get(0);
-				String major = null;
-				for (String[] areaMajor: iAcadAreaMajor)
-					if (areaMajor[0].equals(areaClasf[0])) {
-						major = areaMajor[1]; break;
-					}
-				helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + (major == null ? "" : "/" + major) + " " + areaClasf[1]);
+			if (!iAcadAreaClasfMj.isEmpty()) {
+				String[] areaClasf = iAcadAreaClasfMj.get(0);
+				helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + "/" + areaClasf[2] + " " + areaClasf[1]);
 			}
 				
 			
@@ -350,8 +329,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			student.setFreeTimeCategory(0);
 			student.setSchedulePreference(0);
 			student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
-			student.setAcademicAreaClassifications(new HashSet<AcademicAreaClassification>());
-			student.setPosMajors(new HashSet<PosMajor>());
+			student.setAreaClasfMajors(new HashSet<StudentAreaClassificationMajor>());
 			student.setCourseDemands(new HashSet<CourseDemand>());
 			student.setGroups(new HashSet<StudentGroup>());
 			student.setAccomodations(new HashSet<StudentAccomodation>());
@@ -378,14 +356,15 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			changed = true;
 		}
 		
-		if (iUpdateAcadAreaClasf) {
-			List<AcademicAreaClassification> remaining = new ArrayList<AcademicAreaClassification>(student.getAcademicAreaClassifications());
-			aac: for (String[] areaClasf: iAcadAreaClasf) {
-				String area = areaClasf[0], clasf = areaClasf[1];
-				for (Iterator<AcademicAreaClassification> i = remaining.iterator(); i.hasNext(); ) {
-					AcademicAreaClassification aac = i.next();
+		if (iUpdateAcadAreaClasfMj) {
+			List<StudentAreaClassificationMajor> remaining = new ArrayList<StudentAreaClassificationMajor>(student.getAreaClasfMajors());
+			aac: for (String[] areaClasf: iAcadAreaClasfMj) {
+				String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2];
+				for (Iterator<StudentAreaClassificationMajor> i = remaining.iterator(); i.hasNext(); ) {
+					StudentAreaClassificationMajor aac = i.next();
 					if ((area.equalsIgnoreCase(aac.getAcademicArea().getExternalUniqueId()) || area.equalsIgnoreCase(aac.getAcademicArea().getAcademicAreaAbbreviation())) &&
-						(clasf.equalsIgnoreCase(aac.getAcademicClassification().getExternalUniqueId()) || clasf.equalsIgnoreCase(aac.getAcademicClassification().getCode()))) {
+						(clasf.equalsIgnoreCase(aac.getAcademicClassification().getExternalUniqueId()) || clasf.equalsIgnoreCase(aac.getAcademicClassification().getCode())) &&
+						(major.equalsIgnoreCase(aac.getMajor().getExternalUniqueId()) || major.equalsIgnoreCase(aac.getMajor().getCode()))) {
 						i.remove(); continue aac;
 					}
 				}
@@ -416,49 +395,6 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					ac.setUniqueId((Long) helper.getHibSession().save(ac));
 					helper.info("Added Academic Classification:  " + clasf);
 				}
-
-				AcademicAreaClassification aac = new AcademicAreaClassification();
-				aac.setAcademicArea(aa);
-				aac.setAcademicClassification(ac);
-				aac.setStudent(student);
-				student.addToacademicAreaClassifications(aac);
-				changed = true;
-			}
-			
-			for (AcademicAreaClassification aac: remaining) {
-				student.getAcademicAreaClassifications().remove(aac);
-				helper.getHibSession().delete(aac);
-				changed = true;
-			}
-		}
-		
-		if (iUpdateAcadeAreaMajor) {
-			List<PosMajor> remaining = new ArrayList<PosMajor>(student.getPosMajors());
-			mj: for (String[] areaMajor: iAcadAreaMajor){
-				String area = areaMajor[0], major = areaMajor[1];
-				for (Iterator<PosMajor> i = remaining.iterator(); i.hasNext(); ) {
-					PosMajor m = i.next();
-					if (!major.equalsIgnoreCase(m.getExternalUniqueId()) && !major.equalsIgnoreCase(m.getCode())) continue;
-					for (AcademicArea a: m.getAcademicAreas()) {
-						if (area.equalsIgnoreCase(a.getExternalUniqueId()) || area.equalsIgnoreCase(a.getAcademicAreaAbbreviation())) {
-							i.remove(); continue mj;
-						}
-					}
-				}
-				
-				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), area);						
-				if (aa == null)
-					aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), area);
-				if (aa == null){
-					aa = new AcademicArea();
-					aa.setPosMajors(new HashSet<PosMajor>());
-					aa.setAcademicAreaAbbreviation(area);
-					aa.setSession(student.getSession());
-					aa.setExternalUniqueId(area);
-					aa.setTitle(area);
-					aa.setUniqueId((Long)helper.getHibSession().save(aa));
-					helper.info("Added Academic Area:  " + area);
-				}
 				
 				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), major, area);
 				if (posMajor == null)
@@ -474,13 +410,19 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					aa.addToposMajors(posMajor);
 					helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 				}
-				
-				student.addToposMajors(posMajor);
+
+				StudentAreaClassificationMajor aac = new StudentAreaClassificationMajor();
+				aac.setAcademicArea(aa);
+				aac.setAcademicClassification(ac);
+				aac.setMajor(posMajor);
+				aac.setStudent(student);
+				student.addToareaClasfMajors(aac);
 				changed = true;
 			}
 			
-			for (PosMajor m: remaining) {
-				student.getPosMajors().remove(m);
+			for (StudentAreaClassificationMajor aac: remaining) {
+				student.getAreaClasfMajors().remove(aac);
+				helper.getHibSession().delete(aac);
 				changed = true;
 			}
 		}

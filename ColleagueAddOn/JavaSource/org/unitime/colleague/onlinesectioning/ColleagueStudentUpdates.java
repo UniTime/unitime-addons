@@ -184,30 +184,26 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 				update.withName(studentElement.attributeValue("firstName"), studentElement.attributeValue("middleName"), studentElement.attributeValue("lastName"));
 				update.withEmail(studentElement.attributeValue("email"));
 				
-				Element studentAcadAreaClassElement = studentElement.element("studentAcadAreaClass");
-				if (studentAcadAreaClassElement != null) {
-					// Student XML format
-					update.updateAcadAreaClassifications(true);
-					for (Iterator<?> j = studentAcadAreaClassElement.elementIterator("acadAreaClass"); j.hasNext(); ) {
-						Element areaClassElement = (Element)j.next();
-						update.withAcadAreaClassification(areaClassElement.attributeValue("academicArea"), areaClassElement.attributeValue("academicClass"));
-					}					
-				} else {
-					// Old colleague update message format
-					update.withAcadAreaClassification(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"));
-				}
-				
 				Element studentMajorsElement = studentElement.element("studentMajors");
+				Element studentAcadAreaClassElement = studentElement.element("studentAcadAreaClass");
 				if (studentMajorsElement != null) {
 					// Student XML format
-					update.updateAcadAreaMajors(true);
+					update.updateAcadAreaClassificationMajors(true);
 					for (Iterator<?> j = studentMajorsElement.elementIterator("major"); j.hasNext(); ) {
 						Element majorElement = (Element)j.next();
-						update.withAcadAreaMajor(majorElement.attributeValue("academicArea"), majorElement.attributeValue("code"));
+						if (majorElement.attributeValue("academicClass") == null && studentAcadAreaClassElement != null) {
+							for (Iterator<?> k = studentAcadAreaClassElement.elementIterator("acadAreaClass"); k.hasNext(); ) {
+								Element areaClassElement = (Element)k.next();
+								if (majorElement.attributeValue("academicArea").equals(areaClassElement.attributeValue("academicArea")))
+									update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), areaClassElement.attributeValue("academicClass"), majorElement.attributeValue("code"));
+							}
+						} else {
+							update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), majorElement.attributeValue("academicClass"), majorElement.attributeValue("code"));
+						}
 					}					
 				} else {
-					// Old colleague update message format
-					update.withAcadAreaMajor(studentElement.attributeValue("academicArea"), studentElement.attributeValue("major"));
+					// Old banner update message format
+					update.withAcadAreaClassificationMajor(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"), studentElement.attributeValue("major"));
 				}
 				
 				Element studentGroupsElement = studentElement.element("studentGroups");

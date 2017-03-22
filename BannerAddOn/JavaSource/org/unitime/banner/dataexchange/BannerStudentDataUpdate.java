@@ -41,7 +41,6 @@ import org.unitime.timetable.dataexchange.BaseImport;
 import org.unitime.timetable.dataexchange.StudentEnrollmentImport.Pair;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.AcademicArea;
-import org.unitime.timetable.model.AcademicAreaClassification;
 import org.unitime.timetable.model.AcademicClassification;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
@@ -51,6 +50,7 @@ import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.PosMajor;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
+import org.unitime.timetable.model.StudentAreaClassificationMajor;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentSectioningQueue;
@@ -320,16 +320,18 @@ public class BannerStudentDataUpdate extends BaseImport {
 		}
 
 		// This makes the assumption that when working with Banner students have only one AcademicAreaClassification
-		AcademicAreaClassification aac = null;
-		for(Iterator<?> it = student.getAcademicAreaClassifications().iterator(); it.hasNext();){
-			aac = (AcademicAreaClassification) it.next();
+		StudentAreaClassificationMajor aac = null;
+		for(Iterator<?> it = student.getAreaClasfMajors().iterator(); it.hasNext();){
+			aac = (StudentAreaClassificationMajor) it.next();
 			break;
 		}
 		if (aac == null || 
 			!((aac.getAcademicArea().getExternalUniqueId().equalsIgnoreCase(academicArea) 
 						|| aac.getAcademicArea().getAcademicAreaAbbreviation().equalsIgnoreCase(academicArea)) 
 			  && (aac.getAcademicClassification().getExternalUniqueId().equalsIgnoreCase(classification) 
-					  	|| aac.getAcademicClassification().getCode().equalsIgnoreCase(classification)))) {
+					  	|| aac.getAcademicClassification().getCode().equalsIgnoreCase(classification))
+			  && (aac.getMajor().getExternalUniqueId().equalsIgnoreCase(major))
+			  			|| aac.getMajor().getCode().equalsIgnoreCase(major))) {
 			AcademicArea aa = AcademicArea.findByExternalId(getHibSession(), session.getUniqueId(), academicArea);						
 			if (aa == null){
 				aa = AcademicArea.findByAbbv(getHibSession(), session.getUniqueId(), academicArea);
@@ -344,7 +346,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 				info("Added Academic Area:  " + academicArea);
 			}
 			if (aac == null) { 
-				aac = new AcademicAreaClassification();
+				aac = new StudentAreaClassificationMajor();
 			}
 			aac.setAcademicArea(aa);
 			
@@ -362,21 +364,6 @@ public class BannerStudentDataUpdate extends BaseImport {
 				info("Added Academic Classification:  " + classification);
 			}
 			aac.setAcademicClassification(ac);
-			if (aac.getStudent() == null){
-				aac.setStudent(student);
-				student.addToacademicAreaClassifications(aac);				
-			}
-			changed = true;
-		}
-		
-		//This makes the assumption that when working with Banner students have only one Major
-		PosMajor m = null;
-		for(Iterator<?> it = student.getPosMajors().iterator(); it.hasNext();){
-			m = (PosMajor) it.next();
-		}
-		if (m == null || !(major.equalsIgnoreCase(m.getExternalUniqueId()) || major.equalsIgnoreCase(m.getCode()) 
-				|| (m.getAcademicAreas() != null && !m.getAcademicAreas().isEmpty() && m.getAcademicAreas().contains(aac.getAcademicArea())))){
-			student.getPosMajors().clear();
 			
 			PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(getHibSession(), session.getUniqueId(), major, academicArea);
 			if (posMajor == null){
@@ -392,11 +379,12 @@ public class BannerStudentDataUpdate extends BaseImport {
 				posMajor.addToacademicAreas(aac.getAcademicArea());
 				info("Added Major:  " + major + " to Academic Area:  " + academicArea);
 			}
-			student.addToposMajors(posMajor);
-			changed = true;
-		} else if (m.getAcademicAreas() == null || m.getAcademicAreas().isEmpty()) {
-			m.addToacademicAreas(aac.getAcademicArea());
-			info("Added Academic Area: " + academicArea + " to existing Major:  " + major);
+			aac.setMajor(posMajor);
+			
+			if (aac.getStudent() == null){
+				aac.setStudent(student);
+				student.addToareaClasfMajors(aac);				
+			}
 			changed = true;
 		}
 	
@@ -430,8 +418,7 @@ public class BannerStudentDataUpdate extends BaseImport {
 				record.setFreeTimeCategory(0);
 	            record.setSchedulePreference(0);
 	            record.setClassEnrollments(new HashSet<StudentClassEnrollment>());
-	            record.setAcademicAreaClassifications(new HashSet<AcademicAreaClassification>());
-	            record.setPosMajors(new HashSet<PosMajor>());
+	            record.setAreaClasfMajors(new HashSet<StudentAreaClassificationMajor>());
 	            record.setCourseDemands(new HashSet<CourseDemand>());
 	            changed = true;
 			} else {
