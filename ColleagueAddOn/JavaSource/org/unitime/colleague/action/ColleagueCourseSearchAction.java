@@ -19,6 +19,7 @@
 */
 package org.unitime.colleague.action;
 
+import java.net.URLEncoder;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -111,7 +112,7 @@ public class ColleagueCourseSearchAction extends LocalizedLookupDispatchAction {
 
 				BackTracker.markForBack(
 						request, 
-						"colleagueOfferingSearch.do?op=Back&doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+frm.getCourseNbr(), 
+						"colleagueOfferingSearch.do?op=Back&doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+URLEncoder.encode(frm.getCourseNbr(), "utf-8"), 
 						"Colleague Offerings ("+
 							(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 							(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
