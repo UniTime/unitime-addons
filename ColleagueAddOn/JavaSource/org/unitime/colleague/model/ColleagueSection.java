@@ -52,6 +52,7 @@ import org.unitime.timetable.model.RoomPref;
 import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.Solution;
 import org.unitime.timetable.model.SubjectArea;
+import org.unitime.timetable.model.TeachingResponsibility;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
@@ -771,7 +772,9 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		if (io != null && io.getOfferingCoordinators() != null){
 			for (OfferingCoordinator oc : io.getOfferingCoordinators()){
-				instructorPercents.put(oc.getInstructor(), new Integer(0));
+				if (oc.getResponsibility() == null || !oc.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
+						instructorPercents.put(oc.getInstructor(), new Integer(0));
+				}
 			}
 		}
 		boolean sendInstructors = false;
@@ -785,27 +788,34 @@ public class ColleagueSection extends BaseColleagueSection {
 				if (c.getClassInstructors() != null && !c.getClassInstructors().isEmpty()){
 					int totalPercent = 0;
 					int instructorCount = 0;
-					for (ClassInstructor ci : c.getClassInstructors()){
-						totalPercent += (ci.getPercentShare() != null?(ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue()):0);
-						instructorCount++;
+					for(ClassInstructor ci : c.getClassInstructors()) {
+						if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
+							if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)){
+								totalPercent += (ci.getPercentShare() != null?(ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue()):0);
+								instructorCount++;
+							}
+						}
 					}
 					if (instructorCount > 0){
 						numClassesWithInstructors++;
 					} else {
 						continue;
 					}
-					for (ClassInstructor ci : c.getClassInstructors()){
-						if (ci.getInstructor().getExternalUniqueId() != null){
-							if (instructorPercents.containsKey(ci.getInstructor()) && totalPercent > 0){
-								int pct = instructorPercents.get(ci.getInstructor()).intValue();
-								pct += (ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0);
-								instructorPercents.put(ci.getInstructor(),new Integer(pct));
-							} else {
-								if (totalPercent > 0)
-									instructorPercents.put(ci.getInstructor(),new Integer(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
-								else {
-									instructorPercents.put(ci.getInstructor(),new Integer(0));
+					for(ClassInstructor ci : c.getClassInstructors()) {
+						if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
+							if (ci.getInstructor().getExternalUniqueId() != null){
+								if ((ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) && instructorPercents.containsKey(ci.getInstructor()) && totalPercent > 0){
+									int pct = instructorPercents.get(ci.getInstructor()).intValue();
+									pct += (ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0);
+									instructorPercents.put(ci.getInstructor(),new Integer(pct));
+								} else {
+									if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary) && totalPercent > 0)
+										instructorPercents.put(ci.getInstructor(),new Integer(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
+									else {
+										instructorPercents.put(ci.getInstructor(),new Integer(0));
+									}
 								}
+	
 							}
 						}
 					}
@@ -817,16 +827,18 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		if (!instructorPercents.isEmpty() && numClassesWithInstructors > 0){
 			int totalPct = 0;
-			for(Iterator<DepartmentalInstructor> instrIdIt = instructorPercents.keySet().iterator(); instrIdIt.hasNext();){
-				DepartmentalInstructor instructor = instrIdIt.next();
+			DepartmentalInstructor firstInstructorWithNonZeroPercent = null;
+			for(DepartmentalInstructor instructor : instructorPercents.keySet()){
 				int pct = instructorPercents.get(instructor).intValue()/numClassesWithInstructors;
 				instructorPercents.put(instructor, new Integer(pct));
+				if (pct > 0 && firstInstructorWithNonZeroPercent == null){
+					firstInstructorWithNonZeroPercent = instructor;
+				}
 				totalPct += pct;
 			}
-			if (totalPct != 100){
-				DepartmentalInstructor instructor = instructorPercents.keySet().iterator().next();
-				int pct = (instructorPercents.get(instructor).intValue() == 0?0:instructorPercents.get(instructor).intValue() + (100 - totalPct));
-				instructorPercents.put(instructor, new Integer(pct));
+			if (totalPct != 100 && firstInstructorWithNonZeroPercent != null){
+				int pct = instructorPercents.get(firstInstructorWithNonZeroPercent).intValue() + (100 - totalPct);
+				instructorPercents.put(firstInstructorWithNonZeroPercent, new Integer(pct));
 			}
 		}
 		return(instructorPercents);
