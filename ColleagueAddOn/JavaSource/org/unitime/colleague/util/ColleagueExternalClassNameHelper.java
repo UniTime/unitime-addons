@@ -22,16 +22,15 @@ package org.unitime.colleague.util;
 
 import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.colleague.model.dao.ColleagueSectionDAO;
-import org.unitime.timetable.interfaces.ExternalClassNameHelperInterface;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.util.DefaultExternalClassNameHelper;
 
 /**
  * @author says
  *
  */
-public class ColleagueExternalClassNameHelper implements
-		ExternalClassNameHelperInterface {
+public class ColleagueExternalClassNameHelper extends DefaultExternalClassNameHelper {
 
 	/**
 	 * 
@@ -43,9 +42,10 @@ public class ColleagueExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getClassLabel(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
+	@Override
 	public String getClassLabel(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
-			return(clazz.getClassLabel());
+			return super.getClassLabel(clazz, courseOffering);
 		} else {
 			ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, ColleagueSectionDAO.getInstance().getSession());
 			if (cs != null){
@@ -55,7 +55,7 @@ public class ColleagueExternalClassNameHelper implements
 					return courseOffering.getCourseName()+" "+clazz.getItypeDesc().trim();					
 				}
 			} else {
-				return(clazz.getClassLabel());
+				return super.getClassLabel(clazz, courseOffering);
 			}
 		}
 	}
@@ -63,16 +63,16 @@ public class ColleagueExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getClassLabelWithTitle(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
-	public String getClassLabelWithTitle(Class_ clazz,
-			CourseOffering courseOffering) {
+	@Override
+	public String getClassLabelWithTitle(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
-			return(clazz.getClassLabelWithTitle());
+			return super.getClassLabelWithTitle(clazz, courseOffering);
 		} else {
 			ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, ColleagueSectionDAO.getInstance().getSession());
 	    	if (cs != null) {
 	    		return courseOffering.getCourseNameWithTitle()+" "+clazz.getItypeDesc().trim()+" "+cs.getColleagueId();
 	    	} else {
-	    		return(clazz.getClassLabelWithTitle());
+	    		return super.getClassLabelWithTitle(clazz, courseOffering);
 	    	}
 		}
 	}
@@ -80,6 +80,7 @@ public class ColleagueExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getClassSuffix(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
+	@Override
 	public String getClassSuffix(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
 			return(clazz.getClassSuffix());			
@@ -96,6 +97,7 @@ public class ColleagueExternalClassNameHelper implements
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalClassNameHelperInterface#getExternalId(org.unitime.timetable.model.Class_, org.unitime.timetable.model.CourseOffering)
 	 */
+	@Override
 	public String getExternalId(Class_ clazz, CourseOffering courseOffering) {
 		if (courseOffering.isIsControl().booleanValue()){
 			return(clazz.getExternalUniqueId());
