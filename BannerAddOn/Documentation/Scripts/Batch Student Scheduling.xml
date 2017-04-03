@@ -226,6 +226,7 @@ def execute():
         if not line: continue
         if line[0].lower() == 'puid' or line[0].lower() == 'eof': continue
         puid = line[0]
+        if not puid: continue
         while trimLeadingZeros and puid[0] == '0': puid = puid[1:]
         name = None
         cstart = 1
