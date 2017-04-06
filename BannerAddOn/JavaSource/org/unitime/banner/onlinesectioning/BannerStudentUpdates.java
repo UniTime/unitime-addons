@@ -259,17 +259,21 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					try {
 						OnlineSectioningServer server = (iContainer == null ? null : iContainer.getSolver(sessionId.toString()));
 						if (server != null && server.isReady()) {
-							switch (server.execute(update, user())) {
-							case OK:
-								updatedStudents.add(externalId);
-								break;
-							case FAILURE:
-								failedStudents.add(externalId);
-								break;
-							case PROBLEM:
-								problemStudents.add(externalId);
-								break;
-							case NO_CHANGE:
+							try {
+								switch (server.execute(update, user())) {
+								case OK:
+									updatedStudents.add(externalId);
+									break;
+								case FAILURE:
+									failedStudents.add(externalId);
+									break;
+								case PROBLEM:
+									problemStudents.add(externalId);
+									break;
+								case NO_CHANGE:
+								}
+							} finally {
+								_RootDAO.closeCurrentThreadSessions();
 							}
 						} else {
 							OnlineSectioningHelper h = new OnlineSectioningHelper(QueueInDAO.getInstance().createNewSession(), user(), CacheMode.REFRESH);
