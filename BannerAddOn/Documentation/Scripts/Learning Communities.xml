@@ -144,28 +144,28 @@ if group: createReservations(offerings, group, course2classes)
 if offerings:    
     StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings);]]></body>
 </script>
-<script name="Learning Communities: Course Matrix Import [simplified]" permission="Student Group Edit" engine="python" created="Wed Feb 08 07:48:53 EST 2017">
+<script name="Learning Communities: Course Matrix Import [simplified]" permission="Student Group Edit" engine="python" created="Wed Apr 12 08:30:27 EDT 2017">
   <description><![CDATA[This script creates student groups and student group reservations according to the CSV input file  in one of the following formats:<ol><li>One line per class:<pre>
-LC, Name            , Subj, Course, CRN
-G1, Learning Group 1, ENGL, 10600 , 12345
-  ,                 ,        ,    , 12346
-  ,                 , BIOL, 10100 , 22222
-G2, Learning Group 2, ENGL, 10600 , 12345
-  ,                 ,        ,    , 12347
-  ,                 , MATH, 20100 , 12034
+LC, Name   , Size, Subj, Course, CRN
+G1, Group 1, 24  , ENGL, 10600 , 12345
+  ,        ,     ,     ,       , 12346
+  ,        ,     , BIOL, 10100 , 22222
+G2, Group 2, 26  , ENGL, 10600 , 12345
+  ,        ,     ,     ,       , 12347
+  ,        ,     , MATH, 20100 , 12034
 </pre></li><li>One line per course:<pre>
-LC, Name            , Subj, Course, CRN1 , CRN2 , CRN3 , ...
-G1, Learning Group 1, ENGL, 10600 , 12345, 12346
-  ,                 , BIOL, 10100 , 22222
-G2, Learning Group 2, ENGL, 10600 , 12345, 12347
-  ,                 , MATH, 20100 , 12034
+LC, Name   , Size, Subj, Course, CRN1 , CRN2 , CRN3 , ...
+G1, Group 1, 24  , ENGL, 10600 , 12345, 12346
+  ,        ,     , BIOL, 10100 , 22222
+G2, Group 2, 26  , ENGL, 10600 , 12345, 12347
+  ,        ,     , MATH, 20100 , 12034
 </pre></li><li>One line per course, no section-level restrictions:<pre>
-LC, Name            , Subj, Course
-G1, Learning Group 1, ENGL, 10600R
-  ,                 , BIOL, 10100
-G2, Learning Group 2, ENGL, 10600R
-  ,                 , MATH, 20100
-</pre></li></ol>]]></description>
+LC, Name   , Size, Subj, Course
+G1, Group 1, 24  , ENGL, 10600R
+  ,        ,     , BIOL, 10100
+G2, Group 2, 26  , ENGL, 10600R
+  ,        ,     , MATH, 20100
+</pre></li></ol>Size column is optional.]]></description>
   <parameter name="expirationDate" label="Reservation Expiration Date (yyyy-mm-dd)" type="text"/>
   <parameter name="file" label="Input File" type="file"/>
   <body><![CDATA[import csv
@@ -174,7 +174,7 @@ from java.util import HashSet
 from java.lang import Long
 from java.text import SimpleDateFormat
 
-def getGroup(abbv, name):
+def getGroup(abbv, name, size):
     group = hibSession.createQuery("from StudentGroup where groupAbbreviation = :abbv and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", abbv).setMaxResults(1).uniqueResult();
     if not group:
         log.info("Creating group %s - %s" % (abbv, name))
@@ -187,7 +187,7 @@ def getGroup(abbv, name):
         log.info("Found group %s - %s" % (group.getGroupAbbreviation(), group.getGroupName()))
     return group
 
-def addClass(course2classes, group, subject, courseNbr, crn, writer):
+def addClass(course2classes, course2limit, group, subject, courseNbr, crn, limit, writer):
     clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
     course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
     if clazz and course:
@@ -197,6 +197,7 @@ def addClass(course2classes, group, subject, courseNbr, crn, writer):
             return
         log.debug(clazz.getClassLabelWithTitle(course))
         classes = None
+        if limit and not course in course2limit: course2limit[course] = limit
         if course in course2classes:
             classes = course2classes[course]
         else:
@@ -208,13 +209,14 @@ def addClass(course2classes, group, subject, courseNbr, crn, writer):
         log.error("Class %s %s %d not found." % (subject, courseNbr, crn))
         writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, crn, "Class %s %s %d not found." % (subject, courseNbr, crn)])
 
-def addCourse(course2classes, group, subject, courseNbr, writer):
+def addCourse(course2classes, course2limit, group, subject, courseNbr, limit, writer):
     course = hibSession.createQuery("from CourseOffering co where co.subjectArea.session = :sessionId and co.subjectAreaAbbv = :subject and co.courseNbr = :courseNbr"
                                     ).setLong("sessionId", session.getUniqueId()).setString("subject", subject).setString("courseNbr", courseNbr).setMaxResults(1).uniqueResult()
     if course:
         log.debug(course.getCourseNameWithTitle())
         if course not in course2classes:
             course2classes[course] = []
+        if limit and not course in course2limit: course2limit[course] = limit
         writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, None])
     else:
         log.error("Course %s %s not found." % (subject, courseNbr))
@@ -231,7 +233,7 @@ def hasChild(clazz, classes):
         if isParent(clazz, c): return True
     return False
 
-def createReservations(offerings, group, course2classes):
+def createReservations(offerings, group, course2classes, course2limit):
     reservations = {}
     for r in hibSession.createQuery("from StudentGroupReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
         reservations[r.getInstructionalOffering().getUniqueId()] = r
@@ -259,6 +261,10 @@ def createReservations(offerings, group, course2classes):
                 log.debug("add %s" % clazz.getClassLabel(course))
             else:
                 log.debug("skip %s" % clazz.getClassLabel(course))
+        if course in course2limit:
+            reservation.setLimit(course2limit[course])
+        else:
+            reservation.setLimit(None)
         hibSession.saveOrUpdate(reservation)
         offerings.add(Long(course.getInstructionalOffering().getUniqueId()))
     for r in reservations.values():
@@ -276,44 +282,70 @@ writer.writerow(['LC','Name','Subject','Course','CRN','Error'])
 groups = {}
 header = True
 course2classes = {}
-last = [None, None, None, None]
+course2limit = {}
+last = [None, None, None, None, None]
+
+colAbbv = 0
+colName = 1
+colSize = None
+colSubject = 2
+colCourse = 3
+colCrns = 4
+
 for line in lines:
     if not line:
-        last = [None, None, None, None]
+        last = [None, None, None, None, None]
         continue
     
-    lcAbbv = line[0].strip()
-    lcName = line[1].strip()
-    subject = line[2].strip()
-    courseNbr = line[3].strip()
+    lcAbbv = line[colAbbv].strip()
+    lcName = line[colName].strip()
+    lcSize = None
+    if colSize:
+        try:
+            lcSize = int(line[colSize].strip())
+        except:
+            if line[colSize].strip():
+                log.warn('Wrong group size %s.' % line[colSize].strip())
+    subject = line[colSubject].strip()
+    courseNbr = line[colCourse].strip()
     crns = []
-    for crn in line[4:]:
+    for crn in line[colCrns:]:
         if crn.strip(): crns.append(crn.strip())
     if header:
         header = False
-        if "LC" == lcAbbv: continue
-    
+        if "LC" == lcAbbv:
+            if "size" == subject.lower() or "limit" == subject.lower():
+                log.debug('Size column is included.')
+                colSize = 2
+                colSubject = 3
+                colCourse = 4
+                colCrns = 5
+            continue
     if not lcAbbv: lcAbbv = last[0]
+    elif last[0] and last[0] != lcAbbv:
+        last = [None, None, None, None, None]
     if not lcName: lcName = last[1]
     if not subject: subject = last[2]
     if not courseNbr: courseNbr = last[3]
-    last = [lcAbbv, lcName, subject, courseNbr]
+    if not lcSize: lcSize = last[4]
+    last = [lcAbbv, lcName, subject, courseNbr, lcSize]
     
     if lcAbbv not in groups:
-        groups[lcAbbv] = getGroup(lcAbbv, lcName)
+        groups[lcAbbv] = getGroup(lcAbbv, lcName, lcSize)
         course2classes[lcAbbv] = {}
+        course2limit[lcAbbv] = {}
     
     if crns:
         for crn in crns:
-            addClass(course2classes[lcAbbv], groups[lcAbbv], subject, courseNbr, int(crn), writer)
+            addClass(course2classes[lcAbbv], course2limit[lcAbbv], groups[lcAbbv], subject, courseNbr, int(crn), lcSize, writer)
     else:
-        addCourse(course2classes[lcAbbv], groups[lcAbbv], subject, courseNbr, writer)
+        addCourse(course2classes[lcAbbv], course2limit[lcAbbv], groups[lcAbbv], subject, courseNbr, lcSize, writer)
 writer.writerow(['EOF'])
 output.close()
 
 offerings = HashSet()
 for lcAbbv in groups.keys():
-    createReservations(offerings, groups[lcAbbv], course2classes[lcAbbv])
+    createReservations(offerings, groups[lcAbbv], course2classes[lcAbbv], course2limit[lcAbbv])
 
 if offerings:    
     StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings);]]></body>
@@ -410,7 +442,7 @@ output.close()
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
-<script name="Learning Communities: Create Course Demands" permission="Student Group Edit" engine="python" created="Fri Mar 18 12:58:06 EDT 2016">
+<script name="Learning Communities: Create Course Demands" permission="Student Group Edit" engine="python" created="Wed Apr 12 08:49:23 EDT 2017">
   <description><![CDATA[<p style='max-width:800px'>This script makes sure that students which are enrolled into the existing student groups also request the appropriate courses. The script is using either the existing student group reservations <b><u>or</u></b> the provided LC course matrix to decide which courses students of a learning group should take.</p>
 <p style='max-width:800px'>The <b>LC Course Matrix</b> file is optional. If provided, it has to be in the same format as for the <u>Learning Communities: Course Matrix Import [simplified]</u> script. If it is not provided, the controlling courses of the existing student group reservations are used instead.</p>]]></description>
   <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
@@ -469,27 +501,49 @@ course2classes = {}
 if file:
     lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
     header = True
-    last = [None, None, None, None]
+    last = [None, None, None, None, None]
+    colAbbv = 0
+    colName = 1
+    colSize = None
+    colSubject = 2
+    colCourse = 3
+    colCrns = 4
     for line in lines:
         if not line:
-            last = [None, None, None, None]
+            last = [None, None, None, None, None]
             continue
-        lcAbbv = line[0].strip()
-        lcName = line[1].strip()
-        subject = line[2].strip()
-        courseNbr = line[3].strip()
+        lcAbbv = line[colAbbv].strip()
+        lcName = line[colName].strip()
+        lcSize = None
+        if colSize:
+            try:
+                lcSize = int(line[colSize].strip())
+            except:
+                if line[colSize].strip():
+                    log.warn('Wrong group size %s.' % line[colSize].strip())
+        subject = line[colSubject].strip()
+        courseNbr = line[colCourse].strip()
         crns = []
-        for crn in line[4:]:
+        for crn in line[colCrns:]:
             if crn.strip(): crns.append(crn.strip())
         if header:
             header = False
-            if "LC" == lcAbbv: continue
-    
+            if "LC" == lcAbbv:
+                if "size" == subject.lower() or "limit" == subject.lower():
+                    log.debug('Size column is included.')
+                    colSize = 2
+                    colSubject = 3
+                    colCourse = 4
+                    colCrns = 5
+                continue
         if not lcAbbv: lcAbbv = last[0]
+        elif last[0] and last[0] != lcAbbv:
+            last = [None, None, None, None, None]
         if not lcName: lcName = last[1]
         if not subject: subject = last[2]
         if not courseNbr: courseNbr = last[3]
-        last = [lcAbbv, lcName, subject, courseNbr]
+        if not lcSize: lcSize = last[4]
+        last = [lcAbbv, lcName, subject, courseNbr, lcSize]
     
         if lcAbbv not in course2classes:
             course2classes[lcAbbv] = {}
