@@ -350,7 +350,7 @@ for lcAbbv in groups.keys():
 if offerings:    
     StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings);]]></body>
 </script>
-<script name="Learning Communities: Student Import" permission="Student Group Edit" engine="python" created="Mon Mar 14 12:34:24 EDT 2016">
+<script name="Learning Communities: Student Import" permission="Student Group Edit" engine="python" created="Tue Apr 18 11:46:42 EDT 2017">
   <description><![CDATA[This script imports students of one or more student groups according to the input CSV file in the following formats:
 <ol><li>One line per student:<pre>
 LC, PUID
@@ -369,8 +369,9 @@ G2, 565607184, 288674378, 845738199, 139074464
 </pre></li></ol>]]></description>
   <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
   <parameter name="file" label="Input File" type="file"/>
+  <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
   <body><![CDATA[import csv
-from org.unitime.timetable.model import StudentSectioningQueue
+from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus
 from java.util import HashSet
 from java.lang import Long
 
@@ -382,7 +383,7 @@ def lookupStudent(puid):
         log.debug("%s (%s)" % (student.getName("last-first-middle"), puid))
     return student
 
-def enroll(students, lcAbbv, puids, writer):
+def enroll(students, lcAbbv, puids, status, writer):
     group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
@@ -401,6 +402,9 @@ def enroll(students, lcAbbv, puids, writer):
             group.getStudents().add(student)
             students.add(Long(student.getUniqueId()))
             writer.writerow([group.getGroupAbbreviation(), puid, student.getName("last-first-middle"), student.getEmail()])
+            if status:
+                student.setSectioningStatus(status)
+                hibSession.saveOrUpdate(student)
         else:
             writer.writerow([group.getGroupAbbreviation(), puid, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
@@ -410,6 +414,10 @@ def enroll(students, lcAbbv, puids, writer):
             hibSession.saveOrUpdate(r)
 
 lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+
+status = None
+if statusRef:
+    status = StudentSectioningStatus.getStatus(statusRef, session.getUniqueId(), hibSession)
 
 groups = {}
 header = True
@@ -435,14 +443,14 @@ output = open(log.createOutput('lc-enrollment-results','csv').getAbsolutePath(),
 writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 writer.writerow(['LC','PUID','Name','Email','Error'])
 for lc in groups.keys():
-    enroll(students, lc, groups[lc], writer)
+    enroll(students, lc, groups[lc], status, writer)
 writer.writerow(['EOF'])
 output.close()
 
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
-<script name="Learning Communities: Create Course Demands" permission="Student Group Edit" engine="python" created="Wed Apr 12 08:49:23 EDT 2017">
+<script name="Learning Communities: Create Course Demands" permission="Student Group Edit" engine="python" created="Tue Apr 18 11:46:36 EDT 2017">
   <description><![CDATA[<p style='max-width:800px'>This script makes sure that students which are enrolled into the existing student groups also request the appropriate courses. The script is using either the existing student group reservations <b><u>or</u></b> the provided LC course matrix to decide which courses students of a learning group should take.</p>
 <p style='max-width:800px'>The <b>LC Course Matrix</b> file is optional. If provided, it has to be in the same format as for the <u>Learning Communities: Course Matrix Import [simplified]</u> script. If it is not provided, the controlling courses of the existing student group reservations are used instead.</p>]]></description>
   <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
@@ -488,14 +496,13 @@ if statusRef:
 ts = Date()
 
 students = HashSet()
-
+studentFilter = None
 if status:
    for student in hibSession.createQuery(
         "from Student where sectioningStatus.uniqueId = :statusId and session = :sessionId"
         ).setLong("sessionId", session.getUniqueId()).setLong("statusId", status.getUniqueId()).list():
-       student.setSectioningStatus(None);
-       students.add(Long(student.getUniqueId()))
-       hibSession.saveOrUpdate(student);
+       if not studentFilter: studentFilter = {}
+       studentFilter[student.getUniqueId()] = True
 
 course2classes = {}
 if file:
@@ -566,8 +573,11 @@ for group in groups:
         courses = map(lambda r: r.getInstructionalOffering().getControllingCourseOffering(), reservations)
     log.info("%s: %s" % (group.getGroupAbbreviation(), ', '.join(map(lambda course: course.getCourseName(), courses))))
     for student in group.students:
+        if studentFilter and student.getUniqueId() not in studentFilter:
+            log.debug("Skipping %s %s (student status does not match)" % (student.getExternalUniqueId(), student.getName("last-first-middle")))
+            continue
         log.info("%s %s" % (student.getExternalUniqueId(), student.getName("last-first-middle")))
-        if status: student.setSectioningStatus(status);
+        if status: student.setSectioningStatus(status)
         if clear:
             for cd in student.getCourseDemands():
                 if cd.getFreeTime(): hibSession.delete(cd.getFreeTime())
@@ -609,7 +619,7 @@ for group in groups:
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
-<script name="Learning Communities: Student Import [with Names]" permission="Student Group Edit" engine="python" created="Mon Feb 06 08:34:54 EST 2017">
+<script name="Learning Communities: Student Import [with Names]" permission="Student Group Edit" engine="python" created="Tue Apr 18 11:46:47 EDT 2017">
   <description><![CDATA[This script imports students of one or more student groups according to the input CSV file in the following formats:
 <ol><li>One line per student:<pre>
 LC, PUID     , Name
@@ -628,9 +638,10 @@ G2, 565607184, Paul Ch Armstrong, 288674378, Al R Northrop , 845738199, Pat Oliv
 </pre></li></ol>]]></description>
   <parameter name="nameColumns" label="Name Columns" type="enum(0,1,2,3,4)" default="1"/>
   <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
+  <parameter name="statusRef" label="status" type="reference(StudentSectioningStatus)" default="LC"/>
   <parameter name="file" label="Input File" type="file"/>
   <body><![CDATA[import csv
-from org.unitime.timetable.model import StudentSectioningQueue
+from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus
 from difflib import SequenceMatcher
 from java.util import HashSet
 from java.lang import Long
@@ -653,7 +664,7 @@ def match(name, student):
         if r > ratio: ratio = r
     return 100.0 * ratio
 
-def enroll(students, lcAbbv, puids, writer):
+def enroll(students, lcAbbv, puids, status, writer):
     group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
@@ -676,6 +687,9 @@ def enroll(students, lcAbbv, puids, writer):
             m = match(name, student)
             if m < 80.0: log.warn("Student %s has a weak match of %.2f%%: %s (import) versus %s (on file)" % (puid, m, name, student.getName("last-first-middle")))
             writer.writerow([group.getGroupAbbreviation(), puid, name, student.getName("last-first-middle"), '%.2f' % m, student.getEmail()])
+            if status:
+                student.setSectioningStatus(status)
+                hibSession.saveOrUpdate(student)
         else:
             writer.writerow([group.getGroupAbbreviation(), puid, name, None, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
@@ -685,6 +699,10 @@ def enroll(students, lcAbbv, puids, writer):
             hibSession.saveOrUpdate(r)
 
 lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+
+status = None
+if statusRef:
+    status = StudentSectioningStatus.getStatus(statusRef, session.getUniqueId(), hibSession)
 
 groups = {}
 header = True
@@ -717,7 +735,7 @@ output = open(log.createOutput('lc-enrollment-results','csv').getAbsolutePath(),
 writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 writer.writerow(['LC','PUID','Name (import)','Name (on file)','Name Match [%]','Email','Error'])
 for lc in groups.keys():
-    enroll(students, lc, groups[lc], writer)
+    enroll(students, lc, groups[lc], status, writer)
 writer.writerow(['EOF'])
 output.close()
 
