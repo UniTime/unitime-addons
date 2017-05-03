@@ -51,7 +51,7 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 		Map<Long, CourseAssignment> courses = null;
 		if (iQuery != null && iQuery.length() >= 3) {
 			for (Object[] courseClassId: (List<Object[]>)helper.getHibSession().createQuery(
-					"select distinct bc.courseOfferingId, bsc.classId " +
+					"select bc.courseOfferingId, bsc.classId " +
 					"from BannerSection bs inner join bs.bannerConfig.bannerCourse bc inner join bs.bannerSectionToClasses bsc, CourseOffering co " +
 					"where co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId and co.subjectArea.department.allowStudentScheduling = true " +
 					"and ((:q like lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' %') and " +
