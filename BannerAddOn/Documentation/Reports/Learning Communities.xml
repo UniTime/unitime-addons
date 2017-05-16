@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE report PUBLIC "-//UniTime//UniTime HQL Reports DTD/EN" "http://www.unitime.org/interface/Reports.dtd">
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+ <reports>
+ <report name="LC: Students following a student group reservation" created="Tue May 16 02:58:02 EDT 2017">
+  <flag>APPEARANCE_SECTIONING</flag>
+  <description><![CDATA[The report lists all students (of a student group) that do follow a student group reservation with class-level restrictions.]]></description>
+  <query><![CDATA[select
+  o.uniqueId as __Offering,
+  r.group.groupName as Learning_Community,
+  co.subjectAreaAbbv || ' ' || co.courseNbr as Course,
+  s.externalUniqueId as ID,
+  s.lastName || ', ' || s.firstName || ' ' || s.middleName as Name,
+  s.email as Email
+from
+  StudentGroupReservation r inner join r.instructionalOffering o inner join o.courseOfferings co inner join r.group.students s
+where
+  co.isControl = true and co.subjectArea.uniqueId in %SUBJECTS% and r.classes is not empty and
+  s.uniqueId in (select e.student.uniqueId from StudentClassEnrollment e, StudentGroupReservation x inner join x.classes z where x.uniqueId = r.uniqueId and z = e.clazz)
+  order by
+    r.group.groupName, co.subjectAreaAbbv, co.courseNbr, s.externalUniqueId]]></query>
+</report>
+ <report name="LC: Students not following a student group reservation" created="Tue May 16 02:58:07 EDT 2017">
+  <flag>APPEARANCE_SECTIONING</flag>
+  <description><![CDATA[The report lists all students (of a student group) that do not follow a student group reservation with class-level restrictions.]]></description>
+  <query><![CDATA[select
+  o.uniqueId as __Offering,
+  r.group.groupName as Learning_Community,
+  co.subjectAreaAbbv || ' ' || co.courseNbr as Course,
+  s.externalUniqueId as ID,
+  s.lastName || ', ' || s.firstName || ' ' || s.middleName as Name,
+  s.email as Email
+from
+  StudentGroupReservation r inner join r.instructionalOffering o inner join o.courseOfferings co inner join r.group.students s
+where
+  co.isControl = true and co.subjectArea.uniqueId in %SUBJECTS% and r.classes is not empty and
+  s.uniqueId not in (select e.student.uniqueId from StudentClassEnrollment e, StudentGroupReservation x inner join x.classes z where x.uniqueId = r.uniqueId and z = e.clazz)
+  order by
+    r.group.groupName, co.subjectAreaAbbv, co.courseNbr, s.externalUniqueId]]></query>
+</report>
+ <report name="LC: Classes enabled for student scheduling" created="Tue May 16 02:57:57 EDT 2017">
+  <flag>APPEARANCE_SECTIONING</flag>
+  <description><![CDATA[This report lists all classes that have a student group reservation and that are enabled for student scheduling.]]></description>
+  <query><![CDATA[select
+  o.uniqueId as __Offering,
+  co.subjectAreaAbbv || ' ' || co.courseNbr as Course,
+  c.schedulingSubpart.itype.abbv || ' ' || c.sectionNumberCache ||
+  (case when c.schedulingSubpart.schedulingSubpartSuffixCache = '-' then '' else c.schedulingSubpart.schedulingSubpartSuffixCache end) as Section,
+  b.bannerSection.crn as CRN,
+  c.enrollment as Enrollment,
+  c.expectedCapacity as Limit,
+  r.group.groupName as Learning_Community,
+  (select count(s) from StudentGroup g inner join g.students s where g.uniqueId = r.group.uniqueId) as Students,
+  r.limit as Reserved
+from
+  StudentGroupReservation r inner join r.instructionalOffering o inner join o.courseOfferings co,
+  Class_ c, BannerSectionToClass b
+where
+  c.schedulingSubpart.instrOfferingConfig.instructionalOffering = o and co.isControl = true and co.subjectArea.uniqueId in %SUBJECTS% and
+  c.cancelled = false and c.enabledForStudentScheduling = true and
+  b.classId = c.uniqueId and b.bannerSection.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId and
+  (c.uniqueId in (select x.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select x.parentClass.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select x.parentClass.parentClass.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select x.parentClass.parentClass.parentClass.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select y.uniqueId from StudentGroupReservation xr inner join xr.classes x inner join x.childClasses y where xr = r)
+    or c.uniqueId in (select z.uniqueId from StudentGroupReservation xr inner join xr.classes x inner join x.childClasses y inner join y.childClasses z where xr = r)
+    or c.uniqueId in (select w.uniqueId from StudentGroupReservation xr inner join xr.classes x inner join x.childClasses y inner join y.childClasses z inner join z.childClasses w where xr = r)
+  )
+order by
+  co.subjectAreaAbbv, co.courseNbr, c.schedulingSubpart.itype.itype, c.sectionNumberCache, r.group.groupName]]></query>
+</report>
+ <report name="LC: Classes NOT enabled for student scheduling" created="Tue May 16 02:57:51 EDT 2017">
+  <flag>APPEARANCE_SECTIONING</flag>
+  <description><![CDATA[This reports lists all classes that have a student group reservation and that are marked as NOT enabled for student scheduling (no-print).]]></description>
+  <query><![CDATA[select
+  o.uniqueId as __Offering,
+  co.subjectAreaAbbv || ' ' || co.courseNbr as Course,
+  c.schedulingSubpart.itype.abbv || ' ' || c.sectionNumberCache ||
+  (case when c.schedulingSubpart.schedulingSubpartSuffixCache = '-' then '' else c.schedulingSubpart.schedulingSubpartSuffixCache end) as Section,
+  b.bannerSection.crn as CRN,
+  c.enrollment as Enrollment,
+  c.expectedCapacity as Limit,
+  r.group.groupName as Learning_Community,
+  (select count(s) from StudentGroup g inner join g.students s where g.uniqueId = r.group.uniqueId) as Students,
+  r.limit as Reserved
+from
+  StudentGroupReservation r inner join r.instructionalOffering o inner join o.courseOfferings co,
+  Class_ c, BannerSectionToClass b
+where
+  c.schedulingSubpart.instrOfferingConfig.instructionalOffering = o and co.isControl = true and co.subjectArea.uniqueId in %SUBJECTS% and
+  c.cancelled = false and c.enabledForStudentScheduling = false and
+  b.classId = c.uniqueId and b.bannerSection.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId and
+  (c.uniqueId in (select x.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select x.parentClass.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select x.parentClass.parentClass.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select x.parentClass.parentClass.parentClass.uniqueId from StudentGroupReservation xr inner join xr.classes x where xr = r)
+    or c.uniqueId in (select y.uniqueId from StudentGroupReservation xr inner join xr.classes x inner join x.childClasses y where xr = r)
+    or c.uniqueId in (select z.uniqueId from StudentGroupReservation xr inner join xr.classes x inner join x.childClasses y inner join y.childClasses z where xr = r)
+    or c.uniqueId in (select w.uniqueId from StudentGroupReservation xr inner join xr.classes x inner join x.childClasses y inner join y.childClasses z inner join z.childClasses w where xr = r)
+  )
+order by
+  co.subjectAreaAbbv, co.courseNbr, c.schedulingSubpart.itype.itype, c.sectionNumberCache, r.group.groupName]]></query>
+</report>
+ </reports>
