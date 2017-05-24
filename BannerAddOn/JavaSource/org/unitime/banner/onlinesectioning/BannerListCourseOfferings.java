@@ -23,7 +23,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.hibernate.Query;
+import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.server.DayCode;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.CourseAssignment;
@@ -50,68 +54,80 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 		
 		Map<Long, CourseAssignment> courses = null;
 		if (iQuery != null && iQuery.length() >= 3) {
-			for (Object[] courseClassId: (List<Object[]>)helper.getHibSession().createQuery(
-					"select bc.courseOfferingId, bsc.classId " +
-					"from BannerSection bs inner join bs.bannerConfig.bannerCourse bc inner join bs.bannerSectionToClasses bsc, CourseOffering co " +
-					"where co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId and co.subjectArea.department.allowStudentScheduling = true " +
-					"and ((:q like lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' %') and " +
-					"(lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' ' || bs.crn || '-' || bs.sectionIndex) like :q || '%' or " +
-					"lower(co.subjectArea.subjectAreaAbbreviation || ' ' || co.courseNbr || ' ' || bs.sectionIndex) like :q || '%')) " +
-					"or bs.crn || '-' || bs.sectionIndex like :q || '%') " +
-					"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn"
-					).setString("q", iQuery).setLong("sessionId", server.getAcademicSession().getUniqueId()).setCacheable(true).list()) {
-				Long courseId = (Long)courseClassId[0];
-				Long sectionId = (Long)courseClassId[1];
-				XCourse course = server.getCourse(courseId);
-				if (course != null && (iMatcher == null || iMatcher.match(course))) {
-					XOffering offering = server.getOffering(course.getOfferingId());
-					XSection section = (offering == null ? null : offering.getSection(sectionId));
-					if (section != null) {
-						XSection parent = (section.getParentId() == null ? null : offering.getSection(section.getParentId()));
-						if (parent != null && parent.getName(courseId).equals(section.getName(courseId)))
-							continue;
-						if (courses == null) courses = new HashMap<Long, CourseAssignment>();
-						CourseAssignment ca = courses.get(courseId);
-						if (ca == null) {
-							ca = convert(course, server);
-							courses.put(courseId, ca);
-							ret.add(ca);
-						}
-						ClassAssignmentInterface.ClassAssignment a = ca.addClassAssignment();
-						a.setClassId(section.getSectionId());
-						XSubpart subpart = offering.getSubpart(section.getSubpartId());
-						a.setSubpart(subpart.getName());
-						a.setSection(section.getName(courseId));
-						a.setClassNumber(section.getName(-1l));
-						a.setCancelled(section.isCancelled());
-						a.addNote(course.getNote());
-						a.addNote(section.getNote());
-						a.setCredit(subpart.getCredit(courseId));
-						if (section.getTime() != null) {
-							for (DayCode d: DayCode.toDayCodes(section.getTime().getDays()))
-								a.addDay(d.getIndex());
-							a.setStart(section.getTime().getSlot());
-							a.setLength(section.getTime().getLength());
-							a.setBreakTime(section.getTime().getBreakTime());
-							a.setDatePattern(section.getTime().getDatePatternName());
-						}
-						if (section.getRooms() != null) {
-							for (XRoom rm: section.getRooms()) {
-								a.addRoom(rm.getUniqueId(), rm.getName());
-							}
-						}
-						for (XInstructor instructor: section.getInstructors()) {
-							a.addInstructor(instructor.getName());
-							a.addInstructoEmail(instructor.getEmail() == null ? "" : instructor.getEmail());
-						}
-						if (section.getParentId() != null)
-							a.setParentSection(offering.getSection(section.getParentId()).getName(courseId));
-						a.setSubpartId(subpart.getSubpartId());
-						if (a.getParentSection() == null)
-							a.setParentSection(course.getConsentLabel());
-					}
+			Pattern pattern = Pattern.compile(ApplicationProperties.getProperty("banner.list-courses.pattern", "(([A-Za-z]{2,4}) ([0-9]{3,5}[A-Za-z]{0,5}) )?(\\d{3,5})(\\-\\w{0,3})?"));
+			Matcher matcher = pattern.matcher(iQuery);
+			if (matcher.matches()) {
+				Query query = null;
+				if (matcher.group(1) == null) {
+					query = helper.getHibSession().createQuery(
+							"select bc.courseOfferingId, bsc.classId " +
+							"from BannerSection bs inner join bs.bannerSectionToClasses bsc inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
+							"where bs.crn like :crn || '%' and co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
+							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn"
+						).setInteger("crn", Integer.parseInt(matcher.group(4)));					
+				} else {
+					query = helper.getHibSession().createQuery(
+							"select bc.courseOfferingId, bsc.classId " +
+							"from BannerSection bs inner join bs.bannerSectionToClasses bsc inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
+							"where bs.crn like :crn || '%' and lower(co.subjectArea.subjectAreaAbbreviation) = :subject and lower(co.courseNbr) like :course || '%' and " +
+							"co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
+							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn"
+						).setInteger("crn", Integer.parseInt(matcher.group(4))).setString("subject", matcher.group(2).toLowerCase()).setString("course", matcher.group(3).toLowerCase());
 				}
-				if (iLimit != null && iLimit > 0 && ret.size() == iLimit) break;
+				for (Object[] courseClassId: (List<Object[]>)query.setLong("sessionId", server.getAcademicSession().getUniqueId()).setCacheable(true).list()) {
+					Long courseId = (Long)courseClassId[0];
+					Long sectionId = (Long)courseClassId[1];
+					XCourse course = server.getCourse(courseId);
+					if (course != null && (iMatcher == null || iMatcher.match(course))) {
+						XOffering offering = server.getOffering(course.getOfferingId());
+						XSection section = (offering == null ? null : offering.getSection(sectionId));
+						if (section != null) {
+							XSection parent = (section.getParentId() == null ? null : offering.getSection(section.getParentId()));
+							if (parent != null && parent.getName(courseId).equals(section.getName(courseId)))
+								continue;
+							if (courses == null) courses = new HashMap<Long, CourseAssignment>();
+							CourseAssignment ca = courses.get(courseId);
+							if (ca == null) {
+								ca = convert(course, server);
+								courses.put(courseId, ca);
+								ret.add(ca);
+							}
+							ClassAssignmentInterface.ClassAssignment a = ca.addClassAssignment();
+							a.setClassId(section.getSectionId());
+							XSubpart subpart = offering.getSubpart(section.getSubpartId());
+							a.setSubpart(subpart.getName());
+							a.setSection(section.getName(courseId));
+							a.setClassNumber(section.getName(-1l));
+							a.setCancelled(section.isCancelled());
+							a.addNote(course.getNote());
+							a.addNote(section.getNote());
+							a.setCredit(subpart.getCredit(courseId));
+							if (section.getTime() != null) {
+								for (DayCode d: DayCode.toDayCodes(section.getTime().getDays()))
+									a.addDay(d.getIndex());
+								a.setStart(section.getTime().getSlot());
+								a.setLength(section.getTime().getLength());
+								a.setBreakTime(section.getTime().getBreakTime());
+								a.setDatePattern(section.getTime().getDatePatternName());
+							}
+							if (section.getRooms() != null) {
+								for (XRoom rm: section.getRooms()) {
+									a.addRoom(rm.getUniqueId(), rm.getName());
+								}
+							}
+							for (XInstructor instructor: section.getInstructors()) {
+								a.addInstructor(instructor.getName());
+								a.addInstructoEmail(instructor.getEmail() == null ? "" : instructor.getEmail());
+							}
+							if (section.getParentId() != null)
+								a.setParentSection(offering.getSection(section.getParentId()).getName(courseId));
+							a.setSubpartId(subpart.getSubpartId());
+							if (a.getParentSection() == null)
+								a.setParentSection(course.getConsentLabel());
+						}
+					}
+					if (iLimit != null && iLimit > 0 && ret.size() == iLimit) break;
+				}
 			}
 		}
 		
@@ -124,5 +140,22 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 		}
 		
 		return ret;
+	}
+	
+	public static void main(String[] args) {
+		String[] queries = new String[] { "", "123", "1234", "12345", "123456", "12345-012", "12345-XXX",  "ENGL 10600", "ENGL 106 12345", "ENGL 10600 12345", "ENGL 10600X 12345-002" };
+		Pattern pattern = Pattern.compile("(([A-Za-z]{2,4}) ([0-9]{3,5}[A-Za-z]{0,5}) )?(\\d{3,5})(\\-\\w{0,3})?");
+		for (String q: queries) {
+			Matcher m = pattern.matcher(q);
+			if (m.matches()) {
+				if (m.group(1) != null)
+					System.out.println("Subject: " + m.group(2) + ", Course: " + m.group(3) + ", CRN:" + m.group(4) +
+							(m.group(5) == null ? "" : ", Section: " + m.group(5).substring(1)) + "     --- " + m.group(0));
+				else
+					System.out.println("CRN:" + m.group(4) + (m.group(5) == null ? "" : ", Section: " + m.group(5).substring(1)) + "     --- " + m.group(0));
+			} else {
+				System.out.println("NO MATCH     --- " + q);
+			}
+		}
 	}
 }
