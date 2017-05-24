@@ -24,6 +24,7 @@
 /*
  * Add table to store Banner Campus Overrides
  */
+use timetable;
 
 create table banner_campus_override (
 				uniqueid decimal(20,0) primary key not null,

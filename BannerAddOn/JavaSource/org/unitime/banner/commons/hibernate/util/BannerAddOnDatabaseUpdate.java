@@ -21,9 +21,11 @@ package org.unitime.banner.commons.hibernate.util;
 
 import org.dom4j.Document;
 import org.unitime.banner.dataexchange.BannerSectionAuditExport;
+import org.unitime.banner.reports.pointintimedata.AllWSCHForDepartmentByClassAndInstructor;
 import org.unitime.commons.hibernate.util.DatabaseUpdate;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.DataExchangeHelper;
+import org.unitime.timetable.reports.pointintimedata.BasePointInTimeDataReports;
 
 /**
  * @author says
@@ -39,6 +41,7 @@ public class BannerAddOnDatabaseUpdate extends DatabaseUpdate {
 	        DataExchangeHelper.sImportRegister.put("studentUpdates", org.unitime.banner.onlinesectioning.BannerStudentUpdates.class);
 	        DataExchangeHelper.sImportRegister.put("students", org.unitime.banner.dataexchange.BannerStudentImport.class);
 	        DataExchangeHelper.sExportRegister.put("students", org.unitime.banner.dataexchange.BannerStudentExport.class);
+	        BasePointInTimeDataReports.sPointInTimeDataReportRegister.put("allWSCHforDeptbyClassAndInstructor", AllWSCHForDepartmentByClassAndInstructor.class);
 	    }
 		public BannerAddOnDatabaseUpdate(Document document) throws Exception {
 	        super(document);
