@@ -51,6 +51,7 @@ import org.unitime.timetable.model.StudentAreaClassificationMajor;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
+import org.unitime.timetable.model.StudentNote;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningAction;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
@@ -333,6 +334,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			student.setCourseDemands(new HashSet<CourseDemand>());
 			student.setGroups(new HashSet<StudentGroup>());
 			student.setAccomodations(new HashSet<StudentAccomodation>());
+			student.setNotes(new HashSet<StudentNote>());
 		}
 		return student;
 	}
