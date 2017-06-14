@@ -278,7 +278,7 @@ public class WebBannerCourseListTableBuilder extends
     	    cell.setStyle("padding-left: " + indent + "px;");
         	cell.setNoWrap(true);
     	    row.addContent(cell);
-    	    cell = this.initCell(" &nbsp;", 17, false);
+    	    cell = this.initCell(" &nbsp;", 18, false);
     	    row.addContent(cell);    
 	        table.addContent(row);
 		}
@@ -449,7 +449,7 @@ public class WebBannerCourseListTableBuilder extends
 
 	
     private TableCell subjectAndCourseInfo(BannerCourse bc, InstructionalOffering io, CourseOffering co) {
-        TableCell cell = this.initCell(null, 18, true);
+        TableCell cell = this.initCell(null, 19, true);
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + bc.getUniqueId().toString() + "\"></A>");
@@ -482,66 +482,58 @@ public class WebBannerCourseListTableBuilder extends
     	TableRow row2 = new TableRow();
     	TableHeaderCell cell = null;
     	cell = this.headerCell(LABEL, 2, 1);
-    	cell.addContent("<hr>");
     	row.addContent(cell);
     	cell = this.headerCell("Instr Type", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
     	cell = this.headerCell("Sec&nbsp;Id", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
     	cell = this.headerCell("Limit", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Grade", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		if (BannerSection.displayLabHours()){
 			cell = this.headerCell("Lab Hours", 2, 1);
-			cell.addContent("<hr>");
 			row.addContent(cell);
 		}
 		cell = this.headerCell("Print", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Xlst", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Link&nbsp;Id", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Link Conn", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Consent", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Instr. Method", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Credit", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Campus", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("Class Label", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 		cell = this.headerCell("DatePattern", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
-		cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, TIMETABLE_COLUMN_ORDER.length);
+		
+		cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, 3);
+    	cell.setStyleClass("WebTableHeaderFirstRow");
 		cell.setAlign("center");
-    	row.addContent(cell);
-    	for(int j = 0; j < TIMETABLE_COLUMN_ORDER.length; j++){
-    		cell = headerCell(TIMETABLE_COLUMN_ORDER[j], 1, 1);
-    		cell.addContent("<hr>");
-    		cell.setNoWrap(true);
-    		row2.addContent(cell);     
-    	} 
+		row.addContent(cell);
+		cell = headerCell(MSG.columnAssignedTime(), 1, 1);
+		cell.setNoWrap(true);
+		cell.setStyleClass("WebTableHeaderSecondRow");
+		row2.addContent(cell);
+		cell = headerCell(MSG.columnAssignedRoom(), 1, 1);
+		cell.setNoWrap(true);
+		cell.setStyleClass("WebTableHeaderSecondRow");
+		row2.addContent(cell);
+		cell = headerCell(MSG.columnAssignedRoomCapacity(), 1, 1);
+		cell.setNoWrap(true);
+		cell.setStyleClass("WebTableHeaderSecondRow");
+		row2.addContent(cell);
+		
 		cell = this.headerCell("Instructors", 2, 1);
-		cell.addContent("<hr>");
 		row.addContent(cell);
 
     	table.addContent(row);
