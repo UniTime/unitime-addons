@@ -1017,13 +1017,18 @@ def getUser():
     user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
     return user.build()
 
+def getCrn(courseId, classId):
+    return str(hibSession.createQuery(
+        "select bsc.bannerSection.crn from BannerSectionToClass as bsc where bsc.bannerSection.bannerConfig.bannerCourse.courseOfferingId = :courseId and bsc.classId = :classId"
+        ).setLong("classId", classId).setLong("courseId", courseId).setCacheable(True).uniqueResult())
+
 def getCrns(server, studentId):
     enrollment = server.execute(GetAssignment().forStudent(studentId), getUser())
     crns = {}
     for course in enrollment.getCourseAssignments():
         if course.isFreeTime(): continue
         for assignment in course.getClassAssignments():
-            id = assignment.getSection()
+            id = getCrn(course.getCourseId(), assignment.getClassId())
             if id: crns[id] = True
     return sorted(crns.keys())
 
