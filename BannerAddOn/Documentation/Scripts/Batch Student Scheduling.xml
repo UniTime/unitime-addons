@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
 
 <!--
  * Licensed to The Apereo Foundation under one or more contributor license
@@ -1017,10 +1016,13 @@ def getUser():
     user.setType(OnlineSectioningLog.Entity.EntityType.MANAGER)
     return user.build()
 
-def getCrn(courseId, classId):
-    return str(hibSession.createQuery(
+def getCrn(course, assignment):
+    crns = hibSession.createQuery(
         "select bsc.bannerSection.crn from BannerSectionToClass as bsc where bsc.bannerSection.bannerConfig.bannerCourse.courseOfferingId = :courseId and bsc.classId = :classId"
-        ).setLong("classId", classId).setLong("courseId", courseId).setCacheable(True).uniqueResult())
+        ).setLong("classId", assignment.getClassId()).setLong("courseId", course.getCourseId()).setCacheable(True).list()
+    if crns: return str(crns[0])
+    log.error('Failed to lookup CRN for: %s %s' % (course.getCourseName(), assignment.getSection()))
+    return assignment.getSection()
 
 def getCrns(server, studentId):
     enrollment = server.execute(GetAssignment().forStudent(studentId), getUser())
@@ -1028,7 +1030,7 @@ def getCrns(server, studentId):
     for course in enrollment.getCourseAssignments():
         if course.isFreeTime(): continue
         for assignment in course.getClassAssignments():
-            id = getCrn(course.getCourseId(), assignment.getClassId())
+            id = getCrn(course, assignment)
             if id: crns[id] = True
     return sorted(crns.keys())
 
