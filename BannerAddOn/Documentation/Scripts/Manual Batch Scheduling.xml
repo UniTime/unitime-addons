@@ -375,7 +375,7 @@ else:
   <parameter name="holdPassword" label="7. Hold Password" type="text"/>
   <parameter name="registrationDate" label="8. Registration Date (yyyy-mm-dd)" type="text"/>
   <parameter name="actionAdd" label="9a. Registration Status ADD" type="enum(RE,RW)" default="RE"/>
-  <parameter name="actionDrop" label="9b. Registration Status DROP" type="enum(DD,DW,DDD,CA)" default="DDD"/>
+  <parameter name="actionDrop" label="9b. Registration Status DROP" type="enum(DD,DW,DDD,CA,NO DROP)" default="DDD"/>
   <body><![CDATA[import csv
 from xml.dom import minidom
 from java.lang import Long
@@ -590,6 +590,9 @@ def keep(req, id):
 def drop(req, id):
     if not actionDrop:
         req.drop(id)
+    elif actionDrop == "NO DROP":
+        if not req.courseReferenceNumbers: req.courseReferenceNumbers = ArrayList()
+        req.courseReferenceNumbers.add(XEInterface.CourseReferenceNumber(id, actionAdd))
     else:
         if not req.actionsAndOptions: req.actionsAndOptions = ArrayList()
         req.actionsAndOptions.add(XEInterface.RegisterAction(actionDrop, id))
