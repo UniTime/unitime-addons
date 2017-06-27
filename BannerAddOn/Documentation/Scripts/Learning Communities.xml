@@ -742,4 +742,307 @@ output.close()
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
+<script name="Learning Communities: Reload Courses with Student Group Reservation" permission="Student Group Edit" engine="python" created="Thu Jun 22 11:26:22 EDT 2017">
+  <description><![CDATA[This script will tell the online student scheduling server to reload all instructional offerings that have one or more student group reservations. ]]></description>
+  <body><![CDATA[from org.unitime.timetable.model import StudentSectioningQueue
+
+offerings = hibSession.createQuery(
+  "select r.instructionalOffering.uniqueId from StudentGroupReservation r where r.instructionalOffering.session = :sessionId"
+  ).setLong("sessionId", session.getUniqueId()).list()
+StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings)]]></body>
+</script>
+<script name="Learning Communities: Check Student Status [XE]" permission="Student Group Edit" engine="python" created="Thu Jun 22 10:52:40 EDT 2017">
+  <description><![CDATA[This script is using Banner XE API to check all students of the given status and/or that meet the given student filter (same as on the Student Scheduling Solver page).
+When <b>hold password</b> is provided, it is used when <font color='red'>Holds prevent registration.</font> error is returned.<br>
+When <b>registration date</b> is provided, it is used when <font color='red'>Invalid or undefined Enrollment Status or date range invalid.</font> error is returned.
+<br>
+<br>Student Filter Examples:<ul>
+<li>status:LC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(all students of LC status)
+<li>group:Animalia1 or group:Animalia2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(students of group Animalia1 or group Animalia2)
+<li>area:A and classification:01 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(students of academic area A and academic classification 01)
+</ul>]]></description>
+  <parameter name="holdPassword" label="3. Hold Password" type="text"/>
+  <parameter name="statusRef" label="1. Status" type="reference(StudentSectioningStatus)" default="LC"/>
+  <parameter name="registrationDate" label="4. Registration Date (yyyy-mm-dd)" type="date"/>
+  <parameter name="studentFilter" label="2. Student Filter" type="text" default=""/>
+  <body><![CDATA[import csv
+from java.util import ArrayList
+from java.text import SimpleDateFormat
+from org.restlet import Client
+from org.restlet.data import Protocol, ChallengeScheme, MediaType
+from org.restlet.resource import ClientResource, ResourceException
+from org.unitime.timetable import ApplicationProperties
+from org.unitime.timetable.onlinesectioning import AcademicSessionInfo
+from org.unitime.timetable.onlinesectioning.custom.purdue import GsonRepresentation, XEInterface
+from org.unitime.timetable.gwt.shared import SectioningException
+from org.unitime.banner.onlinesectioning import BannerTermProvider
+from org.unitime.timetable.gwt.server import Query
+from org.unitime.timetable.onlinesectioning.status.db import DbFindEnrollmentInfoAction
+
+def getClient():
+    protocols = ArrayList()
+    protocols.add(Protocol.HTTP)
+    protocols.add(Protocol.HTTPS)
+    return Client(protocols)
+
+def getResource(client):
+    resource = ClientResource(ApplicationProperties.getProperty("banner.xe.site"))
+    resource.setNext(client)
+    resource.setChallengeResponse(ChallengeScheme.HTTP_BASIC, ApplicationProperties.getProperty("banner.xe.admin.user"), ApplicationProperties.getProperty("banner.xe.admin.password"))
+    return resource
+
+def getCourseNameForCrn(crn):
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+    if course:
+        return course.getCourseName()
+    return None
+
+def getSchedule(resource):
+    try:
+        resource.get(MediaType.APPLICATION_JSON)
+    except ResourceException, e: handleError(resource, e)
+
+    current = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse.TYPE_LIST).getObject()
+    original = None
+    if current and not current.isEmpty():
+        original = current.get(0)
+
+    if not original or not original.validStudent:
+        reason = None
+        if original and original.failureReasons:
+            for m in original.failureReasons:
+                if m == "Holds prevent registration." and holdPassword:
+                    return (getHoldSchedule(resource), m)
+                if m == "Invalid or undefined Enrollment Status or date range invalid." and registrationDate:
+                    return (getHoldSchedule(resource), m)
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+        if reason: raise SectioningException(reason)
+        raise SectioningException("Failed to check student registration status.")
+
+    return (original, '')
+
+def getHoldSchedule(resource):
+    if holdPassword:
+        log.debug("Using hold password...")
+    elif registrationDate:
+        log.debug("Using registration date...")
+    term = resource.getQueryValue("term")
+    puid = resource.getQueryValue("bannerId")
+    req = XEInterface.RegisterRequest(term, puid, None, True)
+    req.empty()
+    if holdPassword:
+        req.holdPassword = holdPassword
+    if registrationDate:
+        req.registrationDate = SimpleDateFormat('yyyy-MM-dd').format(registrationDate)
+
+    try:
+        resource.post(GsonRepresentation(req))
+    except ResourceException, e: handleError(resource, e)
+
+    response = GsonRepresentation(resource.getResponseEntity(), XEInterface.RegisterResponse).getObject()
+
+    if not response:
+        raise SectioningException("Failed to check student registration status.")
+    elif not response.validStudent:
+        reason = None
+        if response.failureReasons:
+            for m in response.failureReasons:
+                if not reason:
+                    reason = m
+                else:
+                    reason = '%s\n%s' % (reason, m)
+                raise SectioningException(reason)
+        raise SectioningException("Failed to check student registration status.")
+
+    return response
+
+def handleError(resource, e):
+    error = None
+    if resource.getResponseEntity():
+        response = GsonRepresentation(resource.getResponseEntity(), XEInterface.ErrorResponse).getObject()
+        if response: error = response.getError()
+    if error and error.message:
+        raise SectioningException(error.message)
+    if error and error.description:
+        raise SectioningException(error.description)
+    if error and error.errorMessage:
+        raise SectioningException(error.errorMessage)
+    raise SectioningException(e.getMessage())
+
+def check(client, student, writer):
+    log.info('%s: %s' % (getPuid(student), getName(student)))
+    resource = getResource(client)
+
+    info = AcademicSessionInfo(session)
+    bt = BannerTermProvider()
+    term = bt.getExternalTerm(info)
+    campus = bt.getExternalCampus(info)
+    puid = str(getPuid(student)).zfill(9)
+
+    resource.addQueryParameter("term", term)
+    resource.addQueryParameter("bannerId", puid)
+    resource.addQueryParameter("systemIn", "SB")
+    resource.addQueryParameter("persona", "SB")
+    if holdPassword:
+        resource.addQueryParameter("holdPassword", holdPassword)
+
+    (original, message) = getSchedule(resource)
+    
+    if original.registrations:
+        for reg in original.registrations:
+            log.debug('%s %s %s (%s)' % (reg.subject, reg.courseNumber, reg.courseReferenceNumber, reg.courseRegistrationStatus))
+            writer.writerow([getPuid(student), getName(student), getGroup(student), getArea(student), getClassification(student), getMajor(student),
+                '%s %s' % (reg.subject, reg.courseNumber), reg.courseReferenceNumber, reg.courseRegistrationStatus, reg.courseRegistrationStatusDescription, message])
+    else:
+        log.debug('%s has no enrollments.' % getName(student))
+        writer.writerow([getPuid(student), getName(student), getGroup(student), getArea(student), getClassification(student), getMajor(student),
+          '', '', '', '', message])
+
+def getGroup(student):
+    groups = []
+    for g in student.groups:
+        groups.append(g.groupAbbreviation)
+    if groups: return '; '.join(groups)
+    return None
+
+def getArea(student):
+    areas = []
+    for acm in student.areaClasfMajors:
+        areas.append(acm.academicArea.academicAreaAbbreviation)
+    if areas: return '; '.join(areas)
+    return None
+
+def getClassification(student):
+    clasf = []
+    for acm in student.areaClasfMajors:
+        clasf.append(acm.academicClassification.code)
+    if clasf: return '; '.join(clasf)
+    return None
+
+def getMajor(student):
+    major = []
+    for acm in student.areaClasfMajors:
+        major.append(acm.major.code)
+    if major: return '; '.join(major)
+    return None
+
+def getName(student):
+    return student.getName('last-first-middle')
+
+def getPuid(student):
+    return student.externalUniqueId
+
+def checkStudent(client, student, writer):
+    try:
+        check(client, student, writer)
+    except SectioningException, e:
+        log.error('Check failed: %s' % e.getMessage())
+        writer.writerow([getPuid(student), getName(student), getGroup(student), getArea(student), getClassification(student), getMajor(student),
+          '', '', '', '', e.getMessage()])
+if registrationDate:
+    log.info('Registration date %s' % SimpleDateFormat('yyyy-MM-dd').format(registrationDate))
+students = None
+if statusRef:
+    students = hibSession.createQuery(
+        "from Student s where s.sectioningStatus.reference = :statusRef and s.session = :sessionId order by s.lastName, s.firstName"
+        ).setString("statusRef", statusRef).setLong("sessionId", session.getUniqueId()).list()
+else:
+    students = hibSession.createQuery(
+        "from Student s where s.session = :sessionId order by s.lastName, s.firstName"
+        ).setLong("sessionId", session.getUniqueId()).list()
+query = None
+if studentFilter:
+    query = Query(studentFilter)
+client = getClient()
+output = open(log.createOutput('students','csv').getAbsolutePath(), 'w')
+writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+writer.writerow(['PUID','Name','Group', 'Area', 'Clasf', 'Major', 'Course', 'CRN', 'Status', 'Status Description', 'Error'])
+log.setStatus('Checking students', len(students))
+for student in students:
+    log.incProgress()
+    if query and not query.match(DbFindEnrollmentInfoAction.DbStudentMatcher(student)):
+        continue
+    checkStudent(client, student, writer)
+writer.writerow(['EOF'])
+output.close()]]></body>
+</script>
+<script name="Learning Communities: Course Matrix Export" permission="Student Groups" engine="python" created="Thu Jun 22 09:30:22 EDT 2017">
+  <description><![CDATA[This script exports student groups and student group reservations to a CSV file.]]></description>
+  <body><![CDATA[import csv
+
+def groupSize(group):
+    if group.expectedSize: return str(group.expectedSize)
+    if group.students: return str(group.students.size())
+    return ''
+
+groups = hibSession.createQuery(
+    "from StudentGroup g where g.session = :sessionId order by g.groupAbbreviation"
+    ).setLong("sessionId", session.getUniqueId()).list()
+
+output = open(log.createOutput('learning-communities','csv').getAbsolutePath(), 'w')
+writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+writer.writerow(['LC','Name','Size', 'Subj', 'Course', 'CRN1', 'CRN2', 'CRN3', 'CRN4'])
+
+for g in groups:
+    firstLine = True
+    reservations = hibSession.createQuery(
+        "from StudentGroupReservation r where r.group = :groupId"
+        ).setLong("groupId", g.uniqueId).list()
+    for r in reservations:
+      line = None
+      if firstLine:
+          firstLine = False
+          line = [g.groupAbbreviation, g.groupName, groupSize(g)]
+      else:
+          line = ['','','']
+      line.append(r.instructionalOffering.controllingCourseOffering.subjectAreaAbbv)
+      line.append(r.instructionalOffering.controllingCourseOffering.courseNbr)
+      for c in r.classes:
+          line.append(c.getExternalId(r.instructionalOffering.controllingCourseOffering))
+      writer.writerow(line)
+    if firstLine:
+        writer.writerow([g.groupAbbreviation, g.groupName, groupSize(g)])
+writer.writerow(['EOF'])
+output.close()]]></body>
+</script>
+<script name="Learning Communities: Student Export" permission="Student Groups" engine="python" created="Thu Jun 22 09:14:25 EDT 2017">
+  <description><![CDATA[This script exports students of all student groups that have the given status.]]></description>
+  <parameter name="exportNames" label="Export Student Names" type="boolean" default="true"/>
+  <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)"/>
+  <body><![CDATA[import csv
+from java.util import TreeSet
+
+groups = hibSession.createQuery(
+    "from StudentGroup g where g.session = :sessionId order by g.groupAbbreviation"
+    ).setLong("sessionId", session.getUniqueId()).list()
+
+output = open(log.createOutput('students','csv').getAbsolutePath(), 'w')
+writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+if exportNames:
+    writer.writerow(['LC','PUID','Name'])
+else:
+    writer.writerow(['LC','PUID1','PUID2','PUID3','PUID4'])
+for g in groups:
+    students = None
+    if statusRef:
+        students = TreeSet()
+        for s in g.students:
+            if s.sectioningStatus and statusRef == s.sectioningStatus.reference: students.add(s)
+    else:
+        students = TreeSet(g.students)
+    if not students: continue
+    if exportNames:
+        for s in students:
+            writer.writerow([g.groupAbbreviation, s.externalUniqueId, s.getName('last-first-middle')])
+    else:
+        line = [g.groupAbbreviation]
+        for s in students:
+            line.append(s.externalUniqueId)
+        writer.writerow(line)
+writer.writerow(['EOF'])
+output.close()]]></body>
+</script>
 </scripts>
