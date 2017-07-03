@@ -370,8 +370,9 @@ G2, 565607184, 288674378, 845738199, 139074464
   <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
   <parameter name="file" label="Input File" type="file"/>
   <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
+  <parameter name="canCreateGroup" label="Create Groups" type="boolean" default="false"/>
   <body><![CDATA[import csv
-from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus
+from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus, StudentGroup
 from java.util import HashSet
 from java.lang import Long
 
@@ -385,6 +386,13 @@ def lookupStudent(puid):
 
 def enroll(students, lcAbbv, puids, status, writer):
     group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
+    if not group and canCreateGroup:
+        group = StudentGroup()
+        group.setGroupAbbreviation(lcAbbv)
+        group.setGroupName(lcAbbv)
+        group.setSession(session)
+        group.setStudents(HashSet())
+        hibSession.saveOrUpdate(group) 
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
         for puid in puids:
@@ -640,8 +648,9 @@ G2, 565607184, Paul Ch Armstrong, 288674378, Al R Northrop , 845738199, Pat Oliv
   <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
   <parameter name="statusRef" label="status" type="reference(StudentSectioningStatus)" default="LC"/>
   <parameter name="file" label="Input File" type="file"/>
+  <parameter name="canCreateGroup" label="Create Groups" type="boolean" default="false"/>
   <body><![CDATA[import csv
-from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus
+from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus, StudentGroup
 from difflib import SequenceMatcher
 from java.util import HashSet
 from java.lang import Long
@@ -666,6 +675,13 @@ def match(name, student):
 
 def enroll(students, lcAbbv, puids, status, writer):
     group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
+    if not group and canCreateGroup:
+      group = StudentGroup()
+      group.setGroupAbbreviation(lcAbbv)
+      group.setGroupName(lcAbbv)
+      group.setSession(session)
+      group.setStudents(HashSet())
+      hibSession.saveOrUpdate(group) 
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
         for (puid, name) in puids:
