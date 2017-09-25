@@ -1,6 +1,7 @@
 package org.unitime.banner.reports.pointintimedata;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.hibernate.Session;
@@ -101,16 +102,23 @@ public class AllWSCHForDepartmentByClassAndInstructor extends WSCHByDepartment {
 
 	@Override
 	public void createWeeklyStudentContactHoursByDepartmentReportFor(PointInTimeData pointInTimeData, Session hibSession) {
+		HashSet<Long> processedClasses = new HashSet<Long>();
+
 		for(Long deptId : getDepartmentIds()) {
 			Department d = (Department) hibSession.createQuery("from Department d where d.uniqueId = :id").setLong("id", deptId).setCacheable(true).uniqueResult();
-			List<PitClass> pitClassesForDept = findAllPitClassesWithContactHoursForDepartment(pointInTimeData, d, hibSession);
-			for(PitClass pc : pitClassesForDept) {
-				if (pc.getPitClassInstructors() != null && !pc.getPitClassInstructors().isEmpty()){
-					for (PitClassInstructor pci : pc.getPitClassInstructors()){
-						addClassInstructorRow(d, pc, pci, hibSession);
+			for (Long pioUid : findAllPitInstructionalOfferingUniqueIdsForDepartment(pointInTimeData, deptId, hibSession)) {
+				for(PitClass pc : findAllPitClassesForPitInstructionalOfferingId(pointInTimeData, pioUid, hibSession)) {
+					if (processedClasses.contains(pc.getUniqueId())){
+						continue;
 					}
-				} else {
-					addClassInstructorRow(d, pc, null, hibSession);
+					processedClasses.add(pc.getUniqueId());
+					if (pc.getPitClassInstructors() != null && !pc.getPitClassInstructors().isEmpty()){
+						for (PitClassInstructor pci : pc.getPitClassInstructors()){
+							addClassInstructorRow(d, pc, pci, hibSession);
+						}
+					} else {
+						addClassInstructorRow(d, pc, null, hibSession);
+					}
 				}
 			}
 		}
