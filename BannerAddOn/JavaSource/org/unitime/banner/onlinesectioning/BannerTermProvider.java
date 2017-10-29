@@ -21,6 +21,7 @@ package org.unitime.banner.onlinesectioning;
 
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerSessionDAO;
+import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.custom.ExternalTermProvider;
 
@@ -28,7 +29,6 @@ import org.unitime.timetable.onlinesectioning.custom.ExternalTermProvider;
  * @author Tomas Muller
  */
 public class BannerTermProvider implements ExternalTermProvider {
-
 	@Override
 	public String getExternalTerm(AcademicSessionInfo session) {
 		org.hibernate.Session hibSession = BannerSessionDAO.getInstance().createNewSession();
@@ -64,7 +64,15 @@ public class BannerTermProvider implements ExternalTermProvider {
 
 	@Override
 	public String getExternalCourseNumber(AcademicSessionInfo session, String subjectArea, String courseNumber) {
-		return courseNumber.length() > 5 ? courseNumber.substring(0, 5) : courseNumber;
+		return courseNumber.length() > getCourseNumberLength() ? courseNumber.substring(0, getCourseNumberLength()) : courseNumber;
+	}
+	
+	private Integer iCourseNumberLength = null;
+	public int getCourseNumberLength() {
+		if (iCourseNumberLength == null) {
+			iCourseNumberLength = Integer.valueOf(ApplicationProperties.getProperty("tmtbl.banner.courseNumberLength", "5"));
+		}
+		return iCourseNumberLength;
 	}
 
 }

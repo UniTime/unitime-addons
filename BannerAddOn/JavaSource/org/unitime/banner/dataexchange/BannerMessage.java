@@ -302,14 +302,13 @@ public class BannerMessage {
 			return(null);
 		}
 		BannerMessageAction xmlAction = action;
-
 		Element sectionElement = root.addElement("SECTION");
 		Debug.info((bannerSection.getCrn()==null?"":bannerSection.getCrn().toString()) + " - " + courseOffering.getCourseNameWithTitle());
 		sectionElement.addAttribute("ACTION", xmlAction.toString());
 		sectionElement.addAttribute("EXTERNAL_ID", bannerSection.getUniqueId().toString());
 		sectionElement.addAttribute("CRN", (bannerSection.getCrn()==null?"":bannerSection.getCrn().toString()));
 		sectionElement.addAttribute("SUBJ_CODE", courseOffering.getSubjectAreaAbbv());
-		sectionElement.addAttribute("CRSE_NUMB", courseOffering.getCourseNbr().substring(0, 5));
+		sectionElement.addAttribute("CRSE_NUMB", courseOffering.getCourseNbr().substring(0, getCourseNumberLength()));
 		if (!BannerMessageAction.DELETE.equals(xmlAction)) {
 			sectionElement.addAttribute("ID", bannerSection.getSectionIndex());
 			sectionElement.addAttribute("TITLE", courseOffering.getTitle());
@@ -482,5 +481,12 @@ public class BannerMessage {
 	public void setDocument(Document document) {
 		this.document = document;
 	}
-
+	
+	private Integer iCourseNumberLength = null;
+	public int getCourseNumberLength() {
+		if (iCourseNumberLength == null) {
+			iCourseNumberLength = Integer.valueOf(ApplicationProperties.getProperty("tmtbl.banner.courseNumberLength", "5"));
+		}
+		return iCourseNumberLength;
+	}
 }

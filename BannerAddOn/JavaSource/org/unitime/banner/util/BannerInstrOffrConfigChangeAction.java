@@ -30,6 +30,7 @@ import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.interfaces.ExternalInstrOffrConfigChangeAction;
 import org.unitime.timetable.model.CourseOffering;
@@ -162,7 +163,7 @@ public class BannerInstrOffrConfigChangeAction implements
 				//count all classes that match this course number minus any suffix in all matching academic terms
 				int count = Integer.parseInt(hibSession.createQuery(query)
 				          .setString("subject", co.getSubjectAreaAbbv())
-				          .setString("crsNbrBase", (co.getCourseNbr().substring(0, 5) + "%"))
+				          .setString("crsNbrBase", (co.getCourseNbr().substring(0, getCourseNumberLength()) + "%"))
 				          .setLong("sessionId",	instructionalOffering.getSession().getUniqueId().longValue())
 				          .uniqueResult().toString())
 				          ;
@@ -175,6 +176,14 @@ public class BannerInstrOffrConfigChangeAction implements
 		}
 		
 		return(canOccur);
+	}
+	
+	private Integer iCourseNumberLength = null;
+	public int getCourseNumberLength() {
+		if (iCourseNumberLength == null) {
+			iCourseNumberLength = Integer.valueOf(ApplicationProperties.getProperty("tmtbl.banner.courseNumberLength", "5"));
+		}
+		return iCourseNumberLength;
 	}
 
 
