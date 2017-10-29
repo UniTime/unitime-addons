@@ -48,8 +48,8 @@ import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.UserContext;
 import org.unitime.timetable.security.rights.Right;
+import org.unitime.timetable.solver.service.SolverServerService;
 import org.unitime.timetable.util.queue.QueueItem;
-import org.unitime.timetable.util.queue.QueueProcessor;
 
 
 
@@ -65,6 +65,8 @@ public class RollForwardColleagueSessionAction extends RollForwardSessionAction 
 	 */
 
 	@Autowired SessionContext sessionContext;
+	
+	@Autowired SolverServerService solverServerService;
 
 	/** 
 	 * Method execute
@@ -95,7 +97,7 @@ public class RollForwardColleagueSessionAction extends RollForwardSessionAction 
     		sessionContext.checkPermission(rollForwardColleagueSessionForm.getSessionToRollForwardTo(), "Session", Right.SessionRollForward);
             ActionMessages errors = rollForwardColleagueSessionForm.validate(mapping, request);
             if (errors.size() == 0 && rollForwardColleagueSessionForm.getRollForwardColleagueSession().booleanValue()) {
-            	QueueProcessor.getInstance().add(new ColleagueRollForwardQueueItem(
+            	solverServerService.getQueueProcessor().add(new ColleagueRollForwardQueueItem(
             			SessionDAO.getInstance().get(rollForwardColleagueSessionForm.getSessionToRollForwardTo()), 
             			sessionContext.getUser(),
             			(RollForwardColleagueSessionForm)rollForwardColleagueSessionForm.clone()));
@@ -105,7 +107,7 @@ public class RollForwardColleagueSessionAction extends RollForwardSessionAction 
         }
 
 		if (request.getParameter("remove") != null) {
-			QueueProcessor.getInstance().remove(Long.valueOf(request.getParameter("remove")));
+			solverServerService.getQueueProcessor().remove(request.getParameter("remove"));
 	    }
 		WebTable table = getQueueTable(request, rollForwardColleagueSessionForm);
 	    if (table != null) {
@@ -120,7 +122,7 @@ public class RollForwardColleagueSessionAction extends RollForwardSessionAction 
         WebTable.setOrder(sessionContext,"rollForwardColleagueSession.ord",request.getParameter("ord"),1);
 		String log = request.getParameter("log");
 		DateFormat df = new SimpleDateFormat("h:mma");
-		List<QueueItem> queue = QueueProcessor.getInstance().getItems(null, null, "Colleague Roll Forward");
+		List<QueueItem> queue = solverServerService.getQueueProcessor().getItems(null, null, "Colleague Roll Forward");
 		if (queue.isEmpty()) return null;
 		WebTable table = new WebTable(9, null, "rollForwardColleagueSession.do?ord=%%",
 				new String[] { "Name", "Status", "Progress", "Owner", "Session", "Created", "Started", "Finished", "Output"},
@@ -146,7 +148,7 @@ public class RollForwardColleagueSessionAction extends RollForwardSessionAction 
 						df.format(item.created()),
 						item.started() == null ? "" : df.format(item.started()),
 						item.finished() == null ? "" : df.format(item.finished()),
-						item.output() == null ? "" : "<A href='temp/"+item.output().getName()+"'>"+item.output().getName().substring(item.output().getName().lastIndexOf('.') + 1).toUpperCase()+"</A>"
+						item.hasOutput() && item.finished() != null ? "<A href='"+item.getOutputFileLink()+"'>"+item.output().getName().substring(item.output().getName().lastIndexOf('.') + 1).toUpperCase()+"</A>" : ""
 					},
 					new Comparable[] {
 						item.getId(),
@@ -174,6 +176,7 @@ public class RollForwardColleagueSessionAction extends RollForwardSessionAction 
 
 	
 	private class ColleagueRollForwardQueueItem extends QueueItem {
+		private static final long serialVersionUID = 1L;
 		private RollForwardColleagueSessionForm iForm;
 		private int iProgress = 0;
 		private ActionErrors iErrors = new ActionErrors();
