@@ -799,7 +799,23 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			fixCourseDemands = true;
         		changed = true;
     		} else {
-    			remaining.remove(cr.getCourseDemand());
+    			if (!remaining.remove(cr.getCourseDemand()) && cr.getCourseDemand().getCourseRequests().size() > 1) {
+    				// course demand has been already removed -> need to split the course demand
+    				cr.getCourseDemand().getCourseRequests().remove(cr);
+    				CourseDemand cd = new CourseDemand();
+        			cd.setTimestamp(ts);
+        			cd.setCourseRequests(new HashSet<CourseRequest>());
+        			cd.setEnrollmentMessages(new HashSet<StudentEnrollmentMessage>());
+        			cd.setStudent(student);
+        			student.getCourseDemands().add(cd);
+        			cd.setAlternative(false);
+        			cd.setPriority(nextPriority++);
+        			cd.setWaitlist(false);
+        			cr.setCourseDemand(cd);
+        			cd.getCourseRequests().add(cr);
+        			fixCourseDemands = true;
+        			changed = true;
+    			}
     			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
 					StudentEnrollmentMessage message = i.next();
 					helper.getHibSession().delete(message);
@@ -839,15 +855,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	}
 
     	if ((fixCourseDemands || !deletes.isEmpty()) && student.getUniqueId() != null) {
-    		// removed unused course demands
-    		for (CourseDemand cd: (fixCourseDemands ? remaining : deletes)) {
-    			if (cd.getFreeTime() != null)
-    				helper.getHibSession().delete(cd.getFreeTime());
-    			for (CourseRequest cr: cd.getCourseRequests())
-    				helper.getHibSession().delete(cr);
-    			student.getCourseDemands().remove(cd);
-    			helper.getHibSession().delete(cd);
-    		}
+    		// removed unused course demands (only when not in the registration mode)
+    		if (student.getSession().getStatusType() == null || !student.getSession().getStatusType().canPreRegisterStudents())
+    			for (CourseDemand cd: (fixCourseDemands ? remaining : deletes)) {
+        			if (cd.getFreeTime() != null)
+        				helper.getHibSession().delete(cd.getFreeTime());
+        			for (CourseRequest cr: cd.getCourseRequests())
+        				helper.getHibSession().delete(cr);
+        			student.getCourseDemands().remove(cd);
+        			helper.getHibSession().delete(cd);
+        		}
+    		// fix priorities
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
     			cd.setPriority(priority++);
