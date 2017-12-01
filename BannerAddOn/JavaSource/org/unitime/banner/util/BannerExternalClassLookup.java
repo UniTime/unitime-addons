@@ -36,14 +36,14 @@ public class BannerExternalClassLookup implements ExternalClassLookupInterface {
 		return (CourseOffering) CourseOfferingDAO.getInstance().getSession().createQuery(
 					"select distinct co from BannerSection bs, CourseOffering co where " +
 					"bs.session.uniqueId = :sessionId and bs.crn = :crn and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId"
-				).setLong("sessionId",sessionId).setString("externalId", externalId).setCacheable(true).setMaxResults(1).uniqueResult();
+				).setLong("sessionId",sessionId).setString("crn", externalId).setCacheable(true).setMaxResults(1).uniqueResult();
 	}
 
 	@Override
 	public List<Class_> findClassesByExternalId(Long sessionId, String externalId) {
 		return (List<Class_>) CourseOfferingDAO.getInstance().getSession().createQuery(
 				"select c from BannerSection bs inner join bs.bannerSectionToClasses b2c, Class_ c where " +
-				"bs.session.uniqueId = :sessionId and b2c.classId = c.uniqueId"
-			).setLong("sessionId",sessionId).setString("externalId", externalId).setCacheable(true).uniqueResult();
+				"bs.session.uniqueId = :sessionId and b2c.classId = c.uniqueId and bs.crn = :crn"
+			).setLong("sessionId",sessionId).setString("crn", externalId).setCacheable(true).list();
 	}
 }
