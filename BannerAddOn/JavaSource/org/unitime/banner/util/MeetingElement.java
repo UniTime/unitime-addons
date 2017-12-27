@@ -33,6 +33,7 @@ import org.dom4j.Element;
 import org.unitime.banner.dataexchange.BannerMessage;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.model.Assignment;
+import org.unitime.timetable.model.ClassInstructor;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.DatePattern;
 import org.unitime.timetable.model.Location;
@@ -40,6 +41,7 @@ import org.unitime.timetable.model.NonUniversityLocation;
 import org.unitime.timetable.model.PreferenceLevel;
 import org.unitime.timetable.model.Room;
 import org.unitime.timetable.model.RoomPref;
+import org.unitime.timetable.model.TeachingResponsibility;
 import org.unitime.timetable.util.Constants;
 import org.unitime.timetable.util.DateUtils;
 
@@ -66,6 +68,8 @@ public class MeetingElement implements Comparable<MeetingElement> {
 	private String hoursToArrange;
 	private String meetingId;
     private static SimpleDateFormat sDateFormat = new SimpleDateFormat("MM/dd/yyyy");
+    private String roomType;
+    private String instructorId;
 	
 
 	/**
@@ -83,7 +87,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 	}
 	
 	public MeetingElement(Date startDate, Date endDate, String beginTime, String endTime, IntEnumeration days,
-						String bldgCode, String roomCode, String hoursToArrange, BannerSection bannerSection, Class_ clazz) {
+						String bldgCode, String roomCode, String roomType, String hoursToArrange, String instructorId, BannerSection bannerSection, Class_ clazz) {
 		this.monday = false;
 		this.tuesday = false;
 		this.wednesday = false;
@@ -98,8 +102,10 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		setDaysOfWeek(days);
 		this.bldgCode = bldgCode;
 		this.roomCode = roomCode;
+		this.roomType = roomType;
 		this.hoursToArrange = hoursToArrange;
 		this.meetingId = bannerSection.getUniqueId().toString() + "-" + clazz.getUniqueId().toString();
+		this.instructorId = instructorId;
 	}
 	
     private static String getStartTimeForAssignment(Assignment a) {
@@ -115,10 +121,34 @@ public class MeetingElement implements Comparable<MeetingElement> {
         int h = min / 60;
         return (h<10?"0":"")+h+(m<10?"0":"")+m;
     }
+    
+    private static String instructorId(Class_ clazz, int minLength) {
+    	if (clazz == null || clazz.isCancelled()) return null;
+    	if (clazz.getCommittedAssignment() == null && !clazz.getEffectiveTimePreferences().isEmpty()) return null;
+    	ClassInstructor instructor = null;
+    	if (clazz.getClassInstructors() != null) {
+        	for (ClassInstructor ci: clazz.getClassInstructors()) {
+        		if (ci.getInstructor().getExternalUniqueId() == null || ci.getInstructor().getExternalUniqueId().isEmpty()) continue;
+        		if (ci.getResponsibility() != null && ci.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) continue;
+        		if (ci.getResponsibility() != null && ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) continue;
+        		if (instructor == null || instructor.getPercentShare() < ci.getPercentShare())
+        			instructor = ci;
+        	}
+    	}
+    	if (instructor == null) return null;
+    	String id = instructor.getInstructor().getExternalUniqueId();
+    	while (id != null && id.length() < minLength)
+    		id = "0" + id;
+    	return id;
+    }
 
 
 	public static Vector<MeetingElement> createMeetingElementsFor(BannerSection bannerSection, Class_ clazz, org.hibernate.Session hibSession, BannerMessage bannerMessage){
 		Vector<MeetingElement> elements = new Vector<MeetingElement>();
+		
+		String instructorId = null;
+		if (bannerMessage.getContext().isIncludePrimaryInstructorId())
+			instructorId = instructorId(clazz, bannerMessage.getContext().getInstructorIdLength());
 		
 		Assignment a = clazz.getCommittedAssignment();
 		if (a != null){
@@ -127,6 +157,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 			String endTime = getEndTimeForAssignment(a);
 			String bldgAbbv = null;
 			String roomNbr = null;
+			String roomType = null;
 			int roomCount = 0;
 			for(Iterator locationIt = a.getRooms().iterator(); locationIt.hasNext();){
 				Location loc = (Location) locationIt.next();
@@ -134,17 +165,21 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					NonUniversityLocation nonUnivLoc = (NonUniversityLocation) loc;
 					bldgAbbv = "OFFCMP";
 					roomNbr = nonUnivLoc.getName();
+					if (bannerMessage.getContext().isIncludeRoomType())
+						roomType = loc.getRoomType().getReference();
 				}
 				if (loc instanceof Room) {
 					Room room = (Room) loc;
 					bldgAbbv = room.getBuildingAbbv();
 					roomNbr = room.getRoomNumber();
+					if (bannerMessage.getContext().isIncludeRoomType())
+						roomType = room.getRoomType().getReference();
 				}
 				roomCount++;
 				for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 					Date startDate = dateIt.next();
 					Date endDate = dates.get(startDate);				
-					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, bannerSection, clazz);
+					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, roomType, null, instructorId, bannerSection, clazz);
 					elements.add(me);
 				}
 			}
@@ -152,7 +187,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 					Date startDate = dateIt.next();
 					Date endDate = dates.get(startDate);				
-					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, bannerSection, clazz);
+					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, roomType, null, instructorId, bannerSection, clazz);
 					elements.add(me);
 				}
 			}
@@ -178,20 +213,25 @@ public class MeetingElement implements Comparable<MeetingElement> {
 						createdMeetingElement = true;
 						String bldgAbbv = null;
 						String roomNbr = null;
+						String roomType = null;
 						if (rp.getRoom() instanceof NonUniversityLocation) {
 							NonUniversityLocation nonUnivLoc = (NonUniversityLocation) rp.getRoom();
 							bldgAbbv = "OFFCMP";
-							roomNbr = nonUnivLoc.getName();			
+							roomNbr = nonUnivLoc.getName();
+							if (bannerMessage.getContext().isIncludeRoomType())
+								roomType = nonUnivLoc.getRoomType().getReference();
 						}
 						if (rp.getRoom() instanceof Room) {
 							Room room = (Room) rp.getRoom();
 							bldgAbbv = room.getBuildingAbbv();
-							roomNbr = room.getRoomNumber();								
+							roomNbr = room.getRoomNumber();
+							if (bannerMessage.getContext().isIncludeRoomType())
+								roomType = room.getRoomType().getReference();
 						}
 						for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 							Date startDate = dateIt.next();
 							Date endDate = dates.get(startDate);				
-							MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, bldgAbbv, roomNbr, new Double(hours).toString(), bannerSection, clazz);
+							MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, bldgAbbv, roomNbr, roomType, new Double(hours).toString(), instructorId, bannerSection, clazz);
 							elements.add(me);
 						}
 					}
@@ -200,7 +240,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 						Date startDate = dateIt.next();
 						Date endDate = dates.get(startDate);				
-						MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, null, null, new Double(hours).toString(), bannerSection, clazz);
+						MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, null, null, null, new Double(hours).toString(), instructorId, bannerSection, clazz);
 						elements.add(me);
 					}
 				}
@@ -416,14 +456,19 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		if (bldgCode != null && bldgCode.trim().length() > 0 && roomCode != null && roomCode.trim().length() > 0){
 			meetingElement.addAttribute("BLDG_CODE", bldgCode.trim());
 			meetingElement.addAttribute("ROOM_CODE", roomCode.trim());
+			if (roomType != null)
+				meetingElement.addAttribute("ROOM_TYPE", roomType);
 		} else {
 			meetingElement.addAttribute("BLDG_CODE", "");
-			meetingElement.addAttribute("ROOM_CODE", "");			
+			meetingElement.addAttribute("ROOM_CODE", "");
 		}
 		if (hoursToArrange != null && hoursToArrange.trim().length() > 0){
 			meetingElement.addAttribute("ARRANGE_HOURS_WEEK", hoursToArrange);
 		} else {
 			meetingElement.addAttribute("ARRANGE_HOURS_WEEK", "");			
+		}
+		if (instructorId != null && !instructorId.isEmpty()) {
+			meetingElement.addAttribute("INSTRUCTOR_ID", instructorId);
 		}
 	}
 

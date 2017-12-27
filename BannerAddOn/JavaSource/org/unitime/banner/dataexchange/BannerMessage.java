@@ -234,8 +234,8 @@ public class BannerMessage {
 			int pct = tm.get(instructor).intValue();
 			Element instructorElement = sectionElement.addElement("INSTRUCTOR");
 			String id = "";
-			if (instructor.getExternalUniqueId().length() < 9){
-				for (int i = 0; i < (9 - instructor.getExternalUniqueId().length()); i++){
+			if (instructor.getExternalUniqueId().length() < getContext().getInstructorIdLength()){
+				for (int i = 0; i < (getContext().getInstructorIdLength() - instructor.getExternalUniqueId().length()); i++){
 					id += "0";
 				}
 			}
@@ -308,7 +308,7 @@ public class BannerMessage {
 		sectionElement.addAttribute("EXTERNAL_ID", bannerSection.getUniqueId().toString());
 		sectionElement.addAttribute("CRN", (bannerSection.getCrn()==null?"":bannerSection.getCrn().toString()));
 		sectionElement.addAttribute("SUBJ_CODE", courseOffering.getSubjectAreaAbbv());
-		sectionElement.addAttribute("CRSE_NUMB", courseOffering.getCourseNbr().substring(0, getCourseNumberLength()));
+		sectionElement.addAttribute("CRSE_NUMB", courseOffering.getCourseNbr().substring(0, getContext().getCourseNumberLength()));
 		if (!BannerMessageAction.DELETE.equals(xmlAction)) {
 			sectionElement.addAttribute("ID", bannerSection.getSectionIndex());
 			sectionElement.addAttribute("TITLE", courseOffering.getTitle());
@@ -482,11 +482,31 @@ public class BannerMessage {
 		this.document = document;
 	}
 	
-	private Integer iCourseNumberLength = null;
-	public int getCourseNumberLength() {
-		if (iCourseNumberLength == null) {
-			iCourseNumberLength = Integer.valueOf(ApplicationProperties.getProperty("tmtbl.banner.courseNumberLength", "5"));
+	public static class BannerMessageContext {
+		private int iCourseNumberLength;
+		private int iInstructorIdLength;
+		private boolean iIncludeRoomType;
+		private boolean iIncludePrimaryInstructorId;
+		
+		
+		BannerMessageContext() {
+			iCourseNumberLength = Integer.parseInt(ApplicationProperties.getProperty("tmtbl.banner.courseNumberLength", "5"));
+			iInstructorIdLength = Integer.parseInt(ApplicationProperties.getProperty("tmtbl.banner.instructorIdLength", "9"));
+			iIncludeRoomType = "true".equalsIgnoreCase(ApplicationProperties.getProperty("tmtbl.banner.includeRoomType", "false"));
+			iIncludePrimaryInstructorId = "true".equalsIgnoreCase(ApplicationProperties.getProperty("tmtbl.banner.includePrimaryInstructorId", "false"));
 		}
-		return iCourseNumberLength;
+		
+		public int getCourseNumberLength() { return iCourseNumberLength; }
+		public int getInstructorIdLength() { return iInstructorIdLength; }
+		public boolean isIncludeRoomType() { return iIncludeRoomType; }
+		public boolean isIncludePrimaryInstructorId() { return iIncludePrimaryInstructorId; }
+	}
+	
+	private BannerMessageContext iContext;
+	
+	public BannerMessageContext getContext() {
+		if (iContext == null)
+			iContext = new BannerMessageContext();
+		return iContext;
 	}
 }
