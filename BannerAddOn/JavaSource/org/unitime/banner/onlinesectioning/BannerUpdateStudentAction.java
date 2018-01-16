@@ -35,6 +35,7 @@ import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicClassification;
+import org.unitime.timetable.model.Advisor;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
@@ -44,6 +45,7 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OverrideReservation;
 import org.unitime.timetable.model.PosMajor;
+import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentAccomodation;
@@ -87,6 +89,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private Long iStudentId;
 	private Session iSession;
 	private UpdateResult iResult = UpdateResult.OK;
+	private List<String[]> iAdvisors = new ArrayList<String[]>();
 	
 	public BannerUpdateStudentAction forStudent(String externalId, String termCode) {
 		iExternalId = externalId;
@@ -133,6 +136,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		iOverrides.add(new String[] {type, subject, course, crn});
 		return this;
 	}
+	
+	public BannerUpdateStudentAction withAdvisor(String externalId, String type) {
+		iAdvisors.add(new String[] {externalId, type});
+		return this;
+	}
 
 	@Override
 	public UpdateResult execute(OnlineSectioningServer server, OnlineSectioningHelper helper) {
@@ -172,6 +180,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					changed = true;
 				
 				if (updateStudentGroups(student, helper))
+					changed = true;
+				
+				if (updateAdvisors(student, helper))
 					changed = true;
 				
 				Map<CourseOffering, List<Class_>> enrollments = getEnrollments(helper);
@@ -906,6 +917,49 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			}
 		}
 		return enrollments;
+	}
+	
+	protected boolean updateAdvisors(Student student, OnlineSectioningHelper helper) {
+		Set<Advisor> advisors = new HashSet<Advisor>();
+		for (String[] a: iAdvisors) {
+			String externalId = a[0], type = a[1];
+			Roles role = null;
+			if (type != null && !type.isEmpty())
+				role = Roles.getRole(type + " Advisor", helper.getHibSession());
+			if (role == null)
+				role = Roles.getRole("Advisor", helper.getHibSession());
+			if (role == null) {
+				helper.warn("No advisor role found for " + type);
+				continue;
+			}
+			Advisor advisor = (Advisor)helper.getHibSession().createQuery(
+					"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId")
+					.setString("externalId", externalId).setLong("roleId", role.getRoleId()).setLong("sessionId", iSession.getUniqueId())
+					.setCacheable(true).setMaxResults(1).uniqueResult();
+			if (advisor == null) {
+				advisor = new Advisor();
+				advisor.setExternalUniqueId(externalId);
+				advisor.setRole(role);
+				advisor.setSession(iSession);
+				advisor.setStudents(new HashSet<Student>());
+				advisor.setUniqueId((Long)helper.getHibSession().save(advisor));
+				helper.info("Added Advisor:  " + advisor.getExternalUniqueId() + " - " + advisor.getRole().getReference() + " to session " + advisor.getSession().academicInitiativeDisplayString());
+			}
+			advisors.add(advisor);
+		}
+		boolean changed = false;
+		for (Advisor a: student.getAdvisors()) {
+			if (advisors.remove(a)) continue;
+			a.getStudents().remove(student);
+			student.getAdvisors().remove(a);
+			changed = true;
+		}
+		for (Advisor a: advisors) {
+			a.addTostudents(student);
+			student.addToadvisors(a);
+			changed = true;
+		}
+    	return changed;
 	}
 	
 	protected boolean eq(Object o1, Object o2) {

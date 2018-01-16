@@ -141,7 +141,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		}
 
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public void processMessage(org.hibernate.Session hibSession, Element rootElement) {
 		if (!"studentUpdates".equalsIgnoreCase(rootElement.getName())) return;
@@ -255,6 +255,14 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 							overrideElement.attributeValue("crn"));
 				}
 				
+				// Student advisors
+				for (Iterator<?> j = studentElement.elementIterator("advisor"); j.hasNext(); ) {
+					Element advisorElement = (Element)j.next();
+					update.withAdvisor(
+							advisorElement.attributeValue("advisorId"),
+							advisorElement.attributeValue("advisorType"));
+				}
+
 				for (Long sessionId: sessionIds) {
 					try {
 						OnlineSectioningServer server = (iContainer == null ? null : iContainer.getSolver(sessionId.toString()));
