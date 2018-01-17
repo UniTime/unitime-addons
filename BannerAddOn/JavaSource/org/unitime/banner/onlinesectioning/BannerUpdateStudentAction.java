@@ -477,11 +477,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			groups.add(sg);
 		}
 		boolean changed = false;
-		for (StudentGroup g: student.getGroups()) {
+		for (Iterator<StudentGroup> i = student.getGroups().iterator(); i.hasNext(); ) {
+			StudentGroup g = i.next();
 			if (groups.remove(g)) continue;
 			if (g.getExternalUniqueId() != null) {
 				g.getStudents().remove(student);
-				student.getGroups().remove(g);
+				i.remove();
 				changed = true;
 			}
 		}
@@ -950,10 +951,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 		boolean changed = false;
 		if (student.getAdvisors() != null)
-			for (Advisor a: student.getAdvisors()) {
+			for (Iterator<Advisor> i = student.getAdvisors().iterator(); i.hasNext(); ) {
+				Advisor a = i.next();
 				if (advisors.remove(a)) continue;
 				a.getStudents().remove(student);
-				student.getAdvisors().remove(a);
+				i.remove();
 				changed = true;
 			}
 		for (Advisor a: advisors) {
