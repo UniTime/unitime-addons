@@ -258,9 +258,13 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 				// Student advisors
 				for (Iterator<?> j = studentElement.elementIterator("advisor"); j.hasNext(); ) {
 					Element advisorElement = (Element)j.next();
-					update.withAdvisor(
-							advisorElement.attributeValue("advisorId"),
-							advisorElement.attributeValue("advisorType"));
+					String advisorExternalId = advisorElement.attributeValue("advisorId");
+					if (advisorExternalId == null) {
+						error("No externalId was given for an advisor.");
+						continue;
+					}
+					while (trimLeadingZerosFromExternalId && advisorExternalId.startsWith("0")) advisorExternalId = advisorExternalId.substring(1);
+					update.withAdvisor(advisorExternalId, advisorElement.attributeValue("advisorType"));
 				}
 
 				for (Long sessionId: sessionIds) {

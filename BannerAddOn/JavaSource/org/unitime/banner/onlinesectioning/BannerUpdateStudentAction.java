@@ -347,6 +347,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			student.setGroups(new HashSet<StudentGroup>());
 			student.setAccomodations(new HashSet<StudentAccomodation>());
 			student.setNotes(new HashSet<StudentNote>());
+			student.setAdvisors(new HashSet<Advisor>());
 		}
 		return student;
 	}
@@ -948,12 +949,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			advisors.add(advisor);
 		}
 		boolean changed = false;
-		for (Advisor a: student.getAdvisors()) {
-			if (advisors.remove(a)) continue;
-			a.getStudents().remove(student);
-			student.getAdvisors().remove(a);
-			changed = true;
-		}
+		if (student.getAdvisors() != null)
+			for (Advisor a: student.getAdvisors()) {
+				if (advisors.remove(a)) continue;
+				a.getStudents().remove(student);
+				student.getAdvisors().remove(a);
+				changed = true;
+			}
 		for (Advisor a: advisors) {
 			a.addTostudents(student);
 			student.addToadvisors(a);
