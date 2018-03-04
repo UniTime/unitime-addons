@@ -611,7 +611,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		return((ColleagueSection)hibSession
 				.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.colleagueSection.courseOfferingId = :courseOfferingId " +
-						" and csc.classId = :classId")
+						" and csc.classId = :classId and csc.colleagueSection.deleted = false")
 				.setLong("classId", clazz.getUniqueId().longValue())
 				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
 				.setFlushMode(FlushMode.MANUAL)
@@ -627,7 +627,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		return((ColleagueSection)hibSession
 				.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.colleagueSection.courseOfferingId = :courseOfferingId " +
-						" and csc.classId = :classId")
+						" and csc.classId = :classId and csc.colleagueSection.deleted = false")
 				.setLong("classId", clazz.getUniqueId().longValue())
 				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
 				.setFlushMode(FlushMode.MANUAL)
@@ -734,7 +734,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		Boolean control = co.isIsControl();
 		if (control.booleanValue()){
-			if (this.getColleagueSectionToClasses() == null || this.getColleagueSectionToClasses().isEmpty()){
+			if (this.getColleagueSectionToClasses() == null || this.getColleagueSectionToClasses().isEmpty()  || this.isDeleted().booleanValue()){
 				return;
 			}
 			for (Iterator<?> it = this.getColleagueSectionToClasses().iterator(); it.hasNext();){
