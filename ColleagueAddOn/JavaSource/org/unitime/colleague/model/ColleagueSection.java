@@ -809,7 +809,7 @@ public class ColleagueSection extends BaseColleagueSection {
 									pct += (ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0);
 									instructorPercents.put(ci.getInstructor(),new Integer(pct));
 								} else {
-									if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary) && totalPercent > 0)
+									if ((ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) && totalPercent > 0)
 										instructorPercents.put(ci.getInstructor(),new Integer(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
 									else {
 										instructorPercents.put(ci.getInstructor(),new Integer(0));
