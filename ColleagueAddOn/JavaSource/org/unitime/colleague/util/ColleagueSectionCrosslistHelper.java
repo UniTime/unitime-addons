@@ -27,8 +27,6 @@ import java.util.List;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
-import org.unitime.colleague.dataexchange.SendColleagueMessage;
 import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.commons.Debug;
 import org.unitime.timetable.model.Class_;

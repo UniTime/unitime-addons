@@ -33,7 +33,6 @@ import org.dom4j.Element;
 import org.hibernate.Session;
 import org.unitime.colleague.model.ColleagueRestriction;
 import org.unitime.colleague.model.ColleagueSection;
-import org.unitime.colleague.model.ColleagueSectionToClass;
 import org.unitime.colleague.model.ColleagueSession;
 import org.unitime.colleague.model.ColleagueSuffixDef;
 import org.unitime.colleague.util.ColleagueMessageIdGenerator;
@@ -48,7 +47,6 @@ import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.VariableFixedCreditUnitConfig;
-import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.DatePatternDAO;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
 
@@ -404,27 +402,6 @@ public class ColleagueMessage {
 			sectionElement.addAttribute("SOFF_END_DATE", sDateFormat.format(endDate));
 		} 
 		return(sectionElement);
-	}
-	
-	@SuppressWarnings("unchecked")
-	private TreeSet<Integer> getCrossListedCrns(ColleagueSection colleagueSection, Session hibSession){
-		TreeSet<Integer> ts = new TreeSet<Integer>();
-		Session querySession = hibSession;
-		if (querySession == null){
-			querySession = Class_DAO.getInstance().getSession();
-		}
-		if (colleagueSection.isCrossListedSection(querySession)){
-			for (Iterator bscIt = colleagueSection.getColleagueSectionToClasses().iterator(); bscIt.hasNext();){
-				ColleagueSectionToClass bsc = (ColleagueSectionToClass) bscIt.next();
-				for(Iterator crnIt = querySession.createQuery("select distinct bsc.colleagueSection.crn from ColleagueSectionToClass bsc where bsc.classId = :classId").setLong("classId", bsc.getClassId().longValue()).iterate(); crnIt.hasNext();) {
-					Integer crn = (Integer) crnIt.next();
-					if (crn != null) {
-						ts.add(crn);
-					}
-				}
-			}
-		}
-		return(ts);
 	}
 	
 	private TreeSet<MeetingElement> mergeMeetings(Set<MeetingElement> meetings){

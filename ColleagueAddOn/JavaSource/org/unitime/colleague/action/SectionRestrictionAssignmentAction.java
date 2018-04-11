@@ -33,7 +33,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.ActionRedirect;
-import org.apache.struts.util.MessageResources;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unitime.colleague.form.SectionRestrictionAssignmentForm;
@@ -87,7 +86,6 @@ public class SectionRestrictionAssignmentAction extends Action {
         HttpServletRequest request,
         HttpServletResponse response) throws Exception {
 
-        MessageResources rsc = getResources(request);
         SectionRestrictionAssignmentForm frm = (SectionRestrictionAssignmentForm) form;
 
         // Get operation

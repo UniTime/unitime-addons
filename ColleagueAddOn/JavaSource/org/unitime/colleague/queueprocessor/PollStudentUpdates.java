@@ -30,7 +30,6 @@ import java.util.Date;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
-import org.unitime.colleague.dataexchange.ReceiveColleagueResponseMessage;
 import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueIn;
 import org.unitime.colleague.model.QueueOut;

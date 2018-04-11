@@ -2,7 +2,6 @@ package org.unitime.banner.reports.pointintimedata;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;

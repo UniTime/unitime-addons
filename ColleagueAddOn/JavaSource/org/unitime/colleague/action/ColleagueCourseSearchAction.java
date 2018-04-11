@@ -39,7 +39,6 @@ import org.unitime.localization.impl.LocalizedLookupDispatchAction;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.localization.messages.Messages;
 import org.unitime.timetable.defaults.SessionAttribute;
-import org.unitime.timetable.form.InstructionalOfferingListForm;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
@@ -145,10 +144,7 @@ public class ColleagueCourseSearchAction extends LocalizedLookupDispatchAction {
 			HttpServletResponse response) throws Exception {
 	    
         ActionForward fwd = searchColleagueCourses(mapping, form, request, response);
-        
-        InstructionalOfferingListForm frm = (InstructionalOfferingListForm) form;
-        
-        
+                
         return fwd;
 	}
 	

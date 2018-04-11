@@ -25,11 +25,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -133,7 +131,6 @@ public class ColleagueOfferingDetailAction extends Action {
 			
 	        if (op.equals("Resend to Colleague")) {
 	        	response.sendRedirect(response.encodeURL("colleagueOfferingDetail.do?co="+frm.getCourseOfferingId()));
-	        	Vector<ColleagueSection> sections = new Vector<ColleagueSection>();
 	        	ColleagueSectionDAO csDao = ColleagueSectionDAO.getInstance();
 	        	List<ColleagueSection> colleagueSections = ColleagueSection.findColleagueSectionsForCourseOfferingId(new Long(frm.getCourseOfferingId()), csDao.getSession());
 	        	
@@ -206,8 +203,6 @@ public class ColleagueOfferingDetailAction extends Action {
             ColleagueOfferingDetailForm frm, 
             String courseOfferingIdStr) throws Exception {
         
-
-        HttpSession httpSession = request.getSession();
 
         // Load Instr Offering
         Long courseOfferingId = new Long(courseOfferingIdStr);
