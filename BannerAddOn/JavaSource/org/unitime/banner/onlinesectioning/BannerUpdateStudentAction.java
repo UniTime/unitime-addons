@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.unitime.banner.model.BannerSection;
+import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicClassification;
@@ -80,7 +81,7 @@ import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
 @CheckMaster(Master.REQUIRED)
 public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerUpdateStudentAction.UpdateResult> {
 	private static final long serialVersionUID = 1L;
-	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail;
+	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iCampus;
 	private List<String[]> iGroups = new ArrayList<String[]>();
 	private List<String[]> iAcadAreaClasfMj = new ArrayList<String[]>();
 	private boolean iUpdateAcadAreaClasfMj = false;
@@ -109,10 +110,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
-	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major) {
+	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus) {
 		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty() || major == null || major.isEmpty()) return this;
 		iUpdateAcadAreaClasfMj = true;
-		iAcadAreaClasfMj.add(new String[] {academicArea, classification, major});
+		iAcadAreaClasfMj.add(new String[] {academicArea, classification, major, campus});
 		return this;
 	}
 	
@@ -147,6 +148,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		boolean changed = false;
 		try {
 			iSession = SessionDAO.getInstance().get(server.getAcademicSession().getUniqueId(), helper.getHibSession());
+			BannerSession bs = BannerSession.findBannerSessionForSession(server.getAcademicSession().getUniqueId(), helper.getHibSession());
+			iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
 			
 			iStudentId = getStudentId(helper);
 			if (iStudentId == null) changed = true;
@@ -163,8 +166,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			if (iEmail != null)
 				helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
 			if (!iAcadAreaClasfMj.isEmpty()) {
-				String[] areaClasf = iAcadAreaClasfMj.get(0);
-				helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + "/" + areaClasf[2] + " " + areaClasf[1]);
+				for (String[] areaClasf: iAcadAreaClasfMj) {
+					if (areaClasf[3] == null || areaClasf[3].equals(iCampus)) {
+						helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + "/" + areaClasf[2] + " " + areaClasf[1]);
+						break;
+					}
+				}
 			}
 				
 			
@@ -290,6 +297,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		boolean changed = false;
 		try {
 			iSession = SessionDAO.getInstance().get(sessionId, helper.getHibSession());
+			BannerSession bs = BannerSession.findBannerSessionForSession(sessionId, helper.getHibSession());
+			iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
 			
 			Student student = getStudent(helper);
 			iStudentId = student.getUniqueId();
@@ -374,7 +383,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		if (iUpdateAcadAreaClasfMj) {
 			List<StudentAreaClassificationMajor> remaining = new ArrayList<StudentAreaClassificationMajor>(student.getAreaClasfMajors());
 			aac: for (String[] areaClasf: iAcadAreaClasfMj) {
-				String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2];
+				String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2], campus = areaClasf[3];
+				if (campus != null && !campus.equals(iCampus)) continue;
 				for (Iterator<StudentAreaClassificationMajor> i = remaining.iterator(); i.hasNext(); ) {
 					StudentAreaClassificationMajor aac = i.next();
 					if ((area.equalsIgnoreCase(aac.getAcademicArea().getExternalUniqueId()) || area.equalsIgnoreCase(aac.getAcademicArea().getAcademicAreaAbbreviation())) &&

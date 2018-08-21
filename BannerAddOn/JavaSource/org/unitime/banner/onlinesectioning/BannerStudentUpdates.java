@@ -194,15 +194,15 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 							for (Iterator<?> k = studentAcadAreaClassElement.elementIterator("acadAreaClass"); k.hasNext(); ) {
 								Element areaClassElement = (Element)k.next();
 								if (majorElement.attributeValue("academicArea").equals(areaClassElement.attributeValue("academicArea")))
-									update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), areaClassElement.attributeValue("academicClass"), majorElement.attributeValue("code"));
+									update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), areaClassElement.attributeValue("academicClass"), majorElement.attributeValue("code"), majorElement.attributeValue("campus"));
 							}
 						} else {
-							update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), majorElement.attributeValue("academicClass"), majorElement.attributeValue("code"));
+							update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), majorElement.attributeValue("academicClass"), majorElement.attributeValue("code"), majorElement.attributeValue("campus"));
 						}
 					}					
 				} else {
 					// Old banner update message format
-					update.withAcadAreaClassificationMajor(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"), studentElement.attributeValue("major"));
+					update.withAcadAreaClassificationMajor(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"), studentElement.attributeValue("major"), studentElement.attributeValue("campus"));
 				}
 				
 				Element studentGroupsElement = studentElement.element("studentGroups");
