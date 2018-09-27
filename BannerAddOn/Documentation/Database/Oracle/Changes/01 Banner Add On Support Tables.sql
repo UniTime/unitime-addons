@@ -306,7 +306,7 @@ CREATE OR REPLACE PACKAGE BODY section_processor IS
   BEGIN
 
     IF (to_number(section,
-                  '099') = 999) THEN
+                  '099') = 998) THEN
       sect := NULL;
     ELSE
       sect := TRIM(to_char((to_number(section,

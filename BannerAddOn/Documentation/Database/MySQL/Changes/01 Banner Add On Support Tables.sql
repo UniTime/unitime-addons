@@ -235,7 +235,7 @@ CREATE FUNCTION set_next_999(section VARCHAR(10))
   BEGIN
 	DECLARE sect VARCHAR(10);
 	DECLARE tmp_sect DECIMAL(3);
-      IF (cast(section as DECIMAL(3)) = 999) THEN
+      IF (cast(section as DECIMAL(3)) = 998) THEN
         set sect = NULL;
       ELSE
         set sect = lpad((cast((cast(section as DECIMAL(3)) + 1) as CHAR(10))), 3, '0');
