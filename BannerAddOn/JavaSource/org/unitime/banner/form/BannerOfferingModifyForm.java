@@ -188,6 +188,10 @@ public class BannerOfferingModifyForm extends ActionForm {
     		} else {
     			prevSize++;
     		}
+    		if (sectionId.equals("999")) {
+    			errors.add("maxSectionId", new ActionMessage("errors.generic", "Section Index must be less than 999: " + (String) this.getBannerSectionLabels().get(index)));
+    			this.getClassHasErrors().set(index, new Boolean(true));     			
+    		}
     		if (!this.getBannerSectionOriginalSectionIds().contains((String)this.getBannerSectionSectionIds().get(index))){
     			if (!BannerSection.isSectionIndexUniqueForCourse(co.getInstructionalOffering().getSession(), co, hibSession, (String)this.getBannerSectionSectionIds().get(index))){
         			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "New Section Index must be unique for: " + (String) this.getBannerSectionLabels().get(index)));
