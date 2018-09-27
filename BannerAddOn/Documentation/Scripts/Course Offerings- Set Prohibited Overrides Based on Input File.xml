@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+
+<script name="Course Offerings: Set Prohibited Overrides Based on Input File" permission="Classes" engine="python" created="Thu Sep 27 16:16:44 EDT 2018">
+  <description><![CDATA[<h3>Use the provided CSV file to update the prohibited overrides on a course offering to match the data in the file.</h3>
+<p>Input is expected in the CSV format.<br>There is a line for each Course and Override Type:<br>Campus, Year, Term, Subject, Course, Override Type, Prohibited, IsControl &LT;Optional&GT;</p>
+<p>Output is returned in the CSV format.<br>There is a line for each CRN:<br>Campus, Year, Term, Subject, Course, Override Type, Prohibited, Update Note</p>
+<p><b>Parameters:</b><ul>
+<li>Course Override File: input file in the above format
+</ul></p>]]></description>
+  <parameter name="input" label="Course Override File:" type="file"/>
+  <body><![CDATA[import csv
+from xml.dom import minidom
+from java.lang import Long
+from java.util import ArrayList, HashSet, Date
+from java.io import StringReader
+from org.dom4j.io import SAXReader
+from org.unitime.timetable.model import Session, SubjectArea, CourseOffering, OverrideType, StudentSectioningQueue
+
+def getCourseForSubjectCourseNumber(subject, courseNbr):
+    course = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session = :sessionId and co.subjectArea.subjectAreaAbbreviation = :subj and co.courseNbr = :crsNbr").setLong("sessionId", session.getUniqueId()).setString("subj", subject).setString("crsNbr",courseNbr).setMaxResults(1).uniqueResult()
+    if course:
+        return course
+    return None
+
+def getOverride(override):
+    override = hibSession.createQuery("select o from OverrideType o where o.reference = :ovrRd").setString("ovrRd", override).setMaxResults(1).uniqueResult()
+    if override:
+        return override
+    return None
+
+def isValidSession(campus, year, term):
+    return session.getAcademicInitiative() == campus and session.getAcademicYear() == year and session.getAcademicTerm() == term
+
+def execute():
+    lines = []
+    for line in csv.reader(input.getString('utf-8').split('\n'), delimiter=",", quotechar='"'):
+        if not line: continue
+        if line[0].lower() == 'campus' or line[0].lower() == 'eof': continue
+        lines.append(line)
+    output = open(log.createOutput('courseOverrideProhibitedOutput','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['Campus', 'Year', 'Term', 'Subject', 'Course','Override Type','Prohibited','Update Note'])
+    log.setStatus('Updating Course Override Prohibited Status', len(lines))
+    for line in lines:
+        campus = line[0]
+        year = line[1]
+        term = line[2]
+        subject = line[3]
+        courseNbr = line[4]
+        overrideType = line[5]
+        prohibited = line[6]
+        if not isValidSession(campus, year, term):
+            writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'Session of Course does not match user academic session, no changes made'])
+            continue
+
+        course = getCourseForSubjectCourseNumber(subject, courseNbr)
+        if course == None:
+            writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'Course not found' ])
+        else:
+            override = getOverride(overrideType);
+            if override == None:
+                writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'Override Type not found' ])
+            else:
+                if course.getDisabledOverrides().contains(override):
+                     if prohibited.lower() == 'false':
+                        course.getDisabledOverrides().remove(override)
+			hibSession.saveOrUpdate(course);
+			StudentSectioningQueue.offeringChanged(hibSession, None, course.getInstructionalOffering().getSessionId(), course.getInstructionalOffering().getUniqueId());
+                        writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'Override set to not Prohibited' ])
+                     else:
+                        writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'No change, override already set to Prohibited' ])
+                else:
+                    if prohibited.lower() == 'true':
+                        course.addTodisabledOverrides(override)
+			hibSession.saveOrUpdate(course);
+			StudentSectioningQueue.offeringChanged(hibSession, None, course.getInstructionalOffering().getSessionId(), course.getInstructionalOffering().getUniqueId());
+                        writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'Override set to Prohibited' ])
+                    else:
+                        writer.writerow([campus, year, term, subject, courseNbr, overrideType, prohibited, 'No change, override already set to not Prohibited' ])
+
+        log.incProgress()
+    writer.writerow(['EOF'])
+    output.close()
+
+if not input:
+    log.error("Course override file not provided.")
+else:
+    execute()]]></body>
+</script>

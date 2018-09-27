@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+ 
+<script name="Course Offerings: Set All Closed Section Override Permissions" permission="Classes" engine="ECMAScript" created="Wed Sep 26 18:35:28 EDT 2018">
+  <description><![CDATA[On all course offerings of the selected subject area(s) set the "Closed Section Override Prohibited" flag to either true or false.]]></description>
+  <parameter name="prohibit" label="Closed Section Overrides Prohibited" type="boolean" default="true"/>
+  <parameter name="subjects" label="Subject Area" type="subjects"/>
+  <parameter name="overrideTypeRef" label="Override Type" type="reference(OverrideType)" default="CLOS"/>
+  <body><![CDATA[importPackage(org.unitime.timetable.model);
+
+if (subjects == null || subjects.isEmpty()) {
+    log.error('No subject area was selected.');
+} else {
+    
+    if (overrideTypeRef == null) {
+        log.error('No override type was selected.');
+    } else {
+        
+        var override = hibSession.createQuery('from OverrideType ot where ot.reference = :ref').setString('ref', overrideTypeRef).uniqueResult();
+        
+        for (var i = subjects.iterator(); i.hasNext(); ) {
+            var subject = i.next();
+            var courses = subject.getCourseOfferings();
+            
+            log.setStatus('Updating ' + subject. getSubjectAreaAbbreviation() + ' (' + courses.size() + ' courses) ...', courses.size());
+            
+            for (var j = courses.iterator(); j.hasNext(); ) {
+                var course = j.next();
+                log.incProgress();
+                if (course.isIsControl().booleanValue()) {
+                    
+                    if (course.getInstructionalOffering().getCourseOfferings().size() > 1){  
+                        log.info('Updating ' + course.getCourseName() + ':  is a controlling course for a crosslist.  Updating all non-controlling courses as well.');
+                    }
+                    
+                    for (var k = course.getInstructionalOffering().getCourseOfferings().iterator(); k.hasNext();) {
+                        var crs = k.next();
+                        log.info('Updating ' + crs.getCourseName());
+                        if (prohibit) {
+                            crs.addTodisabledOverrides(override);
+                        } else {
+                            if (crs.getDisabledOverrides() != null & crs.getDisabledOverrides().contains(override)) {
+                                crs.getDisabledOverrides().remove(override);
+                            }
+                        }
+                        hibSession.saveOrUpdate(crs);
+                        StudentSectioningQueue.offeringChanged(hibSession, null, crs.getInstructionalOffering().getSessionId(), crs.getInstructionalOffering().getUniqueId());
+                    }
+                } else {
+                    log.info('Not Updating ' + course.getCourseName() + ':  is not the controlling course.');
+                }
+                log.incProgress();
+            }
+        }
+    }
+}]]></body>
+</script>
