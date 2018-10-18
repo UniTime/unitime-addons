@@ -18,11 +18,11 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/gson-2.3.1.jar" sourcepath="/UniTime/3rd_party/sources/gson-2.3.1-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/hibernate-core-4.3.11.Final.jar" sourcepath="/UniTime/3rd_party/sources/hibernate-core-4.3.11.Final-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-3.6.6.Final.jar" sourcepath="/UniTime/3rd_party/sources/jgroups-3.6.6.Final-sources.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/org.restlet-2.3.4.jar" sourcepath="/UniTime/3rd_party/sources/org.restlet-2.3.4-sources.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/org.restlet-2.3.12.jar" sourcepath="/UniTime/3rd_party/sources/org.restlet-2.3.12-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/protobuf-java-2.6.1.jar" sourcepath="/UniTime/3rd_party/sources/protobuf-java-2.6.1-sources.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-3.2.14.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-beans-3.2.14.RELEASE-sources.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-3.2.14.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-context-3.2.14.RELEASE-sources.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-3.2.8.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-security-core-3.2.8.RELEASE-sources.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-4.3.17.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-beans-4.3.17.RELEASE-sources.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-4.3.17.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-context-4.3.17.RELEASE-sources.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-4.2.9.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-security-core-4.2.9.RELEASE-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/servlet-api-2.5.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/jsp-api-2.2.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/gwt-user-2.8.2.jar"/>
