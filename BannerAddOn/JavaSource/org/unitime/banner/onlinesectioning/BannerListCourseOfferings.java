@@ -31,6 +31,7 @@ import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.server.DayCode;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface.CourseAssignment;
+import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.onlinesectioning.basic.ListCourseOfferings;
@@ -103,6 +104,8 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 							a.addNote(course.getNote());
 							a.addNote(section.getNote());
 							a.setCredit(subpart.getCredit(courseId));
+							Float creditOverride = section.getCreditOverride(courseId);
+							if (creditOverride != null) a.setCredit(FixedCreditUnitConfig.formatCredit(creditOverride));
 							if (section.getTime() != null) {
 								for (DayCode d: DayCode.toDayCodes(section.getTime().getDays()))
 									a.addDay(d.getIndex());

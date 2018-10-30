@@ -23,7 +23,9 @@ package org.unitime.banner.util;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.CourseCreditUnitConfig;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.util.DefaultExternalClassNameHelper;
 
 /**
@@ -106,5 +108,13 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 			}
 		}
 	}
-
+	
+	@Override
+	public Float getClassCredit(Class_ clazz, CourseOffering courseOffering) {
+		CourseCreditUnitConfig credit = courseOffering.getCredit();
+		if (credit == null || credit instanceof FixedCreditUnitConfig) return null;
+		if (clazz.getParentClass() != null && clazz.getSchedulingSubpart().getItype().equals(clazz.getParentClass().getSchedulingSubpart().getItype())) return null;
+		BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, BannerSectionDAO.getInstance().getSession());
+		return bs == null ? null : bs.getOverrideCourseCredit();
+	}
 }
