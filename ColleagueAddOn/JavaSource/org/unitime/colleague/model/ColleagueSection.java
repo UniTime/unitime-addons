@@ -1311,7 +1311,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 	}
 
-	private static String calculateColleagueCourseNumber(CourseOffering courseOffering, Class_ cls) {
+	public static String calculateColleagueCourseNumber(CourseOffering courseOffering, Class_ cls) {
 		if (courseOffering.getCourseNbr().contains("-")){
 			return(courseOffering.getCourseNbr().substring(0, courseOffering.getCourseNbr().indexOf("-")));			
 		}
