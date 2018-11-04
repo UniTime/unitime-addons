@@ -102,6 +102,25 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 			if (colleagueSection.isDeleted().booleanValue()){
 				continue;
 			}
+			Class_ cls = null;
+			for (Class_ c1 : colleagueSection.getClasses(hibSession)) {
+				cls = c1;
+				break;
+			}
+			if (cls != null) {
+				String crsNbr = (ColleagueSection.calculateColleagueCourseNumber(colleagueSection.getCourseOffering(hibSession), cls));
+				if (!colleagueSection.getColleagueCourseNumber().equals(crsNbr)) {
+					try {
+						colleagueSection.setColleagueCourseNumber(crsNbr);
+						hibSession.update(colleagueSection);
+						hibSession.flush();
+						hibSession.refresh(colleagueSection);
+					} catch (Exception e) {
+						Debug.info("failed to generate a new course number");
+						e.printStackTrace();
+					}
+				}
+			}
 			if (!colleagueSection.isSectionIndexStillValid(hibSession)){
 				try {
 					colleagueSection.setSectionIndex(ColleagueSection.findNextUnusedActiveSectionIndexFor(colleagueSection.getSession(), colleagueSection.getCourseOffering(hibSession), colleagueSection.getFirstClass().getSchedulingSubpart().getItype(), hibSession));
