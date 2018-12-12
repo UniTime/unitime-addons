@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+
+<script name="Subject Areas: Restore Instructors After Department Change" permission="Is Admin" engine="python" created="Wed Dec 12 16:02:22 EST 2018">
+  <description><![CDATA[<h3>Copy the instructor data from the previous like term into the current term and new department number and place instructors on classes</h3>
+<br>
+<b>Input is expected in the following CSV format:</b><ul>
+<li>There is a line for each subject area department change</li>
+<li>Subject,Old Department Code,New Department Code</li>
+</ul>
+<b>Output is returned in the following CSV format:</b><ul>
+<li>There may be multiple lines per </li>
+<li>Instructor Copy</li>
+<li>Dept, Instructor, PUID</li>
+<li>Instructor Assignment Copy</li>
+<li>Subject, Course Number, Itype, Section, Instructor, PUID</li>
+</ul>
+<b>Parameters:</b><ul>
+<li>Do It: if set to true, make the changes in the database, otherwise just report the changes to make</li>
+</ul>]]></description>
+  <parameter name="subjects" label="Subject Areas" type="subjects"/>
+  <parameter name="doIt" label="Do It" type="boolean" default="False"/>
+  <body><![CDATA[import csv
+from java.util import ArrayList, HashSet, HashMap, TreeSet
+from java.lang import Long
+from org.unitime.banner.dataexchange import SendBannerMessage
+from org.unitime.banner.dataexchange.BannerMessage import BannerMessageAction
+from org.unitime.banner.model import BannerSection
+from org.unitime.timetable.spring import SpringApplicationContextHolder
+from org.unitime.timetable.model import CourseDemand,InstructionalOffering,CourseOffering,InstrOfferingConfig,SchedulingSubpart,Class_,ItypeDesc,SubjectArea,Department,DepartmentalInstructor,ClassInstructor,BuildingPref,GlobalRoomFeature,RoomFeaturePref,RoomPref,RoomGroupPref,TimePref,DistributionPref,RoomGroup
+
+def info1(writer, str1, str2, str3):
+    log.info(str1 + ' ' + str2 + ' - ' + str3)
+    writer.writerow([str1, str2, str3])
+
+def info2(writer, str1, str2, str3, str4, str5, str6):
+    log.info(str1 + ' ' + str2 + ' ' + str3 + ' ' + str4 + ':  ' + str5 + ' - ' + str6)
+    writer.writerow([str1, str2, str3, str4, str5, str6])
+
+def createNewBuildingPref(fromBuildingPref, toInstr, locations):
+    toBuildingPref = None
+    toBuilding = fromBuildingPref.getBuilding().findSameBuildingInSession(session)
+    if toBuilding != None:
+	deptHasRoomInBuilding = False
+        for loc in locations:
+            if isinstance(loc, Room):
+		r = loc
+		if r.getBuilding() != None and r.getBuilding().getUniqueId().equals(toBuilding.getUniqueId()):
+		    deptHasRoomInBuilding = true
+		    break
+
+    if deptHasRoomInBuilding:
+	toBuildingPref = BuildingPref()
+	toBuildingPref.setBuilding(toBuilding)
+	toBuildingPref.setPrefLevel(fromBuildingPref.getPrefLevel())
+	toBuildingPref.setDistanceFrom(fromBuildingPref.getDistanceFrom())
+	toBuildingPref.setOwner(toInstr)
+	toInstr.addTopreferences(toBuildingPref)
+
+def copyBuildingPrefs(writer, oldDi, newDi, roomList):
+    if oldDi.getBuildingPreferences() != None and not oldDi.getBuildingPreferences().isEmpty():
+	if roomList == None:
+	    return
+	for bp in oldDi.getBuildingPreferences():
+	    info1(writer, '', '', 'Added Building Pref')
+            if doIt:
+		createNewBuildingPref(bp, newDi, roomList)
+
+def createNewRoomPref(fromRoomPref, fromPrefGroup, toPrefGroup, locations):
+    toRoomPref = RoomPref()
+    if isinstance(fromRoomPref.getRoom(), Room):
+	fromRoom = fromRoomPref.getRoom()
+        toRoom = None
+        for loc in locations:
+	    if isinstance(loc, Room):
+		toRoom = loc
+		if ((toRoom.getBuilding().getExternalUniqueId() != None and fromRoom.getBuilding().getExternalUniqueId() != None and toRoom.getBuilding().getExternalUniqueId().equals(fromRoom.getBuilding().getExternalUniqueId())) or ((toRoom.getBuilding().getExternalUniqueId() == None or fromRoom.getBuilding().getExternalUniqueId() == None) and toRoom.getBuilding().getAbbreviation().equals(fromRoom.getBuilding().getAbbreviation()))) and toRoom.getRoomNumber().equals(fromRoom.getRoomNumber()):
+		    break
+	if toRoom != None and ((toRoom.getBuilding().getExternalUniqueId() != None and fromRoom.getBuilding().getExternalUniqueId() != None and toRoom.getBuilding().getExternalUniqueId().equals(fromRoom.getBuilding().getExternalUniqueId())) or ((toRoom.getBuilding().getExternalUniqueId() == None or fromRoom.getBuilding().getExternalUniqueId() == None) and toRoom.getBuilding().getAbbreviation().equals(fromRoom.getBuilding().getAbbreviation()))) and toRoom.getRoomNumber().equals(fromRoom.getRoomNumber()):
+	    toRoomPref.setRoom(toRoom)
+	    toRoomPref.setPrefLevel(fromRoomPref.getPrefLevel())
+	    toRoomPref.setOwner(toPrefGroup)
+	    toPrefGroup.addTopreferences(toRoomPref)
+    elif isinstance(fromRoomPref.getRoom(), NonUniversityLocation):
+	fromNonUniversityLocation = fromRoomPref.getRoom()
+	toNonUniversityLocation = None
+        for loc in locations:
+	    if isinstance(loc, NonUniversityLocation):
+		toNonUniversityLocation = loc
+		if toNonUniversityLocation.getName().equals(fromNonUniversityLocation.getName()):
+		    break
+	if toNonUniversityLocation != None and toNonUniversityLocation.getName().equals(fromNonUniversityLocation.getName()):
+	    toRoomPref.setRoom(toNonUniversityLocation)
+	    toRoomPref.setPrefLevel(fromRoomPref.getPrefLevel())
+	    toRoomPref.setOwner(toPrefGroup)
+	    toPrefGroup.addTopreferences(toRoomPref)
+
+
+def copyRoomPrefs(writer, oldDi, newDi, locations):
+    if oldDi.getRoomPreferences() != None and not oldDi.getRoomPreferences().isEmpty():
+	if locations != None and locations.size() >0:
+	    for rp in oldDi.getRoomPreferences():
+		info1(writer, '', '', 'Added Room Pref')
+		if doIt:
+		    createNewRoomPref(rp, fromPrefGroup, toPrefGroup, locations)
+
+def createToRoomFeaturePref(fromRoomFeaturePref, fromPrefGroup, toPrefGroup):
+    toRoomFeaturePref = RoomFeaturePref()
+    if isinstance(fromRoomFeaturePref.getRoomFeature(), GlobalRoomFeature):
+	grf = GlobalRoomFeature.findGlobalRoomFeatureForLabel(session, fromRoomFeaturePref.getRoomFeature().getLabel())
+	if grf != None:
+	    toRoomFeaturePref.setRoomFeature(grf)
+	    toRoomFeaturePref.setPrefLevel(fromRoomFeaturePref.getPrefLevel())
+	    toRoomFeaturePref.setOwner(toPrefGroup)
+	    toPrefGroup.addTopreferences(toRoomFeaturePref)
+    else:
+	toDepartment = toPrefGroup.getDepartment()
+	if toDepartment == None:
+	    return
+	l = DepartmentRoomFeature.getAllDepartmentRoomFeatures(toDepartment)
+	fromDepartmentRoomFeature = fromRoomFeaturePref.getRoomFeature()
+	if l != None and l.size() > 0:
+	    toDepartmentRoomFeature = None
+	    for toDepartmentRoomFeature in l:
+		if toDepartmentRoomFeature.getLabel() == fromDepartmentRoomFeature.getLabel():
+		    break
+	    if toDepartmentRoomFeature.getLabel() == fromDepartmentRoomFeature.getLabel():
+		toRoomFeaturePref.setRoomFeature(toDepartmentRoomFeature)
+		toRoomFeaturePref.setPrefLevel(fromRoomFeaturePref.getPrefLevel())
+		toRoomFeaturePref.setOwner(toPrefGroup)
+		toPrefGroup.addTopreferences(toRoomFeaturePref)
+
+def copyRoomFeaturePrefs(writer, oldDi, newDi):
+    if oldDi.getRoomFeaturePreferences() != None and not oldDi.getRoomFeaturePreferences().isEmpty():
+	for rfp in oldDi.getRoomFeaturePreferences():
+	    info1(writer, '', '', 'Added Room Feature Pref')
+	    if doIt:
+		createToRoomFeaturePref(rfp, oldDi, newDi)
+
+def createToRoomGroupPref(fromRoomGroupPref, fromPrefGroup, toPrefGroup):
+    toRoomGroupPref = RoomGroupPref()
+    toDefaultRoomGroup = RoomGroup.getGlobalDefaultRoomGroup(session)
+    if fromRoomGroupPref.getRoomGroup().isDefaultGroup() and toDefaultRoomGroup != None:
+	toRoomGroupPref.setRoomGroup(toDefaultRoomGroup)
+	toRoomGroupPref.setPrefLevel(fromRoomGroupPref.getPrefLevel())
+	toRoomGroupPref.setOwner(toPrefGroup)
+	toPrefGroup.addTopreferences(toRoomGroupPref)
+    elif fromRoomGroupPref.getRoomGroup().isGlobal():
+	toRoomGroup = RoomGroup.findGlobalRoomGroupForName(session, fromRoomGroupPref.getRoomGroup().getName())
+	if toRoomGroup != None:
+	    toRoomGroupPref.setRoomGroup(toRoomGroup)
+	    toRoomGroupPref.setPrefLevel(fromRoomGroupPref.getPrefLevel())
+	    toRoomGroupPref.setOwner(toPrefGroup)
+	    toPrefGroup.addTopreferences(toRoomGroupPref)
+    else:
+	toDepartment = toPrefGroup.getDepartment()
+	if toDepartment == None:
+	    return
+	l = RoomGroup.getAllDepartmentRoomGroups(toDepartment)
+	if l != None and l.size() > 0:
+	    toRoomGroup = None
+	    for toRoomGroup in l:
+		if toRoomGroup.getName() == fromRoomGroupPref.getRoomGroup().getName():
+		    break
+	    if toRoomGroup.getName() == fromRoomGroupPref.getRoomGroup().getName():
+		toRoomGroupPref.setRoomGroup(toRoomGroup)
+		toRoomGroupPref.setPrefLevel(fromRoomGroupPref.getPrefLevel())
+		toRoomGroupPref.setOwner(toPrefGroup)
+		toPrefGroup.addTopreferences(toRoomGroupPref)
+
+def copyRoomGroupPrefs(writer, oldDi, newDi):
+    if oldDi.getRoomGroupPreferences() != None and not oldDi.getRoomGroupPreferences().isEmpty():
+	for rgp in oldDi.getRoomGroupPreferences():
+	    info1(writer, '', '', 'Added Room Group Pref')
+            if doIt:
+		createToRoomGroupPref(rgp, oldDi, newDi)
+
+def copyTimePrefs(writer, oldDi, newDi):
+    if oldDi.getTimePreferences() != None and not oldDi.getTimePreferences().isEmpty():
+	toTimePref = None
+	for fromTimePref in oldDi.getTimePreferences():
+	    info1(writer, '', '', 'Added Time Pref')
+	    if doIt:
+		if fromTimePref.getTimePattern() == None:
+		    toTimePref = fromTimePref.clone()
+		else:
+		    toTimePref = TimePattern.getMatchingTimePreference(session.getUniqueId(), fromTimePref)
+	if toTimePref != None:
+	    toTimePref.setOwner(newDi)
+	    newDi.addTopreferences(toTimePref)
+
+def copyInstrDistPrefs(writer, oldDi, newDi):
+    if oldDi.getDistributionPreferences() != None and oldDi.getDistributionPreferences().size() > 0:
+	for fromDistributionPref in oldDi.getDistributionPreferences(): 
+	    info1(writer, '', '', 'Added Distribution Pref')
+	    if doIt:
+		toDistributionPref = DistributionPref()
+		if fromDistributionPref.getDistributionType() != None:
+		    toDistributionPref.setDistributionType(fromDistributionPref.getDistributionType())
+		if fromDistributionPref.getGrouping() != None:
+		    toDistributionPref.setGrouping(fromDistributionPref.getGrouping())
+		toDistributionPref.setPrefLevel(fromDistributionPref.getPrefLevel())
+		toDistributionPref.setOwner(newDi)
+		newDi.addTopreferences(toDistributionPref)
+
+def copyInstructor(writer, oldDeptInstrRecord, newDept, roomList):
+    newDi = None
+    if doIt:
+	newDi = oldDeptInstrRecord.clone()
+	newDi.setDepartment(newDept)
+	newDept.addToinstructors(newDi)
+	info1(writer, newDept.getDeptCode(), newDi.getNameLastFirst(), newDi.getExternalUniqueId())
+    else:
+	info1(writer, newDept.getDeptCode(), oldDeptInstrRecord.getNameLastFirst(), oldDeptInstrRecord.getExternalUniqueId())
+    copyBuildingPrefs(writer, oldDeptInstrRecord, newDi, roomList)
+    copyRoomPrefs(writer, oldDeptInstrRecord, newDi, roomList)
+    copyRoomFeaturePrefs(writer, oldDeptInstrRecord, newDi)
+    copyRoomGroupPrefs(writer, oldDeptInstrRecord, newDi)
+    copyTimePrefs(writer, oldDeptInstrRecord, newDi)
+    copyInstrDistPrefs(writer, oldDeptInstrRecord, newDi)
+    if doIt:
+	hibSession.save(newDi)
+
+    return newDi
+
+def buildRoomQueryForDepartment(dept, type):
+    sb = ''
+    sb = sb + 'select l from ' + type + ' as l inner join l.roomDepts as rd where l.session.uniqueId = '
+    sb = sb + str(session.getUniqueId()) 
+    sb = sb + ' and rd.department.uniqueId = '
+    sb = sb + str(dept.getUniqueId()) 
+    return sb 
+
+def roomListForDept(dept):
+    ts = TreeSet()
+    for r in hibSession.createQuery(buildRoomQueryForDepartment(dept, 'Room')).list():
+	for rd in r.getRoomDepts():
+	    rd.getDepartment()
+	ts.add(r)
+
+    for l in hibSession.createQuery(buildRoomQueryForDepartment(dept, 'NonUniversityLocation')).list():
+	for rd in l.getRoomDepts():
+	    rd.getDepartment()
+	ts.add(l)
+
+    return ts
+
+
+def execute():
+    outfile = open(log.createOutput('instrUpdates','csv').getAbsolutePath(), 'w')
+    writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    info1(writer, 'Instructor Assignment Copy','', '')
+    failed = ArrayList()
+    fromSession = session.getLastLikeSession()
+    if fromSession == None:
+	info1(writer, 'No from session found', 'Exiting','')
+	exit
+    for subject in subjects:
+	newDept = subject.getDepartment()
+	newDeptRooms = roomListForDept(newDept)
+	instructors = HashMap()
+	for deptInstr in newDept.getInstructors():
+	    instructors.put(deptInstr.getExternalUniqueId(),deptInstr)
+	for crs in subject.getCourseOfferings():
+	    if crs.isIsControl() and not crs.getInstructionalOffering().isNotOffered():
+		for cfg in crs.getInstructionalOffering().getInstrOfferingConfigs():
+		    for ss in cfg.getSchedulingSubparts():
+			for c in ss.getClasses():
+			    crff = None
+			    if c.getClassInstructors().size() == 0:
+				if (c.getUniqueIdRolledForwardFrom() != None):
+				    crff = hibSession.createQuery('from Class_ c where c.uniqueId = :cid').setLong('cid', c.getUniqueIdRolledForwardFrom()).uniqueResult()
+			    if crff != None:
+				for ci in crff.getClassInstructors():
+				    if instructors.get(ci.getInstructor().getExternalUniqueId()) == None:
+					newDi = copyInstructor(writer,ci.getInstructor(), newDept, newDeptRooms)
+					if doIt:
+					    instructors.put(newDi.getExternalUniqueId(), newDi)
+					else:
+					    instructors.put(ci.getInstructor().getExternalUniqueId(), ci.getInstructor())
+
+				    if doIt:
+					di = instructors.get(ci.getInstructor().getExternalUniqueId())
+					newCi = ClassInstructor()
+					newCi.setPercentShare(ci.getPercentShare())
+					newCi.setLead(ci.isLead())
+					newCi.setClassInstructing(c)
+					c.addToclassInstructors(newCi)
+					newCi.setInstructor(di)
+					di.addToclasses(newCi)
+					hibSession.save(newCi)
+					info2(writer, subject.getSubjectAreaAbbreviation(), crs.getCourseNbr(), ss.getItype().getAbbv(), c.getSectionNumberString(), di.getNameLastFirst(), di.getExternalUniqueId())
+
+				    else:
+					info2(writer, subject.getSubjectAreaAbbreviation(), crs.getCourseNbr(), ss.getItype().getAbbv(), c.getSectionNumberString(), ci.getInstructor().getNameLastFirst(), ci.getInstructor().getExternalUniqueId())
+	    if doIt:
+		SendBannerMessage.sendBannerMessage(BannerSection.findBannerSectionsForInstructionalOffering(crs.getInstructionalOffering(), hibSession), BannerMessageAction.UPDATE, hibSession);
+
+    writer.writerow(['EOF'])
+    outfile.close()
+
+execute()]]></body>
+</script>
