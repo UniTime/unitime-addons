@@ -27,7 +27,7 @@
   <parameter name="file" label="Input File" type="file"/>
   <body><![CDATA[import csv
 import re
-from org.unitime.timetable.model import StudentGroup, StudentGroupReservation, StudentSectioningQueue, StudentGroupType
+from org.unitime.timetable.model import StudentGroup, LearningCommunityReservation, StudentSectioningQueue, StudentGroupType
 from java.util import HashSet
 from java.lang import Long
 
@@ -99,12 +99,13 @@ def hasChild(clazz, classes):
 def createReservations(offerings, group, course2classes):
     for course in course2classes.keys():
         log.info("Checking reservation for %s..." % course.getCourseName())
-        reservation = hibSession.createQuery("from StudentGroupReservation where instructionalOffering = :offeringId and group = :groupId").setLong("offeringId", course.getInstructionalOffering().getUniqueId()).setLong("groupId", group.getUniqueId()).uniqueResult()
+        reservation = hibSession.createQuery("from LearningCommunityReservation where instructionalOffering = :offeringId and group = :groupId").setLong("offeringId", course.getInstructionalOffering().getUniqueId()).setLong("groupId", group.getUniqueId()).uniqueResult()
         if not reservation:
-            reservation = StudentGroupReservation()
+            reservation = LearningCommunityReservation()
             reservation.setGroup(group)
             reservation.setInstructionalOffering(course.getInstructionalOffering())
             reservation.setClasses(HashSet())
+            reservation.setCourse(course)
             reservation.setLimit(0)
         else:
             reservation.getClasses().clear()
@@ -171,7 +172,7 @@ G2, Group 2, 26  , ENGL, 10600R
   <parameter name="expirationDate" label="Reservation Expiration Date (yyyy-mm-dd)" type="text"/>
   <parameter name="file" label="Input File" type="file"/>
   <body><![CDATA[import csv
-from org.unitime.timetable.model import StudentGroup, StudentGroupReservation, StudentSectioningQueue, StudentGroupType
+from org.unitime.timetable.model import StudentGroup, LearningCommunityReservation, StudentSectioningQueue, StudentGroupType
 from java.util import HashSet
 from java.lang import Long
 from java.text import SimpleDateFormat
@@ -238,7 +239,7 @@ def hasChild(clazz, classes):
 
 def createReservations(offerings, group, course2classes, course2limit):
     reservations = {}
-    for r in hibSession.createQuery("from StudentGroupReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+    for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
         reservations[r.getInstructionalOffering().getUniqueId()] = r
     for course in course2classes.keys():
         reservation = None
@@ -248,10 +249,11 @@ def createReservations(offerings, group, course2classes, course2limit):
             reservation.getClasses().clear()
         else:
             log.info("Creating reservation for %s (%s)..." % (course.getCourseName(), group.getGroupAbbreviation()))
-            reservation = StudentGroupReservation()
+            reservation = LearningCommunityReservation()
             reservation.setGroup(group)
             reservation.setInstructionalOffering(course.getInstructionalOffering())
             reservation.setClasses(HashSet())
+            reservation.setCourse(course)
             reservation.getInstructionalOffering().getReservations().add(reservation)
         if expirationDate:
             reservation.setExpirationDate(SimpleDateFormat("y-M-d").parse(expirationDate))
@@ -421,7 +423,7 @@ def enroll(students, lcAbbv, puids, status, writer):
             writer.writerow([group.getGroupAbbreviation(), puid, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
     if updateSpace:
-        for r in hibSession.createQuery("from StudentGroupReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+        for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
             r.setLimit(len(puids))
             hibSession.saveOrUpdate(r)
 
@@ -463,44 +465,17 @@ if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
 <script name="Learning Communities: Create Course Demands" permission="Student Group Edit" engine="python" created="Tue Apr 18 11:46:36 EDT 2017">
-  <description><![CDATA[<p style='max-width:800px'>This script makes sure that students which are enrolled into the existing student groups also request the appropriate courses. The script is using either the existing student group reservations <b><u>or</u></b> the provided LC course matrix to decide which courses students of a learning group should take.</p>
-<p style='max-width:800px'>The <b>LC Course Matrix</b> file is optional. If provided, it has to be in the same format as for the <u>Learning Communities: Course Matrix Import [simplified]</u> script. If it is not provided, the controlling courses of the existing student group reservations are used instead.</p>]]></description>
-  <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
-  <parameter name="file" label="LC Course Matrix" type="file"/>
+  <description><![CDATA[<p style='max-width:800px'>This script makes sure that students which are enrolled into the existing student groups (of given type) also request the appropriate courses. The script is using the existing learning community reservations.</p>]]></description>
   <parameter name="clear" label="Clear Existing Demands" type="boolean" default="false"/>
+  <parameter name="groupTypeRef" label="Group Type" type="reference(StudentGroupType)" default="LC"/>
+  <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import CourseDemand, CourseRequest, StudentSectioningStatus, StudentSectioningQueue
 from java.util import Date, HashSet
 from java.lang import Long
 from __builtin__ import True
 
-def addClass(course2classes, subject, courseNbr, crn):
-    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-    if clazz and course:
-        if not course.getSubjectAreaAbbv() == subject or not course.getCourseNbr().startswith(courseNbr):
-            log.error("Class %s %s %d is wrong (found %s)." % (subject, courseNbr, crn, course.getCourseNameWithTitle()))
-            return
-        classes = None
-        if course in course2classes:
-            classes = course2classes[course]
-        else:
-            classes = []
-            course2classes[course] = classes
-        classes.append(clazz)
-    else:
-        log.error("Class %s %s %d not found." % (subject, courseNbr, crn))
-
-def addCourse(course2classes, subject, courseNbr):
-    course = hibSession.createQuery("from CourseOffering co where co.subjectArea.session = :sessionId and co.subjectAreaAbbv = :subject and co.courseNbr = :courseNbr"
-                                    ).setLong("sessionId", session.getUniqueId()).setString("subject", subject).setString("courseNbr", courseNbr).setMaxResults(1).uniqueResult()
-    if course:
-        if course not in course2classes:
-            course2classes[course] = []
-    else:
-        log.error("Course %s %s not found." % (subject, courseNbr))
-
-groups = hibSession.createQuery("from StudentGroup where session = :sid").setLong("sid", session.getUniqueId()).list()
+groups = hibSession.createQuery("from StudentGroup where session = :sid and type.reference = :ref").setLong("sid", session.getUniqueId()).setString("ref", groupTypeRef).list()
 
 status = None
 if statusRef:
@@ -516,73 +491,9 @@ if status:
        if not studentFilter: studentFilter = {}
        studentFilter[student.getUniqueId()] = True
 
-course2classes = {}
-if file:
-    lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
-    header = True
-    last = [None, None, None, None, None]
-    colAbbv = 0
-    colName = 1
-    colSize = None
-    colSubject = 2
-    colCourse = 3
-    colCrns = 4
-    for line in lines:
-        if not line:
-            last = [None, None, None, None, None]
-            continue
-        lcAbbv = line[colAbbv].strip()
-        lcName = line[colName].strip()
-        lcSize = None
-        if colSize:
-            try:
-                lcSize = int(line[colSize].strip())
-            except:
-                if line[colSize].strip():
-                    log.warn('Wrong group size %s.' % line[colSize].strip())
-        subject = line[colSubject].strip()
-        courseNbr = line[colCourse].strip()
-        crns = []
-        for crn in line[colCrns:]:
-            if crn.strip(): crns.append(crn.strip())
-        if header:
-            header = False
-            if "LC" == lcAbbv:
-                if "size" == subject.lower() or "limit" == subject.lower():
-                    log.debug('Size column is included.')
-                    colSize = 2
-                    colSubject = 3
-                    colCourse = 4
-                    colCrns = 5
-                continue
-        if not lcAbbv: lcAbbv = last[0]
-        elif last[0] and last[0] != lcAbbv:
-            last = [None, None, None, None, None]
-        if not lcName: lcName = last[1]
-        if not subject: subject = last[2]
-        if not courseNbr: courseNbr = last[3]
-        if not lcSize: lcSize = last[4]
-        last = [lcAbbv, lcName, subject, courseNbr, lcSize]
-    
-        if lcAbbv not in course2classes:
-            course2classes[lcAbbv] = {}
-
-        if crns:
-            for crn in crns:
-                addClass(course2classes[lcAbbv], subject, courseNbr, int(crn))
-        else:
-            addCourse(course2classes[lcAbbv], subject, courseNbr)
-else:
-    log.warn('LC Course Matrix file was not provided, using controlling courses of the appropriate student group reservations instead')
-
 for group in groups:
-    if course2classes and group.getGroupAbbreviation() not in course2classes: continue
-    courses = None
-    if group.getGroupAbbreviation() in course2classes:
-        courses = course2classes[group.getGroupAbbreviation()].keys()
-    else:
-        reservations = hibSession.createQuery("from StudentGroupReservation where group = :gid order by uniqueId").setLong("gid", group.getUniqueId()).list()
-        courses = map(lambda r: r.getInstructionalOffering().getControllingCourseOffering(), reservations)
+    reservations = hibSession.createQuery("from LearningCommunityReservation where group = :gid order by uniqueId").setLong("gid", group.getUniqueId()).list()
+    courses = map(lambda r: r.getCourse(), reservations)
     log.info("%s: %s" % (group.getGroupAbbreviation(), ', '.join(map(lambda course: course.getCourseName(), courses))))
     for student in group.students:
         if studentFilter and student.getUniqueId() not in studentFilter:
@@ -715,7 +626,7 @@ def enroll(students, lcAbbv, puids, status, writer):
             writer.writerow([group.getGroupAbbreviation(), puid, name, None, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
     if updateSpace:
-        for r in hibSession.createQuery("from StudentGroupReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+        for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
             r.setLimit(len(puids))
             hibSession.saveOrUpdate(r)
 
@@ -763,12 +674,12 @@ output.close()
 if students:
     StudentSectioningQueue.studentChanged(hibSession, None, session.getUniqueId(), students)]]></body>
 </script>
-<script name="Learning Communities: Reload Courses with Student Group Reservation" permission="Student Group Edit" engine="python" created="Thu Jun 22 11:26:22 EDT 2017">
-  <description><![CDATA[This script will tell the online student scheduling server to reload all instructional offerings that have one or more student group reservations. ]]></description>
+<script name="Learning Communities: Reload Courses with LC Reservation" permission="Student Group Edit" engine="python" created="Thu Jun 22 11:26:22 EDT 2017">
+  <description><![CDATA[This script will tell the online student scheduling server to reload all instructional offerings that have one or more learning community reservations. ]]></description>
   <body><![CDATA[from org.unitime.timetable.model import StudentSectioningQueue
 
 offerings = hibSession.createQuery(
-  "select r.instructionalOffering.uniqueId from StudentGroupReservation r where r.instructionalOffering.session = :sessionId"
+  "select r.instructionalOffering.uniqueId from LearningCommunityReservation r where r.instructionalOffering.session = :sessionId"
   ).setLong("sessionId", session.getUniqueId()).list()
 StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings)]]></body>
 </script>
@@ -992,6 +903,7 @@ output.close()]]></body>
 </script>
 <script name="Learning Communities: Course Matrix Export" permission="Student Groups" engine="python" created="Thu Jun 22 09:30:22 EDT 2017">
   <description><![CDATA[This script exports student groups and student group reservations to a CSV file.]]></description>
+  <parameter name="groupTypeRef" label="Group Type" type="reference(StudentGroupType)" default="LC"/>
   <body><![CDATA[import csv
 
 def groupSize(group):
@@ -1000,8 +912,8 @@ def groupSize(group):
     return ''
 
 groups = hibSession.createQuery(
-    "from StudentGroup g where g.session = :sessionId order by g.groupAbbreviation"
-    ).setLong("sessionId", session.getUniqueId()).list()
+    "from StudentGroup g where g.session = :sessionId and g.type.reference = :ref order by g.groupAbbreviation"
+    ).setLong("sessionId", session.getUniqueId()).setString("ref", groupTypeRef).list()
 
 output = open(log.createOutput('learning-communities','csv').getAbsolutePath(), 'w')
 writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -1010,7 +922,7 @@ writer.writerow(['LC','Name','Size', 'Subj', 'Course', 'CRN1', 'CRN2', 'CRN3', '
 for g in groups:
     firstLine = True
     reservations = hibSession.createQuery(
-        "from StudentGroupReservation r where r.group = :groupId"
+        "from LearningCommunityReservation r where r.group = :groupId"
         ).setLong("groupId", g.uniqueId).list()
     for r in reservations:
       line = None
@@ -1019,10 +931,10 @@ for g in groups:
           line = [g.groupAbbreviation, g.groupName, groupSize(g)]
       else:
           line = ['','','']
-      line.append(r.instructionalOffering.controllingCourseOffering.subjectAreaAbbv)
-      line.append(r.instructionalOffering.controllingCourseOffering.courseNbr)
+      line.append(r.course.subjectAreaAbbv)
+      line.append(r.course.courseNbr)
       for c in r.classes:
-          line.append(c.getExternalId(r.instructionalOffering.controllingCourseOffering))
+          line.append(c.getExternalId(r.course))
       writer.writerow(line)
     if firstLine:
         writer.writerow([g.groupAbbreviation, g.groupName, groupSize(g)])

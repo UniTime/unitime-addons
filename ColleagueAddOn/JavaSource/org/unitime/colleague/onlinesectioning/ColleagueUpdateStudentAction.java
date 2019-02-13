@@ -684,7 +684,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 							// remove the previous one
 							for (Iterator<XReservation> i = offering.getReservations().iterator(); i.hasNext(); ) {
 								XReservation r = i.next();
-								if (r.getType() == XReservationType.Override && r.getReservationId().equals(override.getUniqueId())) {
+								if (r.getType() == XReservationType.IndividualOverride && r.getReservationId().equals(override.getUniqueId())) {
 									i.remove(); break;
 								}
 							}
@@ -717,7 +717,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					if (offering != null) {
 						for (Iterator<XReservation> i = offering.getReservations().iterator(); i.hasNext(); ) {
 							XReservation r = i.next();
-							if (r.getType() == XReservationType.Override && r.getReservationId().equals(override.getUniqueId())) {
+							if (r.getType() == XReservationType.IndividualOverride && r.getReservationId().equals(override.getUniqueId())) {
 								XIndividualReservation ir = (XIndividualReservation)r;
 								if (ir.getStudentIds().size() > 1) {
 									ir.getStudentIds().remove(iStudentId);
