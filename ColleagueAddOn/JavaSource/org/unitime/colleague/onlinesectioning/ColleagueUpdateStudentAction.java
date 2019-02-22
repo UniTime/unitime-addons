@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.unitime.colleague.model.ColleagueSection;
+import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicClassification;
@@ -87,6 +88,11 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 	private Long iStudentId;
 	private Session iSession;
 	private UpdateResult iResult = UpdateResult.OK;
+	private String iOverrideTypes = null;
+	
+	public ColleagueUpdateStudentAction() {
+		iOverrideTypes = ApplicationProperties.getProperty("colleague.overrides.regexp");
+	}
 	
 	public ColleagueUpdateStudentAction forStudent(String externalId, String termCode) {
 		iExternalId = externalId;
@@ -493,15 +499,13 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 		return false;
 	}
 	
-	protected Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> getOverrides(OnlineSectioningHelper helper) {
-		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = new HashMap<InstructionalOffering, Map<OverrideType, Set<Class_>>>();
+	protected Map<InstructionalOffering, Map<String, Set<Class_>>> getOverrides(OnlineSectioningHelper helper) {
+		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = new HashMap<InstructionalOffering, Map<String, Set<Class_>>>();
 		for (String[] override: iOverrides) {
-			OverrideType type = null;
-			for (OverrideType t: OverrideType.values()) {
-				if (t.getReference().equalsIgnoreCase(override[0])) { type = t; break; }
-			}
-			if (type == null) {
-				helper.info("Unknown override type " + override[0]);
+			String type = override[0];
+			if (type == null || type.isEmpty()) continue;
+			if (iOverrideTypes != null && !type.matches(iOverrideTypes)) {
+				helper.info("Ignoring override type " + type);
 				continue;
 			}
 			
@@ -529,9 +533,9 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 				}
 				// all matching courses
 				for (CourseOffering co: courses) {
-					Map<OverrideType, Set<Class_>> type2classes = restrictions.get(co.getInstructionalOffering());
+					Map<String, Set<Class_>> type2classes = restrictions.get(co.getInstructionalOffering());
 					if (type2classes == null) {
-						type2classes = new HashMap<OverrideType, Set<Class_>>();
+						type2classes = new HashMap<String, Set<Class_>>();
 						restrictions.put(co.getInstructionalOffering(), type2classes);
 					}
 					Set<Class_> classes = type2classes.get(type);
@@ -549,9 +553,9 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 				}
 				if (!iSession.equals(co.getInstructionalOffering().getSession())) continue;
 				
-				Map<OverrideType, Set<Class_>> type2classes = restrictions.get(co.getInstructionalOffering());
+				Map<String, Set<Class_>> type2classes = restrictions.get(co.getInstructionalOffering());
 				if (type2classes == null) {
-					type2classes = new HashMap<OverrideType, Set<Class_>>();
+					type2classes = new HashMap<String, Set<Class_>>();
 					restrictions.put(co.getInstructionalOffering(), type2classes);
 				}
 				Set<Class_> classes = type2classes.get(type);
@@ -580,121 +584,133 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 		return restrictions;
 	}
 	
-	protected void mergeTimeAndLimitOverrides(Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions) {
-		for (Map<OverrideType, Set<Class_>> overrides: restrictions.values()) {
-			Set<Class_> times = overrides.get(OverrideType.AllowTimeConflict);
-			Set<Class_> limits = overrides.get(OverrideType.AllowOverLimit);
-			if (times == null || limits == null) continue;
-			if (times.isEmpty() || times.containsAll(limits)) {
-				if (limits.isEmpty() || limits.containsAll(times)) {
-					overrides.put(OverrideType.AllowOverLimitTimeConflict, times);
-					overrides.remove(OverrideType.AllowTimeConflict);
-					overrides.remove(OverrideType.AllowOverLimit);
-				} else {
-					overrides.put(OverrideType.AllowOverLimitTimeConflict, times);
-					overrides.remove(OverrideType.AllowTimeConflict);
-				}
-			} else if (limits.isEmpty() || limits.containsAll(times)) {
-				overrides.put(OverrideType.AllowOverLimitTimeConflict, limits);
-				overrides.remove(OverrideType.AllowOverLimit);
+	protected OverrideType getType(Map<String, Set<Class_>> restrictions) {
+		boolean time = false, space = false;
+		OverrideType other = null;
+		Set<Class_> otherRestrictions = null;
+		for (Map.Entry<String, Set<Class_>> e: restrictions.entrySet()) {
+			String type = e.getKey();
+			if (OverrideType.AllowTimeConflict.getReference().equalsIgnoreCase(type)) time = true;
+			else if (OverrideType.AllowOverLimit.getReference().equalsIgnoreCase(type)) space = true;
+			else {
+				for (OverrideType t: OverrideType.values())
+					if (t.getReference().equalsIgnoreCase(type)) {
+						if (other == null || e.getValue().size() > otherRestrictions.size() || (e.getValue().size() == otherRestrictions.size() && t.ordinal() < other.ordinal())) {
+							other = t;
+							otherRestrictions = e.getValue();
+						}
+					}
 			}
 		}
+		if (time && space) return OverrideType.AllowOverLimitTimeConflict;
+		if (time) return OverrideType.AllowTimeConflict;
+		if (space) return OverrideType.AllowOverLimit;
+		if (other != null) return other;
+		return OverrideType.Other;
+	}
+	
+	protected Set<Class_> getClasses(Map<String, Set<Class_>> restrictions) {
+		Set<Class_> union = new HashSet<Class_>();
+		for (Set<Class_> c: restrictions.values()) {
+			union.addAll(c);
+		}
+		return union;
 	}
 	
 	protected boolean updateStudentOverrides(Student student, OnlineSectioningServer server, OnlineSectioningHelper helper) {
 		boolean changed = false;
 
-		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = getOverrides(helper);
-
-		mergeTimeAndLimitOverrides(restrictions);
+		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = getOverrides(helper);
 		
 		@SuppressWarnings("unchecked")
 		List<OverrideReservation> overrides = (List<OverrideReservation>)helper.getHibSession().createQuery(
 				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
 			.setLong("studentId", student.getUniqueId()).list();
 		
-		for (Map.Entry<InstructionalOffering, Map<OverrideType, Set<Class_>>> e: restrictions.entrySet()) {
+		overrides: for (Map.Entry<InstructionalOffering, Map<String, Set<Class_>>> e: restrictions.entrySet()) {
 			InstructionalOffering io = e.getKey();
-			overrides: for (Map.Entry<OverrideType, Set<Class_>> f: e.getValue().entrySet()) {
-				OverrideType type = f.getKey();
-				Set<Class_> classes = f.getValue();
-				OverrideReservation override = null;
-				
-				for (Iterator<OverrideReservation> i = overrides.iterator(); i.hasNext(); ) {
-					OverrideReservation r = i.next();
-					if (r.getOverrideType().equals(type) && r.getInstructionalOffering().equals(io)) {
-						int cnt = 0;
-						boolean match = true;
-						for (Class_ c: classes) {
-							if (hasChild(c, classes)) continue;
-							if (r.getClasses().contains(c)) {
-								cnt ++;
-							} else {
-								match = false; break;
-							}
-						}
-						if (match && r.getClasses().size() == cnt && r.getConfigurations().isEmpty()) {
-							// match found --> no change is needed
-							i.remove();
-							continue overrides;
-						}
-						if (r.getStudents().size() == 1) {
-							// update an existing override
-							override = r;
-							i.remove();
-							break;
-						}
-					}
-				}
-				
-				if (override == null) {
-					// create a new override reservation
-					override = new OverrideReservation();
-					override.setOverrideType(type);
-					override.setStudents(new HashSet<Student>());
-					override.setConfigurations(new HashSet<InstrOfferingConfig>());
-					override.setClasses(new HashSet<Class_>());
-					override.setInstructionalOffering(io);
-					io.addToreservations(override);
-					override.addTostudents(student);
-				} else {
-					override.getConfigurations().clear();
-					override.getClasses().clear();
-				}
-				
-				String rx = null;
-				for (Class_ c: classes)
-					if (!hasChild(c, classes)) {
-						override.addToclasses(c);
-						rx = (rx == null ? c.getExternalId(io.getControllingCourseOffering()) : rx + ", " + c.getExternalId(io.getControllingCourseOffering()));
-					}
-				
-				helper.info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
+			
+			OverrideType type = getType(e.getValue());
+			Set<Class_> classes = getClasses(e.getValue());
+			
+			if (classes.isEmpty() && !type.isAllowOverLimit() && !type.isAllowTimeConflict()) continue;
 
-				if (override.getUniqueId() == null)
-					override.setUniqueId((Long)helper.getHibSession().save(override));
-				else
-					helper.getHibSession().update(override);
-				
-				if (server != null) {
-					Lock w = server.writeLock();
-					try {
-						XOffering offering = server.getOffering(io.getUniqueId());
-						if (offering != null) {
-							// remove the previous one
-							for (Iterator<XReservation> i = offering.getReservations().iterator(); i.hasNext(); ) {
-								XReservation r = i.next();
-								if (r.getType() == XReservationType.IndividualOverride && r.getReservationId().equals(override.getUniqueId())) {
-									i.remove(); break;
-								}
-							}
-							// load the new one
-							offering.getReservations().add(new XIndividualReservation(offering, override));
-							server.update(offering);
+			OverrideReservation override = null;
+			
+			for (Iterator<OverrideReservation> i = overrides.iterator(); i.hasNext(); ) {
+				OverrideReservation r = i.next();
+				if (r.getOverrideType().equals(type) && r.getInstructionalOffering().equals(io)) {
+					int cnt = 0;
+					boolean match = true;
+					for (Class_ c: classes) {
+						if (hasChild(c, classes)) continue;
+						if (r.getClasses().contains(c)) {
+							cnt ++;
+						} else {
+							match = false; break;
 						}
-					} finally {
-						w.release();
 					}
+					if (match && r.getClasses().size() == cnt && r.getConfigurations().isEmpty()) {
+						// match found --> no change is needed
+						i.remove();
+						continue overrides;
+					}
+					if (r.getStudents().size() == 1) {
+						// update an existing override
+						override = r;
+						i.remove();
+						break;
+					}
+				}
+			}
+			
+			if (override == null) {
+				// create a new override reservation
+				override = new OverrideReservation();
+				override.setOverrideType(type);
+				override.setStudents(new HashSet<Student>());
+				override.setConfigurations(new HashSet<InstrOfferingConfig>());
+				override.setClasses(new HashSet<Class_>());
+				override.setInstructionalOffering(io);
+				io.addToreservations(override);
+				override.addTostudents(student);
+			} else {
+				override.getConfigurations().clear();
+				override.getClasses().clear();
+			}
+			
+			String rx = null;
+			for (Class_ c: classes)
+				if (!hasChild(c, classes)) {
+					override.addToclasses(c);
+					rx = (rx == null ? c.getExternalId(io.getControllingCourseOffering()) : rx + ", " + c.getExternalId(io.getControllingCourseOffering()));
+				}
+			
+			helper.info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
+
+			if (override.getUniqueId() == null)
+				override.setUniqueId((Long)helper.getHibSession().save(override));
+			else
+				helper.getHibSession().update(override);
+			
+			if (server != null) {
+				Lock w = server.writeLock();
+				try {
+					XOffering offering = server.getOffering(io.getUniqueId());
+					if (offering != null) {
+						// remove the previous one
+						for (Iterator<XReservation> i = offering.getReservations().iterator(); i.hasNext(); ) {
+							XReservation r = i.next();
+							if (r.getType() == XReservationType.IndividualOverride && r.getReservationId().equals(override.getUniqueId())) {
+								i.remove(); break;
+							}
+						}
+						// load the new one
+						offering.getReservations().add(new XIndividualReservation(offering, override));
+						server.update(offering);
+					}
+				} finally {
+					w.release();
 				}
 				
 				changed = true;
