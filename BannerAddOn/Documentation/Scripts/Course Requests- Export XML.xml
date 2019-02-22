@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE scripts PUBLIC "-//UniTime//DTD University Course Timetabling/EN" "http://www.unitime.org/interface/Script.dtd">
+
+<!--
+ * Licensed to The Apereo Foundation under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for
+ * additional information regarding copyright ownership.
+ *
+ * The Apereo Foundation licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ -->
+
+<script name="Course Requests: Export XML" permission="Student Sectioning Solver" engine="python" created="Wed Feb 20 11:46:43 EST 2019">
+  <description><![CDATA[Export student course requests for all students with student status that allows for course request re-validation.]]></description>
+  <body><![CDATA[from xml.dom import minidom
+from java.util import TreeSet
+from java.lang import Long
+from org.unitime.timetable.util import Constants
+from org.unitime.timetable.model import StudentClassPref, StudentInstrMthPref
+from org.unitime.timetable.model.dao import InstructionalMethodDAO, Class_DAO
+import gzip
+
+def startSlot2startTime(startSlot):
+    hrs = startSlot / 12
+    mins = (startSlot % 12) * 5
+    return "%02d%02d" % (hrs, mins)
+
+def toString(num):
+    if num: return str(num)
+    return ""
+
+def getClassSuffix(clazz):
+    suffix = clazz.getClassSuffix()
+    if suffix: return suffix
+    return clazz.getSectionNumberString(hibSession)
+
+doc = minidom.Document()
+root = doc.createElement("request")
+doc.appendChild(root)
+
+root.setAttribute("campus", session.getAcademicInitiative())
+root.setAttribute("year", session.getAcademicYear())
+root.setAttribute("term", session.getAcademicTerm())
+
+students = hibSession.createQuery(
+    "from Student s where bit_and(s.sectioningStatus.status, 8192) != 0 and s.session.uniqueId = :sessionId"
+    ).setLong("sessionId", session.getUniqueId()).list()
+
+for student in students:
+    studentEl = doc.createElement("student")
+    root.appendChild(studentEl)
+
+    studentEl.setAttribute("key", student.getExternalUniqueId())
+    if student.getSectioningStatus():
+        studentEl.setAttribute("status", student.getSectioningStatus().getReference())
+
+    demographicsEl = doc.createElement("updateDemographics")
+    studentEl.appendChild(demographicsEl)
+
+    nameEl = doc.createElement("name")
+    demographicsEl.appendChild(nameEl)
+    if student.getFirstName():
+        nameEl.setAttribute("first", student.getFirstName())
+    if student.getMiddleName():
+        nameEl.setAttribute("middle", student.getMiddleName())
+    if student.getLastName():
+        nameEl.setAttribute("last", student.getLastName())
+
+    for acm in student.getAreaClasfMajors():
+        acadAreaEl = doc.createElement("acadArea")
+        demographicsEl.appendChild(acadAreaEl)
+        acadAreaEl.setAttribute("abbv", acm.getAcademicArea().getAcademicAreaAbbreviation())
+        acadAreaEl.setAttribute("classification", acm.getAcademicClassification().getCode())
+        majorEl = doc.createElement("major")
+        acadAreaEl.appendChild(majorEl)
+        majorEl.setAttribute("code", acm.getMajor().getCode())
+    for acm in student.getAreaClasfMinors():
+        acadAreaEl = doc.createElement("acadArea")
+        demographicsEl.appendChild(acadAreaEl)
+        acadAreaEl.setAttribute("abbv", acm.getAcademicArea().getAcademicAreaAbbreviation())
+        acadAreaEl.setAttribute("classification", acm.getAcademicClassification().getCode())
+        minorEl = doc.createElement("minor")
+        acadAreaEl.appendChild(minorEl)
+        minorEl.setAttribute("code", acm.getMinor().getCode())
+    for group in student.getGroups():
+        groupAffiliationEl = doc.createElement("groupAffiliation")
+        demographicsEl.appendChild(groupAffiliationEl)
+        groupAffiliationEl.setAttribute("code", group.getGroupAbbreviation())
+    for acc in student.getAccomodations():
+        disabilityEl = doc.createElement("disability")
+        demographicsEl.appendChild(disabilityEl)
+        disabilityEl.setAttribute("code", acc.getAbbreviation())
+
+    requestsEl = doc.createElement("updateCourseRequests")
+    studentEl.appendChild(requestsEl)
+    requestsEl.setAttribute("commit", "true")
+
+    demands = TreeSet(student.getCourseDemands())
+    for cd in demands:
+        if cd.getFreeTime():
+            freeTimeEl = doc.createElement("freeTime")
+            requestsEl.appendChild(freeTimeEl)
+            days = []
+            for k in range(0,7):
+                if (cd.getFreeTime().getDayCode() & Constants.DAY_CODES[k]) != 0:
+                    days.append(Constants.DAY_NAMES_SHORT[k])
+            freeTimeEl.setAttribute("days", "".join(days))
+            freeTimeEl.setAttribute("startTime", startSlot2startTime(cd.getFreeTime().getStartSlot()))
+            freeTimeEl.setAttribute("endTime", startSlot2startTime(cd.getFreeTime().getStartSlot() + cd.getFreeTime().getLength()))
+            freeTimeEl.setAttribute("length", toString(5 * cd.getFreeTime().getLength()))
+        if cd.getCourseRequests():
+            courseOfferingEl = None
+            first = True
+            requests = TreeSet(cd.getCourseRequests())
+            for cr in requests:
+                if courseOfferingEl:
+                    alternativeEl = doc.createElement("alternative")
+                    courseOfferingEl.appendChild(alternativeEl)
+                    courseOfferingEl = alternativeEl
+                else:
+                    courseOfferingEl = doc.createElement("courseOffering")
+                    requestsEl.appendChild(courseOfferingEl)
+                courseOfferingEl.setAttribute("subjectArea", cr.getCourseOffering().getSubjectAreaAbbv())
+                courseOfferingEl.setAttribute("courseNumber", cr.getCourseOffering().getCourseNbr())
+                if first and cd.isWaitlist():
+                    courseOfferingEl.setAttribute("waitlist", "true")
+                if first and cd.isAlternative():
+                    courseOfferingEl.setAttribute("alternative", "true")
+                if cr.getCredit():
+                    courseOfferingEl.setAttribute("credit", toString(cr.getCredit()))
+                enrollments = {}
+                for enrollment in cr.getClassEnrollments():
+                    classEl = doc.createElement("class")
+                    clazz = enrollment.getClazz()
+                    extId = clazz.getExternalId(cr.getCourseOffering())
+                    if extId:
+                        if extId in enrollments: continue
+                        classEl.setAttribute("externalId", extId)
+                        enrollments[extId] = True
+                    classEl.setAttribute("type", clazz.getSchedulingSubpart().getItypeDesc().strip())
+                    classEl.setAttribute("suffix", getClassSuffix(clazz))
+                    courseOfferingEl.appendChild(classEl)
+                sections = {}
+                ims = {}
+                prefEl = doc.createElement("preferences")
+                for pr in cr.getPreferences():
+                    if isinstance(pr, StudentClassPref):
+                        classEl = doc.createElement("class")
+                        clazz = pr.getClazz()
+                        extId = clazz.getExternalId(cr.getCourseOffering())
+                        if extId:
+                            if extId in sections: continue
+                            classEl.setAttribute("externalId", extId)
+                            sections[extId] = True
+                        classEl.setAttribute("type", clazz.getSchedulingSubpart().getItypeDesc().strip())
+                        classEl.setAttribute("suffix", getClassSuffix(clazz))
+                        if pr.isRequired():
+                            classEl.setAttribute("required", "true")
+                        prefEl.appendChild(classEl)
+                    else:
+                        meth = pr.getInstructionalMethod()
+                        if meth.getReference() in ims: continue
+                        imEl = doc.createElement("instructional-method")
+                        imEl.setAttribute("externalId", meth.getReference())
+                        imEl.setAttribute("name", meth.getLabel())
+                        if pr.isRequired():
+                            imEl.setAttribute("required", "true")
+                        ims[pr.getInstructionalMethod().getReference()] = True
+                        prefEl.appendChild(imEl)
+                if ims or sections:
+                    courseOfferingEl.appendChild(prefEl)
+                first = False
+
+f = gzip.open(log.createOutput('requests','xml.gz').getAbsolutePath(), "wb")
+f.write(doc.toprettyxml(indent="  "))
+f.close()]]></body>
+</script>
