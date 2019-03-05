@@ -25,6 +25,7 @@
 <script name="Learning Communities: Course Matrix Import [legacy]" permission="Student Group Edit" engine="python" created="Mon Mar 14 11:28:15 EDT 2016">
   <description><![CDATA[This script creates student groups and student group reservations according to the input file (LC Course Matrix in CSV format).]]></description>
   <parameter name="file" label="Input File" type="file"/>
+  <parameter name="groupTypeRef" label="Group Type" type="reference(StudentGroupType)" default="LC"/>
   <body><![CDATA[import csv
 import re
 from org.unitime.timetable.model import StudentGroup, LearningCommunityReservation, StudentSectioningQueue, StudentGroupType
@@ -67,7 +68,7 @@ def getGroup(name):
         group.setGroupAbbreviation(getGroupCode(name));
         group.setGroupName(getGroupName(name));
         group.setUniqueId(hibSession.save(group))
-        group.setType(StudentGroupType.findByReference("LC", hibSession))
+        group.setType(StudentGroupType.findByReference(groupTypeRef, hibSession))
     return group
 
 def addClass(course2classes, group, subject, courseNbr, crn, title):
@@ -169,8 +170,9 @@ G1, Group 1, 24  , ENGL, 10600R
 G2, Group 2, 26  , ENGL, 10600R
   ,        ,     , MATH, 20100
 </pre></li></ol>Size column is optional.]]></description>
-  <parameter name="expirationDate" label="Reservation Expiration Date (yyyy-mm-dd)" type="text"/>
   <parameter name="file" label="Input File" type="file"/>
+  <parameter name="expirationDate" label="Reservation Expiration Date (yyyy-mm-dd)" type="text"/>
+  <parameter name="groupTypeRef" label="Group Type" type="reference(StudentGroupType)" default="LC"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import StudentGroup, LearningCommunityReservation, StudentSectioningQueue, StudentGroupType
 from java.util import HashSet
@@ -186,7 +188,7 @@ def getGroup(abbv, name, size):
         group.setGroupAbbreviation(abbv);
         group.setGroupName(name);
         group.setUniqueId(hibSession.save(group))
-        group.setType(StudentGroupType.findByReference("LC", hibSession))
+        group.setType(StudentGroupType.findByReference(groupTypeRef, hibSession))
     else:
         log.info("Found group %s - %s" % (group.getGroupAbbreviation(), group.getGroupName()))
     return group
@@ -375,6 +377,7 @@ G2, 565607184, 288674378, 845738199, 139074464
   <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
   <parameter name="file" label="Input File" type="file"/>
   <parameter name="statusRef" label="Status" type="reference(StudentSectioningStatus)" default="LC"/>
+  <parameter name="groupTypeRef" label="Group Type" type="reference(StudentGroupType)" default="LC"/>
   <parameter name="canCreateGroup" label="Create Groups" type="boolean" default="false"/>
   <body><![CDATA[import csv
 from org.unitime.timetable.model import StudentSectioningQueue, StudentSectioningStatus, StudentGroup, StudentGroupType
@@ -397,7 +400,7 @@ def enroll(students, lcAbbv, puids, status, writer):
         group.setGroupName(lcAbbv)
         group.setSession(session)
         group.setStudents(HashSet())
-        group.setType(StudentGroupType.findByReference("LC", hibSession))
+        group.setType(StudentGroupType.findByReference(groupTypeRef, hibSession))
         hibSession.saveOrUpdate(group) 
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
@@ -562,6 +565,7 @@ G2, 565607184, Paul Ch Armstrong, 288674378, Al R Northrop , 845738199, Pat Oliv
   <parameter name="nameColumns" label="Name Columns" type="enum(0,1,2,3,4)" default="1"/>
   <parameter name="updateSpace" label="Update Reserved Space" type="boolean" default="true"/>
   <parameter name="statusRef" label="status" type="reference(StudentSectioningStatus)" default="LC"/>
+  <parameter name="groupTypeRef" label="Group Type" type="reference(StudentGroupType)" default="LC"/>
   <parameter name="file" label="Input File" type="file"/>
   <parameter name="canCreateGroup" label="Create Groups" type="boolean" default="false"/>
   <body><![CDATA[import csv
@@ -596,7 +600,7 @@ def enroll(students, lcAbbv, puids, status, writer):
       group.setGroupName(lcAbbv)
       group.setSession(session)
       group.setStudents(HashSet())
-      group.setType(StudentGroupType.findByReference("LC", hibSession))
+      group.setType(StudentGroupType.findByReference(groupTypeRef, hibSession))
       hibSession.saveOrUpdate(group) 
     if not group:
         log.error("Student group %s does not exist." % lcAbbv)
