@@ -42,6 +42,7 @@ import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.CourseRequest;
+import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
 import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
@@ -881,12 +882,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     		}
     	}
     	
+    	
     	Set<CourseDemand> deletes = new HashSet<CourseDemand>();
+    	Set<CourseDemand> exDropDeletes = new HashSet<CourseDemand>();
     	if (!enrollments.isEmpty()) {
     		for (StudentClassEnrollment enrollment: enrollments.values()) {
     			CourseRequest cr = course2request.get(enrollment.getCourseOffering());
-    			if (cr != null && remaining.contains(cr.getCourseDemand()))
+    			if (cr != null && remaining.contains(cr.getCourseDemand())) {
     				deletes.add(cr.getCourseDemand());
+    				if (cr.getCourseRequestOverrideIntent() == CourseRequestOverrideIntent.EX_DROP)
+    					exDropDeletes.add(cr.getCourseDemand());
+    			}
     			student.getClassEnrollments().remove(enrollment);
     			helper.getHibSession().delete(enrollment);
     		}
@@ -904,6 +910,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
         			student.getCourseDemands().remove(cd);
         			helper.getHibSession().delete(cd);
         		}
+    		else if (!exDropDeletes.isEmpty()) {
+    			for (CourseDemand cd: exDropDeletes) {
+        			if (cd.getFreeTime() != null)
+        				helper.getHibSession().delete(cd.getFreeTime());
+        			for (CourseRequest cr: cd.getCourseRequests())
+        				helper.getHibSession().delete(cr);
+        			student.getCourseDemands().remove(cd);
+        			helper.getHibSession().delete(cd);
+        		}
+    		}
     		// fix priorities
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
