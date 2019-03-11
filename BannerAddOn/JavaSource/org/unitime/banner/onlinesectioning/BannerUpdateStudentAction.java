@@ -56,6 +56,7 @@ import org.unitime.timetable.model.StudentAreaClassificationMajor;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
+import org.unitime.timetable.model.StudentGroupType;
 import org.unitime.timetable.model.StudentNote;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningAction;
@@ -130,8 +131,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 
 
+	public BannerUpdateStudentAction withGroup(String externalId, String campus, String abbreviation, String name, String type) {
+		iGroups.add(new String[] {externalId, campus, abbreviation, name, type});
+		return this;
+	}
+	
 	public BannerUpdateStudentAction withGroup(String externalId, String campus, String abbreviation, String name) {
-		iGroups.add(new String[] {externalId, campus, abbreviation, name});
+		iGroups.add(new String[] {externalId, campus, abbreviation, name, null});
 		return this;
 	}
 	
@@ -465,7 +471,29 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	protected boolean updateStudentGroups(Student student, OnlineSectioningHelper helper) {
 		Set<StudentGroup> groups = new HashSet<StudentGroup>();
 		for (String[] g: iGroups) {
-			if (!iSession.getAcademicInitiative().equals(g[1])) continue;
+			if (g[1] != null && !iSession.getAcademicInitiative().equals(g[1])) continue;
+			StudentGroupType type = null;
+			if (g[4] != null) {
+				type = StudentGroupType.findByReference(g[4], helper.getHibSession());
+				if (type == null && "SPORT".equals(g[4])) {
+					type = new StudentGroupType();
+					type.setAdvisorsCanSet(false);
+					type.setAllowDisabledSection(StudentGroupType.AllowDisabledSection.NotAllowed);
+					type.setKeepTogether(false);
+					type.setReference("SPORT");
+					type.setLabel("Student Athletes");
+					helper.getHibSession().save(type);
+				}
+				if (type == null && "COHORT".equals(g[4])) {
+					type = new StudentGroupType();
+					type.setAdvisorsCanSet(false);
+					type.setAllowDisabledSection(StudentGroupType.AllowDisabledSection.NotAllowed);
+					type.setKeepTogether(false);
+					type.setReference("COHORT");
+					type.setLabel("Student Cohorts");
+					helper.getHibSession().save(type);
+				}
+			}
 			StudentGroup sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
 			if (sg == null) {
 				sg = new StudentGroup();
@@ -474,17 +502,23 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				sg.setGroupAbbreviation(g[2] == null ? g[0] : g[2]);
 				sg.setGroupName(g[3] == null ? g[0] : g[3]);
 				sg.setUniqueId((Long)helper.getHibSession().save(sg));
-				helper.info("Added Student Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
+				sg.setType(type);
+				helper.info("Added "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
 			} else {
 				boolean changed = false;
 				if (g[2] != null &&  !g[2].equals(sg.getGroupAbbreviation())){
-					helper.info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old abbreviation:  " + sg.getGroupAbbreviation() + ", new abbreviation:  " + g[2] + " in session " + sg.getSession().academicInitiativeDisplayString());
+					helper.info("Changed "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " - old abbreviation:  " + sg.getGroupAbbreviation() + ", new abbreviation:  " + g[2] + " in session " + sg.getSession().academicInitiativeDisplayString());
 					sg.setGroupAbbreviation(g[2]);
 					changed = true;
 				} 
 				if (g[3] != null && !g[3].equals(sg.getGroupName())){
-					helper.info("Changed Student Group:  " + sg.getExternalUniqueId() + " - old name:  " + sg.getGroupName() + ", new name:  " + g[3] + " in session " + sg.getSession().academicInitiativeDisplayString());
+					helper.info("Changed "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " - old name:  " + sg.getGroupName() + ", new name:  " + g[3] + " in session " + sg.getSession().academicInitiativeDisplayString());
 					sg.setGroupName(g[3]);
+					changed = true;
+				}
+				if (!(type == null ? ""  :type.getReference()).equals(sg.getType() == null ? "" : sg.getType().getReference())) {
+					helper.info("Changed "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " - old type:  " + (sg.getType() == null ? "null" : sg.getType().getReference()) + ", new type:  " + g[4] + " in session " + sg.getSession().academicInitiativeDisplayString());
+					sg.setType(type);
 					changed = true;
 				}
 				if (changed) {

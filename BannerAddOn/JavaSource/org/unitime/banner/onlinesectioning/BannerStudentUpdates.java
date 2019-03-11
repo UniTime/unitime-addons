@@ -266,6 +266,28 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					while (trimLeadingZerosFromExternalId && advisorExternalId.startsWith("0")) advisorExternalId = advisorExternalId.substring(1);
 					update.withAdvisor(advisorExternalId, advisorElement.attributeValue("advisorType"));
 				}
+				
+				// Sports
+				for (Iterator<?> j = studentElement.elementIterator("sport"); j.hasNext(); ) {
+					Element sportElement = (Element)j.next();
+					update.withGroup(
+							sportElement.attributeValue("externalId", sportElement.attributeValue("group")),
+							sportElement.attributeValue("campus"),
+							sportElement.attributeValue("group"),
+							sportElement.attributeValue("groupname", sportElement.attributeValue("group")),
+							"SPORT");
+				}
+				
+				// Cohorts
+				for (Iterator<?> j = studentElement.elementIterator("cohort"); j.hasNext(); ) {
+					Element sportElement = (Element)j.next();
+					update.withGroup(
+							sportElement.attributeValue("externalId", sportElement.attributeValue("group")),
+							sportElement.attributeValue("campus"),
+							sportElement.attributeValue("group"),
+							sportElement.attributeValue("groupname", sportElement.attributeValue("group")),
+							"COHORT");
+				}
 
 				for (Long sessionId: sessionIds) {
 					try {
