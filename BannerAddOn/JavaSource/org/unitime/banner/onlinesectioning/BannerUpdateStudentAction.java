@@ -584,6 +584,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				List<CourseOffering> courses = (List<CourseOffering>)helper.getHibSession().createQuery(
 						"from CourseOffering co where " +
 						"co.instructionalOffering.session.uniqueId = :sessionId and " +
+						"co.instructionalOffering.notOffered = false and " + 
 						"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course")
 						.setString("subject", subject).setString("course", course + "%").setLong("sessionId", iSession.getUniqueId()).list();
 				if (course.isEmpty()) {
