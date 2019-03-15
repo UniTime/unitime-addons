@@ -476,9 +476,19 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		Set<StudentGroup> groups = new HashSet<StudentGroup>();
 		for (String[] g: iGroups) {
 			if (g[1] != null && !iSession.getAcademicInitiative().equals(g[1])) continue;
+			StudentGroup sg = null;
+			for (StudentGroup x: student.getGroups()) {
+				if (g[0].equals(x.getExternalUniqueId())) {
+					sg = x; break;
+				}
+			}
 			StudentGroupType type = null;
 			if (g[4] != null) {
-				type = StudentGroupType.findByReference(g[4], helper.getHibSession());
+				if (sg != null && sg.getType() != null && sg.getType().getReference().equals(g[4])) {
+					type = sg.getType();
+				} else {
+					type = StudentGroupType.findByReference(g[4], helper.getHibSession());
+				}
 				if (type == null && "SPORT".equals(g[4])) {
 					type = new StudentGroupType();
 					type.setAdvisorsCanSet(false);
@@ -498,7 +508,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					helper.getHibSession().save(type);
 				}
 			}
-			StudentGroup sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
+			if (sg == null) {
+				sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
+			}
 			if (sg == null) {
 				sg = new StudentGroup();
 				sg.setExternalUniqueId(g[0]);
