@@ -324,6 +324,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			if (updateStudentGroups(student, helper))
 				changed = true;
 			
+			if (updateAdvisors(student, helper))
+				changed = true;
+
 			if (iStudentId == null)
 				iStudentId = (Long)helper.getHibSession().save(student);
 			else if (changed)
