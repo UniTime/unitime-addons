@@ -48,6 +48,7 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OverrideReservation;
 import org.unitime.timetable.model.PosMajor;
+import org.unitime.timetable.model.Reservation;
 import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
@@ -682,10 +683,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 
 		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = getOverrides(helper);
 		
-		@SuppressWarnings("unchecked")
-		List<OverrideReservation> overrides = (List<OverrideReservation>)helper.getHibSession().createQuery(
+		Set<OverrideReservation> overrides = new HashSet<OverrideReservation>(helper.getHibSession().createQuery(
 				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
-			.setLong("studentId", student.getUniqueId()).list();
+			.setLong("studentId", student.getUniqueId()).list());
 		
 		overrides: for (Map.Entry<InstructionalOffering, Map<String, Set<Class_>>> e: restrictions.entrySet()) {
 			InstructionalOffering io = e.getKey();
@@ -693,39 +693,42 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			OverrideType type = getType(e.getValue());
 			Set<Class_> classes = getClasses(e.getValue());
 			
+			// do not create an override reservation for course-level override that is not a time and/or a space conflict
 			if (classes.isEmpty() && !type.isAllowOverLimit() && !type.isAllowTimeConflict()) continue;
 
 			OverrideReservation override = null;
 			
-			for (Iterator<OverrideReservation> i = overrides.iterator(); i.hasNext(); ) {
-				OverrideReservation r = i.next();
-				if (r.getOverrideType().equals(type) && r.getInstructionalOffering().equals(io)) {
-					int cnt = 0;
-					boolean match = true;
-					for (Class_ c: classes) {
-						if (hasChild(c, classes)) continue;
-						if (r.getClasses().contains(c)) {
-							cnt ++;
-						} else {
-							match = false; break;
-						}
+			// lookup a matching reservation
+			for (Reservation r: io.getReservations()) {
+				if (!(r instanceof OverrideReservation) || !((OverrideReservation)r).getOverrideType().equals(type)) continue; // skip other reservations
+				int cnt = 0;
+				boolean match = true;
+				for (Class_ c: classes) {
+					if (hasChild(c, classes)) continue;
+					if (r.getClasses().contains(c)) {
+						cnt ++;
+					} else {
+						match = false; break;
 					}
-					if (match && r.getClasses().size() == cnt && r.getConfigurations().isEmpty()) {
-						// match found --> no change is needed
-						i.remove();
+				}
+				if (match && r.getClasses().size() == cnt && r.getConfigurations().isEmpty()) {
+					// match found
+					if (overrides.remove(r)) {
+						// student already in --> no changes are needed
 						continue overrides;
-					}
-					if (r.getStudents().size() == 1) {
-						// update an existing override
-						override = r;
-						i.remove();
+					} else {
+						// student not present --> add this student
+						override = (OverrideReservation)r;
+						override.addTostudents(student);
+						helper.info("Updated " + type.getReference() + " override for " + io.getCourseName() + " [" + student.getExternalUniqueId()  + " added]");
+						helper.getHibSession().update(override);
 						break;
 					}
 				}
 			}
-			
+
 			if (override == null) {
-				// create a new override reservation
+				// no match --> create a new override reservation
 				override = new OverrideReservation();
 				override.setOverrideType(type);
 				override.setStudents(new HashSet<Student>());
@@ -734,25 +737,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				override.setInstructionalOffering(io);
 				io.addToreservations(override);
 				override.addTostudents(student);
-			} else {
-				override.getConfigurations().clear();
-				override.getClasses().clear();
-			}
-			
-			String rx = null;
-			for (Class_ c: classes)
-				if (!hasChild(c, classes)) {
-					override.addToclasses(c);
-					rx = (rx == null ? c.getExternalId(io.getControllingCourseOffering()) : rx + ", " + c.getExternalId(io.getControllingCourseOffering()));
-				}
-			
-			helper.info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
+				for (Class_ c: classes)
+					if (!hasChild(c, classes))
+						override.addToclasses(c);
 
-			if (override.getUniqueId() == null)
+				helper.info("Created " + type.getReference() + " override for " + io.getCourseName() + " [" + student.getExternalUniqueId()  + " added]");
 				override.setUniqueId((Long)helper.getHibSession().save(override));
-			else
-				helper.getHibSession().update(override);
-			
+			}
+
 			if (server != null) {
 				Lock w = server.writeLock();
 				try {
@@ -772,17 +764,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				} finally {
 					w.release();
 				}
-				
-				changed = true;
 			}
+			changed = true;
 		}
 		
 		for (OverrideReservation override: overrides) {
-			helper.info("Removed " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName());
 			if (override.getStudents().size() > 1) {
+				helper.info("Updated " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName() + " [" + student.getExternalUniqueId()  + " removed]");
 				override.getStudents().remove(student);
 				helper.getHibSession().update(override);
 			} else {
+				helper.info("Removed " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName() + " [" + student.getExternalUniqueId()  + " removed]");
 				override.getInstructionalOffering().getReservations().remove(override);
 				helper.getHibSession().delete(override);
 			}
