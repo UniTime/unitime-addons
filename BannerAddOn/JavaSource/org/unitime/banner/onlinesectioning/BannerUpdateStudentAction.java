@@ -96,9 +96,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private UpdateResult iResult = UpdateResult.OK;
 	private List<String[]> iAdvisors = new ArrayList<String[]>();
 	private String iOverrideTypes = null;
+	private String iIgnoreGroupRegExp = null;
 	
 	public BannerUpdateStudentAction() {
 		iOverrideTypes = ApplicationProperties.getProperty("banner.overrides.regexp");
+		iIgnoreGroupRegExp = ApplicationProperties.getProperty("banner.ignoreGroups.regexp");
 	}
 	
 	public BannerUpdateStudentAction forStudent(String externalId, String termCode) {
@@ -476,6 +478,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		Set<StudentGroup> groups = new HashSet<StudentGroup>();
 		for (String[] g: iGroups) {
 			if (g[1] != null && !iSession.getAcademicInitiative().equals(g[1])) continue;
+			if (iIgnoreGroupRegExp != null && g[0].matches(iIgnoreGroupRegExp)) continue;
 			StudentGroup sg = null;
 			for (StudentGroup x: student.getGroups()) {
 				if (g[0].equals(x.getExternalUniqueId())) {
@@ -551,12 +554,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				g.getStudents().remove(student);
 				i.remove();
 				changed = true;
+				helper.info("Student " + student.getExternalUniqueId() + " dropped from " + g.getGroupName() + (g.getType() == null ? "" : " (" + g.getType().getReference() + ")"));
 			}
 		}
 		for (StudentGroup g: groups) {
 			g.addTostudents(student);
 			student.addTogroups(g);
 			changed = true;
+			helper.info("Student " + student.getExternalUniqueId() + " added to " + g.getGroupName() + (g.getType() == null ? "" : " (" + g.getType().getReference() + ")"));
 		}
     	return changed;
 	}
@@ -1041,11 +1046,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				a.getStudents().remove(student);
 				i.remove();
 				changed = true;
+				helper.info("Student " + student.getExternalUniqueId() + " dropped from advisor " + a.getExternalUniqueId());
 			}
 		for (Advisor a: advisors) {
 			a.addTostudents(student);
 			student.addToadvisors(a);
 			changed = true;
+			helper.info("Student " + student.getExternalUniqueId() + " added to advisor " + a.getExternalUniqueId());
 		}
     	return changed;
 	}
@@ -1085,5 +1092,4 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			return getCourseId().hashCode() ^ getClassId().hashCode();
 		}
 	}
-
 }
