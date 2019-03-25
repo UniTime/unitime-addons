@@ -163,40 +163,42 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	public UpdateResult execute(OnlineSectioningServer server, OnlineSectioningHelper helper) {
 		boolean changed = false;
 		try {
-			iSession = SessionDAO.getInstance().get(server.getAcademicSession().getUniqueId(), helper.getHibSession());
-			BannerSession bs = BannerSession.findBannerSessionForSession(server.getAcademicSession().getUniqueId(), helper.getHibSession());
-			iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
-			
-			iStudentId = getStudentId(helper);
+			iStudentId = getStudentId(server.getAcademicSession().getUniqueId());
 			if (iStudentId == null) changed = true;
-			
-			OnlineSectioningLog.Action.Builder action = helper.getAction();
-			
-			action.setStudent(
-					OnlineSectioningLog.Entity.newBuilder()
-					.setExternalId(iExternalId)
-					.setName(iLName + ", " + iFName + (iMName == null ? "" : " " + iMName))
-					.setType(OnlineSectioningLog.Entity.EntityType.STUDENT));
-			
-			helper.getAction().addOptionBuilder().setKey("CRNs").setValue(iCRNs.toString());
-			if (iEmail != null)
-				helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
-			if (!iAcadAreaClasfMj.isEmpty()) {
-				for (String[] areaClasf: iAcadAreaClasfMj) {
-					if (areaClasf[3] == null || areaClasf[3].equals(iCampus)) {
-						helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + "/" + areaClasf[2] + " " + areaClasf[1]);
-						break;
-					}
-				}
-			}
-				
-			
-			if (iStudentId != null)
-				action.getStudentBuilder().setUniqueId(iStudentId);
 			
 			Lock lock = (iStudentId == null ? null : server.lockStudent(iStudentId, null, name()));
 			try {
 				helper.beginTransaction();
+
+				iSession = SessionDAO.getInstance().get(server.getAcademicSession().getUniqueId(), helper.getHibSession());
+
+				BannerSession bs = BannerSession.findBannerSessionForSession(server.getAcademicSession().getUniqueId(), helper.getHibSession());
+				iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
+				
+				OnlineSectioningLog.Action.Builder action = helper.getAction();
+				
+				action.setStudent(
+						OnlineSectioningLog.Entity.newBuilder()
+						.setExternalId(iExternalId)
+						.setName(iLName + ", " + iFName + (iMName == null ? "" : " " + iMName))
+						.setType(OnlineSectioningLog.Entity.EntityType.STUDENT));
+				
+				helper.getAction().addOptionBuilder().setKey("CRNs").setValue(iCRNs.toString());
+				if (iEmail != null)
+					helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
+				if (!iAcadAreaClasfMj.isEmpty()) {
+					for (String[] areaClasf: iAcadAreaClasfMj) {
+						if (areaClasf[3] == null || areaClasf[3].equals(iCampus)) {
+							helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + "/" + areaClasf[2] + " " + areaClasf[1]);
+							break;
+						}
+					}
+				}
+					
+				
+				if (iStudentId != null)
+					action.getStudentBuilder().setUniqueId(iStudentId);
+				
 				Student student = getStudent(helper);
 
 				if (updateStudentDemographics(student, helper))
@@ -354,11 +356,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	public Long getStudentId() { return iStudentId; }
 	
-	public Long getStudentId(OnlineSectioningHelper helper) {
-		return (Long)helper.getHibSession().createQuery("select s.uniqueId from Student s where " +
-				"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId")
-				.setLong("sessionId", iSession.getUniqueId()).setString("externalId",iExternalId)
+	public Long getStudentId(Long sessionId) {
+		org.hibernate.Session hibSession = SessionDAO.getInstance().createNewSession();
+		try {
+			return (Long)hibSession.createQuery("select s.uniqueId from Student s where " +
+					"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId")
+					.setLong("sessionId", sessionId).setString("externalId",iExternalId)
 				.setCacheable(true).uniqueResult();
+		} finally {
+			hibSession.close();
+		}
 	}
 	
 	public Student getStudent(OnlineSectioningHelper helper) {
