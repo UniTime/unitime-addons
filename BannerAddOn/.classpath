@@ -11,8 +11,8 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/dom4j-1.6.1.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/commons-logging-1.0.4.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/itext-2.1.7.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-4.3.17.RELEASE.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-4.3.17.RELEASE.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-4.3.18.RELEASE.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-4.3.18.RELEASE.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/protobuf-java-2.6.1.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-3.6.6.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.8.4.jar"/>
