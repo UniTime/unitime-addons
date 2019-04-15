@@ -67,6 +67,11 @@ for student in students:
 
     demographicsEl = doc.createElement("updateDemographics")
     studentEl.appendChild(demographicsEl)
+    
+    if student.getMinCredit():
+        demographicsEl.setAttribute("minCredit", "%0.1f" % student.getMinCredit())
+    if student.getMaxCredit():
+        demographicsEl.setAttribute("maxCredit", "%0.1f" % student.getMaxCredit())
 
     nameEl = doc.createElement("name")
     demographicsEl.appendChild(nameEl)
@@ -137,6 +142,8 @@ for student in students:
                     courseOfferingEl.setAttribute("waitlist", "true")
                 if first and cd.isAlternative():
                     courseOfferingEl.setAttribute("alternative", "true")
+                if first and cd.isCritical():
+                    courseOfferingEl.setAttribute("critical", "true")
                 if cr.getCredit():
                     courseOfferingEl.setAttribute("credit", toString(cr.getCredit()))
                 enrollments = {}
