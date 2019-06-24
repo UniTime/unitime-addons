@@ -436,6 +436,7 @@ def getManualOverride(puid, crn, manualOverrides):
     return None
 
 def addOverride(req, id, override, overrides):
+    if id in overrides and override in overrides[id]: return False
     for crn in req.courseReferenceNumbers:
         if crn.courseReferenceNumber == id:
             log.debug('Adding override %s for %s' % (override, id))
@@ -572,6 +573,7 @@ def isAllowedOverride(override):
     if override == 'PRE-REQ': return ovPreReq
     if override == 'PROGRAM': return ovProgram
     if override == 'TIME-CNFLT': return ovTimeCnflt
+    if override == 'COHORT': return ovCohort
     return False
 
 def add(req, id, changeStatus):
@@ -679,7 +681,7 @@ def enroll(client, puid, name, crns, writer, manualOverrides):
         changed = False
         for reg in response.registrations:
             id = reg.courseReferenceNumber
-            if reg.crnErrors:
+            if reg.crnErrors and id in crns:
                 for e in reg.crnErrors:
                     override = getDefaultOverride(id, e.messageType)
                     if override and isAllowedOverride(override):
@@ -794,6 +796,7 @@ defaultOverrides = {
     'PREQ': 'PRE-REQ',
     'PROG': 'PROGRAM',
     'TIME': 'TIME-CNFLT',
+    'CHRT': 'COHORT',
     }
 
 def execute():
