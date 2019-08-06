@@ -29,12 +29,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
+
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
+import org.unitime.timetable.interfaces.ExternalUidTranslation;
+import org.unitime.timetable.interfaces.ExternalUidTranslation.Source;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicClassification;
 import org.unitime.timetable.model.Advisor;
@@ -78,6 +91,7 @@ import org.unitime.timetable.onlinesectioning.server.CheckMaster;
 import org.unitime.timetable.onlinesectioning.server.CheckMaster.Master;
 import org.unitime.timetable.onlinesectioning.updates.NotifyStudentAction;
 import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
+import org.unitime.timetable.util.Constants;
 
 /**
  * @author Tomas Muller
@@ -1041,6 +1055,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				advisor.setSession(iSession);
 				advisor.setStudents(new HashSet<Student>());
 				advisor.setUniqueId((Long)helper.getHibSession().save(advisor));
+				try {
+					updateDetailsFromLdap(advisor);
+				} catch (Throwable t) {
+					helper.info("Failed to lookup advisor details: " + t.getMessage(), t);
+				}
 				helper.info("Added Advisor:  " + advisor.getExternalUniqueId() + " - " + advisor.getRole().getReference() + " to session " + advisor.getSession().academicInitiativeDisplayString());
 			}
 			advisors.add(advisor);
@@ -1099,4 +1118,69 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			return getCourseId().hashCode() ^ getClassId().hashCode();
 		}
 	}
+	
+    private static String getAttribute(Attributes attrs, String name) {
+        if (attrs == null) return null;
+        if (name == null || name.isEmpty()) return null;
+        for (StringTokenizer stk = new StringTokenizer(name, ","); stk.hasMoreTokens(); ) {
+            Attribute a = attrs.get(stk.nextToken());
+            try {
+                if (a!=null && a.get()!=null) return a.get().toString();
+            } catch (NamingException e) {
+            }
+        }
+        return null;
+    }
+    
+    public static boolean updateDetailsFromLdap(Advisor advisor) throws NamingException {
+    	String url = ApplicationProperty.PeopleLookupLdapUrl.value();
+    	if (url == null) return false;
+    	
+    	ExternalUidTranslation translation = null;
+        if (ApplicationProperty.ExternalUserIdTranslation.value()!=null) {
+            try {
+                translation = (ExternalUidTranslation)Class.forName(ApplicationProperty.ExternalUserIdTranslation.value()).getConstructor().newInstance();
+            } catch (Exception e) {}
+        }
+        String uid = advisor.getExternalUniqueId();
+        if (translation != null) uid = translation.translate(advisor.getExternalUniqueId(), Source.Staff, Source.LDAP);
+        if (!advisor.getExternalUniqueId().equals(uid))
+        	advisor.setLastName(uid);
+        
+        InitialDirContext ctx = null;
+        try {
+            Hashtable<String,String> env = new Hashtable<String, String>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(Context.PROVIDER_URL, url);
+            if (ApplicationProperty.PeopleLookupLdapUser.value() != null) {
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
+            	env.put(Context.SECURITY_PRINCIPAL, ApplicationProperty.PeopleLookupLdapUser.value());
+            	env.put(Context.SECURITY_CREDENTIALS, ApplicationProperty.PeopleLookupLdapPassword.value());
+            } else {
+                env.put(Context.SECURITY_AUTHENTICATION, "none");
+            }
+            ctx = new InitialDirContext(env);
+            SearchControls ctls = new SearchControls();
+            ctls.setCountLimit(100);
+            String filter = "(uid=" + uid + ")";
+            for (NamingEnumeration<SearchResult> e = ctx.search(ApplicationProperty.PeopleLookupLdapBase.value(), filter, ctls); e.hasMore(); ) {
+            	Attributes a = e.next().getAttributes();
+            	advisor.setFirstName(Constants.toInitialCase(getAttribute(a,"givenName")));
+            	advisor.setMiddleName(Constants.toInitialCase(getAttribute(a,"cn")));
+            	advisor.setLastName(Constants.toInitialCase(getAttribute(a,"sn")));
+                if (advisor.getMiddleName()!=null && advisor.getFirstName()!=null && advisor.getMiddleName().indexOf(advisor.getFirstName())>=0)
+                	advisor.setMiddleName(advisor.getMiddleName().replaceAll(advisor.getFirstName()+" ?", ""));
+                if (advisor.getMiddleName()!=null && advisor.getLastName()!=null && advisor.getMiddleName().indexOf(advisor.getLastName())>=0)
+                	advisor.setMiddleName(advisor.getMiddleName().replaceAll(" ?"+advisor.getLastName(), ""));
+            	advisor.setAcademicTitle(getAttribute(a, ApplicationProperty.PeopleLookupLdapAcademicTitleAttribute.value()));
+            	advisor.setEmail(getAttribute(a, ApplicationProperty.PeopleLookupLdapEmailAttribute.value()));
+            	return true;
+            }
+        } finally {
+            try {
+                if (ctx != null) ctx.close();
+            } catch (Exception e) {}
+        }
+        return false;
+    }
 }
