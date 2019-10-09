@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerSessionListForm;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.commons.web.WebTable;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
 
@@ -63,9 +64,13 @@ public class BannerSessionListAction extends Action {
 
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionAdd);
-
+		
 		BannerSessionListForm sessionListForm = (BannerSessionListForm) form;
 		sessionListForm.setSessions(BannerSession.getAllSessions());
+		
+		WebTable.setOrder(sessionContext, "BannerSessionList.ord", request.getParameter("order"), 3);
+		sessionListForm.setOrder(WebTable.getOrder(sessionContext, "BannerSessionList.ord"));
+
 		return mapping.findForward("showBannerSessionList");
 		
 	}

@@ -86,6 +86,20 @@
 			foreign-key="fk_banner_session_session"
 		/>
 		
+		<many-to-one
+			name="futureSession"
+			class="org.unitime.banner.model.BannerSession"
+			column="future_id"
+			not-null="false"
+			foreign-key="fk_banner_session_future"
+		/>
+
+		<property
+			name="futureSessionUpdateModeInt"
+			column="future_mode"
+			type="java.lang.Integer"
+			not-null="false"
+		/>
 	</class>
 
 </hibernate-mapping>

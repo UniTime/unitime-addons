@@ -97,12 +97,24 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
 		sessionEditForm.setSendDataToBanner(bannerSession.isSendDataToBanner());
 		sessionEditForm.setLoadingOfferingsFile(bannerSession.isLoadingOfferingsFile());
 		sessionEditForm.setAcadSessionLabel(bannerSession.getSession().getLabel());
+		sessionEditForm.setFutureSessionId(bannerSession.getFutureSession() == null ? null : bannerSession.getFutureSession().getUniqueId());
+		sessionEditForm.setFutureUpdateMode(bannerSession.getFutureSessionUpdateModeInt());
+		setBannerSessionsInForm(sessionEditForm);
 		return mapping.findForward("showEdit");
 	}
 	protected void setAvailableSessionsInForm(BannerSessionEditForm sessionEditForm){
 		ArrayList sessionList = new ArrayList();
 		sessionList.addAll(SessionDAO.getInstance().getQuery("from Session s where s.uniqueId not in (select bs.session.uniqueId from BannerSession bs)").list());
 		sessionEditForm.setAvailableAcadSessions(sessionList);
+	}
+	
+	protected void setBannerSessionsInForm(BannerSessionEditForm sessionEditForm){
+		ArrayList bannerSessionList = new ArrayList();
+		if (sessionEditForm.getSessionId() != null)
+			bannerSessionList.addAll(SessionDAO.getInstance().getQuery("from BannerSession s where s.uniqueId != :id order by s.bannerTermCode desc, s.bannerCampus").setLong("id", sessionEditForm.getSessionId()).list());
+		else
+			bannerSessionList.addAll(SessionDAO.getInstance().getQuery("from BannerSession s order by s.bannerTermCode desc, s.bannerCampus").list());
+		sessionEditForm.setAvailableBannerSessions(bannerSessionList);
 	}
 	
 	public ActionForward addSession(
@@ -117,6 +129,7 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
 
 //		BannerSessionEditForm sessionEditForm = (BannerSessionEditForm) form;
 		setAvailableSessionsInForm((BannerSessionEditForm) form);
+		setBannerSessionsInForm((BannerSessionEditForm) form);
 		return mapping.findForward("showAdd");
 	}
 	
@@ -146,6 +159,7 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
             ActionMessages errors = sessionEditForm.validate(mapping, request);
             if (errors.size()>0) {
                 saveErrors(request, errors);
+                setBannerSessionsInForm(sessionEditForm);
                 if (sessn.getUniqueId()!=null) {
                     return mapping.findForward("showEdit");
                 }
@@ -161,6 +175,8 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
             sessn.setStoreDataForBanner(sessionEditForm.getStoreDataForBanner() == null?new Boolean(false):sessionEditForm.getStoreDataForBanner());
             sessn.setSendDataToBanner(sessionEditForm.getSendDataToBanner() == null?new Boolean(false):sessionEditForm.getSendDataToBanner());
             sessn.setLoadingOfferingsFile(sessionEditForm.getLoadingOfferingsFile() == null?new Boolean(false):sessionEditForm.getLoadingOfferingsFile());
+            sessn.setFutureSessionUpdateModeInt(sessionEditForm.getFutureUpdateMode());
+            sessn.setFutureSession(sessionEditForm.getFutureSessionId() == null ? null : BannerSessionDAO.getInstance().get(sessionEditForm.getFutureSessionId()));
 
             hibSession.saveOrUpdate(sessn);
 

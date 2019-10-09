@@ -42,4 +42,9 @@ public abstract class BaseBannerSessionDAO extends _RootDAO<BannerSession,Long> 
 	public List<BannerSession> findBySession(org.hibernate.Session hibSession, Long sessionId) {
 		return hibSession.createQuery("from BannerSession x where x.session.uniqueId = :sessionId").setLong("sessionId", sessionId).list();
 	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerSession> findByFutureSession(org.hibernate.Session hibSession, Long futureSessionId) {
+		return hibSession.createQuery("from BannerSession x where x.futureSession.uniqueId = :futureSessionId").setLong("futureSessionId", futureSessionId).list();
+	}
 }
