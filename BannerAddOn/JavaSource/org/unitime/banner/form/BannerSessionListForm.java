@@ -40,6 +40,7 @@ public class BannerSessionListForm extends ActionForm {
 	private static final long serialVersionUID = -1239226473486660059L;
 	// --------------------------------------------------------- Instance Variables
 	private Collection sessions;
+	private Integer order;
 	
 	// --------------------------------------------------------- Methods
 
@@ -65,4 +66,7 @@ public class BannerSessionListForm extends ActionForm {
 	public void setSessions(Collection sessions) {
 		this.sessions = sessions;
 	}
+	
+	public void setOrder(Integer order) { this.order = order; }
+	public Integer getOrder() { return order; }
 }

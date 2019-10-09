@@ -148,5 +148,14 @@
 			alter table %SCHEMA%.banner_config add lab_hours double
 		</mysql>
  	</update>
-	
+ 	<update version="9" date="9-Oct-2019" comment="Future Banner Sessions Student Updates">
+		<plsql>alter table %SCHEMA%.banner_session add future_id number(20,0)</plsql>
+		<mysql>alter table %SCHEMA%.banner_session add future_id decimal(20,0)</mysql>
+		<sql>
+			alter table %SCHEMA%.banner_session add constraint fk_banner_session_future foreign key (future_id)
+			references %SCHEMA%.banner_session (uniqueid) on delete set null
+		</sql>
+		<plsql>alter table %SCHEMA%.banner_session add future_mode number(10,0)</plsql>
+		<mysql>alter table %SCHEMA%.banner_session add future_mode decimal(10,0)</mysql>
+ 	</update>
  </dbupdate>

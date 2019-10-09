@@ -49,6 +49,7 @@ public class BannerSessionEditForm extends ActionForm {
 	Long acadSessionId;
 	String acadSessionLabel;
 	ArrayList availableAcadSessions;
+	ArrayList availableBannerSessions;
 	/**
 	 * @return the availableAcadSessions
 	 */
@@ -71,7 +72,9 @@ public class BannerSessionEditForm extends ActionForm {
 	public String getAcadSessionLabel() {
 		return acadSessionLabel;
 	}
-
+	
+	public void setAvailableBannerSessions(ArrayList availableBannerSessions) { this.availableBannerSessions = availableBannerSessions; }
+	public ArrayList getAvailableBannerSessions() { return availableBannerSessions; }
 
 	/**
 	 * @param acadSessionLabel the acadSessionLabel to set
@@ -183,6 +186,8 @@ public class BannerSessionEditForm extends ActionForm {
 	Boolean storeDataForBanner;
 	Boolean sendDataToBanner;
 	Boolean loadingOfferingsFile;
+	Long futureSessionId;
+	Integer futureUpdateMode;
 		
 	// --------------------------------------------------------- Methods
 	
@@ -253,5 +258,9 @@ public class BannerSessionEditForm extends ActionForm {
 		else
 			session.setUniqueId(sessionId);
 	}
-    
+	
+	public Long getFutureSessionId() { return futureSessionId; }
+	public void setFutureSessionId(Long futureSessionId) { this.futureSessionId = futureSessionId; }
+	public Integer getFutureUpdateMode() { return futureUpdateMode; }
+	public void setFutureUpdateMode(Integer futureUpdateMode) { this.futureUpdateMode = futureUpdateMode; }
 }

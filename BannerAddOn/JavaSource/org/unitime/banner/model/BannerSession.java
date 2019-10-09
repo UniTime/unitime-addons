@@ -51,6 +51,12 @@ public class BannerSession extends BaseBannerSession {
 		super(uniqueId);
 	}
 /*[CONSTRUCTOR MARKER END]*/
+	
+	public static enum FutureSessionUpdateMode {
+		NO_UPDATE,
+		DIRECT_UPDATE,
+		SEND_REQUEST,
+	}
 
 
 	public static BannerSession findBannerSessionForSession(Session acadSession, org.hibernate.Session hibSession){
@@ -130,5 +136,32 @@ public class BannerSession extends BaseBannerSession {
 		BannerSessionDAO bsDao = new BannerSessionDAO();
 		return(bsDao.get(id));
 	}
-		
+	
+	public void setFutureSessionUpdateMode(FutureSessionUpdateMode mode) {
+		if (mode == null)
+			setFutureSessionUpdateModeInt(null);
+		else
+			setFutureSessionUpdateModeInt(mode.ordinal());
+	}
+	
+	public FutureSessionUpdateMode getFutureSessionUpdateMode() {
+		if (getFutureSessionUpdateModeInt() == null)
+			return FutureSessionUpdateMode.NO_UPDATE;
+		else
+			return FutureSessionUpdateMode.values()[getFutureSessionUpdateModeInt()];
+	}
+	
+	public String getFutureSessionUpdateModeLabel() {
+		if (getFutureSession() == null) return "";
+		switch (getFutureSessionUpdateMode()) {
+		case NO_UPDATE: return "Disabled";
+		case DIRECT_UPDATE: return "Direct Update";
+		case SEND_REQUEST: return "Send Request";
+		default: return "";
+		}
+	}
+	
+	public String getLabel() {
+		return getBannerTermCode() + " (" + getBannerCampus() + ")";
+	}
 }

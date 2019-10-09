@@ -33,8 +33,10 @@ public abstract class BaseBannerSession implements Serializable {
 	private Boolean iStoreDataForBanner;
 	private Boolean iSendDataToBanner;
 	private Boolean iLoadingOfferingsFile;
+	private Integer iFutureSessionUpdateModeInt;
 
 	private Session iSession;
+	private BannerSession iFutureSession;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_BANNER_CAMPUS = "bannerCampus";
@@ -42,6 +44,7 @@ public abstract class BaseBannerSession implements Serializable {
 	public static String PROP_STORE_DATA_FOR_BANNER = "storeDataForBanner";
 	public static String PROP_SEND_DATA_TO_BANNER = "sendDataToBanner";
 	public static String PROP_LOADING_OFFERINGS_FILE = "loadingOfferingsFile";
+	public static String PROP_FUTURE_MODE = "futureSessionUpdateModeInt";
 
 	public BaseBannerSession() {
 		initialize();
@@ -75,8 +78,14 @@ public abstract class BaseBannerSession implements Serializable {
 	public Boolean getLoadingOfferingsFile() { return iLoadingOfferingsFile; }
 	public void setLoadingOfferingsFile(Boolean loadingOfferingsFile) { iLoadingOfferingsFile = loadingOfferingsFile; }
 
+	public Integer getFutureSessionUpdateModeInt() { return iFutureSessionUpdateModeInt; }
+	public void setFutureSessionUpdateModeInt(Integer futureSessionUpdateModeInt) { iFutureSessionUpdateModeInt = futureSessionUpdateModeInt; }
+
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
+
+	public BannerSession getFutureSession() { return iFutureSession; }
+	public void setFutureSession(BannerSession futureSession) { iFutureSession = futureSession; }
 
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerSession)) return false;
@@ -97,6 +106,8 @@ public abstract class BaseBannerSession implements Serializable {
 		return "BannerSession[" +
 			"\n	BannerCampus: " + getBannerCampus() +
 			"\n	BannerTermCode: " + getBannerTermCode() +
+			"\n	FutureSession: " + getFutureSession() +
+			"\n	FutureSessionUpdateModeInt: " + getFutureSessionUpdateModeInt() +
 			"\n	LoadingOfferingsFile: " + getLoadingOfferingsFile() +
 			"\n	SendDataToBanner: " + getSendDataToBanner() +
 			"\n	Session: " + getSession() +

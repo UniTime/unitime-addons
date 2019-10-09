@@ -50,21 +50,20 @@
 					7, "", "bannerSessionList.do?order=%%",					
 					new String[] {
 						"Academic<br>Session", "Academic<br>Initiative", "Banner<br>Term&nbsp;Code",
-						"Banner<br>Campus", "Store&nbsp;Data<br>For&nbsp;Banner", "Send&nbsp;Data<br>To&nbsp;Banner", "Loading<br>Offerings" },
+						"Banner<br>Campus", "Store&nbsp;Data<br>For&nbsp;Banner", "Send&nbsp;Data<br>To&nbsp;Banner", "Loading<br>Offerings",
+						"Future<br>Term", "Update<br>Mode"},
 					new String[] { "left", "left", "left", "left",
-						"center", "center", "center" }, 
-					new boolean[] { true, true, false, false, false, true });
+						"center", "center", "center", "left", "left" }, 
+					new boolean[] { true, true, false, false, false, true, true, true });
 					
 			webTable.enableHR("#EFEFEF");
 	        webTable.setRowStyle("white-space: nowrap");
 					
 		%>
 
-		<logic:iterate name="bannerSessionListForm" property="sessions" id="sessn">
+		<logic:iterate name="bannerSessionListForm" property="sessions" id="s" type="org.unitime.banner.model.BannerSession">
 			<%
-					org.unitime.banner.model.BannerSession s = (org.unitime.banner.model.BannerSession) sessn;
-					webTable
-					.addLine(
+				webTable.addLine(
 							"onClick=\"document.location='bannerSessionEdit.do?doit=editSession&sessionId=" + s.getUniqueId() + "';\"",
 							new String[] {
 								s.getSession().getLabel() + "&nbsp;",
@@ -73,7 +72,9 @@
 								s.getBannerCampus() + "&nbsp;",
 								s.isStoreDataForBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
 								s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
-								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; "},
+								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ",
+								s.getFutureSession() == null ? "" : s.getFutureSession().getLabel(),
+								s.getFutureSessionUpdateModeLabel()},
 							new Comparable[] {
 								s.getSession().getLabel(),
 								s.getSession().academicInitiativeDisplayString(),
@@ -81,23 +82,15 @@
 								s.getBannerCampus(),
 								s.isStoreDataForBanner().booleanValue() ? "<img src='images/accept.png'>" : "",
 								s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'>" : "",
-								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'>" : "" } );
+								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'>" : "",
+								s.getFutureSession() == null ? "" : s.getFutureSession().getLabel(),
+								s.getFutureSessionUpdateModeLabel()} );
 			%>
 
 		</logic:iterate>
 		<%-- end interate --%>
-		<%
-		int orderCol = 3;
-		if (request.getParameter("order")!=null) {
-			try {
-				orderCol = Integer.parseInt(request.getParameter("order"));
-			}
-			catch (Exception e){
-				orderCol = 3;
-			}
-		}
-		out.println(webTable.printTable(orderCol));
-		%>
+		<bean:define id="order" name="bannerSessionListForm" property="order" type="java.lang.Integer"/>
+		<%out.println(webTable.printTable(order));%>
 
 		<%-- print out the add link --%>
 

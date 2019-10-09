@@ -120,6 +120,28 @@
 		</TR>
 		</logic:equal>
 		<TR>
+			<TD>Future Session:</TD>
+			<TD colspan='2' align="left">
+				<html:select style="width:200;" property="futureSessionId">
+					<html:option value=""></html:option>
+					<html:optionsCollection property="availableBannerSessions" value="uniqueId" label="label"/>
+				</html:select>
+			</TD>
+		</TR>
+		
+		<TR>
+			<TD>Update Mode:</TD>
+			<TD colspan='2' align="left">
+				<html:select style="width:200;" property="futureUpdateMode">
+					<html:option value="0">Disabled (no automatic future term updates)</html:option>
+					<html:option value="1">Direct Update (student changes automatically propagated into the future term)</html:option>
+					<html:option value="2">Send Request (when student changed, automatically request future term student update)</html:option>
+				</html:select>
+			</TD>
+		</TR>
+						
+		
+		<TR>
 			<TD colspan="3">
 			<DIV class="WelcomeRowHeadBlank">&nbsp;</DIV>
 			</TD>

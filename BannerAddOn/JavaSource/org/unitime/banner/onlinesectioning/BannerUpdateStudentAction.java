@@ -19,6 +19,7 @@
 */
 package org.unitime.banner.onlinesectioning;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -41,6 +42,8 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
+import org.hibernate.CacheMode;
+import org.hibernate.FlushMode;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.ApplicationProperties;
@@ -72,6 +75,7 @@ import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentGroupType;
 import org.unitime.timetable.model.StudentNote;
+import org.unitime.timetable.model.dao.AcademicAreaDAO;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningAction;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
@@ -105,12 +109,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private boolean iUpdateAcadAreaClasfMj = false;
 	private List<String[]> iOverrides = new ArrayList<String[]>();
 	private Set<Integer> iCRNs = new TreeSet<Integer>();
-	private Long iStudentId;
-	private Session iSession;
-	private UpdateResult iResult = UpdateResult.OK;
+	private transient Session iSession;
 	private List<String[]> iAdvisors = new ArrayList<String[]>();
 	private String iOverrideTypes = null;
 	private String iIgnoreGroupRegExp = null;
+	private boolean iUpdateClasses = true;
+	private boolean iLocking = false;
 	
 	public BannerUpdateStudentAction() {
 		iOverrideTypes = ApplicationProperties.getProperty("banner.overrides.regexp");
@@ -147,7 +151,6 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 
-
 	public BannerUpdateStudentAction withGroup(String externalId, String campus, String abbreviation, String name, String type) {
 		iGroups.add(new String[] {externalId, campus, abbreviation, name, type});
 		return this;
@@ -172,16 +175,28 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		iAdvisors.add(new String[] {externalId, type});
 		return this;
 	}
+	
+	public BannerUpdateStudentAction skipClassUpdates() {
+		iUpdateClasses = false;
+		return this;
+	}
+	
+	public BannerUpdateStudentAction withLocking() {
+		iLocking = true;
+		return this;
+	}
 
 	@Override
 	public UpdateResult execute(OnlineSectioningServer server, OnlineSectioningHelper helper) {
-		boolean changed = false;
+		UpdateResult result = new UpdateResult();
 		try {
-			iStudentId = getStudentId(server.getAcademicSession().getUniqueId());
-			if (iStudentId == null) changed = true;
+			result.setStudentId(getStudentId(server.getAcademicSession().getUniqueId()));
+			if (result.getStudentId() == null) result.add(Change.CREATED);
 			
-			Lock lock = (iStudentId == null ? null : server.lockStudent(iStudentId, null, name()));
+			Lock lock = (result.getStudentId() == null ? null : server.lockStudent(result.getStudentId(), null, name()));
 			try {
+				helper.getHibSession().setFlushMode(FlushMode.COMMIT);
+				helper.getHibSession().setCacheMode(CacheMode.REFRESH);
 				helper.beginTransaction();
 
 				iSession = SessionDAO.getInstance().get(server.getAcademicSession().getUniqueId(), helper.getHibSession());
@@ -210,61 +225,59 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 					
 				
-				if (iStudentId != null)
-					action.getStudentBuilder().setUniqueId(iStudentId);
-				
 				Student student = getStudent(helper);
 
-				if (updateStudentDemographics(student, helper))
-					changed = true;
+				if (updateStudentDemographics(student, helper, result))
+					result.add(Change.DEMOGRAPHICS);
 				
 				if (updateStudentGroups(student, helper))
-					changed = true;
+					result.add(Change.GROUPS);
 				
 				if (updateAdvisors(student, helper))
-					changed = true;
+					result.add(Change.ADVISORS);
 				
-				Map<CourseOffering, List<Class_>> enrollments = getEnrollments(helper);
-				
-				OnlineSectioningLog.Enrollment.Builder external = OnlineSectioningLog.Enrollment.newBuilder();
-				external.setType(OnlineSectioningLog.Enrollment.EnrollmentType.EXTERNAL);
-				for (Map.Entry<CourseOffering, List<Class_>> e: enrollments.entrySet()) {
-					CourseOffering course = e.getKey();
-					for (Class_ clazz: e.getValue()) {
-						external.addSectionBuilder()
-								.setClazz(OnlineSectioningLog.Entity.newBuilder()
-										.setUniqueId(clazz.getUniqueId())
-										.setExternalId(clazz.getExternalId(course))
-										.setName(clazz.getClassSuffix(course))
-										)
-								.setCourse(OnlineSectioningLog.Entity.newBuilder()
-										.setUniqueId(course.getUniqueId())
-										.setName(course.getCourseName())
-										)
-								.setSubpart(OnlineSectioningLog.Entity.newBuilder()
-										.setUniqueId(clazz.getSchedulingSubpart().getUniqueId())
-										.setName(clazz.getSchedulingSubpart().getItypeDesc())
-										)
-								;
+				if (iUpdateClasses) {
+					Map<CourseOffering, List<Class_>> enrollments = getEnrollments(helper, result);
+					
+					OnlineSectioningLog.Enrollment.Builder external = OnlineSectioningLog.Enrollment.newBuilder();
+					external.setType(OnlineSectioningLog.Enrollment.EnrollmentType.EXTERNAL);
+					for (Map.Entry<CourseOffering, List<Class_>> e: enrollments.entrySet()) {
+						CourseOffering course = e.getKey();
+						for (Class_ clazz: e.getValue()) {
+							external.addSectionBuilder()
+									.setClazz(OnlineSectioningLog.Entity.newBuilder()
+											.setUniqueId(clazz.getUniqueId())
+											.setExternalId(clazz.getExternalId(course))
+											.setName(clazz.getClassSuffix(course))
+											)
+									.setCourse(OnlineSectioningLog.Entity.newBuilder()
+											.setUniqueId(course.getUniqueId())
+											.setName(course.getCourseName())
+											)
+									.setSubpart(OnlineSectioningLog.Entity.newBuilder()
+											.setUniqueId(clazz.getSchedulingSubpart().getUniqueId())
+											.setName(clazz.getSchedulingSubpart().getItypeDesc())
+											)
+									;
+						}
 					}
+					helper.getAction().addEnrollment(external);
+					
+					if (updateClassEnrollments(student, enrollments, helper))
+						result.add(Change.CLASSES);
 				}
-				helper.getAction().addEnrollment(external);
 				
-				if (updateClassEnrollments(student, enrollments, helper))
-					changed = true;
-				
-				if (iStudentId == null) {
-					iStudentId = (Long)helper.getHibSession().save(student);
-					action.getStudentBuilder().setUniqueId(iStudentId);
-				} else if (changed)
+				if (result.hasChanges())
 					helper.getHibSession().update(student);
 				
-				if (updateStudentOverrides(student, server, helper))
-					changed = true;
+				action.getStudentBuilder().setUniqueId(result.getStudentId());
 				
-				if (changed) {
+				if (iUpdateClasses && updateStudentOverrides(student, server, helper, result))
+					result.add(Change.OVERRIDES);
+				
+				if (iUpdateClasses && result.hasChanges()) {
 					// Unload student
-					XStudent oldStudent = server.getStudent(iStudentId);
+					XStudent oldStudent = server.getStudent(result.getStudentId());
 					if (oldStudent != null) {
 						OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
 						enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.PREVIOUS);
@@ -297,7 +310,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						action.addEnrollment(enrollment);
 					}
 
-					server.execute(server.createAction(NotifyStudentAction.class).forStudent(iStudentId).oldStudent(oldStudent), helper.getUser());
+					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).oldStudent(oldStudent), helper.getUser());
 				}
 			
 				helper.commitTransaction();
@@ -311,66 +324,65 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		} catch (Exception e) {
 			helper.error("Student update failed: " + e.getMessage(), e);
 			helper.getAction().setResult(OnlineSectioningLog.Action.ResultType.FAILURE);
-			return UpdateResult.FAILURE;
+			result.setStatus(Status.FAILURE);
+			return result;
 		} finally {
 			for (OnlineSectioningLog.Message m: helper.getLog().getMessageList())
 				helper.getAction().addMessage(m);
 		}
-		helper.getAction().setResult(changed ? OnlineSectioningLog.Action.ResultType.TRUE : OnlineSectioningLog.Action.ResultType.FALSE);
+		helper.getAction().setResult(result.hasChanges() ? OnlineSectioningLog.Action.ResultType.TRUE : OnlineSectioningLog.Action.ResultType.FALSE);
 		
-		if (iResult == UpdateResult.OK && !changed)
-			return UpdateResult.NO_CHANGE;
+		if (result.getStatus() == Status.OK && !result.hasChanges())
+			result.setStatus(Status.NO_CHANGE);
 		
-		return iResult;
+		return result;
 	}
 	
 	public UpdateResult execute(Long sessionId, OnlineSectioningHelper helper) {
+		helper.getHibSession().setFlushMode(FlushMode.COMMIT);
+		helper.getHibSession().setCacheMode(CacheMode.REFRESH);
 		helper.beginTransaction();
-		boolean changed = false;
+		UpdateResult result = new UpdateResult();
 		try {
 			iSession = SessionDAO.getInstance().get(sessionId, helper.getHibSession());
 			BannerSession bs = BannerSession.findBannerSessionForSession(sessionId, helper.getHibSession());
 			iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
 			
 			Student student = getStudent(helper);
-			iStudentId = student.getUniqueId();
-			if (iStudentId == null) changed = true;
+			result.setStudentId(student.getUniqueId());
+			if (result.getStudentId() == null) result.add(Change.CREATED);
 			
-			if (updateStudentDemographics(student, helper))
-				changed = true;
+			if (updateStudentDemographics(student, helper, result))
+				result.add(Change.DEMOGRAPHICS);
 			
 			if (updateStudentGroups(student, helper))
-				changed = true;
+				result.add(Change.GROUPS);
 			
 			if (updateAdvisors(student, helper))
-				changed = true;
+				result.add(Change.ADVISORS);
 
-			if (iStudentId == null)
-				iStudentId = (Long)helper.getHibSession().save(student);
-			else if (changed)
+			if (result.hasChanges())
 				helper.getHibSession().update(student);
 
-			if (updateStudentOverrides(student, null, helper))
-				changed = true;
+			if (iUpdateClasses && updateStudentOverrides(student, null, helper, result))
+				result.add(Change.OVERRIDES);
 
-			if (updateClassEnrollments(student, getEnrollments(helper), helper))
-				changed = true;
+			if (iUpdateClasses && updateClassEnrollments(student, getEnrollments(helper, result), helper))
+				result.add(Change.CLASSES);
 			
 			helper.commitTransaction();
 		} catch (Exception e) {
 			helper.rollbackTransaction();
 			helper.error("Student update failed: " + e.getMessage(), e);
-			return UpdateResult.FAILURE;
+			result.setStatus(Status.FAILURE);
 		}
 			
-		if (iResult == UpdateResult.OK && !changed)
-			return UpdateResult.NO_CHANGE;
-		return iResult;
+		if (result.getStatus() == Status.OK && !result.hasChanges())
+			result.setStatus(Status.NO_CHANGE);
+		return result;
 	}
 	
-	public Long getStudentId() { return iStudentId; }
-	
-	public Long getStudentId(Long sessionId) {
+	protected Long getStudentId(Long sessionId) {
 		org.hibernate.Session hibSession = SessionDAO.getInstance().createNewSession();
 		try {
 			return (Long)hibSession.createQuery("select s.uniqueId from Student s where " +
@@ -401,7 +413,133 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return student;
 	}
 	
-	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper) {
+	protected AcademicArea getAcademicArea(OnlineSectioningHelper helper, String area) {
+		if (iLocking) {
+			synchronized (("Area:" + iSession.getReference() + ":" + area).intern()) {
+				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), area);
+				if (aa != null) return aa;
+				aa = AcademicArea.findByAbbv(helper.getHibSession(), iSession.getUniqueId(), area);
+				if (aa != null) return aa;
+				aa = new AcademicArea();
+				aa.setPosMajors(new HashSet<PosMajor>());
+				aa.setAcademicAreaAbbreviation(area);
+				aa.setSession(iSession);
+				aa.setExternalUniqueId(area);
+				aa.setTitle(area);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					aa.setUniqueId((Long)hibSession.save(aa));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.info("Added Academic Area:  " + area);
+				helper.getHibSession().update(aa);
+				return aa;
+			}
+		} else {
+			AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), area);
+			if (aa == null)
+				aa = AcademicArea.findByAbbv(helper.getHibSession(), iSession.getUniqueId(), area);
+			if (aa == null){
+				aa = new AcademicArea();
+				aa.setPosMajors(new HashSet<PosMajor>());
+				aa.setAcademicAreaAbbreviation(area);
+				aa.setSession(iSession);
+				aa.setExternalUniqueId(area);
+				aa.setTitle(area);
+				aa.setUniqueId((Long)helper.getHibSession().save(aa));
+				helper.info("Added Academic Area:  " + area);
+			}
+			return aa;
+		}
+	}
+	
+	protected AcademicClassification getAcademicClassification(OnlineSectioningHelper helper, String clasf) {
+		if (iLocking) {
+			synchronized (("Clasf:" + iSession.getReference() + ":" + clasf).intern()) {
+				AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), clasf);
+				if (ac != null) return ac;
+				ac = AcademicClassification.findByCode(helper.getHibSession(), iSession.getUniqueId(), clasf);
+				if (ac != null) return ac;
+				ac = new AcademicClassification();
+				ac.setCode(clasf);
+				ac.setExternalUniqueId(clasf);
+				ac.setName(clasf);
+				ac.setSession(iSession);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					ac.setUniqueId((Long)hibSession.save(ac));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.info("Added Academic Classification:  " + clasf);
+				helper.getHibSession().update(ac);
+				return ac;
+			}
+		} else {
+			AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), clasf);
+			if (ac == null)
+				ac = AcademicClassification.findByCode(helper.getHibSession(), iSession.getUniqueId(), clasf);
+			if (ac == null){
+				ac = new AcademicClassification();
+				ac.setCode(clasf);
+				ac.setExternalUniqueId(clasf);
+				ac.setName(clasf);
+				ac.setSession(iSession);
+				ac.setUniqueId((Long) helper.getHibSession().save(ac));
+				helper.info("Added Academic Classification:  " + clasf);
+			}
+			return ac;
+		}
+	}
+	
+	protected PosMajor getPosMajor(OnlineSectioningHelper helper, AcademicArea aa, String area, String major) {
+		if (iLocking) {
+			synchronized (("Major:" + iSession.getReference() + ":" + area + ":" + major).intern()) {
+				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), iSession.getUniqueId(), major, area);
+				if (posMajor != null) return posMajor;
+				posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), iSession.getUniqueId(), major, area);
+				if (posMajor != null) return posMajor;
+				posMajor = new PosMajor();
+				posMajor.setCode(major);
+				posMajor.setExternalUniqueId(major);
+				posMajor.setName(major);
+				posMajor.setSession(iSession);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					posMajor.addToacademicAreas(aa);
+					aa.addToposMajors(posMajor);
+					posMajor.setUniqueId((Long)hibSession.save(posMajor));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.getHibSession().update(posMajor);
+				helper.info("Added Major:  " + major + " to Academic Area:  " + area);
+				return posMajor;
+			}
+		} else {
+			PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), iSession.getUniqueId(), major, area);
+			if (posMajor == null)
+				posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), iSession.getUniqueId(), major, area);
+			if (posMajor == null) {
+				posMajor = new PosMajor();
+				posMajor.setCode(major);
+				posMajor.setExternalUniqueId(major);
+				posMajor.setName(major);
+				posMajor.setSession(iSession);
+				posMajor.addToacademicAreas(aa);
+				aa.addToposMajors(posMajor);
+				posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
+				helper.info("Added Major:  " + major + " to Academic Area:  " + area);
+			}
+			return posMajor;
+		}
+	}
+	
+	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper, UpdateResult result) {
 		boolean changed = false;
 		if (!eq(iFName, student.getFirstName())) {
 			student.setFirstName(iFName);
@@ -420,6 +558,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			changed = true;
 		}
 		
+		if (result.getStudentId() == null)
+			result.setStudentId((Long)helper.getHibSession().save(student));
+		
 		if (iUpdateAcadAreaClasfMj) {
 			List<StudentAreaClassificationMajor> remaining = new ArrayList<StudentAreaClassificationMajor>(student.getAreaClasfMajors());
 			aac: for (String[] areaClasf: iAcadAreaClasfMj) {
@@ -433,48 +574,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						i.remove(); continue aac;
 					}
 				}
-					
-				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), area);						
-				if (aa == null)
-					aa = AcademicArea.findByAbbv(helper.getHibSession(), student.getSession().getUniqueId(), area);
-				if (aa == null){
-					aa = new AcademicArea();
-					aa.setPosMajors(new HashSet<PosMajor>());
-					aa.setAcademicAreaAbbreviation(area);
-					aa.setSession(student.getSession());
-					aa.setExternalUniqueId(area);
-					aa.setTitle(area);
-					aa.setUniqueId((Long)helper.getHibSession().save(aa));
-					helper.info("Added Academic Area:  " + area);
-				}
 				
-				AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), student.getSession().getUniqueId(), clasf);
-				if (ac == null)
-					ac = AcademicClassification.findByCode(helper.getHibSession(), student.getSession().getUniqueId(), clasf);
-				if (ac == null){
-					ac = new AcademicClassification();
-					ac.setCode(clasf);
-					ac.setExternalUniqueId(clasf);
-					ac.setName(clasf);
-					ac.setSession(student.getSession());
-					ac.setUniqueId((Long) helper.getHibSession().save(ac));
-					helper.info("Added Academic Classification:  " + clasf);
-				}
+				AcademicArea aa = getAcademicArea(helper, area);
 				
-				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), student.getSession().getUniqueId(), major, area);
-				if (posMajor == null)
-					posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), student.getSession().getUniqueId(), major, area);
-				if (posMajor == null) {
-					posMajor = new PosMajor();
-					posMajor.setCode(major);
-					posMajor.setExternalUniqueId(major);
-					posMajor.setName(major);
-					posMajor.setSession(student.getSession());
-					posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
-					posMajor.addToacademicAreas(aa);
-					aa.addToposMajors(posMajor);
-					helper.info("Added Major:  " + major + " to Academic Area:  " + area);
-				}
+				AcademicClassification ac = getAcademicClassification(helper, clasf);
+				
+				PosMajor posMajor = getPosMajor(helper, aa, area, major);
 
 				StudentAreaClassificationMajor aac = new StudentAreaClassificationMajor();
 				aac.setAcademicArea(aa);
@@ -495,54 +600,116 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return changed;
 	}
 	
-	protected boolean updateStudentGroups(Student student, OnlineSectioningHelper helper) {
-		Set<StudentGroup> groups = new HashSet<StudentGroup>();
-		for (String[] g: iGroups) {
-			if (g[1] != null && !iSession.getAcademicInitiative().equals(g[1])) continue;
-			if (iIgnoreGroupRegExp != null && g[0].matches(iIgnoreGroupRegExp)) continue;
-			StudentGroup sg = null;
-			for (StudentGroup x: student.getGroups()) {
-				if (g[0].equals(x.getExternalUniqueId())) {
-					sg = x; break;
-				}
-			}
-			StudentGroupType type = null;
-			if (g[4] != null) {
-				if (sg != null && sg.getType() != null && sg.getType().getReference().equals(g[4])) {
-					type = sg.getType();
-				} else {
-					type = StudentGroupType.findByReference(g[4], helper.getHibSession());
-				}
-				if (type == null && "SPORT".equals(g[4])) {
+	protected StudentGroupType getStudentGroupType(OnlineSectioningHelper helper, String name) {
+		if (iLocking) {
+			synchronized (("GroupType:" + name).intern()) {
+				StudentGroupType type = StudentGroupType.findByReference(name, helper.getHibSession());
+				if (type != null) return type;
+				if (type == null && "SPORT".equals(name)) {
 					type = new StudentGroupType();
 					type.setAdvisorsCanSet(false);
 					type.setAllowDisabledSection(StudentGroupType.AllowDisabledSection.NotAllowed);
 					type.setKeepTogether(false);
 					type.setReference("SPORT");
 					type.setLabel("Student Athletes");
-					helper.getHibSession().save(type);
 				}
-				if (type == null && "COHORT".equals(g[4])) {
+				if (type == null && "COHORT".equals(name)) {
 					type = new StudentGroupType();
 					type.setAdvisorsCanSet(false);
 					type.setAllowDisabledSection(StudentGroupType.AllowDisabledSection.NotAllowed);
 					type.setKeepTogether(false);
 					type.setReference("COHORT");
 					type.setLabel("Student Cohorts");
-					helper.getHibSession().save(type);
 				}
+				if (type != null) {
+					org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+					try {
+						type.setUniqueId((Long)hibSession.save(type));
+						hibSession.flush();
+					} finally {
+						hibSession.close();
+					}
+					helper.getHibSession().update(type);
+				}
+				return type;
 			}
-			if (sg == null) {
-				sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
+		} else {
+			StudentGroupType type = StudentGroupType.findByReference(name, helper.getHibSession());
+			if (type == null && "SPORT".equals(name)) {
+				type = new StudentGroupType();
+				type.setAdvisorsCanSet(false);
+				type.setAllowDisabledSection(StudentGroupType.AllowDisabledSection.NotAllowed);
+				type.setKeepTogether(false);
+				type.setReference("SPORT");
+				type.setLabel("Student Athletes");
+				helper.getHibSession().save(type);
 			}
+			if (type == null && "COHORT".equals(name)) {
+				type = new StudentGroupType();
+				type.setAdvisorsCanSet(false);
+				type.setAllowDisabledSection(StudentGroupType.AllowDisabledSection.NotAllowed);
+				type.setKeepTogether(false);
+				type.setReference("COHORT");
+				type.setLabel("Student Cohorts");
+				helper.getHibSession().save(type);
+			}
+			return type;
+		}
+	}
+	
+	protected StudentGroup getStudentGroup(OnlineSectioningHelper helper, StudentGroupType type, String[] g) {
+		if (iLocking) {
+			synchronized (("Group:" + g[0]).intern()) {
+				StudentGroup sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
+				if (sg == null) {
+					sg = new StudentGroup();
+					sg.setExternalUniqueId(g[0]);
+					sg.setSession(iSession);
+					sg.setGroupAbbreviation(g[2] == null ? g[0] : g[2]);
+					sg.setGroupName(g[3] == null ? g[0] : g[3]);
+					org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+					try {
+						sg.setType(g[4] == null ? null : StudentGroupType.findByReference(g[4], hibSession));
+						sg.setUniqueId((Long)hibSession.save(sg));
+						hibSession.flush();
+					} finally {
+						hibSession.close();
+					}
+					helper.info("Added "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
+					helper.getHibSession().update(sg);
+				} else {
+					boolean changed = false;
+					if (g[2] != null &&  !g[2].equals(sg.getGroupAbbreviation())){
+						helper.info("Changed "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " - old abbreviation:  " + sg.getGroupAbbreviation() + ", new abbreviation:  " + g[2] + " in session " + sg.getSession().academicInitiativeDisplayString());
+						sg.setGroupAbbreviation(g[2]);
+						changed = true;
+					} 
+					if (g[3] != null && !g[3].equals(sg.getGroupName())){
+						helper.info("Changed "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " - old name:  " + sg.getGroupName() + ", new name:  " + g[3] + " in session " + sg.getSession().academicInitiativeDisplayString());
+						sg.setGroupName(g[3]);
+						changed = true;
+					}
+					if (!(type == null ? ""  :type.getReference()).equals(sg.getType() == null ? "" : sg.getType().getReference())) {
+						helper.info("Changed "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " - old type:  " + (sg.getType() == null ? "null" : sg.getType().getReference()) + ", new type:  " + g[4] + " in session " + sg.getSession().academicInitiativeDisplayString());
+						sg.setType(type);
+						changed = true;
+					}
+					if (changed) {
+						helper.getHibSession().update(sg);
+					}
+				}
+				return sg;
+			}
+		} else {
+			StudentGroup sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
 			if (sg == null) {
 				sg = new StudentGroup();
 				sg.setExternalUniqueId(g[0]);
 				sg.setSession(iSession);
 				sg.setGroupAbbreviation(g[2] == null ? g[0] : g[2]);
 				sg.setGroupName(g[3] == null ? g[0] : g[3]);
-				sg.setUniqueId((Long)helper.getHibSession().save(sg));
 				sg.setType(type);
+				sg.setUniqueId((Long)helper.getHibSession().save(sg));
 				helper.info("Added "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
 			} else {
 				boolean changed = false;
@@ -565,6 +732,31 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					helper.getHibSession().update(sg);
 				}
 			}
+			return sg;
+		}
+	}
+	
+	protected boolean updateStudentGroups(Student student, OnlineSectioningHelper helper) {
+		Set<StudentGroup> groups = new HashSet<StudentGroup>();
+		for (String[] g: iGroups) {
+			if (g[1] != null && !iSession.getAcademicInitiative().equals(g[1])) continue;
+			if (iIgnoreGroupRegExp != null && g[0].matches(iIgnoreGroupRegExp)) continue;
+			StudentGroup sg = null;
+			for (StudentGroup x: student.getGroups()) {
+				if (g[0].equals(x.getExternalUniqueId())) {
+					sg = x; break;
+				}
+			}
+			StudentGroupType type = getStudentGroupType(helper, g[4]);
+			if (g[4] != null) {
+				if (sg != null && sg.getType() != null && sg.getType().getReference().equals(g[4])) {
+					type = sg.getType();
+				} else {
+					type = getStudentGroupType(helper, g[4]);
+				}
+			}
+			if (sg == null)
+				sg = getStudentGroup(helper, type, g);
 			groups.add(sg);
 		}
 		boolean changed = false;
@@ -600,7 +792,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return false;
 	}
 	
-	protected Map<InstructionalOffering, Map<String, Set<Class_>>> getOverrides(OnlineSectioningHelper helper) {
+	protected Map<InstructionalOffering, Map<String, Set<Class_>>> getOverrides(OnlineSectioningHelper helper, UpdateResult result) {
 		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = new HashMap<InstructionalOffering, Map<String, Set<Class_>>>();
 		for (String[] override: iOverrides) {
 			String type = override[0];
@@ -631,7 +823,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						.setString("subject", subject).setString("course", course + "%").setLong("sessionId", iSession.getUniqueId()).list();
 				if (course.isEmpty()) {
 					helper.error("No course offering found for subject " + subject + ", course number " + course + " and banner session " + iTermCode);
-					iResult = UpdateResult.PROBLEM;
+					result.setStatus(Status.PROBLEM);
 				}
 				// all matching courses
 				for (CourseOffering co: courses) {
@@ -650,7 +842,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(helper.getHibSession(), crn, iTermCode);
 				if (co == null) {
 					helper.error("No course offering found for CRN " + crn + " and banner session " + iTermCode);
-					iResult = UpdateResult.PROBLEM;
+					result.setStatus(Status.PROBLEM);
 					continue;
 				}
 				if (!iSession.equals(co.getInstructionalOffering().getSession())) continue;
@@ -678,7 +870,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				if (!foundClass) {
 					helper.error("No classes found for CRN " + crn + " and banner session " + iTermCode);
-					iResult = UpdateResult.PROBLEM;
+					result.setStatus(Status.PROBLEM);
 					continue;
 				}
 			}
@@ -719,10 +911,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return union;
 	}
 	
-	protected boolean updateStudentOverrides(Student student, OnlineSectioningServer server, OnlineSectioningHelper helper) {
+	protected boolean updateStudentOverrides(Student student, OnlineSectioningServer server, OnlineSectioningHelper helper, UpdateResult result) {
 		boolean changed = false;
 
-		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = getOverrides(helper);
+		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = getOverrides(helper, result);
 		
 		Set<OverrideReservation> overrides = new HashSet<OverrideReservation>(helper.getHibSession().createQuery(
 				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
@@ -829,7 +1021,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							if (r.getType() == XReservationType.IndividualOverride && r.getReservationId().equals(override.getUniqueId())) {
 								XIndividualReservation ir = (XIndividualReservation)r;
 								if (ir.getStudentIds().size() > 1) {
-									ir.getStudentIds().remove(iStudentId);
+									ir.getStudentIds().remove(result.getStudentId());
 								} else {
 									i.remove();
 								}
@@ -999,13 +1191,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	return changed;
 	}
 	
-	public Map<CourseOffering, List<Class_>> getEnrollments(OnlineSectioningHelper helper) {
+	public Map<CourseOffering, List<Class_>> getEnrollments(OnlineSectioningHelper helper, UpdateResult result) {
 		Map<CourseOffering, List<Class_>> enrollments = new HashMap<CourseOffering, List<Class_>>();
 		for (Integer crn: iCRNs) {
 			CourseOffering co = BannerSection.findCourseOfferingForCrnAndTermCode(helper.getHibSession(), crn, iTermCode);
 			if (co == null) {
 				helper.error("No course offering found for CRN " + crn + " and banner session " + iTermCode);
-				iResult = UpdateResult.PROBLEM;
+				result.setStatus(Status.PROBLEM);
 				continue;
 			}
 			if (!iSession.equals(co.getInstructionalOffering().getSession()))
@@ -1025,25 +1217,51 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			}
 			if (!foundClasses) {
 				helper.error("No classes found for CRN " + crn + " and banner session " + iTermCode);
-				iResult = UpdateResult.PROBLEM;
+				result.setStatus(Status.PROBLEM);
 			}
 		}
 		return enrollments;
 	}
 	
-	protected boolean updateAdvisors(Student student, OnlineSectioningHelper helper) {
-		Set<Advisor> advisors = new HashSet<Advisor>();
-		for (String[] a: iAdvisors) {
-			String externalId = a[0], type = a[1];
-			Roles role = null;
-			if (type != null && !type.isEmpty())
-				role = Roles.getRole(type + " Advisor", helper.getHibSession());
-			if (role == null)
-				role = Roles.getRole("Advisor", helper.getHibSession());
-			if (role == null) {
-				helper.warn("No advisor role found for " + type);
-				continue;
+	protected Advisor getAdvisor(OnlineSectioningHelper helper, String externalId, String type) {
+		Roles role = null;
+		if (type != null && !type.isEmpty())
+			role = Roles.getRole(type + " Advisor", helper.getHibSession());
+		if (role == null)
+			role = Roles.getRole("Advisor", helper.getHibSession());
+		if (role == null) {
+			helper.warn("No advisor role found for " + type);
+			return null;
+		}
+		if (iLocking) {
+			synchronized (("Advisor:" + externalId).intern()) {
+				Advisor advisor = (Advisor)helper.getHibSession().createQuery(
+						"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId")
+						.setString("externalId", externalId).setLong("roleId", role.getRoleId()).setLong("sessionId", iSession.getUniqueId())
+						.setCacheable(true).setMaxResults(1).uniqueResult();
+				if (advisor != null) return advisor;
+				advisor = new Advisor();
+				advisor.setExternalUniqueId(externalId);
+				advisor.setRole(role);
+				advisor.setSession(iSession);
+				advisor.setStudents(new HashSet<Student>());
+				try {
+					updateDetailsFromLdap(advisor);
+				} catch (Throwable t) {
+					helper.info("Failed to lookup advisor details: " + t.getMessage(), t);
+				}
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					advisor.setUniqueId((Long)hibSession.save(advisor));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.info("Added Advisor:  " + advisor.getExternalUniqueId() + " - " + advisor.getRole().getReference() + " to session " + iSession.academicInitiativeDisplayString());
+				helper.getHibSession().update(advisor);
+				return advisor;
 			}
+		} else {
 			Advisor advisor = (Advisor)helper.getHibSession().createQuery(
 					"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId")
 					.setString("externalId", externalId).setLong("roleId", role.getRoleId()).setLong("sessionId", iSession.getUniqueId())
@@ -1062,6 +1280,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				helper.info("Added Advisor:  " + advisor.getExternalUniqueId() + " - " + advisor.getRole().getReference() + " to session " + advisor.getSession().academicInitiativeDisplayString());
 			}
+			return advisor;
+		}
+	}
+	
+	protected boolean updateAdvisors(Student student, OnlineSectioningHelper helper) {
+		Set<Advisor> advisors = new HashSet<Advisor>();
+		for (String[] a: iAdvisors) {
+			String externalId = a[0], type = a[1];
+			Advisor advisor = getAdvisor(helper, externalId, type);
+			if (advisor == null) continue;
 			advisors.add(advisor);
 		}
 		boolean changed = false;
@@ -1095,11 +1323,46 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return "banner-update";
 	}
 	
-	public static enum UpdateResult {
+	public static enum Status {
 		NO_CHANGE,
 		OK,
 		PROBLEM,
-		FAILURE
+		FAILURE,
+	}
+	
+	public static enum Change {
+		CREATED,
+		DEMOGRAPHICS,
+		GROUPS,
+		ADVISORS,
+		CLASSES,
+		OVERRIDES,
+		;
+		public int flag() { return 1 << ordinal(); }
+	}
+	
+	public static class UpdateResult implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private Status iStatus = Status.OK;
+		private int iChanges = 0;
+		private Long iStudentId = null;
+		
+		public Status getStatus() { return iStatus; }
+		public void setStatus(Status status) { iStatus = status; }
+		
+		public void add(Change change) {
+			iChanges = (iChanges | change.flag());
+		}
+		public boolean hasChanges() {
+			return iChanges != 0;
+		}
+		public boolean has(Change... changes) {
+			for (Change ch: changes)
+				if ((iChanges & ch.flag()) != 0) return true;
+			return false;
+		}
+		public void setStudentId(Long studentId) { iStudentId = studentId; }
+		public Long getStudentId() { return iStudentId; }
 	}
 
 	public static class Pair {
