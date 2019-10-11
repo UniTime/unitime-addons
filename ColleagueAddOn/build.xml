@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project>
-<!-- 
+<!--
  * Licensed to The Apereo Foundation under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for
  * additional information regarding copyright ownership.
@@ -17,13 +17,13 @@
  *
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  -->
 <project name="timetabling" basedir="." default="build">
 	<!-- Mac GWT requires -XstartOnFirstThread -->
 	<condition property="mac">
 		<os name="Mac OS X"/>
-	</condition>	
+	</condition>
 	<condition property="macJvmArgs" value="-XstartOnFirstThread" else="-Dgwt.dummy.arg1=">
 		<isset property="mac"/>
 	</condition>
@@ -32,18 +32,18 @@
 		<loadproperties srcFile="${basedir}/build.properties" />
 		<property environment="env"/>
 	</target>
-	
+
 	<target name="setup-properties" depends="load-properties, -setup-missing_properties">
 	</target>
-	
+
 	<target name="-setup-missing_properties" depends="-setup-unitime-dir,
 		                                              -setup-lib-dir,
 													  -setup-3rd_party-dir,
 													  -setup-unitime.src-dir,
 													  -setup-unitime.jsp-dir">
     </target>
-	 
-	<target name="-setup-unitime-dir" depends="-test-unitime-dir-var-exists, 
+
+	<target name="-setup-unitime-dir" depends="-test-unitime-dir-var-exists,
 		                                       -unitime-dir-var-not-present">
 	</target>
 	<target name="-test-unitime-dir-var-exists" >
@@ -53,7 +53,7 @@
 			</not>
 		</condition>
 	</target>
-	
+
 	<target name="-unitime-dir-var-not-present" if="do.unitime-dir-var-not-present" depends="-set-unitime-dir-second-try">
 	       <echo>the property $${unitime.dir} was set to ${unitime.dir}</echo>
 	</target>
@@ -75,12 +75,12 @@
         	 </not>
         </condition>
 	</target>
-	
+
 	<target name="-set-unitime-dir-second-try" if="do.unitime-first-try-dir-not-found" depends="-set-unitime-dir-first-try">
 		<property name="unitime.dir" value="${basedir}/../../UniTime"/>
 	</target>
-	
-	<target name="-setup-lib-dir" depends="-test-lib-dir-var-exists, 
+
+	<target name="-setup-lib-dir" depends="-test-lib-dir-var-exists,
 								           -lib-dir-var-not-present">
 	</target>
 
@@ -91,13 +91,13 @@
 			</not>
 		</condition>
 	</target>
-	
+
 	<target name="-lib-dir-var-not-present" if="do.lib-dir-var-not-present">
 		<property name="lib.dir" value="${unitime.dir}/WebContent/WEB-INF/lib"/>
 	    <echo>the property $${lib.dir} was set to ${lib.dir}</echo>
 	</target>
 
-	<target name="-setup-3rd_party-dir" depends="-test-3rd_party-dir-var-exists, 
+	<target name="-setup-3rd_party-dir" depends="-test-3rd_party-dir-var-exists,
 								           -3rd_party-dir-var-not-present">
 	</target>
 
@@ -108,13 +108,13 @@
 			</not>
 		</condition>
 	</target>
-	
+
 	<target name="-3rd_party-dir-var-not-present" if="do.3rd_party-dir-var-not-present">
 		<property name="3rd_party.dir" value="${unitime.dir}/3rd_party"/>
 	    <echo>the property $${3rd_party.dir} was set to ${3rd_party.dir}</echo>
 	</target>
 
-	<target name="-setup-unitime.src-dir" depends="-test-unitime.src-dir-var-exists, 
+	<target name="-setup-unitime.src-dir" depends="-test-unitime.src-dir-var-exists,
 								           -unitime.src-dir-var-not-present">
 	</target>
 
@@ -125,13 +125,13 @@
 			</not>
 		</condition>
 	</target>
-	
+
 	<target name="-unitime.src-dir-var-not-present" if="do.unitime.src-dir-var-not-present">
 		<property name="unitime.src.dir" value="${unitime.dir}/JavaSource"/>
 	    <echo>the property $${unitime.src.dir} was set to ${unitime.src.dir}</echo>
 	</target>
 
-	<target name="-setup-unitime.jsp-dir" depends="-test-unitime.jsp-dir-var-exists, 
+	<target name="-setup-unitime.jsp-dir" depends="-test-unitime.jsp-dir-var-exists,
 								           -unitime.jsp-dir-var-not-present">
 	</target>
 
@@ -142,12 +142,12 @@
 			</not>
 		</condition>
 	</target>
-	
+
 	<target name="-unitime.jsp-dir-var-not-present" if="do.unitime.jsp-dir-var-not-present">
 		<property name="unitime.jsp.dir" value="${unitime.dir}/WebContent"/>
 	    <echo>the property $${unitime.jsp.dir} was set to ${unitime.jsp.dir}</echo>
 	</target>
-	
+
 	<target name="set_gwt_env_prod">
 		<property name="gwt_env" value="org.unitime.timetable.gwt.UniTime"/>
 	    <echo>the property $${gwt_env} was set to ${gwt_env}</echo>
@@ -163,22 +163,22 @@
         <delete dir="${build.dir}" failonerror="false"/>
     	<delete dir="${war.dir}" failonerror="false"/>
     </target>
-    
+
     <target name="init" depends="clean, set-debug-mode, set-optimize-mode">
         <mkdir dir="${build_src.dir}"/>
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${temp.dir}"/>
     	<mkdir dir="${dist.dir}"/>
     </target>
-	
+
 	<target name="set-debug-mode" unless="java.debug">
 		<property name="java.debug" value="false"/>
 	</target>
-	
+
 	<target name="set-optimize-mode" unless="java.optimize">
 		<property name="java.optimize" value="true"/>
 	</target>
-    
+
     <target name="prepare" depends="init">
         <buildnumber/>
         <echo message="Build number: ${build.number}${build.tag}"/>
@@ -223,9 +223,9 @@
 			</fileset>
         </path>
     </target>
-	
+
 	<target name="compile-java" depends="prepare">
-		<javac debug="${java.debug}" optimize="${java.optimize}" source="1.5" target="1.5" destdir="${build.dir}" includeantruntime="false">
+		<javac debug="${java.debug}" optimize="${java.optimize}" destdir="${build.dir}" includeantruntime="false">
 			<src path="${build_src.dir}" />
 			<classpath refid="build.classpath" />
 		</javac>
@@ -243,7 +243,7 @@
 			<arg value="4"/>
 		</java>
 	</target>
-	
+
 	<target name="define-merge-xml" depends="compile-java">
         <path id="merge-xml.classpath">
             <fileset dir="${lib.dir}">
@@ -346,7 +346,7 @@
 		<copy todir="${dist.dir}" file="${war.dir}/help/Release-Notes.xml"/>
 		<copy todir="${dist.dir}" file="${war.dir}/help/Release-Notes.css"/>
 	</target>
-	
+
 	<target name="copy-gwt" depends="init, compile-gwt">
 		<copy todir="${war.dir}" overwrite="Yes" preservelastmodified="Yes">
 			<fileset dir="${temp.dir}/war"/>
@@ -367,13 +367,13 @@
 			</manifest>
 		</jar>
 	</target>
-	
+
 	<target name="check-tomcat-home" depends="setup-properties" unless="env.TOMCAT_HOME">
 		<fail>
 			Environment variable TOMCAT_HOME is not defined.
 		</fail>
 	</target>
-	
+
 	<target name="tomcat-deploy-local" description="Deploys to local Tomcat" depends="check-tomcat-home">
 		<copy file="${dist.dir}/UniTimeC.war" todir="${env.TOMCAT_HOME}/webapps" overwrite="Yes" preservelastmodified="No" verbose="Yes" />
 	</target>
@@ -391,7 +391,7 @@
 				<include name="*.jar" />
 			</fileset>
         </path>
-		<javac source="1.5" target="1.5" destdir="${build.dir}" includes="org/unitime/commons/ant/CreateBaseModelFromXml.java" debug="true" includeantruntime="false">
+		<javac destdir="${build.dir}" includes="org/unitime/commons/ant/CreateBaseModelFromXml.java" debug="true" includeantruntime="false">
 			<src path="${unitime.src.dir}"/>
 			<classpath refid="build.classpath"/>
 		</javac>
