@@ -30,7 +30,7 @@
  		
         <id
             name="uniqueId"
-            column="UNIQUEID"
+            column=uniqueid
             type="java.lang.Long"
         >
            <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">

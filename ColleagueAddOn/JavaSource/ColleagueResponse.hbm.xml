@@ -25,7 +25,7 @@
 <hibernate-mapping package="org.unitime.colleague.model">
  <class name="org.unitime.colleague.model.ColleagueResponse" table="colleague_response">
   <cache include="non-lazy" usage="read-write"/>
-  <id column="UNIQUEID" name="uniqueId" type="java.lang.Long">
+  <id column="uniqueid" name="uniqueId" type="java.lang.Long">
    <generator class="org.unitime.commons.hibernate.id.UniqueIdGenerator">
     <param name="sequence">colleague_response_seq</param>
    </generator>
