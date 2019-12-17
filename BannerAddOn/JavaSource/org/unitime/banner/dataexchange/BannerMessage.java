@@ -47,6 +47,7 @@ import org.unitime.timetable.model.DatePattern;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.model.InstructionalMethod;
+import org.unitime.timetable.model.LearningManagementSystemInfo;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.DatePatternDAO;
@@ -387,6 +388,9 @@ public class BannerMessage {
 				sectionElement.addAttribute("INSM_CODE", im.getReference());
 			else
 				sectionElement.addAttribute("INSM_CODE", "");
+			if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(bs.getSession().getUniqueId()) && clazz.getLms() != null) {
+				sectionElement.addAttribute("LMS_CODE", clazz.getLms().getExternalUniqueId());
+			}
 		} else {
 			sectionElement.addAttribute("ID", "***");
 		}
