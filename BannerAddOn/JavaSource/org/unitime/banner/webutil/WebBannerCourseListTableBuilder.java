@@ -45,6 +45,7 @@ import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
+import org.unitime.timetable.model.LearningManagementSystemInfo;
 import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
@@ -280,8 +281,13 @@ public class WebBannerCourseListTableBuilder extends
     	    row.addContent(cell);
     	    cell = this.initCell(" &nbsp;", 18, false);
     	    row.addContent(cell);    
-	        table.addContent(row);
+     	if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(ioc.getSessionId())) {
+     		cell = this.initCell(" &nbsp;", 1, false);
+     		row.addContent(cell);	
+     		}
+        table.addContent(row);
 		}
+
         ArrayList subpartList = new ArrayList(ioc.getSchedulingSubparts());
         Collections.sort(subpartList, new SchedulingSubpartComparator());
         Iterator it = subpartList.iterator();
@@ -424,7 +430,11 @@ public class WebBannerCourseListTableBuilder extends
     	cell.setNoWrap(true);
      	cell.addContent(bs.buildInstructorHtml());
      	row.addContent(cell);
-     	
+
+     	if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(c.getSessionId())) {
+         	row.addContent(buildLmsInfo(c, isEditable));
+     	}
+
     	table.addContent(row);
 	}
 
@@ -449,7 +459,11 @@ public class WebBannerCourseListTableBuilder extends
 
 	
     private TableCell subjectAndCourseInfo(BannerCourse bc, InstructionalOffering io, CourseOffering co) {
-        TableCell cell = this.initCell(null, 19, true);
+    		int span = 19;
+     	if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(io.getSessionId())) {
+     		span++;	
+     		}
+        TableCell cell = this.initCell(null, span, true);
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + bc.getUniqueId().toString() + "\"></A>");
@@ -535,7 +549,11 @@ public class WebBannerCourseListTableBuilder extends
 		
 		cell = this.headerCell("Instructors", 2, 1);
 		row.addContent(cell);
-
+		if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(sessionId)) {
+			cell = this.headerCell("LMS Code", 2, 1);
+			row.addContent(cell);
+		}
+		
     	table.addContent(row);
     	table.addContent(row2);
    }
