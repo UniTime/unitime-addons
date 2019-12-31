@@ -70,8 +70,9 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			rollForwardColleagueSessionData(toSession, fromSession);
 			rollForwardColleagueSuffixDefData(toSession, fromSession);
 			rollForwardColleagueRestrictionData(toSession, fromSession);
-			rollForwardColleagueCourseData(toSession);
-			updateClassSuffixes(toSession);
+			// Do not roll foward course data.  This is generated whenever the session is turned on for data sharing with Colleague.
+			//rollForwardColleagueCourseData(toSession);
+			//updateClassSuffixes(toSession);
 		} catch (Exception e) {
 			iLog.error("Failed to roll colleague session data forward.", e);
 			errors.add("rollForward", new ActionMessage("errors.rollForward", "Colleague Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to roll colleague session data forward."));
