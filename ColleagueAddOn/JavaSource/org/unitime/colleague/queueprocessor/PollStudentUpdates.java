@@ -78,7 +78,7 @@ public class PollStudentUpdates extends ColleagueCaller {
 			qi.setStatus(QueueIn.STATUS_READY);
 			qi.setXml(result);
 
-			qid.save(qi);
+			qi.setUniqueId(qid.save(qi));
 			
 			if (!"true".equalsIgnoreCase(getColleagueStudentInterfaceProcessInStudentSectioningSolverServer())){
 				Element rootElement = qi.getXml().getRootElement();
@@ -89,6 +89,7 @@ public class PollStudentUpdates extends ColleagueCaller {
 						qi.setProcessDate(new Date());
 						qi.setStatus(Queue.STATUS_PROCESSED);
 						QueueInDAO.getInstance().getSession().update(qi);
+						csu.removeOldStudentUpdateMessages(qi.getUniqueId(), qi.getXml().getRootElement(), QueueInDAO.getInstance().getSession());
 					} catch (Exception e) {
 						LoggableException le = new LoggableException(e, qi);
 						le.logError();

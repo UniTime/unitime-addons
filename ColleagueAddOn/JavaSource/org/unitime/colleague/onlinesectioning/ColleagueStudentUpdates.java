@@ -30,6 +30,7 @@ import java.util.Set;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.hibernate.CacheMode;
+import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueIn;
@@ -116,6 +117,44 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 		}
 	}
 	
+	public void removeOldStudentUpdateMessages(Long queueId, Element rootElement, Session hibSession) {
+		if (!"studentUpdates".equalsIgnoreCase(rootElement.getName())) return;
+		/* remove when status = processed and term matches this messages term and message is a student update message 
+		 * and the uniqueid does not match this messages uniqueid
+		 * */
+		HashSet<String> colleagueSessionIds = new HashSet<String>();
+		for (Iterator<?> i = rootElement.elementIterator("student"); i.hasNext();) {
+			Element studentElement = (Element) i.next();
+			String colleagueSession = studentElement.attributeValue("session");
+			if (colleagueSession != null) {
+				colleagueSessionIds.add(colleagueSession);
+			}
+		}
+
+		for (String colleagueSessionId : colleagueSessionIds) {
+			StringBuilder queryBase = new StringBuilder();
+			queryBase.append(" from QueueIn q where q.xml like '%session=\"")
+					.append(colleagueSessionId)
+					.append("\"%' and q.uniqueId != ")
+					.append(queueId.toString())
+					.append(" and q.status = '")
+					.append(Queue.STATUS_PROCESSED)
+					.append("'");
+					;
+			String countQuery = "select count(q) " + queryBase.toString();
+	    	    Long uniqueIdsToDeleteCount = (Long) hibSession.createQuery(countQuery).uniqueResult();
+	    	    if (0 == uniqueIdsToDeleteCount) {
+	    	    		info("-- no old student update records to delete from:  QueueIn");
+	    	    }
+	    	    else {
+	    	        info("-- " + uniqueIdsToDeleteCount + " old student update records to delete from:  QueueIn");
+	    	        String deleteHql = "delete " + queryBase.toString();
+	    	        info("-- delete statement:  " + deleteHql);
+	    	        hibSession.createQuery(deleteHql).executeUpdate();
+	    	    }
+		}
+	}
+	
 	public void pollMessage() {
 		try {
 			while (true) {
@@ -129,6 +168,7 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 					processMessage(hibSession, message.getContent().getRootElement());
 					info("Message #" + message.getQueueId() + " processed.");
 					updateMessage(message, Queue.STATUS_PROCESSED);
+					removeOldStudentUpdateMessages(message.getQueueId(), message.getContent().getRootElement(), hibSession);
 				} catch (Exception e) {
 					updateMessage(message, Queue.STATUS_FAILED);
 					error("Failed to process message #" + message.getQueueId() +": " + e.getMessage(), e);
