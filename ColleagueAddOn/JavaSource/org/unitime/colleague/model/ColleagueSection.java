@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import org.hibernate.FlushMode;
@@ -41,6 +42,7 @@ import org.unitime.timetable.model.Assignment;
 import org.unitime.timetable.model.ClassInstructor;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.DatePattern;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
@@ -895,7 +897,35 @@ public class ColleagueSection extends BaseColleagueSection {
         return(Integer.toString(num));
     	
 	}
-	
+
+	public String findMeetingPattern(){
+		StringBuilder meetingPattern = new StringBuilder();
+		TreeSet<DatePattern> patternList = new TreeSet<DatePattern>();
+		for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+			Assignment a = aClass.getCommittedAssignment();
+			if (a != null){
+				if (a.getDatePattern() != null){
+					patternList.add(a.getDatePattern());
+				}
+			} else {
+				if (aClass.effectiveDatePattern() != null){
+					patternList.add(aClass.effectiveDatePattern());
+				}
+			}
+		}
+		boolean first = true;
+		for (DatePattern dp : patternList) {
+			if (!first) {
+				meetingPattern.append(",");
+			} else {
+				first = false;
+			}
+			meetingPattern.append(dp.getName());
+		}
+        return(meetingPattern.toString());
+    	
+	}
+
 	public String findSchedType() {
 		String schedType = null;
 		Class_ c = getFirstClass();

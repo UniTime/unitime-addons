@@ -324,6 +324,7 @@ public class ColleagueMessage {
 			}
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(section.calculateMaxEnrl(hibSession))).toString()));
 			sectionElement.addAttribute("NUM_WEEKS", ((new Integer(section.findNumWeeks())).toString()));
+			sectionElement.addAttribute("MEETING_PATTERN", section.findMeetingPattern());
 
 			CourseCreditUnitConfig courseCreditUnitConfig = courseOffering.getCredit();
 			if (courseCreditUnitConfig == null && !courseOffering.isIsControl().booleanValue()){
