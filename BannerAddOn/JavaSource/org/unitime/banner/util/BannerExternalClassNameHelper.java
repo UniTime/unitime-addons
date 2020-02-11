@@ -26,6 +26,8 @@ import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseCreditUnitConfig;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
+import org.unitime.timetable.model.ItypeDesc;
+import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.util.DefaultExternalClassNameHelper;
 
 /**
@@ -116,5 +118,23 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		if (clazz.getParentClass() != null && clazz.getSchedulingSubpart().getItype().equals(clazz.getParentClass().getSchedulingSubpart().getItype())) return null;
 		BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, BannerSectionDAO.getInstance().getSession());
 		return bs == null ? null : bs.getOverrideCourseCredit();
+	}
+	
+	@Override
+	public boolean isGradableSubpart(SchedulingSubpart subpart, CourseOffering courseOffering, org.hibernate.Session hibSession) {
+		// child of a subpart with the same itype -> false
+		if (subpart.getParentSubpart() != null && subpart.getItype().equals(subpart.getParentSubpart().getItype())) return false;
+		// get gradable itype
+		ItypeDesc itype = (ItypeDesc)hibSession.createQuery(
+				"select bc.gradableItype from BannerConfig bc where bc.bannerCourse.courseOfferingId = :courseOfferingId and bc.instrOfferingConfigId = :configId"
+				).setLong("configId", subpart.getInstrOfferingConfig().getUniqueId())
+				.setLong("courseOfferingId", courseOffering.getUniqueId())
+				.setCacheable(true)
+				.setMaxResults(1)
+				.uniqueResult();
+		// no gradable itype -> fallback to the default helper
+		if (itype == null) return super.isGradableSubpart(subpart, courseOffering, hibSession);
+		// check that the gradable itype matches the subpart's itype
+		return itype.equals(subpart.getItype());
 	}
 }
