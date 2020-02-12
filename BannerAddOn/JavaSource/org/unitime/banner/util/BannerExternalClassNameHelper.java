@@ -20,21 +20,29 @@
 
 package org.unitime.banner.util;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.hibernate.Session;
+import org.hibernate.type.LongType;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerSectionDAO;
+import org.unitime.timetable.interfaces.ExternalClassNameHelperInterface;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseCreditUnitConfig;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
-import org.unitime.timetable.model.ItypeDesc;
 import org.unitime.timetable.model.SchedulingSubpart;
+import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 import org.unitime.timetable.util.DefaultExternalClassNameHelper;
 
 /**
  * @author says
  *
  */
-public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelper {
+public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelper implements ExternalClassNameHelperInterface.HasGradableSubpartCache {
 
 	/**
 	 * 
@@ -125,16 +133,97 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		// child of a subpart with the same itype -> false
 		if (subpart.getParentSubpart() != null && subpart.getItype().equals(subpart.getParentSubpart().getItype())) return false;
 		// get gradable itype
-		ItypeDesc itype = (ItypeDesc)hibSession.createQuery(
-				"select bc.gradableItype from BannerConfig bc where bc.bannerCourse.courseOfferingId = :courseOfferingId and bc.instrOfferingConfigId = :configId"
+		Integer itype = (Integer)hibSession.createQuery(
+				"select bc.gradableItype.itype from BannerConfig bc where bc.bannerCourse.courseOfferingId = :courseOfferingId and bc.instrOfferingConfigId = :configId"
 				).setLong("configId", subpart.getInstrOfferingConfig().getUniqueId())
 				.setLong("courseOfferingId", courseOffering.getUniqueId())
 				.setCacheable(true)
 				.setMaxResults(1)
 				.uniqueResult();
-		// no gradable itype -> fallback to the default helper
-		if (itype == null) return super.isGradableSubpart(subpart, courseOffering, hibSession);
 		// check that the gradable itype matches the subpart's itype
-		return itype.equals(subpart.getItype());
+		if (itype != null)
+			return subpart.getItype() != null && itype.equals(subpart.getItype().getItype());
+		// no gradable itype
+		// there is only one subpart -> true
+		if (subpart.getInstrOfferingConfig().getSchedulingSubparts().size() == 1) return true;
+		// has a parent -> false
+		if (subpart.getParentSubpart() != null) return false;
+		// otherwise, check that this subpart is the first one
+		SchedulingSubpartComparator cmp = new SchedulingSubpartComparator();
+		for (SchedulingSubpart s: subpart.getInstrOfferingConfig().getSchedulingSubparts()) {
+			if (cmp.compare(s, subpart) < 0) return false;
+		}
+		return true;
+	}
+
+	@Override
+	public HasGradableSubpart getGradableSubparts(Long sessionId, Session hibSession) {
+		return new GradableSubpartsCache(sessionId, hibSession);
+	}
+	
+	@Override
+	public HasGradableSubpart getGradableSubparts(Collection<Long> offeringIds, org.hibernate.Session hibSession) {
+		return new GradableSubpartsCache(offeringIds, hibSession);
+	}
+	
+	public static class GradableSubpartsCache implements HasGradableSubpart {
+		Map<Long, Map<Long, Integer>> iCache = new HashMap<Long, Map<Long,Integer>>();
+		
+		public GradableSubpartsCache(Long sessionId, Session hibSession) {
+			for (Object[] o: (List<Object[]>)hibSession.createQuery(
+					"select bc.bannerCourse.courseOfferingId, bc.instrOfferingConfigId, bc.gradableItype.itype " +
+					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.session = :sessionId"
+					).setLong("sessionId", sessionId).list()) {
+				Long courseId = (Long)o[0];
+				Long configId = (Long)o[1];
+				Integer itype = (Integer)o[2];
+				Map<Long, Integer> config2itype = iCache.get(courseId);
+				if (config2itype == null) {
+					config2itype = new HashMap<Long, Integer>();
+					iCache.put(courseId, config2itype);
+				}
+				config2itype.put(configId, itype);
+			}
+		}
+		
+		public GradableSubpartsCache(Collection<Long> offeringIds, Session hibSession) {
+			for (Object[] o: (List<Object[]>)hibSession.createQuery(
+					"select bc.bannerCourse.courseOfferingId, bc.instrOfferingConfigId, bc.gradableItype.itype " +
+					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.uniqueId in (:offeringIds)"
+					).setParameterList("offeringIds", offeringIds, LongType.INSTANCE).list()) {
+				Long courseId = (Long)o[0];
+				Long configId = (Long)o[1];
+				Integer itype = (Integer)o[2];
+				Map<Long, Integer> config2itype = iCache.get(courseId);
+				if (config2itype == null) {
+					config2itype = new HashMap<Long, Integer>();
+					iCache.put(courseId, config2itype);
+				}
+				config2itype.put(configId, itype);
+			}
+		}
+
+		@Override
+		public boolean isGradableSubpart(SchedulingSubpart subpart, CourseOffering courseOffering, org.hibernate.Session hibSession) {
+			// child of a subpart with the same itype -> false
+			if (subpart.getParentSubpart() != null && subpart.getItype().equals(subpart.getParentSubpart().getItype())) return false;
+			// get gradable itype
+			Map<Long, Integer> config2itype = iCache.get(courseOffering.getUniqueId());
+			Integer itype = (config2itype == null ? null : config2itype.get(subpart.getInstrOfferingConfig().getUniqueId()));
+			// check that the gradable itype matches the subpart's itype
+			if (itype != null)
+				return subpart.getItype() != null && itype.equals(subpart.getItype().getItype());
+			// no gradable itype
+			// there is only one subpart -> true
+			if (subpart.getInstrOfferingConfig().getSchedulingSubparts().size() == 1) return true;
+			// has a parent -> false
+			if (subpart.getParentSubpart() != null) return false;
+			// otherwise, check that this subpart is the first one
+			SchedulingSubpartComparator cmp = new SchedulingSubpartComparator();
+			for (SchedulingSubpart s: subpart.getInstrOfferingConfig().getSchedulingSubparts()) {
+				if (cmp.compare(s, subpart) < 0) return false;
+			}
+			return true;
+		}
 	}
 }
