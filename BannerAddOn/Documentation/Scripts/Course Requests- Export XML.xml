@@ -23,11 +23,15 @@
 
 <script name="Course Requests: Export XML" permission="Student Sectioning Solver" engine="python" created="Wed Feb 20 11:46:43 EST 2019">
   <description><![CDATA[Export student course requests for all students with student status that allows for course request re-validation.]]></description>
+  <parameter name="expartCourseRequests" label="Export Course Requests" type="boolean" default="true"/>
+  <parameter name="query" label="Student Query" type="textarea" default="from Student s where bit_and(s.sectioningStatus.status, 8192) != 0 and s.session.uniqueId = :sessionId"/>
+  <parameter name="exportClasses" label="Export Class Enrollments" type="boolean" default="true"/>
+  <parameter name="exportDemographics" label="Export Demographics" type="boolean" default="true"/>
   <body><![CDATA[from xml.dom import minidom
 from java.util import TreeSet
 from java.lang import Long
 from org.unitime.timetable.util import Constants
-from org.unitime.timetable.model import StudentClassPref, StudentInstrMthPref
+from org.unitime.timetable.model import StudentClassPref, StudentInstrMthPref, CourseDemand
 from org.unitime.timetable.model.dao import InstructionalMethodDAO, Class_DAO
 import gzip
 
@@ -53,9 +57,7 @@ root.setAttribute("campus", session.getAcademicInitiative())
 root.setAttribute("year", session.getAcademicYear())
 root.setAttribute("term", session.getAcademicTerm())
 
-students = hibSession.createQuery(
-    "from Student s where bit_and(s.sectioningStatus.status, 8192) != 0 and s.session.uniqueId = :sessionId"
-    ).setLong("sessionId", session.getUniqueId()).list()
+students = hibSession.createQuery(query).setLong("sessionId", session.getUniqueId()).list()
 
 for student in students:
     studentEl = doc.createElement("student")
@@ -66,8 +68,8 @@ for student in students:
         studentEl.setAttribute("status", student.getSectioningStatus().getReference())
 
     demographicsEl = doc.createElement("updateDemographics")
-    studentEl.appendChild(demographicsEl)
-    
+    if exportDemographics: studentEl.appendChild(demographicsEl)
+
     if student.getMinCredit():
         demographicsEl.setAttribute("minCredit", "%0.1f" % student.getMinCredit())
     if student.getMaxCredit():
@@ -108,7 +110,7 @@ for student in students:
         disabilityEl.setAttribute("code", acc.getAbbreviation())
 
     requestsEl = doc.createElement("updateCourseRequests")
-    studentEl.appendChild(requestsEl)
+    if expartCourseRequests: studentEl.appendChild(requestsEl)
     requestsEl.setAttribute("commit", "true")
 
     demands = TreeSet(student.getCourseDemands())
@@ -142,10 +144,12 @@ for student in students:
                     courseOfferingEl.setAttribute("waitlist", "true")
                 if first and cd.isAlternative():
                     courseOfferingEl.setAttribute("alternative", "true")
-                if first and cd.isCritical():
-                    courseOfferingEl.setAttribute("critical", "true")
                 if cr.getCredit():
                     courseOfferingEl.setAttribute("credit", toString(cr.getCredit()))
+                if first and cd.getCritical():
+                    courseOfferingEl.setAttribute("critical", CourseDemand.Critical.values()[cd.getCritical()].name())
+                if first and cd.getCriticalOverride():
+                    courseOfferingEl.setAttribute("criticalOverride", CourseDemand.Critical.values()[cd.getCriticalOverride()].name())
                 enrollments = {}
                 for enrollment in cr.getClassEnrollments():
                     classEl = doc.createElement("class")
@@ -157,7 +161,7 @@ for student in students:
                         enrollments[extId] = True
                     classEl.setAttribute("type", clazz.getSchedulingSubpart().getItypeDesc().strip())
                     classEl.setAttribute("suffix", getClassSuffix(clazz))
-                    courseOfferingEl.appendChild(classEl)
+                    if exportClasses: courseOfferingEl.appendChild(classEl)
                 sections = {}
                 ims = {}
                 prefEl = doc.createElement("preferences")
