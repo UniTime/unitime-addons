@@ -31,8 +31,8 @@ import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
+import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
@@ -125,7 +125,6 @@ public class BannerSectionCrosslistHelper {
 		}
     }
     
-	@SuppressWarnings("unchecked")
 	private void ensureAllSubpartClassesHaveBannerSection(SchedulingSubpart schedSubpart) throws Exception{
 		
 		for(Class_ c : schedSubpart.getClasses()){
@@ -135,17 +134,15 @@ public class BannerSectionCrosslistHelper {
 			List<BannerSection> bannerSections = BannerSection.findBannerSectionsForClass(c, hibSession);
 			if (bannerSections.isEmpty()){
 				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
-					List parentBannerSections = BannerSection.findBannerSectionsForClass(c.getParentClass(), hibSession);
+					List<BannerSection> parentBannerSections = BannerSection.findBannerSectionsForClass(c.getParentClass(), hibSession);
 					Transaction trans = hibSession.beginTransaction();
-					for(Iterator it = parentBannerSections.iterator(); it.hasNext();){
-						BannerSection bs = (BannerSection) it.next();
+					for(BannerSection bs : parentBannerSections){
 						bs.addClass(c, hibSession);
 						hibSession.update(bs);
 					}
 					trans.commit();
 				} else {					
-					for (Iterator it = instructionalOffering.getCourseOfferings().iterator(); it.hasNext();){
-						CourseOffering courseOffering = (CourseOffering) it.next();
+					for (CourseOffering courseOffering : instructionalOffering.getCourseOfferings()){
 						addBannerSectionFor(courseOffering, c);
 					}
 				}
@@ -171,10 +168,17 @@ public class BannerSectionCrosslistHelper {
 					if (!removeSet.isEmpty()){
 						for(BannerSection bs : removeSet){
 							Transaction trans = hibSession.beginTransaction();
-							SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
-							BannerConfig bc = bs.getBannerConfig();
-							bc.getBannerSections().remove(bs);
-							hibSession.update(bc);
+							bs.removeClass(c, hibSession);
+							if (bs.getBannerSectionToClasses().isEmpty()) {
+								SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
+								BannerConfig bc = bs.getBannerConfig();
+								bc.getBannerSections().remove(bs);
+								bs.setBannerConfig(null);
+								hibSession.update(bc);
+								hibSession.delete(bs);
+							} else {
+								hibSession.update(bs);
+							}
 							trans.commit();
 						}
 					}
@@ -222,8 +226,7 @@ public class BannerSectionCrosslistHelper {
 			trans.commit();
 			hibSession.flush();
 		}
-		for(Iterator ssIt = schedSubpart.getChildSubparts().iterator(); ssIt.hasNext();){
-			SchedulingSubpart ss = (SchedulingSubpart) ssIt.next();
+		for(SchedulingSubpart ss : schedSubpart.getChildSubparts()){
 			ensureAllSubpartClassesHaveBannerSection(ss);
 		}
 	}
@@ -291,15 +294,12 @@ public class BannerSectionCrosslistHelper {
 		hibSession.flush();
 	}
 	
-	@SuppressWarnings("unchecked")
 	private void ensureAllClassesHaveBannerSection() throws Exception{
 		// Remove any orphaned banner sections
 		BannerSection.removeOrphanedBannerSections(hibSession);
 		
-		for(Iterator iocIt = instructionalOffering.getInstrOfferingConfigs().iterator(); iocIt.hasNext();){
-			InstrOfferingConfig ioc = (InstrOfferingConfig) iocIt.next();
-			for(Iterator ssIt = ioc.getSchedulingSubparts().iterator(); ssIt.hasNext();){
-				SchedulingSubpart ss = (SchedulingSubpart) ssIt.next();
+		for(InstrOfferingConfig ioc : instructionalOffering.getInstrOfferingConfigs()){
+			for(SchedulingSubpart ss : ioc.getSchedulingSubparts()){
 				if (ss.getParentSubpart() == null){
 					ensureAllSubpartClassesHaveBannerSection(ss);
 				}
@@ -309,6 +309,7 @@ public class BannerSectionCrosslistHelper {
 
 	public static String findNextUnusedCrosslistIdForSession(org.unitime.timetable.model.Session acadSession) {
 		String nextCrosslistId = null;
+		@SuppressWarnings("rawtypes")
 		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
 		Connection connection = null;
 	   	try {

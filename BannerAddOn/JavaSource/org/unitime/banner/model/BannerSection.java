@@ -115,6 +115,33 @@ public class BannerSection extends BaseBannerSection {
 		classes.add(clazz);
 	}
 	
+	public void removeClass(Class_ clazz, Session hibSession){
+		if (clazz == null || clazz.getUniqueId() == null){
+			return;
+		}
+		removeClassId(clazz.getUniqueId(), hibSession);
+	}
+
+	public void removeClassId(Long classId, Session hibSession){
+		if (classId == null){
+			return;
+		}
+		if (getBannerSectionToClasses() != null && !getBannerSectionToClasses().isEmpty()){
+			initClassesIfNecessary(hibSession, null);
+		}
+		BannerSectionToClass bscToRemove = null;
+		for (BannerSectionToClass bsc : getBannerSectionToClasses()) {
+			if (bsc.getClassId() != null && classId != null && bsc.getClassId().equals(classId)) {
+				bscToRemove = bsc;
+				break;
+			}
+		}
+		if (bscToRemove != null) {
+			getBannerSectionToClasses().remove(bscToRemove);
+		}
+	}
+
+	
 	private void initClassesIfNecessary(Session hibSession, Class_ clazz){
 		if (classes == null){
 			classes = new HashSet<Class_>();
@@ -125,8 +152,7 @@ public class BannerSection extends BaseBannerSection {
 				} else {
 					querySession = hibSession;
 				}
-				for(Iterator it = getBannerSectionToClasses().iterator(); it.hasNext();){
-					BannerSectionToClass bsc = (BannerSectionToClass) it.next();
+				for(BannerSectionToClass bsc : getBannerSectionToClasses()){
 					if (clazz != null && bsc.getClassId().equals(clazz.getUniqueId())){
 						classes.add(clazz);
 					} else {
@@ -190,8 +216,7 @@ public class BannerSection extends BaseBannerSection {
 
 	public boolean isCrossListedSection(Session hibSession){
 		boolean isCrossListed = false;
-		for (Iterator it = getBannerSectionToClasses().iterator(); (it.hasNext() && !isCrossListed);){
-			BannerSectionToClass bsc = (BannerSectionToClass) it.next();
+		for (BannerSectionToClass bsc : getBannerSectionToClasses()){
 			if (countBannerSectionsFor(bsc.getClassId(), hibSession) > 1){
 				isCrossListed = true;
 			}			
@@ -336,6 +361,7 @@ public class BannerSection extends BaseBannerSection {
 	
 	public static Integer findNextUnusedCrnInUniTimeFor(org.unitime.timetable.model.Session acadSession, Session hibSession) {
 		Integer nextCrn = null;
+		@SuppressWarnings("rawtypes")
 		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
 		Connection connection = null;
 	   	try {
@@ -362,6 +388,7 @@ public class BannerSection extends BaseBannerSection {
 	public static boolean isSectionIndexUniqueForCourse(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,
 			Session hibSession, String sectionId) {
 		int sectionExists = 0;
+		@SuppressWarnings("rawtypes")
 		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
         Connection connection = null;
 	   	try {
@@ -391,6 +418,7 @@ public class BannerSection extends BaseBannerSection {
 	public static String findNextUnusedSectionIndexFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering,
 			Session hibSession) {
 		String nextSectionId = null;
+		@SuppressWarnings("rawtypes")
 		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
 		Connection connection = null;
 		try {
@@ -420,6 +448,7 @@ public class BannerSection extends BaseBannerSection {
 
 	public static String findNextUnusedLinkIdentifierFor(org.unitime.timetable.model.Session acadSession, CourseOffering courseOffering, Session hibSession) {
 		String nextLinkId = null;
+		@SuppressWarnings("rawtypes")
 		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
 		Connection connection = null;
 	   	try {
@@ -477,16 +506,13 @@ public class BannerSection extends BaseBannerSection {
 	public static List<BannerSection> findBannerSectionsForSolution(
 			Solution solution, Session hibSession) {
 		Vector<BannerSection> hs = new Vector<BannerSection>();
-		List sections = hibSession
+		List<BannerSection> sections = hibSession
 		.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Assignment a where a.solution.uniqueId = :solutionId and bsc.classId = a.clazz.uniqueId")
 		.setLong("solutionId", solution.getUniqueId().longValue())
 		.setFlushMode(FlushMode.MANUAL)
 		.setCacheable(false)
 		.list();
-		BannerSection bs = null;
-		Iterator it = sections.iterator();
-		while(it.hasNext()){
-			bs = (BannerSection) it.next();
+		for(BannerSection bs : sections){
 			hs.add(bs);
 		}
 		return(hs);
@@ -515,18 +541,36 @@ public class BannerSection extends BaseBannerSection {
 				.setFlushMode(FlushMode.MANUAL)
 				.list();
 		for(BannerSection bs : orphanedBannerSections){
-			Debug.info("removing orphaned banner section");
-			SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
-			parentList.add(bs.getBannerConfig());
-			if (bs.getParentBannerSection() != null){
-				bs.getParentBannerSection().getBannerSectionToChildSections().remove(bs);
-			}
-			if (bs.getBannerSectionToChildSections() != null && !bs.getBannerSectionToChildSections().isEmpty()){
-				for(BannerSection cBs : (Set<BannerSection>)bs.getBannerSectionToChildSections()){
-					cBs.setParentBannerSection(null);
+			if (bs.getClasses(hibSession).size() > 0) {
+				Debug.info("removing deleted classes from banner section");
+				HashSet<BannerSectionToClass> l = new HashSet<BannerSectionToClass>();
+				l.addAll(bs.getBannerSectionToClasses());
+				for (BannerSectionToClass bstc : l) {
+					if (bstc.getClassId() == null) {
+						bs.getBannerSectionToClasses().remove(bstc);
+						hibSession.update(bs);
+					} else {
+						Class_ c = Class_DAO.getInstance().get(bstc.getClassId(), hibSession);
+						if (c == null) {
+							bs.getBannerSectionToClasses().remove(bstc);
+							hibSession.update(bs);
+						}
+					}
 				}
+			} else {
+				Debug.info("removing orphaned banner section");
+				SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
+				parentList.add(bs.getBannerConfig());
+				if (bs.getParentBannerSection() != null){
+					bs.getParentBannerSection().getBannerSectionToChildSections().remove(bs);
+				}
+				if (bs.getBannerSectionToChildSections() != null && !bs.getBannerSectionToChildSections().isEmpty()){
+					for(BannerSection cBs : (Set<BannerSection>)bs.getBannerSectionToChildSections()){
+						cBs.setParentBannerSection(null);
+					}
+				}
+				bs.getBannerConfig().getBannerSections().remove(bs);
 			}
-			bs.getBannerConfig().getBannerSections().remove(bs);
 		}
 		for(BannerConfig bc : parentList){		
 				hibSession.update(bc);
@@ -584,7 +628,8 @@ public class BannerSection extends BaseBannerSection {
 		return(sb.toString());
 	}
 	
-	public List bannerSectionsCrosslistedWithThis(){
+	@SuppressWarnings("unchecked")
+	public List<BannerSection> bannerSectionsCrosslistedWithThis(){
 		if (!getClasses(null).isEmpty()){
 		Class_ c = (Class_)getClasses(null).iterator().next();
 		String qs = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.class_id = :classId and bsc.bannerSection.uniqueId != :sectionId";
@@ -594,7 +639,7 @@ public class BannerSection extends BaseBannerSection {
 				               .setLong("sectionId", getUniqueId().longValue())
 				               .list());
 		} else {
-			return(new Vector());
+			return(new Vector<BannerSection>());
 		}
 		
 	}
@@ -661,8 +706,7 @@ public class BannerSection extends BaseBannerSection {
 	public void updateClassSuffixForClassesIfNecessaryRefreshClasses(Session hibSession, boolean refresh){
 		Boolean control = this.getBannerConfig().getBannerCourse().getCourseOffering(hibSession).isIsControl();
 		if (control.booleanValue()){
-			for (Iterator<?> it = this.getBannerSectionToClasses().iterator(); it.hasNext();){
-				BannerSectionToClass bsc = (BannerSectionToClass) it.next();
+			for (BannerSectionToClass bsc : this.getBannerSectionToClasses()){
 				Class_ clazz = Class_DAO.getInstance().get(bsc.getClassId(), hibSession);
 				if (clazz != null){
 					String classSuffix = this.classSuffixFor(clazz, hibSession);
@@ -702,7 +746,6 @@ public class BannerSection extends BaseBannerSection {
 		return(getBannerConfig().getBannerCourse().getCourseOffering(BannerCourseDAO.getInstance().getSession()).getConsentType());
 	}
 	
-	@SuppressWarnings("unchecked")
 	public TreeMap<DepartmentalInstructor, Integer> findInstructorsWithPercents(Session hibSession){
 
 		int numClassesWithInstructors = 0;
@@ -724,8 +767,7 @@ public class BannerSection extends BaseBannerSection {
 			}
 		}
 		boolean sendInstructors = false;
-		for(Iterator<Class_> cIt = this.getClasses(hibSession).iterator(); cIt.hasNext();){
-			Class_ c = cIt.next();		
+		for(Class_ c : this.getClasses(hibSession)){
 			if (c.isCancelled().booleanValue()){
 				continue;
 			}
@@ -821,7 +863,8 @@ public class BannerSection extends BaseBannerSection {
 	     		}   else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
 							RoomPref rp = (RoomPref) rmPrefIt.next();
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 			    				if (firstReqRoomPref){
@@ -945,7 +988,8 @@ public class BannerSection extends BaseBannerSection {
 	     		}  else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
 							RoomPref rp = (RoomPref) rmPrefIt.next();
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 			    				if (firstReqRoomPref){
@@ -983,7 +1027,7 @@ public class BannerSection extends BaseBannerSection {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-		    		Iterator it2 = a.getRooms().iterator();
+					Iterator<Location> it2 = a.getRooms().iterator();
 		    		while (it2.hasNext()){
 		    			Location room = (Location)it2.next();
 		    			sb.append(room.getLabel());
@@ -994,7 +1038,8 @@ public class BannerSection extends BaseBannerSection {
 	    		} else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
 							RoomPref rp = (RoomPref) rmPrefIt.next();
 							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
 			    				if (firstReqRoomPref){
@@ -1033,7 +1078,7 @@ public class BannerSection extends BaseBannerSection {
 	    			Debug.error(e);
 	    		}
 	    		if (a!=null) {
-		    		Iterator it2 = a.getRooms().iterator();
+		    		Iterator<Location> it2 = a.getRooms().iterator();
 		    		while (it2.hasNext()){
 		    			Location room = (Location)it2.next();
 		    			sb.append(room.getCapacity());
@@ -1044,7 +1089,8 @@ public class BannerSection extends BaseBannerSection {
 	    		} else {
 		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
 		    			boolean firstReqRoomPref = true;
-		    			for(Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
 		    				if (firstReqRoomPref){
 		    					firstReqRoomPref = false;
 		    				} else {
@@ -1066,7 +1112,8 @@ public class BannerSection extends BaseBannerSection {
        return(sb.toString());
     }
 
-    public static List findAll(Long sessionId) {
+    @SuppressWarnings("unchecked")
+	public static List<BannerSection> findAll(Long sessionId) {
     	return (new BannerSectionDAO()).
     		getSession().
     		createQuery("select distinct bs from BannerSection bs where " +
@@ -1075,11 +1122,12 @@ public class BannerSection extends BaseBannerSection {
     		list();
     }
 
-    public static List findAllClassesForCrnAndTermCode(Integer crn, String termCode){
+    public static List<Class_> findAllClassesForCrnAndTermCode(Integer crn, String termCode){
     	return(findAllClassesForCrnAndTermCode((new BannerSectionDAO()).getSession(), crn, termCode));
     }
     
-    public static List findAllClassesForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
+    @SuppressWarnings("unchecked")
+	public static List<Class_> findAllClassesForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
     	return (hibSession.
 			createQuery("select distinct c from BannerSession bsess, BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where " +
 					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and bstc.classId = c.uniqueId").
