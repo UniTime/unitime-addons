@@ -20,6 +20,7 @@
 
 package org.unitime.colleague.model;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,6 +56,7 @@ import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.Solution;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.TeachingResponsibility;
+import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
@@ -87,7 +89,7 @@ public class ColleagueSection extends BaseColleagueSection {
 	}
 /*[CONSTRUCTOR MARKER END]*/
 
-	private HashSet<Class_> classes;
+	private TreeSet<Class_> classes;
 	private CourseOffering courseOffering;
 	private SubjectArea subjectArea;
 	
@@ -103,14 +105,34 @@ public class ColleagueSection extends BaseColleagueSection {
 		csc.setClassId(clazz.getUniqueId());
 		addTocolleagueSectionToClasses(csc);
 		if (classes == null){
-			classes = new HashSet<Class_>();
+			classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_HIERARCHY));
 		}
 		classes.add(clazz);
 	}
+
+	public void removeClass(Class_ clazz, Session hibSession){
+		if (clazz == null || clazz.getUniqueId() == null){
+			return;
+		}
+		if (getColleagueSectionToClasses() != null && !getColleagueSectionToClasses().isEmpty()){
+			initClassesIfNecessary(hibSession, null);
+		}
+		ColleagueSectionToClass cscToRemove = null;
+		for (ColleagueSectionToClass csc : getColleagueSectionToClasses()) {
+			if (csc.getClassId() != null && clazz.getUniqueId() != null && csc.getClassId().equals(clazz.getUniqueId())) {
+				cscToRemove = csc;
+				break;
+			}
+		}
+		if (cscToRemove != null) {
+			getColleagueSectionToClasses().remove(cscToRemove);
+		}
+	}
 	
+
 	private void initClassesIfNecessary(Session hibSession, Class_ clazz){
 		if (classes == null){
-			classes = new HashSet<Class_>();
+			classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_HIERARCHY));
 			if (getColleagueSectionToClasses() != null && !getColleagueSectionToClasses().isEmpty()){
 				Session querySession;
 				if (hibSession == null){
@@ -132,12 +154,12 @@ public class ColleagueSection extends BaseColleagueSection {
 		}		
 	}
 	
-	public HashSet<Class_> getClasses(Session hibSession, Class_ clazz){
+	public TreeSet<Class_> getClasses(Session hibSession, Class_ clazz){
 		initClassesIfNecessary(hibSession, clazz);	
 		return(classes);
 	}
 	
-	public HashSet<Class_> getClasses(Session hibSession){
+	public TreeSet<Class_> getClasses(Session hibSession){
 		initClassesIfNecessary(hibSession, null);	
 		return(classes);
 	}
@@ -587,20 +609,44 @@ public class ColleagueSection extends BaseColleagueSection {
 			hibSession.flush();
 		}		
 	}
+	
 	@SuppressWarnings("unchecked")
 	public static void removeOrphanedColleagueSections(Session hibSession){
-		String orphanedSectionsQuery1 = "select distinct cs from ColleagueSection cs where cs.deleted = false and cs.courseOfferingId not in ( select co.uniqueId from CourseOffering co )";
-		String orphanedSectionsQuery2 = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.colleagueSection.deleted = false and csc.classId not in ( select c.uniqueId from Class_ c )";
+		String orphanedSectionsQuery = "select distinct cs from ColleagueSection cs where cs.deleted = false and cs.courseOfferingId not in ( select co.uniqueId from CourseOffering co )";
+		String potentiallyOrphanedSectionsQuery = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.colleagueSection.deleted = false and csc.classId not in ( select c.uniqueId from Class_ c )";
 
 		Transaction trans = hibSession.beginTransaction();
-		List<ColleagueSection> orphanedColleagueSections1 = (List<ColleagueSection>) hibSession.createQuery(orphanedSectionsQuery1)
+		List<ColleagueSection> orphanedColleagueSections = (List<ColleagueSection>) hibSession.createQuery(orphanedSectionsQuery)
 		.setFlushMode(FlushMode.MANUAL)
 		.list();
-		removeOrphanedColleagueSections(hibSession, orphanedColleagueSections1);
+		removeOrphanedColleagueSections(hibSession, orphanedColleagueSections);
 		
-		List<ColleagueSection> orphanedColleagueSections2 = (List<ColleagueSection>) hibSession.createQuery(orphanedSectionsQuery2)
+		List<ColleagueSection> potentiallyOrphanedColleagueSections = (List<ColleagueSection>) hibSession.createQuery(potentiallyOrphanedSectionsQuery)
 				.setFlushMode(FlushMode.MANUAL)
 				.list();
+		
+		ArrayList<ColleagueSection> orphanedColleagueSections2 = new ArrayList<ColleagueSection>();
+		for (ColleagueSection cs : potentiallyOrphanedColleagueSections) {
+			if (cs.getClasses(hibSession).size() > 0) {
+				Debug.info("removing deleted classes from colleague section");
+				HashSet<ColleagueSectionToClass> l = new HashSet<ColleagueSectionToClass>();
+				l.addAll(cs.getColleagueSectionToClasses());
+				for(ColleagueSectionToClass cstc : l) {
+					if (cstc.getClassId() == null) {
+						cs.getColleagueSectionToClasses().remove(cstc);
+						hibSession.update(cs);
+					} else {
+						Class_ c = Class_DAO.getInstance().get(cstc.getClassId(), hibSession);
+						if (c == null) {
+							cs.getColleagueSectionToClasses().remove(cstc);
+							hibSession.update(cs);
+						}
+					}
+				}
+			} else {
+				orphanedColleagueSections2.add(cs);
+			} 
+		}
 		removeOrphanedColleagueSections(hibSession, orphanedColleagueSections2);
 
 		trans.commit();
@@ -710,8 +756,13 @@ public class ColleagueSection extends BaseColleagueSection {
 	public void assignNewSectionIndex(Session hibSession) throws Exception{
 		ItypeDesc itype = null;
 		for (Class_ c : this.getClasses(hibSession)){
-			itype = c.getSchedulingSubpart().getItype();
-			break;
+			if (itype == null) {
+				itype = c.getSchedulingSubpart().getItype();
+			} else {
+				if (itype.getItype().intValue() > c.getSchedulingSubpart().getItype().getItype().intValue()) {
+					itype = c.getSchedulingSubpart().getItype();
+				}
+			}
 		}
 		ColleagueSession cSess = ColleagueSession.findColleagueSessionForSession(this.getSession().getUniqueId(), hibSession);
 		if (cSess.isSendDataToColleague() && this.getSectionIndex() == null) {

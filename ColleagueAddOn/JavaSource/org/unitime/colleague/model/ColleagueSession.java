@@ -193,14 +193,10 @@ public class ColleagueSession extends BaseColleagueSession {
 								ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c, co, ioDao.getSession());
 								if (cs == null){
 									if(c.getParentClass() != null){
-										if (c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
-											ColleagueSection pcs = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c.getParentClass(), co, ioDao.getSession());
-											if (pcs != null){
-												pcs.addClass(c, ioDao.getSession());
-												ioDao.getSession().update(pcs);
-											} else {
-												ColleagueSection.addColleagueSectionFor(co, c, ioDao.getSession());
-											}
+										ColleagueSection pcs = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c.getParentClass(), co, ioDao.getSession());
+										if (pcs != null){
+											pcs.addClass(c, ioDao.getSession());
+											ioDao.getSession().update(pcs);
 										} else {
 											ColleagueSection.addColleagueSectionFor(co, c, ioDao.getSession());
 										}

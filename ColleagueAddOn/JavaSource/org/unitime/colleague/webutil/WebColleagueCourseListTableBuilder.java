@@ -311,7 +311,7 @@ public class WebColleagueCourseListTableBuilder extends
 			Class_ aClass, CourseOffering courseOffering, int indentSpaces, SessionContext sessionContext,
 			Integer prevItype, boolean clickable) {
 		Integer currentItype = aClass.getSchedulingSubpart().getItype().getItype();
-		if (prevItype == null || !prevItype.equals(currentItype)){
+		if (prevItype == null){
 			buildSectionRow(classAssignment, ct, table, aClass, courseOffering, indentSpaces, sessionContext, clickable);
 		}
     	Set childClasses = aClass.getChildClasses();
@@ -325,7 +325,7 @@ public class WebColleagueCourseListTableBuilder extends
             Class_ child = null;
             while (it.hasNext()){              
                 child = (Class_) it.next();
-                buildSectionRows(classAssignment, ct, table, child, courseOffering, indentSpaces + (prevItype != null && prevItype.equals(currentItype) ? 0 : 1), sessionContext, currentItype, clickable);            }
+                buildSectionRows(classAssignment, ct, table, child, courseOffering, indentSpaces, sessionContext, currentItype, clickable);            }
         }
 		
 	}

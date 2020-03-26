@@ -22,8 +22,8 @@
 package org.unitime.colleague.util;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -34,6 +34,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
+import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 
 
 
@@ -58,7 +59,7 @@ public class ColleagueSectionCrosslistHelper {
 			}
 			List<ColleagueSection> colleagueSections = ColleagueSection.findNotDeletedColleagueSectionsForClass(c, hibSession);
 			if (colleagueSections.isEmpty()){
-				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
+				if (c.getParentClass() != null){
 					List<ColleagueSection> parentColleagueSections = ColleagueSection.findNotDeletedColleagueSectionsForClass(c.getParentClass(), hibSession);
 					Transaction trans = hibSession.beginTransaction();
 					for(ColleagueSection cs : parentColleagueSections){
@@ -73,7 +74,7 @@ public class ColleagueSectionCrosslistHelper {
 				}
 			
 			} else {
-				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
+				if (c.getParentClass() != null){
 					HashSet<ColleagueSection> sections = new HashSet<ColleagueSection>();
 					sections.addAll(ColleagueSection.findNotDeletedColleagueSectionsForClass(c, hibSession));
 					
@@ -94,7 +95,12 @@ public class ColleagueSectionCrosslistHelper {
 						for(ColleagueSection cs : removeSet){
 							if (!cs.isDeleted()){
 								Transaction trans = hibSession.beginTransaction();
-								ColleagueSection.deleteSection(hibSession, cs);
+								cs.removeClass(c, hibSession);
+								if (cs.getColleagueSectionToClasses().size() == 0) {
+									ColleagueSection.deleteSection(hibSession, cs);
+								} else {
+									hibSession.update(cs);
+								}
 								trans.commit();
 							}
 						}
@@ -158,13 +164,14 @@ public class ColleagueSectionCrosslistHelper {
 			} else {
 				ColleagueSection parentSection = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c.getParentClass(), cs.getCourseOffering(hibSession), hibSession);
 				Class_ parentClass = c.getParentClass();
-				boolean foundParentClass = false;
-				while (!foundParentClass && parentSection != null){
-					if (!parentClass.getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
-						foundParentClass = true;
-					} else {
+
+				while (parentSection != null){
+					if (parentClass.getParentClass() != null) {
 						parentSection = ColleagueSection.findColleagueSectionForClassAndCourseOffering(parentClass.getParentClass(), cs.getCourseOffering(hibSession), hibSession);
 						parentClass = parentClass.getParentClass();
+					} else {
+						parentSection = null;
+						break;
 					}
 				}
 				if (parentSection != null && (cs.getParentColleagueSection() == null || !cs.getParentColleagueSection().getUniqueId().equals(parentSection.getUniqueId()))){
@@ -189,11 +196,10 @@ public class ColleagueSectionCrosslistHelper {
 	private void ensureAllClassesHaveColleagueSection() throws Exception{
 		// Remove any orphaned Colleague sections
 		ColleagueSection.removeOrphanedColleagueSections(hibSession);
-		
-		for(Iterator iocIt = instructionalOffering.getInstrOfferingConfigs().iterator(); iocIt.hasNext();){
-			InstrOfferingConfig ioc = (InstrOfferingConfig) iocIt.next();
-			for(Iterator ssIt = ioc.getSchedulingSubparts().iterator(); ssIt.hasNext();){
-				SchedulingSubpart ss = (SchedulingSubpart) ssIt.next();
+		for(InstrOfferingConfig ioc : instructionalOffering.getInstrOfferingConfigs()){
+			TreeSet<SchedulingSubpart> ssSet = new TreeSet<SchedulingSubpart>(new SchedulingSubpartComparator());
+			ssSet .addAll(ioc.getSchedulingSubparts());
+			for(SchedulingSubpart ss : ssSet){
 				if (ss.getParentSubpart() == null){
 					ensureAllSubpartClassesHaveColleagueSection(ss);
 				}

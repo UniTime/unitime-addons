@@ -50,6 +50,8 @@ import org.unitime.timetable.util.DateUtils;
  */
 public class MeetingElement implements Comparable<MeetingElement> {
 
+	private Integer itypeId;
+	private String instructionalMethod;
 	private boolean monday;
 	private boolean tuesday;
 	private boolean wednesday;
@@ -83,8 +85,10 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		sunday = false;
 	}
 	
-	public MeetingElement(Date startDate, Date endDate, String beginTime, String endTime, IntEnumeration days,
+	public MeetingElement(Integer itypeId, String instructionalMethod, Date startDate, Date endDate, String beginTime, String endTime, IntEnumeration days,
 						String bldgCode, String roomCode, String hoursToArrange, ColleagueSection colleagueSection, Class_ clazz, boolean alternatingWeeks) {
+		this.itypeId = itypeId;
+		this.instructionalMethod = instructionalMethod;
 		this.monday = false;
 		this.tuesday = false;
 		this.wednesday = false;
@@ -131,8 +135,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 			String bldgAbbv = null;
 			String roomNbr = null;
 			int roomCount = 0;
-			for(Iterator locationIt = a.getRooms().iterator(); locationIt.hasNext();){
-				Location loc = (Location) locationIt.next();
+			for(Location loc : a.getRooms()){
 				if (loc instanceof NonUniversityLocation) {
 					NonUniversityLocation nonUnivLoc = (NonUniversityLocation) loc;
 					bldgAbbv = "OFFCMP";
@@ -147,7 +150,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 					Date startDate = dateIt.next();
 					Date endDate = dates.get(startDate);				
-					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz, alternatingWeeks);
+					MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz, alternatingWeeks);
 					elements.add(me);
 				}
 			}
@@ -155,7 +158,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 				for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 					Date startDate = dateIt.next();
 					Date endDate = dates.get(startDate);				
-					MeetingElement me = new MeetingElement(startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz, alternatingWeeks);
+					MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, beginTime, endTime, a.getTimeLocation().getDays(), bldgAbbv, roomNbr, null, colleagueSection, clazz, alternatingWeeks);
 					elements.add(me);
 				}
 			}
@@ -196,7 +199,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 						for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 							Date startDate = dateIt.next();
 							Date endDate = dates.get(startDate);				
-							MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, bldgAbbv, roomNbr, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
+							MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, null, null, null, bldgAbbv, roomNbr, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
 							elements.add(me);
 						}
 					}
@@ -205,7 +208,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 						Date startDate = dateIt.next();
 						Date endDate = dates.get(startDate);				
-						MeetingElement me = new MeetingElement(startDate, endDate, null, null, null, null, null, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
+						MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, null, null, null, null, null, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
 						elements.add(me);
 					}
 				}
@@ -214,14 +217,18 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		return(elements);
 	}
 	
-	public boolean canBeMerged(MeetingElement me){
-		if (me.getStartDate() != null && getStartDate() != null && me.getStartDate().getTime() == getStartDate().getTime()){
-			if (me.getEndDate() != null && getEndDate() != null && me.getEndDate().getTime() == getEndDate().getTime()){
-				if(me.getBeginTime() != null && getBeginTime() != null && me.getBeginTime().equals(getBeginTime())){
-					if (me.getEndTime() != null && getEndTime() != null && me.getEndTime().equals(getEndTime())){
-						if (me.getBldgCode() != null && getBldgCode() != null && me.getBldgCode().equals(getBldgCode())){
-							if (me.getRoomCode() != null && getRoomCode() != null && me.getRoomCode().equals(getRoomCode())){
-								return(true);
+	public boolean canBeMerged(MeetingElement me) {
+		if (me.getItypeId() != null && getItypeId() != null && me.getItypeId().equals(getItypeId())) {
+			if (me.getStartDate() != null && getStartDate() != null && me.getStartDate().getTime() == getStartDate().getTime()){
+				if (me.getEndDate() != null && getEndDate() != null && me.getEndDate().getTime() == getEndDate().getTime()){
+					if(me.getBeginTime() != null && getBeginTime() != null && me.getBeginTime().equals(getBeginTime())){
+						if (me.getEndTime() != null && getEndTime() != null && me.getEndTime().equals(getEndTime())){
+							if (me.getBldgCode() != null && getBldgCode() != null && me.getBldgCode().equals(getBldgCode())){
+								if (me.getRoomCode() != null && getRoomCode() != null && me.getRoomCode().equals(getRoomCode())){
+									return(true);
+								} else {
+									return(false);
+								}
 							} else {
 								return(false);
 							}
@@ -369,7 +376,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		
 		Element meetingElement = sectionElement.addElement("MEETING");
 		meetingElement.addAttribute("MEETING_ID", meetingId);
-		
+		meetingElement.addAttribute("INSTRUCTIONAL_METHOD", instructionalMethod);
 		if (monday){
 			meetingElement.addAttribute("MONDAY", "M");
 		} else {
@@ -444,6 +451,22 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		}
 	}
 
+
+	public Integer getItypeId() {
+		return itypeId;
+	}
+
+	public void setItypeId(Integer itypeId) {
+		this.itypeId = itypeId;
+	}
+
+	public void setInstructionalMethod(String instructionalMethod) {
+		this.instructionalMethod = instructionalMethod;
+	}
+	
+	public String getInstructionalMethod() {
+		return(this.instructionalMethod);
+	}
 
 	public boolean isMonday() {
 		return monday;
@@ -594,118 +617,131 @@ public class MeetingElement implements Comparable<MeetingElement> {
 
 
 	public int compareTo(MeetingElement me) {
-		if (me.getStartDate() != null && getStartDate() != null && me.getStartDate().getTime() == getStartDate().getTime()){
-			if (me.getEndDate() != null && getEndDate() != null && me.getEndDate().getTime() == getEndDate().getTime()){
-				if(me.getBeginTime() != null && getBeginTime() != null && me.getBeginTime().equals(getBeginTime())){
-					if (me.getEndTime() != null && getEndTime() != null && me.getEndTime().equals(getEndTime())){
-						if (me.getBldgCode() != null && getBldgCode() != null && me.getBldgCode().equals(getBldgCode())){
-							if (me.getRoomCode() != null && getRoomCode() != null && me.getRoomCode().equals(getRoomCode())){
-								if(me.isMonday() == true && isMonday() == false){
-									return(1);
-								} else if (me.isMonday() == false && isMonday() == true){
-									return(-1);
-								} else if (me.isTuesday() == true && isTuesday() == false){
-									return(1);
-								} else if (me.isTuesday() == false && isTuesday() == true){
-									return(-1);
-								} else if (me.isWednesday() == true && isWednesday() == false){
-									return(1);
-								} else if (me.isWednesday() == false && isWednesday() == true){
-									return(-1);
-								} else if (me.isThursday() == true && isThursday() == false){
-									return(1);
-								} else if (me.isThursday() == false && isThursday() == true){
-									return(-1);
-								} else if (me.isFriday() == true && isFriday() == false){
-									return(1);
-								} else if (me.isFriday() == false && isFriday() == true){
-									return(-1);
-								} else if (me.isSaturday() == true && isSaturday() == false){
-									return(1);
-								} else if (me.isSaturday() == false && isSaturday() == true){
-									return(-1);
-								} else if (me.isSunday() == true && isSunday() == false){
-									return(1);
-								} else if (me.isSunday() == false && isSunday() == true){
-									return(-1);
-								} else {
-									if (me.getHoursToArrange() == null && getHoursToArrange() != null){
+		if (me.getItypeId() != null && getItypeId() != null && me.getItypeId().equals(getItypeId())) {
+			if (me.getStartDate() != null && getStartDate() != null && me.getStartDate().getTime() == getStartDate().getTime()){
+				if (me.getEndDate() != null && getEndDate() != null && me.getEndDate().getTime() == getEndDate().getTime()){
+					if(me.getBeginTime() != null && getBeginTime() != null && me.getBeginTime().equals(getBeginTime())){
+						if (me.getEndTime() != null && getEndTime() != null && me.getEndTime().equals(getEndTime())){
+							if (me.getBldgCode() != null && getBldgCode() != null && me.getBldgCode().equals(getBldgCode())){
+								if (me.getRoomCode() != null && getRoomCode() != null && me.getRoomCode().equals(getRoomCode())){
+									if(me.isMonday() == true && isMonday() == false){
 										return(1);
-									} else if (me.getHoursToArrange() != null && getHoursToArrange() == null){
+									} else if (me.isMonday() == false && isMonday() == true){
 										return(-1);
-									} else if (me.getHoursToArrange() == null && getHoursToArrange() == null){
-										return(0);
+									} else if (me.isTuesday() == true && isTuesday() == false){
+										return(1);
+									} else if (me.isTuesday() == false && isTuesday() == true){
+										return(-1);
+									} else if (me.isWednesday() == true && isWednesday() == false){
+										return(1);
+									} else if (me.isWednesday() == false && isWednesday() == true){
+										return(-1);
+									} else if (me.isThursday() == true && isThursday() == false){
+										return(1);
+									} else if (me.isThursday() == false && isThursday() == true){
+										return(-1);
+									} else if (me.isFriday() == true && isFriday() == false){
+										return(1);
+									} else if (me.isFriday() == false && isFriday() == true){
+										return(-1);
+									} else if (me.isSaturday() == true && isSaturday() == false){
+										return(1);
+									} else if (me.isSaturday() == false && isSaturday() == true){
+										return(-1);
+									} else if (me.isSunday() == true && isSunday() == false){
+										return(1);
+									} else if (me.isSunday() == false && isSunday() == true){
+										return(-1);
 									} else {
-										return(new Float(getHoursToArrange()).compareTo(new Float(me.getHoursToArrange())));
+										if (me.getHoursToArrange() == null && getHoursToArrange() != null){
+											return(1);
+										} else if (me.getHoursToArrange() != null && getHoursToArrange() == null){
+											return(-1);
+										} else if (me.getHoursToArrange() == null && getHoursToArrange() == null){
+											return(0);
+										} else {
+											return(new Float(getHoursToArrange()).compareTo(new Float(me.getHoursToArrange())));
+										}
+									}
+								} else {
+									if (me.getRoomCode() == null && getRoomCode() == null){
+										return(0);
+									} else if(me.getRoomCode() != null && getRoomCode() == null){
+										return(-1);
+									} else if (me.getRoomCode() == null && getRoomCode() != null){
+										return(1);
+									} else {
+										return(getRoomCode().compareTo(me.getRoomCode()));
 									}
 								}
 							} else {
-								if (me.getRoomCode() == null && getRoomCode() == null){
+								if (me.getBldgCode() == null && getBldgCode() == null){
 									return(0);
-								} else if(me.getRoomCode() != null && getRoomCode() == null){
+								} else if(me.getBldgCode() != null && getBldgCode() == null){
 									return(-1);
-								} else if (me.getRoomCode() == null && getRoomCode() != null){
+								} else if (me.getBldgCode() == null && getBldgCode() != null){
 									return(1);
 								} else {
-									return(getRoomCode().compareTo(me.getRoomCode()));
+									return(getBldgCode().compareTo(me.getBldgCode()));
 								}
 							}
 						} else {
-							if (me.getBldgCode() == null && getBldgCode() == null){
+							if (me.getEndTime() == null && getEndTime() == null){
 								return(0);
-							} else if(me.getBldgCode() != null && getBldgCode() == null){
+							} else if(me.getEndTime() != null && getEndTime() == null){
 								return(-1);
-							} else if (me.getBldgCode() == null && getBldgCode() != null){
+							} else if (me.getEndTime() == null && getEndTime() != null){
 								return(1);
 							} else {
-								return(getBldgCode().compareTo(me.getBldgCode()));
+								return(getEndTime().compareTo(me.getEndTime()));
 							}
 						}
 					} else {
-						if (me.getEndTime() == null && getEndTime() == null){
+						if (me.getBeginTime() == null && getBeginTime() == null){
 							return(0);
-						} else if(me.getEndTime() != null && getEndTime() == null){
+						} else if(me.getBeginTime() != null && getBeginTime() == null){
 							return(-1);
-						} else if (me.getEndTime() == null && getEndTime() != null){
+						} else if (me.getBeginTime() == null && getBeginTime() != null){
 							return(1);
 						} else {
-							return(getEndTime().compareTo(me.getEndTime()));
+							return(getBeginTime().compareTo(me.getBeginTime()));
 						}
 					}
 				} else {
-					if (me.getBeginTime() == null && getBeginTime() == null){
+					if (me.getEndDate() == null && getEndDate() == null){
 						return(0);
-					} else if(me.getBeginTime() != null && getBeginTime() == null){
+					} else if(me.getEndDate() != null && getEndDate() == null){
 						return(-1);
-					} else if (me.getBeginTime() == null && getBeginTime() != null){
+					} else if (me.getEndDate() == null && getEndDate() != null){
 						return(1);
 					} else {
-						return(getBeginTime().compareTo(me.getBeginTime()));
+						return(getEndDate().compareTo(me.getEndDate()));
 					}
 				}
 			} else {
-				if (me.getEndDate() == null && getEndDate() == null){
+				if (me.getStartDate() == null && getStartDate() == null){
 					return(0);
-				} else if(me.getEndDate() != null && getEndDate() == null){
+				} else if(me.getStartDate() != null && getStartDate() == null){
 					return(-1);
-				} else if (me.getEndDate() == null && getEndDate() != null){
+				} else if (me.getStartDate() == null && getStartDate() != null){
 					return(1);
 				} else {
-					return(getEndDate().compareTo(me.getEndDate()));
+					return(getStartDate().compareTo(me.getStartDate()));
 				}
 			}
 		} else {
-			if (me.getStartDate() == null && getStartDate() == null){
+			if (me.getItypeId() == null && getItypeId() == null){
 				return(0);
-			} else if(me.getStartDate() != null && getStartDate() == null){
+			} else if(me.getItypeId() != null && getItypeId() == null){
 				return(-1);
-			} else if (me.getStartDate() == null && getStartDate() != null){
+			} else if (me.getItypeId() == null && getItypeId() != null){
 				return(1);
 			} else {
-				return(getStartDate().compareTo(me.getStartDate()));
+				return(getItypeId().compareTo(me.getItypeId()));
 			}
 		}
 	}
+		
 
 	public String getMeetingId() {
 		return meetingId;
