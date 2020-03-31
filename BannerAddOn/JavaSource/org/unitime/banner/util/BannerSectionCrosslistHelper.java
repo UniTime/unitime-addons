@@ -168,10 +168,10 @@ public class BannerSectionCrosslistHelper {
 					if (!removeSet.isEmpty()){
 						for(BannerSection bs : removeSet){
 							Transaction trans = hibSession.beginTransaction();
+							BannerConfig bc = bs.getBannerConfig();
 							bs.removeClass(c, hibSession);
 							if (bs.getBannerSectionToClasses().isEmpty()) {
 								SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
-								BannerConfig bc = bs.getBannerConfig();
 								bc.getBannerSections().remove(bs);
 								bs.setBannerConfig(null);
 								hibSession.update(bc);
@@ -180,6 +180,7 @@ public class BannerSectionCrosslistHelper {
 								hibSession.update(bs);
 							}
 							trans.commit();
+							hibSession.refresh(bc);
 						}
 					}
 					if (!addSet.isEmpty()){
@@ -189,6 +190,7 @@ public class BannerSectionCrosslistHelper {
 							bs.addClass(c, hibSession);
 							hibSession.update(bc);
 							trans.commit();
+							hibSession.refresh(bc);
 						}
 					}
 
@@ -217,6 +219,7 @@ public class BannerSectionCrosslistHelper {
 							bc.getBannerSections().remove(bs);
 							hibSession.update(bc);
 							trans.commit();
+							hibSession.refresh(bc);
 						}
 					}
 				}
