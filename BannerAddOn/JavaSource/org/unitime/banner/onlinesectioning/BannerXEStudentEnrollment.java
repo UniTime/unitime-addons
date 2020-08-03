@@ -261,34 +261,34 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 			
 			boolean changed = updateClassEnrollments(student, enrollments, helper);
 			
-			if (changed) {
+			if (changed)
 				helper.getHibSession().update(student);
 				
-				for (int i = 0; i < helper.getAction().getEnrollmentCount(); i++)
-					if (helper.getAction().getEnrollment(i).getType() == OnlineSectioningLog.Enrollment.EnrollmentType.STORED)
-						helper.getAction().getEnrollmentBuilder(i).setType(OnlineSectioningLog.Enrollment.EnrollmentType.PREVIOUS);
+			for (int i = 0; i < helper.getAction().getEnrollmentCount(); i++)
+				if (helper.getAction().getEnrollment(i).getType() == OnlineSectioningLog.Enrollment.EnrollmentType.STORED)
+					helper.getAction().getEnrollmentBuilder(i).setType(OnlineSectioningLog.Enrollment.EnrollmentType.PREVIOUS);
 
-				// Reload student
-				XStudent newStudent = ReloadAllData.loadStudent(student, null, server, helper);
-				if (newStudent != null) {
-					server.update(newStudent, true);
-					OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
-					enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.STORED);
-					helper.getAction().clearRequest();
-					for (XRequest newRequest: newStudent.getRequests()) {
-						helper.getAction().addRequest(OnlineSectioningHelper.toProto(newRequest));
-						if (newRequest instanceof XCourseRequest && ((XCourseRequest)newRequest).getEnrollment() != null) {
-							XEnrollment enrl = ((XCourseRequest)newRequest).getEnrollment();
-							XOffering offering = server.getOffering(enrl.getOfferingId());
-							for (XSection section: offering.getSections(enrl))
-								enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
-						}
+			// Reload student
+			XStudent newStudent = ReloadAllData.loadStudent(student, null, server, helper);
+			if (newStudent != null) {
+				server.update(newStudent, true);
+				OnlineSectioningLog.Enrollment.Builder enrollment = OnlineSectioningLog.Enrollment.newBuilder();
+				enrollment.setType(OnlineSectioningLog.Enrollment.EnrollmentType.STORED);
+				helper.getAction().clearRequest();
+				for (XRequest newRequest: newStudent.getRequests()) {
+					helper.getAction().addRequest(OnlineSectioningHelper.toProto(newRequest));
+					if (newRequest instanceof XCourseRequest && ((XCourseRequest)newRequest).getEnrollment() != null) {
+						XEnrollment enrl = ((XCourseRequest)newRequest).getEnrollment();
+						XOffering offering = server.getOffering(enrl.getOfferingId());
+						for (XSection section: offering.getSections(enrl))
+							enrollment.addSection(OnlineSectioningHelper.toProto(section, enrl));
 					}
-					helper.getAction().addEnrollment(enrollment);
 				}
-				
-				server.execute(server.createAction(NotifyStudentAction.class).forStudent(student.getUniqueId()).oldStudent(s), helper.getUser());
+				helper.getAction().addEnrollment(enrollment);
 			}
+			
+			if (changed)
+				server.execute(server.createAction(NotifyStudentAction.class).forStudent(student.getUniqueId()).oldStudent(s), helper.getUser());
 			
 			helper.commitTransaction();
 		} catch (SectioningException e) {
