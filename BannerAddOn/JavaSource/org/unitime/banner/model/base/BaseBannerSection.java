@@ -30,6 +30,10 @@ import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.timetable.model.OfferingConsentType;
 import org.unitime.timetable.model.Session;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerSection implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -47,9 +51,9 @@ public abstract class BaseBannerSection implements Serializable {
 	private OfferingConsentType iConsentType;
 	private Session iSession;
 	private BannerSection iParentBannerSection;
+	private BannerCampusOverride iBannerCampusOverride;
 	private Set<BannerSectionToClass> iBannerSectionToClasses;
 	private Set<BannerSection> iBannerSectionToChildSections;
-	private BannerCampusOverride iBannerCampusOverride;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_CRN = "crn";
@@ -60,7 +64,6 @@ public abstract class BaseBannerSection implements Serializable {
 	public static String PROP_UID_ROLLED_FWD_FROM = "uniqueIdRolledForwardFrom";
 	public static String PROP_OVERRIDE_LIMIT = "overrideLimit";
 	public static String PROP_OVERRIDE_COURSE_CREDIT = "overrideCourseCredit";
-	public static String PROP_BANNER_CAMPUS_OVERRIDE = "bannerCampusOverride";
 
 	public BaseBannerSection() {
 		initialize();
@@ -146,6 +149,7 @@ public abstract class BaseBannerSection implements Serializable {
 
 	public String toDebugString() {
 		return "BannerSection[" +
+			"\n	BannerCampusOverride: " + getBannerCampusOverride() +
 			"\n	BannerConfig: " + getBannerConfig() +
 			"\n	ConsentType: " + getConsentType() +
 			"\n	Crn: " + getCrn() +
@@ -159,7 +163,6 @@ public abstract class BaseBannerSection implements Serializable {
 			"\n	Session: " + getSession() +
 			"\n	UniqueId: " + getUniqueId() +
 			"\n	UniqueIdRolledForwardFrom: " + getUniqueIdRolledForwardFrom() +
-			"\n	Banner Campus Override: " + getBannerCampusOverride() +
 			"]";
 	}
 }

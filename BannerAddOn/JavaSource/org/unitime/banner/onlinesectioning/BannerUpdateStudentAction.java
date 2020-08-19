@@ -115,6 +115,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private String iIgnoreGroupRegExp = null;
 	private boolean iUpdateClasses = true;
 	private boolean iLocking = false;
+	private Set<String> iCampusCodes = null;
 	
 	public BannerUpdateStudentAction() {
 		iOverrideTypes = ApplicationProperties.getProperty("banner.overrides.regexp");
@@ -176,6 +177,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
+	public BannerUpdateStudentAction withCampus(String campus) {
+		if (campus != null && !campus.isEmpty()) {
+			if (iCampusCodes == null) iCampusCodes = new HashSet<String>();
+			iCampusCodes.add(campus);
+		}
+		return this;
+	}
+	
 	public BannerUpdateStudentAction skipClassUpdates() {
 		iUpdateClasses = false;
 		return this;
@@ -184,6 +193,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	public BannerUpdateStudentAction withLocking() {
 		iLocking = true;
 		return this;
+	}
+	
+	public boolean isApplicable(BannerSession bs) {
+		if (bs.getStudentCampus() == null || bs.getStudentCampus().isEmpty()) return true;
+		if (iCampusCodes == null || iCampusCodes.isEmpty()) return true;
+		for (String code: iCampusCodes)
+			if (code.matches(bs.getStudentCampus())) return true;
+		return false;
 	}
 
 	@Override

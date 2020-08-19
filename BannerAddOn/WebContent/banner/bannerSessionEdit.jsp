@@ -139,6 +139,14 @@
 				</html:select>
 			</TD>
 		</TR>
+		
+		<TR>
+			<TD valign="top">Student Campus:</TD>
+			<TD colspan='2'>
+				<html:text property="studentCampus"  maxlength="500" size="50"/><br>
+				<font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<b>Note:</b> May contain a regular expression that the student campus code must match.</font>
+			</TD>
+		</TR>
 						
 		
 		<TR>

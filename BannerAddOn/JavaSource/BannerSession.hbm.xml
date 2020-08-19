@@ -100,6 +100,14 @@
 			type="java.lang.Integer"
 			not-null="false"
 		/>
+		
+		<property
+			name="studentCampus"
+			column="student_campus"
+			type="java.lang.String"
+			not-null="true"
+			length="500"
+		/>
 	</class>
 
 </hibernate-mapping>

@@ -34,6 +34,7 @@ public abstract class BaseBannerSession implements Serializable {
 	private Boolean iSendDataToBanner;
 	private Boolean iLoadingOfferingsFile;
 	private Integer iFutureSessionUpdateModeInt;
+	private String iStudentCampus;
 
 	private Session iSession;
 	private BannerSession iFutureSession;
@@ -80,6 +81,9 @@ public abstract class BaseBannerSession implements Serializable {
 
 	public Integer getFutureSessionUpdateModeInt() { return iFutureSessionUpdateModeInt; }
 	public void setFutureSessionUpdateModeInt(Integer futureSessionUpdateModeInt) { iFutureSessionUpdateModeInt = futureSessionUpdateModeInt; }
+	
+	public String getStudentCampus() { return iStudentCampus; }
+	public void setStudentCampus(String studentCampus) { iStudentCampus = studentCampus; }
 
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
@@ -112,6 +116,7 @@ public abstract class BaseBannerSession implements Serializable {
 			"\n	SendDataToBanner: " + getSendDataToBanner() +
 			"\n	Session: " + getSession() +
 			"\n	StoreDataForBanner: " + getStoreDataForBanner() +
+			"\n StudentCampus: " + getStudentCampus() +
 			"\n	UniqueId: " + getUniqueId() +
 			"]";
 	}

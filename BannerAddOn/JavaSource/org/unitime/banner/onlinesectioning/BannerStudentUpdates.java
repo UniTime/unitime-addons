@@ -263,6 +263,13 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					sportElement.attributeValue("groupname", sportElement.attributeValue("group")),
 					"COHORT");
 		}
+		
+		// Campus code(s)
+		for (Iterator<?> j = studentElement.elementIterator("campus"); j.hasNext(); ) {
+			Element campusElement = (Element)j.next();
+			update.withCampus(campusElement.getTextTrim());
+		}
+		
 		return update;
 	}
 	
@@ -424,6 +431,10 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					if (locking) update.withLocking();
 					
 					for (BannerSession bs: sessionIds) {
+						if (!update.isApplicable(bs)) {
+							debug("[" + externalId + "] Skipping campus " + bs.getBannerCampus());
+							continue;
+						}
 						Long sessionId = bs.getSession().getUniqueId();
 						UpdateResult result = null;
 						try {

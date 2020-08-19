@@ -158,4 +158,8 @@
 		<plsql>alter table %SCHEMA%.banner_session add future_mode number(10,0)</plsql>
 		<mysql>alter table %SCHEMA%.banner_session add future_mode decimal(10,0)</mysql>
  	</update>
+ 	<update version="10" date="9-Oct-2019" comment="Banner Sessions Student Campus">
+		<plsql>alter table %SCHEMA%.banner_session add student_campus varchar2(500 char)</plsql>
+		<mysql>alter table %SCHEMA%.banner_session add student_campus varchar(500)</mysql>
+ 	</update>
  </dbupdate>

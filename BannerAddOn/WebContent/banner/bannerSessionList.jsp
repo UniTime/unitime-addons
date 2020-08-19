@@ -51,10 +51,10 @@
 					new String[] {
 						"Academic<br>Session", "Academic<br>Initiative", "Banner<br>Term&nbsp;Code",
 						"Banner<br>Campus", "Store&nbsp;Data<br>For&nbsp;Banner", "Send&nbsp;Data<br>To&nbsp;Banner", "Loading<br>Offerings",
-						"Future<br>Term", "Update<br>Mode"},
+						"Future<br>Term", "Update<br>Mode", "Student<br>Campus"},
 					new String[] { "left", "left", "left", "left",
-						"center", "center", "center", "left", "left" }, 
-					new boolean[] { true, true, false, false, false, true, true, true });
+						"center", "center", "center", "left", "left", "left"}, 
+					new boolean[] { true, true, false, false, false, true, true, true, true });
 					
 			webTable.enableHR("#EFEFEF");
 	        webTable.setRowStyle("white-space: nowrap");
@@ -74,7 +74,8 @@
 								s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
 								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ",
 								s.getFutureSession() == null ? "" : s.getFutureSession().getLabel(),
-								s.getFutureSessionUpdateModeLabel()},
+								s.getFutureSessionUpdateModeLabel(),
+								s.getStudentCampus()},
 							new Comparable[] {
 								s.getSession().getLabel(),
 								s.getSession().academicInitiativeDisplayString(),
@@ -84,7 +85,8 @@
 								s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'>" : "",
 								s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'>" : "",
 								s.getFutureSession() == null ? "" : s.getFutureSession().getLabel(),
-								s.getFutureSessionUpdateModeLabel()} );
+								s.getFutureSessionUpdateModeLabel(),
+								s.getStudentCampus() == null ? "" : s.getStudentCampus()} );
 			%>
 
 		</logic:iterate>

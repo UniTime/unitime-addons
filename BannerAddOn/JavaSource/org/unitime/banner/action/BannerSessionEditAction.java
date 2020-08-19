@@ -99,6 +99,7 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
 		sessionEditForm.setAcadSessionLabel(bannerSession.getSession().getLabel());
 		sessionEditForm.setFutureSessionId(bannerSession.getFutureSession() == null ? null : bannerSession.getFutureSession().getUniqueId());
 		sessionEditForm.setFutureUpdateMode(bannerSession.getFutureSessionUpdateModeInt());
+		sessionEditForm.setStudentCampus(bannerSession.getStudentCampus());
 		setBannerSessionsInForm(sessionEditForm);
 		return mapping.findForward("showEdit");
 	}
@@ -177,6 +178,7 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
             sessn.setLoadingOfferingsFile(sessionEditForm.getLoadingOfferingsFile() == null?new Boolean(false):sessionEditForm.getLoadingOfferingsFile());
             sessn.setFutureSessionUpdateModeInt(sessionEditForm.getFutureUpdateMode());
             sessn.setFutureSession(sessionEditForm.getFutureSessionId() == null ? null : BannerSessionDAO.getInstance().get(sessionEditForm.getFutureSessionId()));
+            sessn.setStudentCampus(sessionEditForm.getStudentCampus());
 
             hibSession.saveOrUpdate(sessn);
 

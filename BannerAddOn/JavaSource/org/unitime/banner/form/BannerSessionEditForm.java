@@ -50,6 +50,7 @@ public class BannerSessionEditForm extends ActionForm {
 	String acadSessionLabel;
 	ArrayList availableAcadSessions;
 	ArrayList availableBannerSessions;
+	String studentCampus;
 	/**
 	 * @return the availableAcadSessions
 	 */
@@ -263,4 +264,6 @@ public class BannerSessionEditForm extends ActionForm {
 	public void setFutureSessionId(Long futureSessionId) { this.futureSessionId = futureSessionId; }
 	public Integer getFutureUpdateMode() { return futureUpdateMode; }
 	public void setFutureUpdateMode(Integer futureUpdateMode) { this.futureUpdateMode = futureUpdateMode; }
+	public String getStudentCampus() { return studentCampus; }
+	public void setStudentCampus(String studentCampus) { this.studentCampus = studentCampus; }
 }
