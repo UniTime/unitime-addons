@@ -103,7 +103,7 @@ import org.unitime.timetable.util.Constants;
 @CheckMaster(Master.REQUIRED)
 public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerUpdateStudentAction.UpdateResult> {
 	private static final long serialVersionUID = 1L;
-	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iCampus;
+	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iCampus, iStudentCampus;
 	private List<String[]> iGroups = new ArrayList<String[]>();
 	private List<String[]> iAcadAreaClasfMj = new ArrayList<String[]>();
 	private boolean iUpdateAcadAreaClasfMj = false;
@@ -220,6 +220,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 
 				BannerSession bs = BannerSession.findBannerSessionForSession(server.getAcademicSession().getUniqueId(), helper.getHibSession());
 				iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
+				iStudentCampus = (bs == null ? null : bs.getStudentCampus());
 				
 				OnlineSectioningLog.Action.Builder action = helper.getAction();
 				
@@ -234,10 +235,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
 				if (!iAcadAreaClasfMj.isEmpty()) {
 					for (String[] areaClasf: iAcadAreaClasfMj) {
-						if (areaClasf[3] == null || areaClasf[3].equals(iCampus)) {
-							helper.getAction().addOptionBuilder().setKey("curriculum").setValue(areaClasf[0] + "/" + areaClasf[2] + " " + areaClasf[1]);
-							break;
+						String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2], campus = areaClasf[3];
+						if (iStudentCampus == null || iStudentCampus.isEmpty()) {
+							if (campus != null && !campus.equals(iCampus)) continue;
+						} else {
+							if (campus != null && !campus.matches(iStudentCampus)) continue;
 						}
+						helper.getAction().addOptionBuilder().setKey("curriculum").setValue(area + "/" + major + " " + clasf);
 					}
 				}
 					
@@ -364,6 +368,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			iSession = SessionDAO.getInstance().get(sessionId, helper.getHibSession());
 			BannerSession bs = BannerSession.findBannerSessionForSession(sessionId, helper.getHibSession());
 			iCampus = (bs == null ? iSession.getAcademicInitiative() : bs.getBannerCampus());
+			iStudentCampus = (bs == null ? null : bs.getStudentCampus());
 			
 			Student student = getStudent(helper);
 			result.setStudentId(student.getUniqueId());
@@ -582,7 +587,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			List<StudentAreaClassificationMajor> remaining = new ArrayList<StudentAreaClassificationMajor>(student.getAreaClasfMajors());
 			aac: for (String[] areaClasf: iAcadAreaClasfMj) {
 				String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2], campus = areaClasf[3];
-				if (campus != null && !campus.equals(iCampus)) continue;
+				if (iStudentCampus == null || iStudentCampus.isEmpty()) {
+					if (campus != null && !campus.equals(iCampus)) continue;
+				} else {
+					if (campus != null && !campus.matches(iStudentCampus)) continue;
+				}
 				for (Iterator<StudentAreaClassificationMajor> i = remaining.iterator(); i.hasNext(); ) {
 					StudentAreaClassificationMajor aac = i.next();
 					if ((area.equalsIgnoreCase(aac.getAcademicArea().getExternalUniqueId()) || area.equalsIgnoreCase(aac.getAcademicArea().getAcademicAreaAbbreviation())) &&
@@ -756,7 +765,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	protected boolean updateStudentGroups(Student student, OnlineSectioningHelper helper) {
 		Set<StudentGroup> groups = new HashSet<StudentGroup>();
 		for (String[] g: iGroups) {
-			if (g[1] != null && !iSession.getAcademicInitiative().equals(g[1])) continue;
+			if (g[1] != null) {
+				if (iStudentCampus == null || iStudentCampus.isEmpty()) {
+					if (!g[1].equals(iCampus)) continue;
+				} else {
+					if (!g[1].matches(iStudentCampus)) continue;
+				}
+			}
 			if (iIgnoreGroupRegExp != null && g[0].matches(iIgnoreGroupRegExp)) continue;
 			StudentGroup sg = null;
 			for (StudentGroup x: student.getGroups()) {
