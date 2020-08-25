@@ -105,7 +105,7 @@
 			name="studentCampus"
 			column="student_campus"
 			type="java.lang.String"
-			not-null="true"
+			not-null="false"
 			length="500"
 		/>
 	</class>
