@@ -202,8 +202,14 @@ public class ColleagueMessage {
 	private void createMeetingElementsXml(ColleagueSection colleagueSection, Session hibSession, Element sectionElement) {
 		Set<MeetingElement> initialMeetingElements = getInitialMeetingElements(colleagueSection, hibSession);
 		TreeSet<MeetingElement> meetingElements = mergeMeetings(initialMeetingElements);
+		HashMap<String, Integer> meetingRepeatCounts = new HashMap<String, Integer>();
 		for(MeetingElement me : meetingElements){
-			me.addMeetingElements(sectionElement);
+			if (meetingRepeatCounts.get(me.getMeetingId()) == null) {
+				meetingRepeatCounts.put(me.getMeetingId(), 0);
+			} else {
+				meetingRepeatCounts.put(me.getMeetingId(), meetingRepeatCounts.get(me.getMeetingId()) + 1);
+			}
+			me.addMeetingElements(sectionElement, meetingRepeatCounts.get(me.getMeetingId()).intValue());
 		}
 	}
 	
@@ -283,6 +289,10 @@ public class ColleagueMessage {
 	private Element beginSectionElement(ColleagueSection section, Class_ clazz, CourseOffering courseOffering, MessageAction action, ColleagueSession cSession, Session hibSession){
 		if (section.isDeleted() && !action.equals(MessageAction.DELETE)){
 			action = MessageAction.DELETE;
+		}
+		if (action.equals(MessageAction.DELETE) && section.getColleagueId() == null) {
+			Debug.info("Colleague section uid = " + section.getUniqueId().toString() + " does not have a colleague synonym.");	
+			return(null);
 		}
 
 		if (!action.equals(MessageAction.DELETE) && (section.getCourseOffering(hibSession) == null || courseOffering == null)){

@@ -372,10 +372,9 @@ public class MeetingElement implements Comparable<MeetingElement> {
 		return(tm);
 	}
 	
-	public void addMeetingElements(Element sectionElement){
-		
+	public void addMeetingElements(Element sectionElement, int meetingRepeatCount){
 		Element meetingElement = sectionElement.addElement("MEETING");
-		meetingElement.addAttribute("MEETING_ID", meetingId);
+		meetingElement.addAttribute("MEETING_ID", meetingId + (meetingRepeatCount > 0 ? "-" + meetingRepeatCount : ""));
 		meetingElement.addAttribute("INSTRUCTIONAL_METHOD", instructionalMethod);
 		if (monday){
 			meetingElement.addAttribute("MONDAY", "M");
