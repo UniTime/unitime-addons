@@ -24,6 +24,10 @@ import java.util.Date;
 
 import org.unitime.banner.model.QueueError;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseQueueError implements Serializable {
 	private static final long serialVersionUID = 1L;
 

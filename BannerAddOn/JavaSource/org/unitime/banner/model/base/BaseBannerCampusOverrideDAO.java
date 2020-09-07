@@ -20,9 +20,13 @@
 package org.unitime.banner.model.base;
 
 import org.unitime.banner.model.BannerCampusOverride;
-import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
 import org.unitime.banner.model.dao._RootDAO;
+import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerCampusOverrideDAO extends _RootDAO<BannerCampusOverride,Long> {
 
 	private static BannerCampusOverrideDAO sInstance;
@@ -35,5 +39,4 @@ public abstract class BaseBannerCampusOverrideDAO extends _RootDAO<BannerCampusO
 	public Class<BannerCampusOverride> getReferenceClass() {
 		return BannerCampusOverride.class;
 	}
-
 }

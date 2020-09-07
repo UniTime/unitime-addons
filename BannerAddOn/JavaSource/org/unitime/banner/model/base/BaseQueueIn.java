@@ -24,6 +24,10 @@ import java.io.Serializable;
 import org.unitime.banner.model.Queue;
 import org.unitime.banner.model.QueueIn;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseQueueIn extends Queue implements Serializable {
 	private static final long serialVersionUID = 1L;
 

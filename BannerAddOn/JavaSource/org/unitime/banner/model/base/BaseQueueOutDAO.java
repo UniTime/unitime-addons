@@ -23,6 +23,10 @@ import org.unitime.banner.model.QueueOut;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.QueueOutDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseQueueOutDAO extends _RootDAO<QueueOut,Long> {
 
 	private static QueueOutDAO sInstance;

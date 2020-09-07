@@ -28,6 +28,10 @@ import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.timetable.model.ItypeDesc;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -65,6 +69,9 @@ public abstract class BaseBannerConfig implements Serializable {
 	public Long getUniqueIdRolledForwardFrom() { return iUniqueIdRolledForwardFrom; }
 	public void setUniqueIdRolledForwardFrom(Long uniqueIdRolledForwardFrom) { iUniqueIdRolledForwardFrom = uniqueIdRolledForwardFrom; }
 
+	public Float getLabHours() { return iLabHours; }
+	public void setLabHours(Float labHours) { iLabHours = labHours; }
+
 	public ItypeDesc getGradableItype() { return iGradableItype; }
 	public void setGradableItype(ItypeDesc gradableItype) { iGradableItype = gradableItype; }
 
@@ -77,10 +84,6 @@ public abstract class BaseBannerConfig implements Serializable {
 		if (iBannerSections == null) iBannerSections = new HashSet<BannerSection>();
 		iBannerSections.add(bannerSection);
 	}
-	
-	public Float getLabHours() { return iLabHours; }
-	public void setLabHours(Float labHours) { iLabHours = labHours; }
-
 
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerConfig)) return false;
@@ -102,6 +105,7 @@ public abstract class BaseBannerConfig implements Serializable {
 			"\n	BannerCourse: " + getBannerCourse() +
 			"\n	GradableItype: " + getGradableItype() +
 			"\n	InstrOfferingConfigId: " + getInstrOfferingConfigId() +
+			"\n	LabHours: " + getLabHours() +
 			"\n	UniqueId: " + getUniqueId() +
 			"\n	UniqueIdRolledForwardFrom: " + getUniqueIdRolledForwardFrom() +
 			"]";

@@ -23,6 +23,10 @@ import java.io.Serializable;
 
 import org.unitime.banner.model.BannerCampusOverride;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerCampusOverride implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -30,6 +34,7 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 	private String iBannerCampusCode;
 	private String iBannerCampusName;
 	private Boolean iVisible;
+
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_BANNER_CAMPUS_CODE = "bannerCampusCode";
@@ -79,8 +84,8 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 		return "BannerCampusOverride[" +
 			"\n	BannerCampusCode: " + getBannerCampusCode() +
 			"\n	BannerCampusName: " + getBannerCampusName() +
-			"\n	Visible: " + getVisible() +
 			"\n	UniqueId: " + getUniqueId() +
+			"\n	Visible: " + getVisible() +
 			"]";
 	}
 }

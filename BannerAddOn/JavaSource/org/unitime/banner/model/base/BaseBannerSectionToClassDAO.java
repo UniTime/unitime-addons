@@ -25,6 +25,10 @@ import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.BannerSectionToClassDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerSectionToClassDAO extends _RootDAO<BannerSectionToClass,Long> {
 
 	private static BannerSectionToClassDAO sInstance;

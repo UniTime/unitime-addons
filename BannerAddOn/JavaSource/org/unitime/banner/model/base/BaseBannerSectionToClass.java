@@ -24,6 +24,10 @@ import java.io.Serializable;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerSectionToClass implements Serializable {
 	private static final long serialVersionUID = 1L;
 

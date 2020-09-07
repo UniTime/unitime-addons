@@ -25,6 +25,10 @@ import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerSectionDAO extends _RootDAO<BannerSection,Long> {
 
 	private static BannerSectionDAO sInstance;
@@ -56,5 +60,10 @@ public abstract class BaseBannerSectionDAO extends _RootDAO<BannerSection,Long> 
 	@SuppressWarnings("unchecked")
 	public List<BannerSection> findByParentBannerSection(org.hibernate.Session hibSession, Long parentBannerSectionId) {
 		return hibSession.createQuery("from BannerSection x where x.parentBannerSection.uniqueId = :parentBannerSectionId").setLong("parentBannerSectionId", parentBannerSectionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerSection> findByBannerCampusOverride(org.hibernate.Session hibSession, Long bannerCampusOverrideId) {
+		return hibSession.createQuery("from BannerSection x where x.bannerCampusOverride.uniqueId = :bannerCampusOverrideId").setLong("bannerCampusOverrideId", bannerCampusOverrideId).list();
 	}
 }

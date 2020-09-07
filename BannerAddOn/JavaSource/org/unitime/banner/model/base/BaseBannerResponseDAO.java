@@ -23,6 +23,10 @@ import org.unitime.banner.model.BannerResponse;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.BannerResponseDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerResponseDAO extends _RootDAO<BannerResponse,Long> {
 
 	private static BannerResponseDAO sInstance;

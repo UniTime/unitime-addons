@@ -23,6 +23,10 @@ import org.unitime.banner.model.Queue;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.QueueDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseQueueDAO extends _RootDAO<Queue,Long> {
 
 	private static QueueDAO sInstance;

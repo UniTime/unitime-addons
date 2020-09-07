@@ -25,6 +25,10 @@ import java.util.Date;
 import org.unitime.banner.model.Queue;
 import org.unitime.banner.model.QueueOut;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseQueueOut extends Queue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
