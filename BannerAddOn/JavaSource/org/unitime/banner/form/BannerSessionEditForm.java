@@ -189,6 +189,8 @@ public class BannerSessionEditForm extends ActionForm {
 	Boolean loadingOfferingsFile;
 	Long futureSessionId;
 	Integer futureUpdateMode;
+	Boolean useSubjectAreaPrefixAsCampus;
+	String subjectAreaPrefixDelimiter;
 		
 	// --------------------------------------------------------- Methods
 	
@@ -235,6 +237,26 @@ public class BannerSessionEditForm extends ActionForm {
 		this.session = session;
 	}
 	
+	public Boolean getUseSubjectAreaPrefixAsCampus() {
+		return useSubjectAreaPrefixAsCampus;
+	}
+
+
+	public void setUseSubjectAreaPrefixAsCampus(Boolean useSubjectAreaPrefixAsCampus) {
+		this.useSubjectAreaPrefixAsCampus = useSubjectAreaPrefixAsCampus;
+	}
+
+
+	public String getSubjectAreaPrefixDelimiter() {
+		return subjectAreaPrefixDelimiter;
+	}
+
+
+	public void setSubjectAreaPrefixDelimiter(String subjectAreaPrefixDelimiter) {
+		this.subjectAreaPrefixDelimiter = subjectAreaPrefixDelimiter;
+	}
+
+
 	public boolean equals(Object arg0) {
 		return session.equals(arg0);
 	}

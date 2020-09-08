@@ -17,26 +17,20 @@
  * limitations under the License.
  * 
 */
-package org.unitime.banner.model.base;
 
-import org.unitime.banner.model.BannerTermCrnProperties;
-import org.unitime.banner.model.dao._RootDAO;
-import org.unitime.banner.model.dao.BannerTermCrnPropertiesDAO;
+package org.unitime.banner.interfaces;
+
+import org.unitime.banner.model.BannerSection;
+import org.unitime.banner.model.BannerSession;
+import org.unitime.timetable.model.Class_;
 
 /**
- * Do not change this class. It has been automatically generated using ant create-model.
- * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ * 
+ * @author says
+ *
  */
-public abstract class BaseBannerTermCrnPropertiesDAO extends _RootDAO<BannerTermCrnProperties,Long> {
-
-	private static BannerTermCrnPropertiesDAO sInstance;
-
-	public static BannerTermCrnPropertiesDAO getInstance() {
-		if (sInstance == null) sInstance = new BannerTermCrnPropertiesDAO();
-		return sInstance;
-	}
-
-	public Class<BannerTermCrnProperties> getReferenceClass() {
-		return BannerTermCrnProperties.class;
-	}
+public interface ExternalBannerSubjectAreaElementHelperInterface {
+	
+	public String getBannerSubjectAreaAbbreviation(BannerSection bannerSection, BannerSession bannerSession, Class_ clazz);
+	
 }

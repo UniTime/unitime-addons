@@ -147,7 +147,19 @@
 				<font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<b>Note:</b> May contain a regular expression that the student campus code must match.</font>
 			</TD>
 		</TR>
+		<TR>
+			<TD>Use Subject Area Prefix As Campus:</TD>
+			<TD colspan='2' align="left">
+				<html:checkbox property="useSubjectAreaPrefixAsCampus"/>
+			</TD>
+		</TR>
 						
+		<TR>
+			<TD>Subject Area Prefix Delimiter (default = " - "):</TD>
+			<TD colspan='2'>
+				<html:text property="subjectAreaPrefixDelimiter" maxlength="5" size="5"/>
+			</TD>
+		</TR>
 		
 		<TR>
 			<TD colspan="3">

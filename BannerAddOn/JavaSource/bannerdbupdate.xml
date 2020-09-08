@@ -162,4 +162,368 @@
 		<plsql>alter table %SCHEMA%.banner_session add student_campus varchar2(500 char)</plsql>
 		<mysql>alter table %SCHEMA%.banner_session add student_campus varchar(500)</mysql>
  	</update>
+ 	 	<update version="11" date="21-Aug-2020" comment="Banner Session CRN Properties Changes">
+ 	    <plsql>alter table %SCHEMA%.banner_session add banner_term_crn_prop_id number(20)</plsql>
+ 	    <plsql>alter table %SCHEMA%.banner_session add use_subj_area_prfx_as_campus number(1)</plsql>
+		<plsql>alter table %SCHEMA%.banner_session add subj_area_prfx_delim varchar2(5 char)</plsql>
+		<mysql>alter table %SCHEMA%.banner_session add banner_term_crn_prop_id decimal(20,0)</mysql>
+ 	    <mysql>alter table %SCHEMA%.banner_session add use_subj_area_prfx_as_campus decimal(1,0)</mysql>
+		<mysql>alter table %SCHEMA%.banner_session add subj_area_prfx_delim varchar(5)</mysql>
+		<sql>
+			alter table %SCHEMA%.banner_session add constraint fk_ban_trm_to_crn_prop foreign key (banner_term_crn_prop_id)
+			references %SCHEMA%.banner_crn_provider (uniqueid) on delete set null
+		</sql>
+		<sql>
+			update %SCHEMA%.banner_session
+			set banner_session.banner_term_crn_prop_id = (select banner_crn_provider.uniqueid from %SCHEMA%.banner_crn_provider where banner_crn_provider.term_code = banner_session.banner_term_code)
+		</sql>
+		<plsql>
+		<![CDATA[create or replace PACKAGE %SCHEMA%.crn_processor IS
+
+  -- Author  : JRM
+  -- Created : 4/22/2009 11:19:43 AM
+  -- Purpose : Provide CRN for Banner sections
+
+  -- banner_crn_provider table
+  --   create table banner_crn_provider
+  --   (
+  --          term_code   varchar2(20) not null,
+  --        last_crn    number(10) not null,
+  --        search_flag char(1) not null,
+  --        min_crn number(10) not null,
+  --        max_crn number(10) not null
+  --   );
+
+  -- Public function and procedure declarations
+  FUNCTION get_crn(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE)
+    RETURN %SCHEMA%.banner_section.crn%TYPE;
+
+END crn_processor;]]></plsql>
+<plsql><![CDATA[create or replace PACKAGE BODY %SCHEMA%.crn_processor IS
+
+  FUNCTION get_max_crn(term_code IN %SCHEMA%.banner_session.banner_term_code%TYPE,
+                       crn_min   IN %SCHEMA%.banner_crn_provider.min_crn%TYPE,
+                       crn_max   IN %SCHEMA%.banner_crn_provider.max_crn%TYPE)
+    RETURN %SCHEMA%.banner_section.crn%TYPE IS
+
+    max_crn %SCHEMA%.banner_section.crn%TYPE;
+
+  BEGIN
+
+    BEGIN
+      SELECT MAX(crn)
+        INTO max_crn
+        FROM %SCHEMA%.banner_section
+       WHERE banner_section.session_id IN
+             (SELECT session_id
+                FROM %SCHEMA%.banner_session
+               WHERE banner_term_code = term_code);
+    EXCEPTION
+      WHEN no_data_found THEN
+        max_crn := crn_min;
+    END;
+
+    IF (max_crn > crn_max) THEN
+      max_crn := crn_max;
+    END IF;
+
+    IF (max_crn < crn_min) THEN
+      max_crn := crn_min;
+    END IF;
+
+    RETURN max_crn;
+
+  END get_max_crn;
+
+  FUNCTION get_min_crn(term_code IN %SCHEMA%.banner_session.banner_term_code%TYPE,
+                       crn_min   IN %SCHEMA%.banner_crn_provider.min_crn%TYPE)
+    RETURN %SCHEMA%.banner_section.crn%TYPE IS
+
+    min_crn %SCHEMA%.banner_section.crn%TYPE;
+
+  BEGIN
+
+    BEGIN
+      SELECT MIN(crn)
+        INTO min_crn
+        FROM %SCHEMA%.banner_section
+       WHERE banner_section.session_id IN
+             (SELECT session_id
+                FROM %SCHEMA%.banner_session
+               WHERE banner_term_code = term_code);
+    EXCEPTION
+      WHEN no_data_found THEN
+        min_crn := crn_min;
+    END;
+
+    IF (min_crn < crn_min) THEN
+      min_crn := crn_min;
+    END IF;
+
+    RETURN min_crn;
+
+  END get_min_crn;
+
+  FUNCTION get_next_unused_crn(term_code IN %SCHEMA%.banner_session.banner_term_code%TYPE,
+                               start_crn IN %SCHEMA%.banner_section.crn%TYPE,
+                               crn_min   IN %SCHEMA%.banner_crn_provider.min_crn%TYPE,
+                               crn_max   IN %SCHEMA%.banner_crn_provider.max_crn%TYPE)
+    RETURN %SCHEMA%.banner_section.crn%TYPE IS
+
+    TYPE crn_type IS TABLE OF %SCHEMA%.banner_section.crn%TYPE;
+    crn_table crn_type;
+
+    next_crn %SCHEMA%.banner_section.crn%TYPE;
+
+    restart_search BOOLEAN;
+    answer         BOOLEAN;
+
+  BEGIN
+    next_crn       := start_crn + 1;
+    restart_search := FALSE;
+
+    SELECT banner_section.crn BULK COLLECT
+      INTO crn_table
+      FROM %SCHEMA%.banner_section
+     WHERE banner_section.session_id IN
+           (SELECT session_id
+              FROM %SCHEMA%.banner_session
+             WHERE banner_term_code = term_code);
+
+    LOOP
+      answer := next_crn NOT MEMBER OF crn_table;
+      IF (answer IS NULL OR answer) THEN
+        EXIT;
+      ELSE
+        next_crn := next_crn + 1;
+
+        IF (next_crn > crn_max) THEN
+          IF (restart_search) THEN
+            raise_application_error(-20999,
+                                    'No unused CRN is available (' ||
+                                    term_code || ')');
+          ELSE
+            next_crn       := get_min_crn(term_code, crn_min);
+            restart_search := TRUE;
+          END IF;
+        END IF;
+      END IF;
+    END LOOP;
+
+    RETURN next_crn;
+
+  END get_next_unused_crn;
+
+  FUNCTION get_crn(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE)
+    RETURN %SCHEMA%.banner_section.crn%TYPE IS
+
+    v_term_code %SCHEMA%.banner_session.banner_term_code%TYPE;
+    v_crn_prov_id  %SCHEMA%.banner_crn_provider.uniqueid%TYPE;
+    v_next_crn  %SCHEMA%.banner_crn_provider.last_crn%TYPE;
+    v_min_crn   %SCHEMA%.banner_crn_provider.min_crn%TYPE;
+    v_max_crn   %SCHEMA%.banner_crn_provider.max_crn%TYPE;
+    v_search    %SCHEMA%.banner_crn_provider.search_flag%TYPE;
+    v_new_crn_prov_id  %SCHEMA%.banner_crn_provider.uniqueid%TYPE;
+
+  BEGIN
+
+    v_term_code := section_processor.get_term_code(sesn_id);
+
+    BEGIN
+      SELECT banner_crn_provider.uniqueid,
+             banner_crn_provider.last_crn,
+             banner_crn_provider.min_crn,
+             banner_crn_provider.max_crn,
+             banner_crn_provider.search_flag
+        INTO v_crn_prov_id,
+	           v_next_crn,
+             v_min_crn,
+             v_max_crn,
+             v_search
+       FROM %SCHEMA%.banner_session
+       INNER JOIN %SCHEMA%.banner_crn_provider on banner_crn_provider.uniqueid = banner_session.banner_term_crn_prop_id
+       WHERE banner_session.session_id = sesn_id;
+    EXCEPTION
+      WHEN no_data_found THEN
+        v_min_crn  := 10000;
+        v_max_crn  := 69999;
+        v_next_crn := get_max_crn(v_term_code, v_min_crn, v_max_crn);
+    END;
+
+    IF (v_search IS NOT NULL AND (v_search = 'Y' or v_search = '1')) THEN
+      v_next_crn := get_next_unused_crn(v_term_code, v_next_crn, v_min_crn, v_max_crn);
+    ELSE
+      v_next_crn := v_next_crn + 1;
+    END IF;
+
+    IF (v_next_crn > v_max_crn) THEN
+      v_next_crn := get_min_crn(v_term_code, v_min_crn);
+      v_next_crn := get_next_unused_crn(v_term_code, v_next_crn, v_min_crn, v_max_crn);
+      v_search   := '1';
+    END IF;
+
+    IF (v_crn_prov_id IS NULL) THEN
+      BEGIN
+	      SELECT pref_group_seq.nextval
+	      INTO v_new_crn_prov_id
+	      FROM dual;
+      END;
+      INSERT INTO %SCHEMA%.banner_crn_provider
+      VALUES
+        (v_new_crn_prov_id, v_term_code,
+         v_next_crn,
+         '1',
+         v_min_crn,
+         v_max_crn);
+      UPDATE %SCHEMA%.banner_session
+      SET banner_term_crn_prop_id = v_new_crn_prov_id
+      WHERE session_id = sesn_id;
+    ELSE
+      UPDATE %SCHEMA%.banner_crn_provider
+         SET last_crn    = v_next_crn,
+             search_flag = v_search
+      WHERE uniqueid = v_crn_prov_id;
+    END IF;
+    COMMIT;
+
+    RETURN v_next_crn;
+
+  END get_crn;
+
+END crn_processor;]]>
+</plsql>		
+<mysql>DROP FUNCTION IF EXISTS %SCHEMA%.get_crn_provider_id</mysql>
+<mysql>
+CREATE FUNCTION %SCHEMA%.get_crn_provider_id(sesn_id DECIMAL(20, 0))
+    RETURNS DECIMAL(20, 0)
+
+  BEGIN
+    declare crn_provider_id DECIMAL(20, 0);
+
+
+    BEGIN
+      SELECT banner_session.banner_term_crn_prop_id
+        INTO crn_provider_id
+        FROM %SCHEMA%.banner_session
+       WHERE banner_session.session_id = sesn_id;
+    END;
+
+    RETURN crn_provider_id;
+
+  END
+</mysql>
+<mysql>DROP PROCEDURE IF EXISTS %SCHEMA%.insert_crn_provider_rec</mysql>
+<mysql>
+  CREATE PROCEDURE %SCHEMA%.insert_crn_provider_rec(v_term_code VARCHAR(20),
+         v_next_crn  BIGINT(10),
+         v_min_crn   BIGINT(10),
+         v_max_crn   BIGINT(10),
+         v_sesn_id DECIMAL(20, 0)) 
+   BEGIN
+        DECLARE next_id DECIMAL(20,0);
+      start transaction;
+      select 32767 * next_hi
+      into next_id 
+      from %SCHEMA%.hibernate_unique_key;
+      
+      INSERT INTO %SCHEMA%.banner_crn_provider
+      VALUES
+        (next_id, v_term_code,
+         v_next_crn,
+         '1',
+         v_min_crn,
+         v_max_crn);
+         
+      update %SCHEMA%.banner_session
+      set banner_term_crn_prop_id = next_id
+      where session_id = v_sesn_id;
+      
+      update %SCHEMA%.hibernate_unique_key set next_hi = next_hi+1;
+      commit;
+
+  END
+  </mysql>
+<mysql>DROP PROCEDURE IF EXISTS %SCHEMA%.update_crn_provider_rec</mysql>
+  <mysql>
+  CREATE PROCEDURE %SCHEMA%.update_crn_provider_rec(v_banner_crn_provider_id DECIMAL(20, 0),
+       v_next_crn  BIGINT(10),
+       v_search    CHAR(1)) 
+
+  BEGIN
+        start transaction;
+        UPDATE %SCHEMA%.banner_crn_provider
+           SET last_crn    = v_next_crn,
+               search_flag = v_search
+        WHERE uniqueid = v_banner_crn_provider_id;
+        COMMIT;
+  END
+  </mysql>
+<mysql>DROP PROCEDURE IF EXISTS %SCHEMA%.get_crn</mysql>
+<mysql>
+CREATE PROCEDURE %SCHEMA%.get_crn(OUT out_crn BIGINT(10), IN sesn_id LONG)
+
+BEGIN
+    DECLARE v_term_code VARCHAR(20);
+    DECLARE v_banner_crn_provider_id DECIMAL(20, 0);
+    DECLARE v_next_crn  BIGINT(10);
+    DECLARE v_min_crn   BIGINT(10);
+    DECLARE v_max_crn   BIGINT(10);
+    DECLARE v_search    CHAR(1);
+
+    SET v_term_code = get_term_code(sesn_id);
+    SET v_banner_crn_provider_id = get_crn_provider_id(sesn_id);
+
+    BEGIN
+      SELECT banner_crn_provider.last_crn,
+             banner_crn_provider.min_crn,
+             banner_crn_provider.max_crn,
+             banner_crn_provider.search_flag
+        INTO v_next_crn,
+             v_min_crn,
+             v_max_crn,
+             v_search
+        FROM %SCHEMA%.banner_crn_provider
+       WHERE banner_crn_provider.uniqueid = v_banner_crn_provider_id;
+    END;
+    
+    IF (v_min_crn IS NULL) THEN
+        SET v_min_crn  = 10000;
+        SET v_max_crn  = 69999;
+        SET v_next_crn = get_max_crn(v_term_code,
+                                v_min_crn,
+                                v_max_crn);
+    END IF;
+
+    IF (v_search IS NULL OR v_search = 'Y' or v_search = '1') THEN
+      SET v_next_crn = get_next_unused_crn(v_term_code,
+                                      v_next_crn,
+                                      v_min_crn,
+                                      v_max_crn);
+    ELSE
+      SET v_next_crn = v_next_crn + 1;
+    END IF;
+
+    IF (v_next_crn > v_max_crn) THEN
+      SET v_next_crn = get_min_crn(v_term_code,
+                              v_min_crn);
+      SET v_next_crn = get_next_unused_crn(v_term_code,
+                                      v_next_crn,
+                                      v_min_crn,
+                                      v_max_crn);
+      SET v_search   = '1';
+    END IF;
+
+    IF (v_banner_crn_provider_id IS NULL) THEN
+	    call insert_crn_provider_rec(v_term_code,
+	       v_next_crn,
+	       v_min_crn,
+	       v_max_crn,
+         sesn_id); 
+    ELSE
+      call update_crn_provider_rec(v_banner_crn_provider_id, v_next_crn, v_search);
+    END IF;
+    set out_crn = v_next_crn;
+  END 
+  </mysql>
+  	</update>
  </dbupdate>

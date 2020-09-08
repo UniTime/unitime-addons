@@ -38,11 +38,13 @@ import org.hibernate.engine.spi.SessionImplementor;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
+import org.unitime.banner.interfaces.ExternalBannerSubjectAreaElementHelperInterface;
 import org.unitime.banner.model.base.BaseBannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.banner.util.BannerCrnValidator;
 import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
+import org.unitime.banner.util.DefaultExternalBannerSubjectAreaElementHelper;
 import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.timetable.ApplicationProperties;
@@ -81,6 +83,7 @@ public class BannerSection extends BaseBannerSection {
 	 */
 	private static final long serialVersionUID = -7327253389631092870L;
 	private static ExternalBannerCampusCodeElementHelperInterface externalCampusCodeElementHelper;
+	private static ExternalBannerSubjectAreaElementHelperInterface externalSubjectAreaElementHelper;
 
 
 	/*[CONSTRUCTOR MARKER BEGIN]*/
@@ -1176,6 +1179,34 @@ public class BannerSection extends BaseBannerSection {
 
 	}
 
+	private ExternalBannerSubjectAreaElementHelperInterface getExternalSubjectAreaElementHelper(){
+		if (externalSubjectAreaElementHelper == null){
+            String className = ApplicationProperties.getProperty("tmtbl.banner.subjectArea.element.helper");
+        	if (className != null && className.trim().length() > 0){
+        		try {
+        			externalSubjectAreaElementHelper = (ExternalBannerSubjectAreaElementHelperInterface) (Class.forName(className).newInstance());
+				} catch (InstantiationException e) {
+					Debug.error("Failed to instantiate instance of: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+				} catch (IllegalAccessException e) {
+					Debug.error("Illegal Access Exception on: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+				} catch (ClassNotFoundException e) {
+					Debug.error("Failed to find class: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+				}
+        	} else {
+        		externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+        	}
+		}
+		return externalSubjectAreaElementHelper;
+
+	}
+
+	
 	public String getCampusCode(BannerSession bannerSession,
 			Class_ clazz) {
 		if (this.getBannerCampusOverride() != null){
@@ -1185,9 +1216,13 @@ public class BannerSection extends BaseBannerSection {
 		}
 	}
 
-	public String getDefualtCampusCode(BannerSession bannerSession,
+	public String getDefaultCampusCode(BannerSession bannerSession,
 			Class_ clazz) {
 		return(getExternalCampusCodeElementHelper().getDefaultCampusCode(this, bannerSession, clazz));
+	}
+	
+	public String getBannerSubjectArea(BannerSession bannerSession, Class_ clazz) {
+		return(getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(this, bannerSession, clazz));
 	}
 
 	public boolean isCanceled(Session hibSession){

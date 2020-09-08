@@ -73,6 +73,19 @@
 			type="java.lang.Integer"
 			not-null="true"
 		/>
+		
+        <set
+            name="bannerSessions"
+            inverse="true"
+            lazy="true"
+            cascade="none"
+            table="banner_session"
+            order-by="uniqueid">
+
+            <cache include="non-lazy" usage="transactional"/>
+            <key column="banner_term_crn_prop_id"/>
+            <one-to-many class="BannerSession"/>
+        </set>
 				
 	</class>
 

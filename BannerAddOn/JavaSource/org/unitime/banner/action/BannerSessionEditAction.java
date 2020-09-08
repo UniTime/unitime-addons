@@ -100,6 +100,8 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
 		sessionEditForm.setFutureSessionId(bannerSession.getFutureSession() == null ? null : bannerSession.getFutureSession().getUniqueId());
 		sessionEditForm.setFutureUpdateMode(bannerSession.getFutureSessionUpdateModeInt());
 		sessionEditForm.setStudentCampus(bannerSession.getStudentCampus());
+		sessionEditForm.setUseSubjectAreaPrefixAsCampus(bannerSession.isUseSubjectAreaPrefixAsCampus());
+		sessionEditForm.setSubjectAreaPrefixDelimiter(bannerSession.getSubjectAreaPrefixDelimiter());
 		setBannerSessionsInForm(sessionEditForm);
 		return mapping.findForward("showEdit");
 	}
@@ -179,6 +181,8 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
             sessn.setFutureSessionUpdateModeInt(sessionEditForm.getFutureUpdateMode());
             sessn.setFutureSession(sessionEditForm.getFutureSessionId() == null ? null : BannerSessionDAO.getInstance().get(sessionEditForm.getFutureSessionId()));
             sessn.setStudentCampus(sessionEditForm.getStudentCampus());
+            sessn.setUseSubjectAreaPrefixAsCampus(sessionEditForm.getUseSubjectAreaPrefixAsCampus());
+            sessn.setSubjectAreaPrefixDelimiter(sessionEditForm.getSubjectAreaPrefixDelimiter());
 
             hibSession.saveOrUpdate(sessn);
 

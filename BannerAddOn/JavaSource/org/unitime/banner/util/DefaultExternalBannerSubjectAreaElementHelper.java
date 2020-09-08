@@ -20,7 +20,7 @@
 
 package org.unitime.banner.util;
 
-import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
+import org.unitime.banner.interfaces.ExternalBannerSubjectAreaElementHelperInterface;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.model.Class_;
@@ -30,28 +30,28 @@ import org.unitime.timetable.model.Class_;
  * @author says
  *
  */
-public class DefaultExternalBannerCampusCodeElementHelper implements
-		ExternalBannerCampusCodeElementHelperInterface {
+public class DefaultExternalBannerSubjectAreaElementHelper implements
+ExternalBannerSubjectAreaElementHelperInterface {
 
 
 	@Override
-	public String getDefaultCampusCode(BannerSection bannerSection, BannerSession bannerSession,
+	public String getBannerSubjectAreaAbbreviation(BannerSection bannerSection, BannerSession bannerSession,
 			Class_ clazz) {
-		String prefix = null;
+		String subj = null;
 		if (bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
-			String delimiter = (bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("") ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
+			String delimiter = ((bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("")) ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
 			if (bannerSection.getBannerConfig() != null 
 					&& bannerSection.getBannerConfig().getBannerCourse() != null 
 					&& bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null) != null
 				    && bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea() != null 
 				    && bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter) >= 0) {
-				prefix = bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().substring(0, bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter));				
+				subj = bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().substring(bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter) + delimiter.length());				
 			}
 		}
-		if (prefix == null) {
-			return(bannerSession.getBannerCampus());
+		if (subj == null) {
+			return (bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectAreaAbbv());
 		} else {
-			return(prefix);
+			return(subj);
 		}
 	}
 

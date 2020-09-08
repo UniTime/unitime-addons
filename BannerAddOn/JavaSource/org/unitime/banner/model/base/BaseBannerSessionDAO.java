@@ -25,6 +25,10 @@ import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.BannerSessionDAO;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerSessionDAO extends _RootDAO<BannerSession,Long> {
 
 	private static BannerSessionDAO sInstance;
@@ -46,5 +50,10 @@ public abstract class BaseBannerSessionDAO extends _RootDAO<BannerSession,Long> 
 	@SuppressWarnings("unchecked")
 	public List<BannerSession> findByFutureSession(org.hibernate.Session hibSession, Long futureSessionId) {
 		return hibSession.createQuery("from BannerSession x where x.futureSession.uniqueId = :futureSessionId").setLong("futureSessionId", futureSessionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerSession> findByBannerTermCrnProperties(org.hibernate.Session hibSession, Long bannerTermCrnPropertiesId) {
+		return hibSession.createQuery("from BannerSession x where x.bannerTermCrnProperties.uniqueId = :bannerTermCrnPropertiesId").setLong("bannerTermCrnPropertiesId", bannerTermCrnPropertiesId).list();
 	}
 }

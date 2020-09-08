@@ -20,7 +20,9 @@
 
 package org.unitime.banner.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 import org.hibernate.Session;
 import org.unitime.banner.model.base.BaseBannerTermCrnProperties;
@@ -53,13 +55,39 @@ public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 
 		return((BannerTermCrnProperties)BannerTermCrnPropertiesDAO.getInstance().getQuery("from BannerTermCrnProperties btcp where btcp.bannerTermCode = :bannerTermCode", session).setString("bannerTermCode", bannerTermCode).uniqueResult());
 	}
+	
+	public static HashSet<BannerTermCrnProperties> findAllBannerTermCrnPropertiesForBannerSessions(ArrayList<Long> bannerSessionIds){
+		HashSet<BannerTermCrnProperties> crnProps = new HashSet<BannerTermCrnProperties>();
+		for (Long bsId : bannerSessionIds) {
+			BannerSession bs = BannerSession.getBannerSessionById(bsId);
+			if (bs.getBannerTermCrnProperties() != null) {
+				crnProps.add(bs.getBannerTermCrnProperties());
+			}
+		}
+		return(crnProps);
+	}
 
 	public static BannerTermCrnProperties getBannerTermCrnPropertiesById(Long id) {
 		return(BannerTermCrnPropertiesDAO.getInstance().get(id));
 	}
 
-	public static Collection getAllBannerTermCrnProperties() {
+	@SuppressWarnings("unchecked")
+	public static Collection<BannerTermCrnProperties> getAllBannerTermCrnProperties() {
 		return(BannerTermCrnPropertiesDAO.getInstance().getQuery("from BannerTermCrnProperties").list());
+	}
+	
+	public String getBannerSessionsLabel() {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (BannerSession bs : this.getBannerSessions()) {
+			if (first) {
+				first = false;
+			} else {
+				sb.append(";");
+			}
+			sb.append(bs.getLabel());
+		}
+		return(sb.toString());
 	}
 
 

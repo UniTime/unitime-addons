@@ -45,13 +45,13 @@
 	<table width="90%" border="0" cellspacing="0" cellpadding="3">
 		<%
 			WebTable webTable = new WebTable(
-					5, "", "bannerTermCrnPropertiesList.do?order=%%",					
+					6, "", "bannerTermCrnPropertiesList.do?order=%%",					
 					new String[] {
-						"Banner<br>Term&nbsp;Code", "Last&nbsp;CRN", "Minimum<br>CRN",
+						"Banner<br>Term&nbsp;Code", "Banner<br>Sessions", "Last&nbsp;CRN", "Minimum<br>CRN",
 						"Maximum<br>CRN", "Search<br>Flag" },
-					new String[] { "left", "left", "left", "left",
+					new String[] { "left", "left", "left", "left", "left",
 						"center" }, 
-					new boolean[] { true, true, true, true, false });
+					new boolean[] { true, true, true, true, true, false });
 					
 			webTable.enableHR("#EFEFEF");
 	        webTable.setRowStyle("white-space: nowrap");
@@ -66,12 +66,14 @@
 							"onClick=\"document.location='bannerTermCrnPropertiesEdit.do?doit=editSession&bannerTermCrnPropertiesId=" + s.getUniqueId() + "';\"",
 							new String[] {
 								s.getBannerTermCode() + "&nbsp;",
+								s.getBannerSessionsLabel() + "&nbsp;",
 								s.getLastCrn().toString() + "&nbsp;",
 								s.getMinCrn().toString() + "&nbsp;",
 								s.getMaxCrn().toString() + "&nbsp;",
 								s.isSearchFlag().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; "},
 							new Comparable[] {
 								s.getBannerTermCode(),
+								s.getBannerSessionsLabel(),
 								s.getLastCrn().toString(),
 								s.getMinCrn(),
 								s.getMaxCrn(),

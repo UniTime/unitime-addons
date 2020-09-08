@@ -308,7 +308,7 @@ public class BannerMessage {
 		sectionElement.addAttribute("ACTION", xmlAction.toString());
 		sectionElement.addAttribute("EXTERNAL_ID", bannerSection.getUniqueId().toString());
 		sectionElement.addAttribute("CRN", (bannerSection.getCrn()==null?"":bannerSection.getCrn().toString()));
-		sectionElement.addAttribute("SUBJ_CODE", courseOffering.getSubjectAreaAbbv());
+		sectionElement.addAttribute("SUBJ_CODE", bannerSection.getBannerSubjectArea(bs, clazz));
 		sectionElement.addAttribute("CRSE_NUMB", courseOffering.getCourseNbr().substring(0, getContext().getCourseNumberLength()));
 		if (!BannerMessageAction.DELETE.equals(xmlAction)) {
 			sectionElement.addAttribute("ID", bannerSection.getSectionIndex());

@@ -392,7 +392,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 		}
 		this.courseCreditOverrides.add(bs.getOverrideCourseCredit()==null?"":bs.getOverrideCourseCredit());
 		this.courseCredits.add(bs.courseCreditStringBasedOnClass(cls));
-		this.defaultCampus.add(bs.getDefualtCampusCode(bsess, cls));
+		this.defaultCampus.add(bs.getDefaultCampusCode(bsess, cls));
 		this.campusOverrides.add(bs.getBannerCampusOverride()==null?null:bs.getBannerCampusOverride().getUniqueId());
 		this.campuses.add(bs.getCampusCode(bsess, cls));
 	}

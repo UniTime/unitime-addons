@@ -20,9 +20,16 @@
 package org.unitime.banner.model.base;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.BannerTermCrnProperties;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerTermCrnProperties implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -33,6 +40,7 @@ public abstract class BaseBannerTermCrnProperties implements Serializable {
 	private Integer iMinCrn;
 	private Integer iMaxCrn;
 
+	private Set<BannerSession> iBannerSessions;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_TERM_CODE = "bannerTermCode";
@@ -70,6 +78,13 @@ public abstract class BaseBannerTermCrnProperties implements Serializable {
 
 	public Integer getMaxCrn() { return iMaxCrn; }
 	public void setMaxCrn(Integer maxCrn) { iMaxCrn = maxCrn; }
+
+	public Set<BannerSession> getBannerSessions() { return iBannerSessions; }
+	public void setBannerSessions(Set<BannerSession> bannerSessions) { iBannerSessions = bannerSessions; }
+	public void addTobannerSessions(BannerSession bannerSession) {
+		if (iBannerSessions == null) iBannerSessions = new HashSet<BannerSession>();
+		iBannerSessions.add(bannerSession);
+	}
 
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerTermCrnProperties)) return false;

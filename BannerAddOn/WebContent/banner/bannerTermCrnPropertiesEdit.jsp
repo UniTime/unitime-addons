@@ -22,8 +22,13 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
+<%@ page import="org.unitime.banner.form.BannerTermCrnPropertiesEditForm"%>
 
 <html:form method="post" action="bannerTermCrnPropertiesEdit.do">
+	<%// Get Form 
+	String frmName = "bannerTermCrnPropertiesEditForm";
+	BannerTermCrnPropertiesEditForm frm = (BannerTermCrnPropertiesEditForm) request.getAttribute(frmName);
+	%>
 	
 	<TABLE width="95%" border="0" cellspacing="0" cellpadding="3">
 
@@ -80,6 +85,14 @@
 					<html:hidden property="bannerTermCode"/>	
 					<bean:write name="bannerTermCrnPropertiesEditForm" property="bannerTermCode" />	
 				</logic:notEqual>
+			</TD>
+		</TR>
+		<TR>
+			<TD>Banner Sessions:</TD>
+			<!-- TODO: convert this to work with Banner Sessions -->
+			<TD colspan='2'>
+				<html:select size="<%=String.valueOf(Math.min(7,frm.getAvailableBannerSessions().size()))%>" name="<%=frmName%>" styleClass="cmb" property="bannerSessionIds" multiple="true">
+				<html:optionsCollection property="availableBannerSessions" value="uniqueId" label="label" /></html:select>
 			</TD>
 		</TR>
 

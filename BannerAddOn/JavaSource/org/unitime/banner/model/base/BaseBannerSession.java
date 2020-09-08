@@ -22,8 +22,13 @@ package org.unitime.banner.model.base;
 import java.io.Serializable;
 
 import org.unitime.banner.model.BannerSession;
+import org.unitime.banner.model.BannerTermCrnProperties;
 import org.unitime.timetable.model.Session;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 public abstract class BaseBannerSession implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -35,9 +40,12 @@ public abstract class BaseBannerSession implements Serializable {
 	private Boolean iLoadingOfferingsFile;
 	private Integer iFutureSessionUpdateModeInt;
 	private String iStudentCampus;
+	private Boolean iUseSubjectAreaPrefixAsCampus;
+	private String iSubjectAreaPrefixDelimiter;
 
 	private Session iSession;
 	private BannerSession iFutureSession;
+	private BannerTermCrnProperties iBannerTermCrnProperties;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_BANNER_CAMPUS = "bannerCampus";
@@ -46,6 +54,9 @@ public abstract class BaseBannerSession implements Serializable {
 	public static String PROP_SEND_DATA_TO_BANNER = "sendDataToBanner";
 	public static String PROP_LOADING_OFFERINGS_FILE = "loadingOfferingsFile";
 	public static String PROP_FUTURE_MODE = "futureSessionUpdateModeInt";
+	public static String PROP_STUDENT_CAMPUS = "studentCampus";
+	public static String PROP_USE_SUBJ_AREA_PRFX_AS_CAMPUS = "useSubjectAreaPrefixAsCampus";
+	public static String PROP_SUBJ_AREA_PRFX_DELIM = "subjectAreaPrefixDelimiter";
 
 	public BaseBannerSession() {
 		initialize();
@@ -81,15 +92,25 @@ public abstract class BaseBannerSession implements Serializable {
 
 	public Integer getFutureSessionUpdateModeInt() { return iFutureSessionUpdateModeInt; }
 	public void setFutureSessionUpdateModeInt(Integer futureSessionUpdateModeInt) { iFutureSessionUpdateModeInt = futureSessionUpdateModeInt; }
-	
+
 	public String getStudentCampus() { return iStudentCampus; }
 	public void setStudentCampus(String studentCampus) { iStudentCampus = studentCampus; }
+
+	public Boolean isUseSubjectAreaPrefixAsCampus() { return iUseSubjectAreaPrefixAsCampus; }
+	public Boolean getUseSubjectAreaPrefixAsCampus() { return iUseSubjectAreaPrefixAsCampus; }
+	public void setUseSubjectAreaPrefixAsCampus(Boolean useSubjectAreaPrefixAsCampus) { iUseSubjectAreaPrefixAsCampus = useSubjectAreaPrefixAsCampus; }
+
+	public String getSubjectAreaPrefixDelimiter() { return iSubjectAreaPrefixDelimiter; }
+	public void setSubjectAreaPrefixDelimiter(String subjectAreaPrefixDelimiter) { iSubjectAreaPrefixDelimiter = subjectAreaPrefixDelimiter; }
 
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
 
 	public BannerSession getFutureSession() { return iFutureSession; }
 	public void setFutureSession(BannerSession futureSession) { iFutureSession = futureSession; }
+
+	public BannerTermCrnProperties getBannerTermCrnProperties() { return iBannerTermCrnProperties; }
+	public void setBannerTermCrnProperties(BannerTermCrnProperties bannerTermCrnProperties) { iBannerTermCrnProperties = bannerTermCrnProperties; }
 
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerSession)) return false;
@@ -110,14 +131,17 @@ public abstract class BaseBannerSession implements Serializable {
 		return "BannerSession[" +
 			"\n	BannerCampus: " + getBannerCampus() +
 			"\n	BannerTermCode: " + getBannerTermCode() +
+			"\n	BannerTermCrnProperties: " + getBannerTermCrnProperties() +
 			"\n	FutureSession: " + getFutureSession() +
 			"\n	FutureSessionUpdateModeInt: " + getFutureSessionUpdateModeInt() +
 			"\n	LoadingOfferingsFile: " + getLoadingOfferingsFile() +
 			"\n	SendDataToBanner: " + getSendDataToBanner() +
 			"\n	Session: " + getSession() +
 			"\n	StoreDataForBanner: " + getStoreDataForBanner() +
-			"\n StudentCampus: " + getStudentCampus() +
+			"\n	StudentCampus: " + getStudentCampus() +
+			"\n	SubjectAreaPrefixDelimiter: " + getSubjectAreaPrefixDelimiter() +
 			"\n	UniqueId: " + getUniqueId() +
+			"\n	UseSubjectAreaPrefixAsCampus: " + getUseSubjectAreaPrefixAsCampus() +
 			"]";
 	}
 }

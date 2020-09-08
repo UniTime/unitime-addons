@@ -108,6 +108,26 @@
 			not-null="false"
 			length="500"
 		/>
+		<many-to-one
+             name="bannerTermCrnProperties"
+             class="BannerTermCrnProperties"
+             column="banner_term_crn_prop_id"
+             not-null="false"
+             foreign-key="fk_ban_trm_to_crn_prop"/>
+		<property
+			name="useSubjectAreaPrefixAsCampus"
+			column="use_subj_area_prfx_as_campus"
+			type="java.lang.Boolean"
+			not-null="false"
+		/>
+		<property
+			name="subjectAreaPrefixDelimiter"
+			column="subj_area_prfx_delim"
+			type="java.lang.String"
+			not-null="false"
+			length="5"
+		/>
+		
 	</class>
 
 </hibernate-mapping>

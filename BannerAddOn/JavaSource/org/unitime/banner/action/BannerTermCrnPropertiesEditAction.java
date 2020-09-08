@@ -21,7 +21,8 @@ package org.unitime.banner.action;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -89,31 +90,43 @@ public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatch
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
-        BannerTermCrnPropertiesEditForm bannerTermCrnPropertiesEditFrom = (BannerTermCrnPropertiesEditForm) form;		
+        BannerTermCrnPropertiesEditForm bannerTermCrnPropertiesEditForm = (BannerTermCrnPropertiesEditForm) form;		
 		Long id =  new Long(Long.parseLong(request.getParameter("bannerTermCrnPropertiesId")));
 		BannerTermCrnProperties bannerTermCrnProperties = BannerTermCrnProperties.getBannerTermCrnPropertiesById(id);
-		bannerTermCrnPropertiesEditFrom.setBannerTermProperties(bannerTermCrnProperties);
-		bannerTermCrnPropertiesEditFrom.setBannerTermCode(bannerTermCrnProperties.getBannerTermCode());
-		bannerTermCrnPropertiesEditFrom.setLastCrn(bannerTermCrnProperties.getLastCrn());
-		bannerTermCrnPropertiesEditFrom.setMinCrn(bannerTermCrnProperties.getMinCrn());
-		bannerTermCrnPropertiesEditFrom.setMaxCrn(bannerTermCrnProperties.getMaxCrn());
-		bannerTermCrnPropertiesEditFrom.setSearchFlag(bannerTermCrnProperties.isSearchFlag());
+		bannerTermCrnPropertiesEditForm.setBannerTermProperties(bannerTermCrnProperties);
+		bannerTermCrnPropertiesEditForm.setBannerTermCode(bannerTermCrnProperties.getBannerTermCode());
+		setAvailableSessionInfoInForm(bannerTermCrnPropertiesEditForm);
+		String[] bannerSessionIds = new String[bannerTermCrnProperties.getBannerSessions().size()];
+		int i = 0;
+		for (BannerSession bs : bannerTermCrnProperties.getBannerSessions()) {
+			bannerSessionIds[i++] = bs.getUniqueId().toString();
+			if (!bannerTermCrnPropertiesEditForm.getAvailableBannerSessions().contains(bs)) {
+				bannerTermCrnPropertiesEditForm.getAvailableBannerSessions().add(bs);
+			}
+		}
+		bannerTermCrnPropertiesEditForm.setBannerSessionIds(bannerSessionIds);
+		bannerTermCrnPropertiesEditForm.setLastCrn(bannerTermCrnProperties.getLastCrn());
+		bannerTermCrnPropertiesEditForm.setMinCrn(bannerTermCrnProperties.getMinCrn());
+		bannerTermCrnPropertiesEditForm.setMaxCrn(bannerTermCrnProperties.getMaxCrn());
+		bannerTermCrnPropertiesEditForm.setSearchFlag(bannerTermCrnProperties.isSearchFlag());
 		return mapping.findForward("showEdit");
 	}
-	protected void setAvailableSessionsInForm(BannerTermCrnPropertiesEditForm sessionEditForm){
+	protected void setAvailableSessionInfoInForm(BannerTermCrnPropertiesEditForm sessionEditForm){
 		ArrayList<BannerSession> bannerTermCodes = new ArrayList<BannerSession>();
-
-		@SuppressWarnings("rawtypes")
-		Iterator it = SessionDAO.getInstance().getQuery("select bs from BannerSession bs where bs.bannerTermCode not in (select btcp.bannerTermCode from BannerTermCrnProperties btcp)").iterate();
+		ArrayList<BannerSession> bannerSessionList = new ArrayList<BannerSession>();
 		TreeMap<String, BannerSession> bannerSessions = new TreeMap<String, BannerSession>();
-		while(it.hasNext()){
-			BannerSession bs = (BannerSession) it.next();
-			bannerSessions.put(bs.getBannerTermCode(), bs);
+		for (BannerSession bs : (List<BannerSession>)SessionDAO.getInstance().getSession().createQuery("select bs from BannerSession bs").list()){
+			if (bs.getBannerTermCrnProperties() == null) {
+				bannerSessions.put(bs.getBannerTermCode(), bs);
+				bannerSessionList.add(bs);
+			}
 		}
-		for(String key : bannerSessions.keySet()){
-			bannerTermCodes.add(bannerSessions.get(key));
+		for (String bsTermCode : bannerSessions.keySet()) {
+			bannerTermCodes.add(bannerSessions.get(bsTermCode));
+			
 		}
 		sessionEditForm.setAvailableBannerTermCodes(bannerTermCodes);
+		sessionEditForm.setAvailableBannerSessions(bannerSessionList);
 	}
 
 	
@@ -126,8 +139,9 @@ public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatch
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionAdd);
 
-//		BannerTermCrnPropertiesEditForm sessionEditForm = (BannerTermCrnPropertiesEditForm) form;
-		setAvailableSessionsInForm((BannerTermCrnPropertiesEditForm) form);
+		BannerTermCrnPropertiesEditForm crnPropEditForm = (BannerTermCrnPropertiesEditForm) form;
+		setAvailableSessionInfoInForm(crnPropEditForm);
+		crnPropEditForm.setBannerSessionIds(new String[0]);
 		return mapping.findForward("showAdd");
 	}
 	
@@ -157,11 +171,12 @@ public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatch
             ActionMessages errors = bannerTermCrnPropertiesEditForm.validate(mapping, request);
             if (errors.size()>0) {
                 saveErrors(request, errors);
+                setAvailableSessionInfoInForm(bannerTermCrnPropertiesEditForm);
                 if (bannerTermCrnProperties.getUniqueId()!=null) {
                     return mapping.findForward("showEdit");
                 }
                 else {
-                    setAvailableSessionsInForm(bannerTermCrnPropertiesEditForm);
+
                     return mapping.findForward("showAdd");
                 }
             }
@@ -171,8 +186,23 @@ public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatch
             bannerTermCrnProperties.setMinCrn(bannerTermCrnPropertiesEditForm.getMinCrn());
             bannerTermCrnProperties.setMaxCrn(bannerTermCrnPropertiesEditForm.getMaxCrn());
             bannerTermCrnProperties.setSearchFlag(bannerTermCrnPropertiesEditForm.getSearchFlag()==null?new Boolean(false):bannerTermCrnPropertiesEditForm.getSearchFlag());
-
+            HashSet<BannerSession> origSessions = new HashSet<BannerSession>();
+            if (bannerTermCrnProperties.getBannerSessions() != null) {
+            		origSessions.addAll(bannerTermCrnProperties.getBannerSessions());
+                bannerTermCrnProperties.getBannerSessions().clear();
+            }
+            for (String bsId : bannerTermCrnPropertiesEditForm.getBannerSessionIds()) {
+            		BannerSession bs = BannerSession.getBannerSessionById(new Long(bsId));
+            		bannerTermCrnProperties.addTobannerSessions(bs);
+            		bs.setBannerTermCrnProperties(bannerTermCrnProperties);
+            		origSessions.remove(bs);
+            }
             hibSession.saveOrUpdate(bannerTermCrnProperties);
+            for (BannerSession bs : origSessions) {
+            	    BannerSession bs2 = BannerSession.getBannerSessionById(bs.getUniqueId());
+            	    bs2.setBannerTermCrnProperties(null);
+            	    hibSession.update(bs2);
+            }
 
             ChangeLog.addChange(
                     hibSession, 
