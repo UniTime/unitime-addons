@@ -234,6 +234,8 @@ public class BannerSessionRollForward extends SessionRollForward {
 			toBs.setLoadingOfferingsFile(new Boolean(false));
 			toBs.setSession(toSession);
 			toBs.setStudentCampus(fromBs.getStudentCampus());
+			toBs.setSubjectAreaPrefixDelimiter(fromBs.getSubjectAreaPrefixDelimiter());
+			toBs.setUseSubjectAreaPrefixAsCampus(fromBs.getUseSubjectAreaPrefixAsCampus());
 			BannerSessionDAO.getInstance().save(toBs);
 		}
 	}
