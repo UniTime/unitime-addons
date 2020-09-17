@@ -24,6 +24,7 @@ import org.unitime.banner.interfaces.ExternalBannerSubjectAreaElementHelperInter
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.SubjectArea;
 
 /**
  * 
@@ -45,11 +46,27 @@ ExternalBannerSubjectAreaElementHelperInterface {
 					&& bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null) != null
 				    && bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea() != null 
 				    && bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter) >= 0) {
-				subj = bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().substring(bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter) + delimiter.length());				
+				subj = getBannerSubjectAreaAbbreviation(bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea(), bannerSession);			
 			}
 		}
 		if (subj == null) {
 			return (bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectAreaAbbv());
+		} else {
+			return(subj);
+		}
+	}
+
+	@Override
+	public String getBannerSubjectAreaAbbreviation(SubjectArea subjectArea, BannerSession bannerSession) {
+		String subj = null;
+		if (bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
+			String delimiter = ((bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("")) ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
+			if (subjectArea.getSubjectAreaAbbreviation().indexOf(delimiter) >= 0) {
+				subj = subjectArea.getSubjectAreaAbbreviation().substring(subjectArea.getSubjectAreaAbbreviation().indexOf(delimiter) + delimiter.length());				
+			}
+		}
+		if (subj == null) {
+			return (subjectArea.getSubjectAreaAbbreviation());
 		} else {
 			return(subj);
 		}

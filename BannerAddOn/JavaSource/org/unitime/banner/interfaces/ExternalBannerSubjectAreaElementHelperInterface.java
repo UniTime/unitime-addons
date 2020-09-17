@@ -23,6 +23,7 @@ package org.unitime.banner.interfaces;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.SubjectArea;
 
 /**
  * 
@@ -32,5 +33,6 @@ import org.unitime.timetable.model.Class_;
 public interface ExternalBannerSubjectAreaElementHelperInterface {
 	
 	public String getBannerSubjectAreaAbbreviation(BannerSection bannerSection, BannerSession bannerSession, Class_ clazz);
+	public String getBannerSubjectAreaAbbreviation(SubjectArea subjectArea, BannerSession bannerSession);
 	
 }

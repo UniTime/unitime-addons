@@ -526,4 +526,611 @@ BEGIN
   END 
   </mysql>
   	</update>
+  	 	<update version="12" date="10-Oct-2020" comment="Banner Section Index and Link Id Support For Subject Area Prefixes">
+		<plsql><![CDATA[
+create or replace PACKAGE %SCHEMA%.section_processor IS
+
+--Author : JRM
+--Created : 5/12/2009 11:25:47 AM
+--Purpose : Provide Section Number for Banner sections
+--Check for existance of a Banner Section Number
+--Provide Link Identifier for Banner sectons
+
+
+--Public function and procedure declarations
+  FUNCTION get_term_code(sesn_id IN %SCHEMA%.banner_session.session_id%TYPE)
+    RETURN %SCHEMA%.banner_session.banner_term_code%TYPE;
+
+
+  FUNCTION get_section(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                       subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                       crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE;
+
+  FUNCTION section_exists(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                          subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                          crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE,
+                          section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN BOOLEAN;
+
+  FUNCTION get_link_identifier(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                               subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                               crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE)
+    RETURN %SCHEMA%.banner_section.link_identifier%TYPE;
+
+END section_processor;]]>
+		</plsql>
+		<plsql><![CDATA[
+create or replace PACKAGE BODY %SCHEMA%.section_processor IS
+
+  FUNCTION get_term_code(sesn_id IN %SCHEMA%.banner_session.session_id%TYPE)
+    RETURN %SCHEMA%.banner_session.banner_term_code%TYPE IS
+
+    term_code %SCHEMA%.banner_session.banner_term_code%TYPE;
+
+  BEGIN
+    BEGIN
+      SELECT banner_term_code
+        INTO term_code
+        FROM %SCHEMA%.banner_session
+       WHERE banner_session.session_id = sesn_id;
+
+    EXCEPTION
+      WHEN no_data_found THEN
+        raise_application_error(-20999,
+                                'Unknown session id (' || sesn_id || ')');
+    END;
+    RETURN term_code;
+  END get_term_code;
+
+
+  FUNCTION is_numeric(section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN BOOLEAN IS
+
+    RESULT BOOLEAN;
+
+  BEGIN
+    RESULT := FALSE;
+
+    IF ((length(TRIM(translate(section, '0123456789',
+                                        ' ')))) IS NULL) THEN
+      RESULT := TRUE;
+    END IF;
+    RETURN RESULT;
+  END is_numeric;
+
+
+  FUNCTION set_next_999(section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE IS
+
+    sect %SCHEMA%.banner_section.section_index%TYPE;
+
+  BEGIN
+
+    IF (to_number(section, '099') = 998) THEN
+      sect := NULL;
+    ELSE
+      sect := TRIM(to_char((to_number(section, '099') + 1), '099'));
+    END IF;
+    RETURN sect;
+  END set_next_999;
+
+
+  FUNCTION form_99a(section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN BOOLEAN IS
+
+    RESULT BOOLEAN;
+    first_chars VARCHAR2(10);
+    last_char INTEGER;
+
+  BEGIN
+    RESULT := FALSE;
+    first_chars := substr(section, 1, 2);
+    last_char := ascii(substr(section, 3, 1));
+
+    IF (last_char >= 65 AND last_char <= 90 AND is_numeric(first_chars)) THEN
+      RESULT := TRUE;
+    END IF;
+    RETURN RESULT;
+  END form_99a;
+
+
+  FUNCTION set_next_99a(section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE IS
+
+    num_val INTEGER;
+    last_char INTEGER;
+    sect %SCHEMA%.banner_section.section_index%TYPE;
+
+  BEGIN
+    num_val := to_number(substr(section, 1, 2), '99');
+    last_char := ascii(substr(section, 3, 1)) + 1;
+
+    IF (last_char > 90) THEN
+      last_char := 65;
+      num_val := num_val + 1;
+    END IF;
+
+    IF (num_val > 99) THEN
+      sect := NULL;
+    ELSE
+      sect := TRIM(to_char(num_val, '09')) || TRIM(chr(last_char));
+    END IF;
+    RETURN sect;
+  END set_next_99a;
+
+
+  FUNCTION form_a99(section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN BOOLEAN IS
+
+    RESULT BOOLEAN;
+    first_char INTEGER;
+    last_chars VARCHAR2(10);
+
+  BEGIN
+    RESULT := FALSE;
+    first_char := ascii(substr(section, 1, 1));
+    last_chars := substr(section, 2);
+
+    IF (first_char >= 65 AND first_char <= 90 AND is_numeric(last_chars)) THEN
+      RESULT := TRUE;
+    END IF;
+    RETURN RESULT;
+  END form_a99;
+
+
+  FUNCTION set_next_a99(section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE IS
+
+    num_val INTEGER;
+    first_char INTEGER;
+    sect %SCHEMA%.banner_section.section_index%TYPE;
+
+  BEGIN
+    num_val := to_number(substr(section, 2), '99') + 1;
+    first_char := ascii(substr(section, 1, 1));
+
+    IF (num_val > 99) THEN
+      num_val := 1;
+      first_char := first_char + 1;
+    END IF;
+
+    IF (first_char > 90) THEN
+      sect := NULL;
+    ELSE
+      sect := TRIM(chr(first_char)) ||
+              TRIM(to_char(num_val, '09'));
+    END IF;
+    RETURN sect;
+  END set_next_a99;
+
+  FUNCTION find_section_nbr(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                            subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                            crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE IS
+
+    section_nbr %SCHEMA%.banner_section.section_index%TYPE;
+    section_num INTEGER;
+
+  BEGIN
+    section_num := 1;
+    LOOP
+      section_nbr := TRIM(to_char(section_num, '099'));
+      IF (NOT section_exists(sesn_id,
+                             subject,
+                             crs_nbr,
+                             section_nbr)) THEN
+        EXIT;
+      END IF;
+
+      section_num := section_num + 1;
+      IF (section_num > 999) THEN
+        raise_application_error(-20999,
+                                'No section number is available (' ||
+                                rtrim(subject) || rtrim(crs_nbr) || ')');
+      END IF;
+    END LOOP;
+    RETURN section_nbr;
+  END find_section_nbr;
+
+
+  FUNCTION check_exists(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                        subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                        crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE,
+                        section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE IS
+
+    section_nbr %SCHEMA%.banner_section.section_index%TYPE;
+
+  BEGIN
+    section_nbr := section;
+    WHILE (section_exists(sesn_id,
+                          subject,
+                          crs_nbr,
+                          section_nbr)) LOOP
+      IF (is_numeric(section_nbr)) THEN
+        section_nbr := set_next_999(section_nbr);
+      ELSIF (form_a99(section_nbr)) THEN
+        section_nbr := set_next_a99(section_nbr);
+      ELSIF (form_99a(section_nbr)) THEN
+        section_nbr := set_next_99a(section_nbr);
+      ELSE
+        section_nbr := find_section_nbr(sesn_id,
+                                        subject,
+                                        crs_nbr);
+      END IF;
+
+      IF (section_nbr IS NULL) THEN
+         section_nbr := find_section_nbr(sesn_id,
+                                         subject,
+                                         crs_nbr);
+      END IF;
+    END LOOP;
+    RETURN section_nbr;
+  END check_exists;
+
+
+  FUNCTION get_section(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                       subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                       crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE)
+    RETURN %SCHEMA%.banner_section.section_index%TYPE IS
+
+    section_nbr %SCHEMA%.banner_section.section_index%TYPE;
+    term_code %SCHEMA%.banner_session.banner_term_code%TYPE;
+
+  BEGIN
+    term_code := get_term_code(sesn_id);
+    BEGIN
+      SELECT MAX(banner_section.section_index)
+        INTO section_nbr
+        FROM %SCHEMA%.banner_section,
+             %SCHEMA%.banner_config,
+             %SCHEMA%.banner_course,
+             %SCHEMA%.course_offering,
+             %SCHEMA%.subject_area,
+             %SCHEMA%.banner_session
+       WHERE banner_config.uniqueid = banner_section.banner_config_id
+         AND banner_course.uniqueid = banner_config.banner_course_id
+         AND course_offering.uniqueid = banner_course.course_offering_id
+         AND subject_area.uniqueid = course_offering.subject_area_id
+         AND rtrim(case 
+    when banner_session.use_subj_area_prfx_as_campus is null then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 0 then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim is null then substr(subject_area.subject_area_abbreviation, instr(subject_area.subject_area_abbreviation, ' - ') + 3) 
+    else substr(subject_area.subject_area_abbreviation, instr(subject_area.subject_area_abbreviation, banner_session.subj_area_prfx_delim) + length(banner_session.subj_area_prfx_delim)) 
+    end
+         ) = rtrim(subject)
+         AND (length(TRIM(translate(banner_section.section_index, '0123456789',
+                                                                  ' ')))) IS NULL
+
+         AND rtrim(substr(course_offering.course_nbr, 1, 5)) = rtrim(substr(crs_nbr, 1, 5))
+         AND banner_session.session_id = banner_section.session_id 
+         AND banner_session.banner_term_code = rtrim(term_code);
+    EXCEPTION
+      WHEN no_data_found THEN
+        section_nbr := '000';
+    END;
+
+    IF (section_nbr IS NULL) THEN
+      section_nbr := '000';
+    END IF;
+
+    IF (is_numeric(section_nbr)) THEN
+      section_nbr := set_next_999(section_nbr);
+    ELSIF (form_a99(section_nbr)) THEN
+      section_nbr := set_next_a99(section_nbr);
+    ELSIF (form_99a(section_nbr)) THEN
+      section_nbr := set_next_99a(section_nbr);
+    ELSE
+      section_nbr := find_section_nbr(sesn_id,
+                                      subject,
+                                      crs_nbr);
+    END IF;
+
+    IF (section_nbr IS NULL) THEN
+      section_nbr := find_section_nbr(sesn_id,
+                                      subject,
+                                      crs_nbr);
+    END IF;
+
+    section_nbr := check_exists(sesn_id,
+                                subject,
+                                crs_nbr,
+                                section_nbr);
+    RETURN section_nbr;
+  END get_section;
+
+
+  FUNCTION section_exists(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                          subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                          crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE,
+                          section IN %SCHEMA%.banner_section.section_index%TYPE)
+    RETURN BOOLEAN IS
+
+    sect_exists BOOLEAN;
+    term_code %SCHEMA%.banner_session.banner_term_code%TYPE;
+    rec INTEGER;
+
+  BEGIN
+    sect_exists := FALSE;
+    term_code := get_term_code(sesn_id);
+    SELECT COUNT(*)
+      INTO rec
+      FROM %SCHEMA%.banner_section,
+           %SCHEMA%.banner_config,
+           %SCHEMA%.banner_course,
+           %SCHEMA%.course_offering,
+           %SCHEMA%.subject_area,
+             %SCHEMA%.banner_session
+     WHERE banner_config.uniqueid = banner_section.banner_config_id
+       AND banner_course.uniqueid = banner_config.banner_course_id
+       AND course_offering.uniqueid = banner_course.course_offering_id
+       AND subject_area.uniqueid = course_offering.subject_area_id
+       AND rtrim(case 
+    when banner_session.use_subj_area_prfx_as_campus is null then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 0 then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim is null then substr(subject_area.subject_area_abbreviation, instr(subject_area.subject_area_abbreviation, ' - ') + 3) 
+    else substr(subject_area.subject_area_abbreviation, instr(subject_area.subject_area_abbreviation, banner_session.subj_area_prfx_delim) + length(banner_session.subj_area_prfx_delim)) 
+    end) = rtrim(subject)
+       AND rtrim(substr(course_offering.course_nbr, 1, 5)) = rtrim(substr(crs_nbr, 1, 5))
+       AND rtrim(banner_section.section_index) = rtrim(section)
+       AND banner_session.session_id = banner_section.session_id 
+         AND banner_session.banner_term_code = rtrim(term_code);
+    IF (rec > 0) THEN
+      sect_exists := TRUE;
+    END IF;
+    RETURN sect_exists;
+  END section_exists;
+
+
+  FUNCTION get_link_identifier(sesn_id IN %SCHEMA%.banner_section.session_id%TYPE,
+                               subject IN %SCHEMA%.subject_area.subject_area_abbreviation%TYPE,
+                               crs_nbr IN %SCHEMA%.course_offering.course_nbr%TYPE)
+    RETURN %SCHEMA%.banner_section.link_identifier%TYPE IS
+
+    link_id %SCHEMA%.banner_section.link_identifier%TYPE;
+    term_code %SCHEMA%.banner_session.banner_term_code%TYPE;
+
+    CURSOR l_id IS
+      SELECT cross_list_identifier
+        FROM %SCHEMA%.banner_cross_list_provider
+      MINUS
+      SELECT banner_section.link_identifier
+        FROM %SCHEMA%.banner_section,
+             %SCHEMA%.banner_config,
+             %SCHEMA%.banner_course,
+             %SCHEMA%.course_offering,
+             %SCHEMA%.subject_area,
+             %SCHEMA%.banner_session
+       WHERE banner_config.uniqueid = banner_section.banner_config_id
+         AND banner_course.uniqueid = banner_config.banner_course_id
+         AND course_offering.uniqueid = banner_course.course_offering_id
+         AND subject_area.uniqueid = course_offering.subject_area_id
+         AND rtrim(case 
+    when banner_session.use_subj_area_prfx_as_campus is null then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 0 then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim is null then substr(subject_area.subject_area_abbreviation, instr(subject_area.subject_area_abbreviation, ' - ') + 3) 
+    else substr(subject_area.subject_area_abbreviation, instr(subject_area.subject_area_abbreviation, banner_session.subj_area_prfx_delim) + length(banner_session.subj_area_prfx_delim)) 
+    end) = rtrim(subject)
+         AND rtrim(substr(course_offering.course_nbr, 1, 5)) = rtrim(substr(crs_nbr, 1, 5))
+         AND banner_session.session_id = banner_section.session_id 
+         AND banner_session.banner_term_code = rtrim(term_code)
+         AND banner_section.session_id IN (SELECT banner_session.session_id
+                                             FROM %SCHEMA%.banner_session
+                                            WHERE banner_session.banner_term_code = rtrim(term_code))
+                                           MINUS
+                                           SELECT cross_list_identifier
+                                             FROM %SCHEMA%.banner_cross_list_provider
+                                            WHERE ascii(substr(cross_list_identifier, 1, 1)) BETWEEN 48 AND 57
+                                               OR ascii(substr(cross_list_identifier, 2, 1)) = 48;
+
+  BEGIN
+    term_code := get_term_code(sesn_id);
+    link_id := NULL;
+
+    OPEN l_id;
+      FETCH l_id
+       INTO link_id;
+
+      IF (link_id IS NULL) THEN
+        raise_application_error(-20999,
+                                'No unused link identifier is available (' ||
+                                rtrim(subject) || rtrim(crs_nbr) || ')');
+      END IF;
+    CLOSE l_id;
+    RETURN link_id;
+  END get_link_identifier;
+END section_processor;		]]>
+	</plsql>
+	<plsql>ALTER PACKAGE %SCHEMA%.cross_list_processor COMPILE BODY</plsql>
+		<mysql>
+			DROP FUNCTION IF EXISTS %SCHEMA%.get_section
+		</mysql>
+		<mysql>
+			CREATE FUNCTION %SCHEMA%.get_section(sesn_id DECIMAL(20,0),
+                            subject VARCHAR(10),
+                            crs_nbr VARCHAR(10))
+    RETURNS VARCHAR(10)
+    
+  BEGIN
+    DECLARE section_nbr VARCHAR(10);
+    DECLARE term_code VARCHAR(20);
+
+    set term_code = get_term_code(sesn_id);
+
+    BEGIN
+      SELECT MAX(banner_section.section_index)
+        INTO section_nbr
+        FROM %SCHEMA%.banner_section,
+             %SCHEMA%.banner_config,
+             %SCHEMA%.banner_course,
+             %SCHEMA%.course_offering,
+             %SCHEMA%.subject_area,
+             %SCHEMA%.banner_session
+       WHERE banner_config.uniqueid = banner_section.banner_config_id
+         AND banner_course.uniqueid = banner_config.banner_course_id
+         AND course_offering.uniqueid = banner_course.course_offering_id
+         AND subject_area.uniqueid = course_offering.subject_area_id
+         AND rtrim(case 
+    when banner_session.use_subj_area_prfx_as_campus is null then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 0 then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim is null then substring_index(subject_area.subject_area_abbreviation, ' - ', -1) 
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim = '' then substring_index(subject_area.subject_area_abbreviation, ' - ', -1) 
+    else substring_index(subject_area.subject_area_abbreviation, banner_session.subj_area_prfx_delim, -1) 
+    end) = rtrim(subject)
+         AND is_numeric(banner_section.section_index)
+         AND rtrim(substr(course_offering.course_nbr,
+                          1,
+                          5)) = rtrim(substr(crs_nbr,
+                                             1,
+                                             5))
+         AND banner_session.session_id = banner_section.session_id 
+         AND banner_session.banner_term_code = rtrim(term_code);
+    END;
+
+    IF (section_nbr IS NULL) THEN
+      set section_nbr = '000';
+    END IF;
+
+    IF (is_numeric(section_nbr)) THEN
+      set section_nbr = set_next_999(section_nbr);
+    ELSEIF (form_a99(section_nbr)) THEN
+      set section_nbr = set_next_a99(section_nbr);
+    ELSEIF (form_99a(section_nbr)) THEN
+      set section_nbr = set_next_99a(section_nbr);
+    ELSE
+      set section_nbr = find_section_nbr(sesn_id,
+                                      subject,
+                                      crs_nbr);
+    END IF;
+
+    IF (section_nbr IS NULL) THEN
+      set section_nbr = find_section_nbr(sesn_id,
+                                      subject,
+                                      crs_nbr);
+    END IF;
+
+    set section_nbr = check_exists(sesn_id,
+                                subject,
+                                crs_nbr,
+                                section_nbr);
+
+    RETURN section_nbr;
+
+  END
+		</mysql>
+		<mysql>
+		DROP FUNCTION IF EXISTS %SCHEMA%.section_exists
+		</mysql>		
+		<mysql>
+		CREATE FUNCTION %SCHEMA%.section_exists(sesn_id DECIMAL(20,0),
+                          subject VARCHAR(10),
+                          crs_nbr VARCHAR(10),
+                          section VARCHAR(10))
+    RETURNS BOOLEAN
+
+  BEGIN
+    DECLARE sect_exists BOOLEAN;
+    DECLARE term_code VARCHAR(20);
+    DECLARE rec       DECIMAL(10);
+
+    set sect_exists = FALSE;
+    set term_code = get_term_code(sesn_id);
+
+    SELECT COUNT(*)
+      INTO rec
+      FROM %SCHEMA%.banner_section,
+           %SCHEMA%.banner_config,
+           %SCHEMA%.banner_course,
+           %SCHEMA%.course_offering,
+           %SCHEMA%.subject_area,
+           %SCHEMA%.banner_session
+     WHERE banner_config.uniqueid = banner_section.banner_config_id
+       AND banner_course.uniqueid = banner_config.banner_course_id
+       AND course_offering.uniqueid = banner_course.course_offering_id
+       AND subject_area.uniqueid = course_offering.subject_area_id
+       AND rtrim(case 
+    when banner_session.use_subj_area_prfx_as_campus is null then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 0 then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim is null then substring_index(subject_area.subject_area_abbreviation, ' - ', -1) 
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim = '' then substring_index(subject_area.subject_area_abbreviation, ' - ', -1) 
+    else substring_index(subject_area.subject_area_abbreviation, banner_session.subj_area_prfx_delim, -1) 
+    end) = rtrim(subject)
+       AND rtrim(substr(course_offering.course_nbr,
+                        1,
+                        5)) = rtrim(substr(crs_nbr,
+                                           1,
+                                           5))
+       AND rtrim(banner_section.section_index) = rtrim(section)
+       AND banner_session.session_id = banner_section.session_id 
+       AND banner_session.banner_term_code = rtrim(term_code);
+       
+    IF (rec > 0) THEN
+      set sect_exists = TRUE;
+    END IF;
+
+    RETURN sect_exists;
+
+  END
+		</mysql>
+		<mysql>
+		DROP FUNCTION IF EXISTS %SCHEMA%.get_link_identifier
+		</mysql>
+		<mysql>
+		CREATE FUNCTION %SCHEMA%.get_link_identifier(sesn_id DECIMAL(20,0),
+                          subject VARCHAR(10),
+                          crs_nbr VARCHAR(10))
+    RETURNS VARCHAR(10)
+
+  BEGIN
+
+    DECLARE link_id VARCHAR(10);
+    DECLARE term_code VARCHAR(20);
+    DECLARE l_id CURSOR FOR
+       SELECT cross_list_identifier
+        FROM %SCHEMA%.banner_cross_list_provider
+      where cross_list_identifier regexp '^[A-Z][A-Z1-9]$'
+        and cross_list_identifier not in (
+      SELECT banner_section.link_identifier
+        FROM %SCHEMA%.banner_section,
+             %SCHEMA%.banner_config,
+             %SCHEMA%.banner_course,
+             %SCHEMA%.course_offering,
+             %SCHEMA%.subject_area,
+             %SCHEMA%.banner_session
+       WHERE banner_config.uniqueid = banner_section.banner_config_id
+         AND banner_course.uniqueid = banner_config.banner_course_id
+         AND banner_section.link_identifier = banner_cross_list_provider.cross_list_identifier
+         AND course_offering.uniqueid = banner_course.course_offering_id
+         AND subject_area.uniqueid = course_offering.subject_area_id
+         AND rtrim(case 
+    when banner_session.use_subj_area_prfx_as_campus is null then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 0 then subject_area.subject_area_abbreviation
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim is null then substring_index(subject_area.subject_area_abbreviation, ' - ', -1) 
+    when banner_session.use_subj_area_prfx_as_campus = 1 and banner_session.subj_area_prfx_delim = '' then substring_index(subject_area.subject_area_abbreviation, ' - ', -1) 
+   else substring_index(subject_area.subject_area_abbreviation, banner_session.subj_area_prfx_delim, -1) 
+    end) = rtrim(subject)
+         AND rtrim(substr(course_offering.course_nbr,
+                          1,
+                          5)) = rtrim(substr(crs_nbr,
+                                             1,
+                                             5))
+       AND banner_session.session_id = banner_section.session_id 
+       AND banner_session.banner_term_code = rtrim(term_code))
+    order by cross_list_identifier;
+ 
+    set term_code = get_term_code(sesn_id);
+    set link_id = NULL;
+
+    OPEN l_id;
+
+    FETCH l_id
+      INTO link_id;
+    CLOSE l_id;
+
+    RETURN link_id;
+
+  END
+		</mysql>
+	</update>
  </dbupdate>

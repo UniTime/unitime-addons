@@ -396,11 +396,13 @@ public class BannerSection extends BaseBannerSection {
         Connection connection = null;
 	   	try {
     		String sectionExistsSql = ApplicationProperties.getProperty("banner.section_id.validator");
+    		BannerSession bs = BannerSession.findBannerSessionForSession(acadSession, hibSession);	
+    		String subject = getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(courseOffering.getSubjectArea(), bs);
             connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(sectionExistsSql);
             call.registerOutParameter(1, java.sql.Types.INTEGER);
             call.setLong(2, acadSession.getUniqueId().longValue());
-            call.setString(3, courseOffering.getSubjectAreaAbbv());
+            call.setString(3, subject);
             call.setString(4, courseOffering.getCourseNbr());
             call.setString(5, sectionId);
             call.execute();
@@ -426,12 +428,14 @@ public class BannerSection extends BaseBannerSection {
 		Connection connection = null;
 		try {
 //    		String nextSectionIdSql = ApplicationProperties.getProperty("banner.section_id.generator","{?= call timetable.section_processor.get_section(?,?,?)}");
+		BannerSession bs = BannerSession.findBannerSessionForSession(acadSession, hibSession);	
+		String subject = getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(courseOffering.getSubjectArea(), bs);
     		String nextSectionIdSql = ApplicationProperties.getProperty("banner.section_id.generator");
             connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextSectionIdSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
-            call.setString(3, courseOffering.getSubjectAreaAbbv());
+            call.setString(3, subject);
             call.setString(4, courseOffering.getCourseNbr());
             call.execute();
             nextSectionId = call.getString(1);
@@ -455,12 +459,14 @@ public class BannerSection extends BaseBannerSection {
 		SessionImplementor session = (SessionImplementor)new _RootDAO().getSession();
 		Connection connection = null;
 	   	try {
+			BannerSession bs = BannerSession.findBannerSessionForSession(acadSession, hibSession);	
+			String subject = getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(courseOffering.getSubjectArea(), bs);
     		String nextLinkIdSql = ApplicationProperties.getProperty("banner.link_id.generator","{?= call timetable.section_processor.get_link_identifier(?,?,?)}");
             connection = session.getJdbcConnectionAccess().obtainConnection();
             CallableStatement call = connection.prepareCall(nextLinkIdSql);
             call.registerOutParameter(1, java.sql.Types.VARCHAR);
             call.setLong(2, acadSession.getUniqueId().longValue());
-            call.setString(3, courseOffering.getSubjectAreaAbbv());
+            call.setString(3, subject);
             call.setString(4, courseOffering.getCourseNbr());
             call.execute();
             nextLinkId = call.getString(1);
@@ -1179,7 +1185,7 @@ public class BannerSection extends BaseBannerSection {
 
 	}
 
-	private ExternalBannerSubjectAreaElementHelperInterface getExternalSubjectAreaElementHelper(){
+	private static ExternalBannerSubjectAreaElementHelperInterface getExternalSubjectAreaElementHelper(){
 		if (externalSubjectAreaElementHelper == null){
             String className = ApplicationProperties.getProperty("tmtbl.banner.subjectArea.element.helper");
         	if (className != null && className.trim().length() > 0){
