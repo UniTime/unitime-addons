@@ -167,7 +167,12 @@ public class ColleagueMessage {
 		if (section.getClasses(hibSession).isEmpty()){
 			clazz = null;
 		} else {
-			clazz =  section.getClasses(hibSession).iterator().next();
+			clazz = null;
+			for (Class_ c : section.getClasses(hibSession)) {
+				if (c.getParentClass() == null) {
+					clazz = c;
+				}
+			}
 		}
 
 		if (section.isCanceled(hibSession)){
@@ -328,7 +333,7 @@ public class ColleagueMessage {
 			ColleagueSuffixDef csd = ColleagueSuffixDef.findColleagueSuffixDefForTermCode(clazz.getSchedulingSubpart().getItype(), courseOffering, cSess.getColleagueTermCode(), hibSession);
 			sectionElement.addAttribute("LOCATION_CODE", (csd.getCampusCode() == null?cSess.getColleagueCampus():csd.getCampusCode()));
 			addCampusCodeElement(sectionElement, section, cSession, clazz);
-			if (section.findSchedType() != null){
+			sectionElement.addAttribute("INSTRUCTIONAL_METHOD", clazz.getSchedulingSubpart().getItype().getSis_ref());if (section.findSchedType() != null){
 				sectionElement.addAttribute("SCHED_TYPE", section.findSchedType());
 			}
 			sectionElement.addAttribute("MAX_ENRL", ((new Integer(section.calculateMaxEnrl(hibSession))).toString()));
