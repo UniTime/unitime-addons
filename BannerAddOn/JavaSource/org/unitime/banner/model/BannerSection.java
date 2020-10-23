@@ -23,6 +23,7 @@ package org.unitime.banner.model;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,6 +36,7 @@ import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.springframework.beans.factory.support.MergedBeanDefinitionPostProcessor;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
@@ -42,6 +44,7 @@ import org.unitime.banner.interfaces.ExternalBannerSubjectAreaElementHelperInter
 import org.unitime.banner.model.base.BaseBannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
+import org.unitime.banner.model.dao.BannerSessionDAO;
 import org.unitime.banner.util.BannerCrnValidator;
 import org.unitime.banner.util.DefaultExternalBannerCampusCodeElementHelper;
 import org.unitime.banner.util.DefaultExternalBannerSubjectAreaElementHelper;
@@ -56,6 +59,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.model.InstrOfferingConfig;
+import org.unitime.timetable.model.InstructionalMethod;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.Location;
 import org.unitime.timetable.model.OfferingConsentType;
@@ -66,6 +70,7 @@ import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.Solution;
 import org.unitime.timetable.model.TeachingResponsibility;
 import org.unitime.timetable.model.dao.Class_DAO;
+import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.util.Constants;
@@ -927,6 +932,43 @@ public class BannerSection extends BaseBannerSection {
     		
         return(sb.toString());
     }
+    
+    public String buildRestrictionHtml() {
+    		StringBuilder restrictionString = new StringBuilder();
+    		ArrayList<BannerCohortRestriction> cohortRestrictions = getAllBannerCohortRestrictions(BannerSessionDAO.getInstance().getSession());
+    		if (!cohortRestrictions.isEmpty()) {
+	    		ArrayList<BannerCohortRestriction> activeCohortRestrictions = new ArrayList<BannerCohortRestriction>();
+	    		ArrayList<BannerCohortRestriction> removedCohortRestrictions = new ArrayList<BannerCohortRestriction>();
+	    		
+	    		for (BannerCohortRestriction bcr : cohortRestrictions) {
+	    			if (bcr.getRemoved()) {
+	    				removedCohortRestrictions.add(bcr);
+	    			} else {
+	    				activeCohortRestrictions.add(bcr);
+	    			}
+	    		}
+	    		boolean first = true;
+	    		for ( BannerCohortRestriction bcr : activeCohortRestrictions) {
+	    			if (first) {
+	    				first = false;
+	    			} else {
+	    				restrictionString.append("<BR>");
+	    			}
+		    		restrictionString.append(bcr.restrictionText());
+	    		}
+	    		if ("true".equals(ApplicationProperties.getProperty("banner.menu.display_inst_method_restrictions_show_removed","false"))) {
+	    			for ( BannerCohortRestriction bcr : removedCohortRestrictions) {
+		    			if (first) {
+		    				first = false;
+		    			} else {
+		    				restrictionString.append("<BR>");
+		    			}
+			    		restrictionString.append(bcr.restrictionText());
+		    		}
+	    		}
+    		}
+    		return(restrictionString.toString());
+    }
 
     public String buildInstructorHtml(){
     	Session hibSession = BannerSectionDAO.getInstance().getSession();
@@ -1240,5 +1282,85 @@ public class BannerSection extends BaseBannerSection {
 			}
 		}
 		return(allClassesCanceled);
+	}
+	
+	public ArrayList<BannerInstrMethodCohortRestriction> getAllBannerInstrMethodCohortRestriction(Session hibSession){
+		ArrayList<BannerInstrMethodCohortRestriction> imRestrictions = new ArrayList<BannerInstrMethodCohortRestriction>();
+		
+		InstrOfferingConfig ioc = InstrOfferingConfigDAO.getInstance().get(this.getBannerConfig().getInstrOfferingConfigId(), hibSession);
+		if (ioc.getEffectiveInstructionalMethod() != null) {
+    	    		imRestrictions.addAll(BannerInstrMethodCohortRestriction.findAllWithTermAndMethod(getSession(), ioc.getEffectiveInstructionalMethod(), hibSession));
+		}
+		return(imRestrictions);
+		
+	}
+
+	private ArrayList<BannerCohortRestriction> mergeBannerCohortRestrictions(ArrayList<BannerCohortRestriction> bannerCohortRestrictions, ArrayList<BannerInstrMethodCohortRestriction> instructionalMethodBannerCohortRestrictions) {
+		ArrayList<BannerCohortRestriction> mergedRestrictions = new ArrayList<BannerCohortRestriction>();
+		ArrayList<BannerCohortRestriction> notMatchedRestrictions = new ArrayList<BannerCohortRestriction>();
+		notMatchedRestrictions.addAll(bannerCohortRestrictions);
+		for (BannerInstrMethodCohortRestriction bimcr : instructionalMethodBannerCohortRestrictions) {
+			boolean merged = false;
+			for (BannerCohortRestriction bcr : bannerCohortRestrictions) {
+				if (notMatchedRestrictions.contains(bcr) && bcr.matches(bimcr)) {
+					merged = true;
+					notMatchedRestrictions.remove(bcr);
+					BannerCohortRestriction newBcr = BannerCohortRestriction.createFromInstructionalMethodCohortRestriction(bimcr);
+					newBcr.setBannerSection(this);
+					mergedRestrictions.add(newBcr);
+					break;
+				}
+			}
+			if (!merged) {
+				BannerCohortRestriction newBcr = BannerCohortRestriction.createFromInstructionalMethodCohortRestriction(bimcr);
+				newBcr.setBannerSection(this);
+				mergedRestrictions.add(newBcr);
+			}
+		}
+		for (BannerCohortRestriction bcr : notMatchedRestrictions) {
+			BannerCohortRestriction newBcr = bcr.clone();
+			newBcr.setRemoved(new Boolean(true));
+			mergedRestrictions.add(newBcr);
+		}
+        return(mergedRestrictions);
+	}
+	
+	public void replaceLastSentCohortRestrictions(ArrayList<BannerCohortRestriction> newLastSentCohortRestrictions, Session hibSession) {
+		ArrayList<BannerCohortRestriction> deleteList = new ArrayList<BannerCohortRestriction>();
+		deleteList.addAll(getAllLastSentCohortRestrictions());
+		Transaction trans = hibSession.beginTransaction();
+		for (BannerCohortRestriction bcr : deleteList) {
+			bcr.setBannerSection(null);
+			this.getBannerLastSentBannerRestrictions().remove(bcr);
+			hibSession.delete(bcr);
+		}
+		hibSession.update(this);
+		trans.commit();
+		trans = hibSession.beginTransaction();
+		for (BannerCohortRestriction bcr : newLastSentCohortRestrictions) {
+			bcr.setBannerSection(this);
+			bcr.setUniqueId((Long) hibSession.save(bcr));
+			this.addTobannerLastSentBannerRestrictions(bcr);
+		}
+		hibSession.update(this);
+		trans.commit();
+	}
+	
+	public ArrayList<BannerCohortRestriction> getAllBannerCohortRestrictions(Session hibSession) {
+		ArrayList<BannerInstrMethodCohortRestriction> imRestrictions = getAllBannerInstrMethodCohortRestriction(hibSession);
+		ArrayList<BannerCohortRestriction> lastSentCohortRestrictions = getAllLastSentCohortRestrictions();
+		return(mergeBannerCohortRestrictions(lastSentCohortRestrictions, imRestrictions));
+	}
+
+	private ArrayList<BannerCohortRestriction> getAllLastSentCohortRestrictions() {
+		ArrayList<BannerCohortRestriction> lastSentCohortRestrictions = new ArrayList<BannerCohortRestriction>();
+		if (getBannerLastSentBannerRestrictions() != null) {
+			for (BannerLastSentSectionRestriction blssr : getBannerLastSentBannerRestrictions()) {
+				if (blssr instanceof BannerCohortRestriction) {
+					lastSentCohortRestrictions.add((BannerCohortRestriction) blssr);
+				}
+			}
+		}
+		return lastSentCohortRestrictions;
 	}
 }

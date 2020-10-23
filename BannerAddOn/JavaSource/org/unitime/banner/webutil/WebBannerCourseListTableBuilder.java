@@ -34,6 +34,7 @@ import javax.servlet.jsp.JspWriter;
 
 import org.unitime.banner.form.BannerCourseListForm;
 import org.unitime.banner.model.BannerCourse;
+import org.unitime.banner.model.BannerLastSentSectionRestriction;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
@@ -285,6 +286,10 @@ public class WebBannerCourseListTableBuilder extends
      		cell = this.initCell(" &nbsp;", 1, false);
      		row.addContent(cell);	
      		}
+     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(ioc.getSessionId())) {
+     		cell = this.initCell(" &nbsp;", 1, false);
+     		row.addContent(cell);	
+     	}
         table.addContent(row);
 		}
 
@@ -426,14 +431,21 @@ public class WebBannerCourseListTableBuilder extends
      	row.addContent(roomCell);
      	row.addContent(roomCapacityCell);
      	
-    	cell = initNormalCell("", isEditable);   
-    	cell.setNoWrap(true);
+     	cell = initNormalCell("", isEditable);   
+     	cell.setNoWrap(true);
      	cell.addContent(bs.buildInstructorHtml());
      	row.addContent(cell);
 
      	if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(c.getSessionId())) {
          	row.addContent(buildLmsInfo(c, isEditable));
      	}
+     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(bs.getSession().getUniqueId())) {
+     		cell = initNormalCell("", isEditable);   
+         	cell.setNoWrap(true);
+         	cell.addContent(bs.buildRestrictionHtml());
+         	row.addContent(cell);
+     	}
+
 
     	table.addContent(row);
 	}
@@ -460,9 +472,15 @@ public class WebBannerCourseListTableBuilder extends
 	
     private TableCell subjectAndCourseInfo(BannerCourse bc, InstructionalOffering io, CourseOffering co) {
     		int span = 19;
-     	if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(io.getSessionId())) {
+    		if (BannerSection.displayLabHours()){
+    			span++;
+    		}
+    		if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(io.getSessionId())) {
      		span++;	
      		}
+     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(io.getSession().getUniqueId())) {
+     		span++;
+     	}
         TableCell cell = this.initCell(null, span, true);
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
@@ -553,6 +571,10 @@ public class WebBannerCourseListTableBuilder extends
 			cell = this.headerCell("LMS Code", 2, 1);
 			row.addContent(cell);
 		}
+     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(sessionId)) {
+     		cell = this.headerCell("Restrictions", 2, 1);
+			row.addContent(cell);
+     	}
 		
     	table.addContent(row);
     	table.addContent(row2);

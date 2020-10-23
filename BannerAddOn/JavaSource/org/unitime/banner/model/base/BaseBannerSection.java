@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.BannerConfig;
+import org.unitime.banner.model.BannerLastSentSectionRestriction;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.timetable.model.OfferingConsentType;
@@ -54,6 +55,7 @@ public abstract class BaseBannerSection implements Serializable {
 	private BannerCampusOverride iBannerCampusOverride;
 	private Set<BannerSectionToClass> iBannerSectionToClasses;
 	private Set<BannerSection> iBannerSectionToChildSections;
+	private Set<BannerLastSentSectionRestriction> iBannerLastSentBannerRestrictions;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_CRN = "crn";
@@ -130,6 +132,13 @@ public abstract class BaseBannerSection implements Serializable {
 	public void addTobannerSectionToChildSections(BannerSection bannerSection) {
 		if (iBannerSectionToChildSections == null) iBannerSectionToChildSections = new HashSet<BannerSection>();
 		iBannerSectionToChildSections.add(bannerSection);
+	}
+
+	public Set<BannerLastSentSectionRestriction> getBannerLastSentBannerRestrictions() { return iBannerLastSentBannerRestrictions; }
+	public void setBannerLastSentBannerRestrictions(Set<BannerLastSentSectionRestriction> bannerLastSentBannerRestrictions) { iBannerLastSentBannerRestrictions = bannerLastSentBannerRestrictions; }
+	public void addTobannerLastSentBannerRestrictions(BannerLastSentSectionRestriction bannerLastSentSectionRestriction) {
+		if (iBannerLastSentBannerRestrictions == null) iBannerLastSentBannerRestrictions = new HashSet<BannerLastSentSectionRestriction>();
+		iBannerLastSentBannerRestrictions.add(bannerLastSentSectionRestriction);
 	}
 
 	public boolean equals(Object o) {

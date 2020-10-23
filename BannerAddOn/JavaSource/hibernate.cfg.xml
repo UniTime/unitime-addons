@@ -35,6 +35,8 @@
 		<mapping resource="BannerResponse.hbm.xml" />
 		<mapping resource="BannerTermCrnProperties.hbm.xml" />
 		<mapping resource="BannerCampusOverride.hbm.xml" />
+		<mapping resource="BannerInstrMethodCohortRestriction.hbm.xml" />
+		<mapping resource="BannerLastSentSectionRestriction.hbm.xml" />
 		
 		<!-- End of custom hbm.xml files -->
 	</session-factory>

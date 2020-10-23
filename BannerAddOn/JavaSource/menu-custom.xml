@@ -65,6 +65,16 @@
 					<hasPermission name="SessionRollForward"/>
 				</condition>
 			</item>
+			<item name="Instr Method Restrictions" page="admin" type="gwt">
+				<parameter name="type">instMthdRstrct</parameter>
+				<condition>
+					<and>
+						<propertyEquals name="banner.menu.display_inst_method_restrictions" value="true" defaultValue="false"/>
+						<hasPermission name="AcademicSessions"/>
+					</and>					
+				</condition>
+			</item>
+			
 		</menu>
 	</menu>
 </unitime-menu>

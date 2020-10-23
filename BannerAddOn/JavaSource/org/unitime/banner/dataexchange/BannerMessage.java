@@ -20,10 +20,12 @@
 package org.unitime.banner.dataexchange;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -32,6 +34,7 @@ import org.dom4j.Document;
 import org.dom4j.Element;
 import org.hibernate.Session;
 import org.unitime.banner.interfaces.ExternalBannerSessionElementHelperInterface;
+import org.unitime.banner.model.BannerCohortRestriction;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
@@ -204,10 +207,61 @@ public class BannerMessage {
 			if (!action.equals(BannerMessageAction.DELETE)){
 				createMeetingElementsXml(bannerSection, hibSession, sectionElement);
 				createInstructorXml(bannerSection, hibSession, sectionElement);
+				createRestrictionXml(bannerSection, hibSession, sectionElement);
+				
 			}
 		}
 	}
 	
+	private void createRestrictionXml(BannerSection bannerSection, Session hibSession, Element sectionElement) {
+		createCohortRestrictionXml(bannerSection, hibSession, sectionElement);
+		/* in future if other restrictions are supported add them here */
+	}
+
+	private void createCohortRestrictionXml(BannerSection bannerSection, Session hibSession, Element sectionElement) {
+		ArrayList<BannerCohortRestriction> cohortRestrictions = bannerSection.getAllBannerCohortRestrictions(hibSession);
+		if (cohortRestrictions.isEmpty()) {
+			return;
+		}
+		ArrayList<BannerCohortRestriction> activeCohortRestrictions = new ArrayList<BannerCohortRestriction>();
+		ArrayList<BannerCohortRestriction> removedCohortRestrictions = new ArrayList<BannerCohortRestriction>();
+		
+		for (BannerCohortRestriction bcr : cohortRestrictions) {
+			if (bcr.getRemoved()) {
+				removedCohortRestrictions.add(bcr);
+			} else {
+				activeCohortRestrictions.add(bcr);
+			}
+		}
+		String restrictionAction = null;
+		if (activeCohortRestrictions.isEmpty()) {
+			restrictionAction = removedCohortRestrictions.get(0).getRestrictionAction();
+		} else {
+			restrictionAction = activeCohortRestrictions.get(0).getRestrictionAction();			
+		}
+
+		Element restrictionElement = sectionElement.addElement("RESTRICTION");
+		restrictionElement.addAttribute("TYPE", "COHORT");
+		restrictionElement.addAttribute("STATUS", restrictionAction);
+		for (BannerCohortRestriction bcr : activeCohortRestrictions) {
+			addCohortRestrictElement(bcr, restrictionElement);
+		}
+		for (BannerCohortRestriction bcr : removedCohortRestrictions) {
+			addCohortRestrictElement(bcr, restrictionElement);
+		}
+
+		bannerSection.replaceLastSentCohortRestrictions(cohortRestrictions, hibSession);
+	}
+
+	private void addCohortRestrictElement(BannerCohortRestriction bcr, Element restrictionElement) {
+		Element restrictElement = restrictionElement.addElement("RESTRICT");
+		if (bcr.isRemoved()) {
+			restrictElement.addAttribute("REMOVE", "Y");
+		}
+		restrictElement.addText(bcr.getCohort().getExternalUniqueId() != null?bcr.getCohort().getExternalUniqueId():bcr.getCohort().getGroupAbbreviation());
+		
+	}
+
 	private void createMeetingElementsXml(BannerSection bannerSection, Session hibSession, Element sectionElement) {
 		Set<MeetingElement> initialMeetingElements = getInitialMeetingElements(bannerSection, hibSession);
 		TreeSet<MeetingElement> meetingElements = mergeMeetings(initialMeetingElements);
@@ -405,10 +459,8 @@ public class BannerMessage {
 			querySession = Class_DAO.getInstance().getSession();
 		}
 		if (bannerSection.isCrossListedSection(querySession)){
-			for (Iterator bscIt = bannerSection.getBannerSectionToClasses().iterator(); bscIt.hasNext();){
-				BannerSectionToClass bsc = (BannerSectionToClass) bscIt.next();
-				for(Iterator crnIt = querySession.createQuery("select distinct bsc.bannerSection.crn from BannerSectionToClass bsc where bsc.classId = :classId").setLong("classId", bsc.getClassId().longValue()).iterate(); crnIt.hasNext();) {
-					Integer crn = (Integer) crnIt.next();
+			for (BannerSectionToClass bsc : bannerSection.getBannerSectionToClasses()){
+				for(Integer crn : (List<Integer>) querySession.createQuery("select distinct bsc.bannerSection.crn from BannerSectionToClass bsc where bsc.classId = :classId").setLong("classId", bsc.getClassId().longValue()).list()) {
 					if (crn != null) {
 						ts.add(crn);
 					}

@@ -17,5 +17,8 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-3.6.6.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.8.4.jar"/>
 	<classpathentry kind="src" path="/UniTime"/>
+	<classpathentry kind="lib" path="/UniTime/3rd_party/gwt-dev-2.8.2.jar"/>
+	<classpathentry kind="lib" path="/UniTime/3rd_party/gwt-user-2.8.2.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-4.2.9.RELEASE.jar" sourcepath="/UniTime/3rd_party/sources/spring-security-core-4.2.9.RELEASE-sources.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>

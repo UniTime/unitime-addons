@@ -176,6 +176,19 @@
 			lazy="false"
 			foreign-key="fk_campus_override"
 		/>
+
+		<set
+			name="bannerLastSentBannerRestrictions"
+			lazy="false"
+			inverse="true"
+			cascade="all"
+            table="banner_last_sent_sect_restr"
+			>
+			<cache include="non-lazy" usage="read-write"/>
+			<key column="banner_section_id" foreign-key="fk_blssr_banner_sec_id"/>
+			<one-to-many class="org.unitime.banner.model.BannerLastSentSectionRestriction"/>
+		</set>		
+
 	</class>
 
 </hibernate-mapping>
