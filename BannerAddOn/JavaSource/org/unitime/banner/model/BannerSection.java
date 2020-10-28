@@ -35,6 +35,7 @@ import java.util.Vector;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.TransactionException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.springframework.beans.factory.support.MergedBeanDefinitionPostProcessor;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
@@ -1328,22 +1329,37 @@ public class BannerSection extends BaseBannerSection {
 	public void replaceLastSentCohortRestrictions(ArrayList<BannerCohortRestriction> newLastSentCohortRestrictions, Session hibSession) {
 		ArrayList<BannerCohortRestriction> deleteList = new ArrayList<BannerCohortRestriction>();
 		deleteList.addAll(getAllLastSentCohortRestrictions());
-		Transaction trans = hibSession.beginTransaction();
+		
+		Transaction trans = null;
+		try {
+			trans = hibSession.beginTransaction();
+		} catch (TransactionException e) {
+			// Skip processing Last Sent Banner Restriction update inside of a hibernate transaction to avoid nested transaction error.
+			trans = null;
+		}
 		for (BannerCohortRestriction bcr : deleteList) {
 			bcr.setBannerSection(null);
 			this.getBannerLastSentBannerRestrictions().remove(bcr);
 			hibSession.delete(bcr);
 		}
 		hibSession.update(this);
-		trans.commit();
-		trans = hibSession.beginTransaction();
+		if (trans == null) {
+			hibSession.flush();
+		} else {
+			trans.commit();
+			trans = hibSession.beginTransaction();
+		}
 		for (BannerCohortRestriction bcr : newLastSentCohortRestrictions) {
 			bcr.setBannerSection(this);
 			bcr.setUniqueId((Long) hibSession.save(bcr));
 			this.addTobannerLastSentBannerRestrictions(bcr);
 		}
 		hibSession.update(this);
-		trans.commit();
+		if (trans == null) {
+			hibSession.flush();
+		} else {
+			trans.commit();
+		}
 	}
 	
 	public ArrayList<BannerCohortRestriction> getAllBannerCohortRestrictions(Session hibSession) {
