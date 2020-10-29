@@ -35,9 +35,7 @@ import java.util.Vector;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.TransactionException;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.springframework.beans.factory.support.MergedBeanDefinitionPostProcessor;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
@@ -60,7 +58,6 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.DepartmentalInstructor;
 import org.unitime.timetable.model.FixedCreditUnitConfig;
 import org.unitime.timetable.model.InstrOfferingConfig;
-import org.unitime.timetable.model.InstructionalMethod;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.Location;
 import org.unitime.timetable.model.OfferingConsentType;
@@ -1332,34 +1329,36 @@ public class BannerSection extends BaseBannerSection {
 		
 		Transaction trans = null;
 		try {
-			trans = hibSession.beginTransaction();
-		} catch (TransactionException e) {
-			// Skip processing Last Sent Banner Restriction update inside of a hibernate transaction to avoid nested transaction error.
-			trans = null;
+			if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive()) {
+				trans = hibSession.beginTransaction();
+			}
+			for (BannerCohortRestriction bcr : deleteList) {
+				bcr.setBannerSection(null);
+				this.getBannerLastSentBannerRestrictions().remove(bcr);
+				hibSession.delete(bcr);
+			}
+			hibSession.update(this);
+			if (trans == null) {
+				hibSession.flush();
+			} else {
+				trans.commit();
+				trans = hibSession.beginTransaction();
+			}
+			for (BannerCohortRestriction bcr : newLastSentCohortRestrictions) {
+				bcr.setBannerSection(this);
+				bcr.setUniqueId((Long) hibSession.save(bcr));
+				this.addTobannerLastSentBannerRestrictions(bcr);
+			}
+			hibSession.update(this);
+			if (trans == null) {
+				hibSession.flush();
+			} else {
+				trans.commit();
+			}
+		} catch (Exception e) {
+			Debug.info("Failed to save Last Sent Banner Restrictions for " + this.getCrn().toString());
 		}
-		for (BannerCohortRestriction bcr : deleteList) {
-			bcr.setBannerSection(null);
-			this.getBannerLastSentBannerRestrictions().remove(bcr);
-			hibSession.delete(bcr);
-		}
-		hibSession.update(this);
-		if (trans == null) {
-			hibSession.flush();
-		} else {
-			trans.commit();
-			trans = hibSession.beginTransaction();
-		}
-		for (BannerCohortRestriction bcr : newLastSentCohortRestrictions) {
-			bcr.setBannerSection(this);
-			bcr.setUniqueId((Long) hibSession.save(bcr));
-			this.addTobannerLastSentBannerRestrictions(bcr);
-		}
-		hibSession.update(this);
-		if (trans == null) {
-			hibSession.flush();
-		} else {
-			trans.commit();
-		}
+		
 	}
 	
 	public ArrayList<BannerCohortRestriction> getAllBannerCohortRestrictions(Session hibSession) {
