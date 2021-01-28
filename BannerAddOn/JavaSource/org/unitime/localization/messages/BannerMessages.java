@@ -20,7 +20,6 @@
 package org.unitime.localization.messages;
 
 import org.unitime.banner.action.BannerCourseSearchAction;
-import org.unitime.localization.messages.CourseMessages;
 
 public interface BannerMessages extends CourseMessages {
 
