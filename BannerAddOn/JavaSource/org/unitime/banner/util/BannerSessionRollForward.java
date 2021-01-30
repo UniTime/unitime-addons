@@ -22,11 +22,13 @@ package org.unitime.banner.util;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.hibernate.Transaction;
 import org.unitime.banner.form.RollForwardBannerSessionForm;
 import org.unitime.banner.interfaces.ExternalSessionRollForwardCustomizationInterface;
 import org.unitime.banner.model.BannerConfig;
@@ -40,8 +42,11 @@ import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
+import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.SubjectArea;
+import org.unitime.timetable.model.comparators.InstructionalOfferingComparator;
+import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.util.SessionRollForward;
 
 
@@ -73,14 +78,59 @@ public class BannerSessionRollForward extends SessionRollForward {
 		}
 		try {
 			ExternalSessionRollForwardCustomizationInterface customRollForwardAction = getExternalSessionRollForwardCustomization();
-			if (customRollForwardAction != null){
+			org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
+			Transaction trns = null;
+			try {
+				if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
+					trns = hibSession.beginTransaction();
+				if (customRollForwardAction != null){
 				customRollForwardAction.doCustomRollFowardAction(fromSession, toSession);
-			}
+				}
+				if (trns != null) {
+					trns.commit();
+				}
+			} catch (Exception e){
+				iLog.error("Failed to perform custom roll banner session data forward action for session: " + toSession.getLabel(), e);
+				if (trns != null){
+					if (trns.isActive()){
+						trns.rollback();
+					}
+				}
+				throw e;
+			}	
+
 		} catch (Exception e) {
 			iLog.error("Failed to perform custom roll banner session data forward action.", e);
 			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to perform custom roll banner session data forward action: " + e.getMessage()));
 		}
 		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void createMissingBannerSections(ActionMessages errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
+		Session academicSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollForwardTo());
+		try {
+			TreeSet<SubjectArea> subjectAreas = new TreeSet<SubjectArea>();
+			subjectAreas.addAll((Set<SubjectArea>)academicSession.getSubjectAreas());
+
+			for (SubjectArea sa : subjectAreas) {
+				TreeSet<InstructionalOffering> offeringsToUpdate = new TreeSet<InstructionalOffering>(new InstructionalOfferingComparator(null));
+				org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
+				offeringsToUpdate.addAll(BannerSection.findOfferingsMissingBannerSectionsForSubjectArea(sa, hibSession));
+				BannerInstrOffrConfigChangeAction biocca = null;
+				for (InstructionalOffering io : offeringsToUpdate) {
+					iLog.info("Creating Missing Banner Sections for Offering:  " + io.getCourseNameWithTitle());
+					biocca = new BannerInstrOffrConfigChangeAction();
+					biocca.updateInstructionalOffering(io, hibSession);
+					hibSession.evict(io);
+				}	
+				hibSession.flush();
+				hibSession.clear();
+			}				
+		} catch (Exception e) {
+			iLog.error("Failed to create missing Banner sections.", e);
+			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Section Data", academicSession.getLabel(), "Failed to create missing Banner sections."));
+		}
 	}
 
 	private void rollForwardBannerCourseData(Session toSession) {
@@ -107,60 +157,76 @@ public class BannerSessionRollForward extends SessionRollForward {
 									.iterator();
 				while (fromBannerCourseIt.hasNext()){
 					BannerCourse fromBc = (BannerCourse) fromBannerCourseIt.next();
-					BannerCourse toBc = new BannerCourse();
-					toBc.setUniqueIdRolledForwardFrom(fromBc.getUniqueId());
-					CourseOffering toCo = CourseOffering.findByIdRolledForwardFrom(toSessionId, fromBc.getCourseOfferingId());
-					toBc.setCourseOfferingId(toCo.getUniqueId());
-					for(Iterator fromBannerConfigsIt = fromBc.getBannerConfigs().iterator(); fromBannerConfigsIt.hasNext();){
-						BannerConfig fromBcfg = (BannerConfig) fromBannerConfigsIt.next();
-						BannerConfig toBcfg = new BannerConfig();
-						InstrOfferingConfig toIoc = InstrOfferingConfig.findByIdRolledForwardFrom(toSessionId, fromBcfg.getInstrOfferingConfigId());
-						if (toIoc == null){
-							iLog.info("Not rolling foward Banner Configuration with unique id: " + fromBcfg.getUniqueId().toString() + ", this configuration was orphaned.");		
-							continue;
-						}
-						toBcfg.setUniqueIdRolledForwardFrom(fromBcfg.getUniqueId());
-						toBcfg.setInstrOfferingConfigId(toIoc.getUniqueId());
-						toBcfg.setBannerCourse(toBc);
-						toBcfg.setGradableItype(fromBcfg.getGradableItype());
-						toBcfg.setLabHours(fromBcfg.getLabHours());
-						toBc.addTobannerConfigs(toBcfg);
-						for(Iterator fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
-							BannerSection fromBs = (BannerSection) fromBannerSectionsIt.next();
-							BannerSection toBs = new BannerSection();
-							toBs.setCrossListIdentifier(fromBs.getCrossListIdentifier());
-							toBs.setLinkIdentifier(fromBs.getLinkIdentifier());
-							toBs.setLinkConnector(fromBs.getLinkConnector());
-							toBs.setCrn(fromBs.getCrn());
-							toBs.setSectionIndex(fromBs.getSectionIndex());
-							toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueId());
-							toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
-							toBs.setOverrideLimit(fromBs.getOverrideLimit());
-							toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
-						
+					Transaction trns = null;
+					try {
+						if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
+							trns = hibSession.beginTransaction();
+						BannerCourse toBc = new BannerCourse();
+						toBc.setUniqueIdRolledForwardFrom(fromBc.getUniqueId());
+						CourseOffering toCo = CourseOffering.findByIdRolledForwardFrom(toSessionId, fromBc.getCourseOfferingId());
+						toBc.setCourseOfferingId(toCo.getUniqueId());
+						for(Iterator fromBannerConfigsIt = fromBc.getBannerConfigs().iterator(); fromBannerConfigsIt.hasNext();){
+							BannerConfig fromBcfg = (BannerConfig) fromBannerConfigsIt.next();
+							BannerConfig toBcfg = new BannerConfig();
+							InstrOfferingConfig toIoc = InstrOfferingConfig.findByIdRolledForwardFrom(toSessionId, fromBcfg.getInstrOfferingConfigId());
+							if (toIoc == null){
+								iLog.info("Not rolling foward Banner Configuration with unique id: " + fromBcfg.getUniqueId().toString() + ", this configuration was orphaned.");		
+								continue;
+							}
+							toBcfg.setUniqueIdRolledForwardFrom(fromBcfg.getUniqueId());
+							toBcfg.setInstrOfferingConfigId(toIoc.getUniqueId());
+							toBcfg.setBannerCourse(toBc);
+							toBcfg.setGradableItype(fromBcfg.getGradableItype());
+							toBcfg.setLabHours(fromBcfg.getLabHours());
+							toBc.addTobannerConfigs(toBcfg);
+							for(Iterator fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
+								BannerSection fromBs = (BannerSection) fromBannerSectionsIt.next();
+								BannerSection toBs = new BannerSection();
+								toBs.setCrossListIdentifier(fromBs.getCrossListIdentifier());
+								toBs.setLinkIdentifier(fromBs.getLinkIdentifier());
+								toBs.setLinkConnector(fromBs.getLinkConnector());
+								toBs.setCrn(fromBs.getCrn());
+								toBs.setSectionIndex(fromBs.getSectionIndex());
+								toBs.setUniqueIdRolledForwardFrom(fromBs.getUniqueId());
+								toBs.setOverrideCourseCredit(fromBs.getOverrideCourseCredit());
+								toBs.setOverrideLimit(fromBs.getOverrideLimit());
+								toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
 							
-							for (Iterator fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();){
-								BannerSectionToClass fromBsc = (BannerSectionToClass) fromBannerSectionToClassIt.next();
-								Class_ toClass = Class_.findByIdRolledForwardFrom(toSessionId, fromBsc.getClassId());
-								if (toClass != null) {
-									BannerSectionToClass toBsc = new BannerSectionToClass();
-									toBsc.setBannerSection(toBs);
-									toBs.addTobannerSectionToClasses(toBsc);
-									toBsc.setClassId(toClass.getUniqueId());
+								
+								for (Iterator fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();){
+									BannerSectionToClass fromBsc = (BannerSectionToClass) fromBannerSectionToClassIt.next();
+									Class_ toClass = Class_.findByIdRolledForwardFrom(toSessionId, fromBsc.getClassId());
+									if (toClass != null) {
+										BannerSectionToClass toBsc = new BannerSectionToClass();
+										toBsc.setBannerSection(toBs);
+										toBs.addTobannerSectionToClasses(toBsc);
+										toBsc.setClassId(toClass.getUniqueId());
+									}
+								}
+								if (toBs.getBannerSectionToClasses() != null){
+									toBs.setBannerConfig(toBcfg);
+									toBcfg.addTobannerSections(toBs);								
+									toBs.setConsentType(fromBs.getConsentType());
+									toBs.setSession(toSession);
 								}
 							}
-							if (toBs.getBannerSectionToClasses() != null){
-								toBs.setBannerConfig(toBcfg);
-								toBcfg.addTobannerSections(toBs);								
-								toBs.setConsentType(fromBs.getConsentType());
-								toBs.setSession(toSession);
+						}
+						hibSession.save(toBc);
+						if (trns != null && trns.isActive()) {
+							trns.commit();
+						}
+						hibSession.flush();
+						hibSession.evict(toBc);
+						hibSession.evict(fromBc);
+					} catch (Exception e){
+						iLog.error("Failed to roll banner course data: " + fromBc.getCourseOffering(hibSession), e);
+						if (trns != null){
+							if (trns.isActive()){
+								trns.rollback();
 							}
 						}
-					}
-					hibSession.save(toBc);
-					hibSession.flush();
-					hibSession.evict(toBc);
-					hibSession.evict(fromBc);
+						throw e;
+					}	
 				}
 			}
 		}
@@ -168,12 +234,11 @@ public class BannerSessionRollForward extends SessionRollForward {
 
 	private void updateClassSuffixes(Session toSession) {
 		Long toSessionId = toSession.getUniqueId();
-		BannerSession bs = BannerSession.findBannerSessionForSession(toSessionId, null);
+		org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
+		BannerSession bs = BannerSession.findBannerSessionForSession(toSessionId, hibSession);
 		if (bs.isStoreDataForBanner().booleanValue()){
 			TreeSet<SubjectArea> subjectAreas =  new TreeSet<SubjectArea>();
-			for(Iterator saIt = toSession.getSubjectAreas().iterator(); saIt.hasNext();){
-				subjectAreas.add((SubjectArea) saIt.next());
-			}
+			subjectAreas.addAll(toSession.getSubjectAreas());
 			StringBuilder sb = new StringBuilder();
 			sb.append("select distinct bc from BannerCourse bc, CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId")
 			  .append(" and bc.courseOfferingId = co.uniqueId")
@@ -186,58 +251,89 @@ public class BannerSessionRollForward extends SessionRollForward {
 			  .append(" and bstc.bannerSection.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId")
 			  .append(" and c.uniqueId = bstc.classId");
 			String queryString2 = sb2.toString();
-			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
-				iLog.info("Updating Class External Ids for Subject Area:  " + sa.getSubjectAreaAbbreviation());
-				Iterator bannerCourseIt = hibSession.createQuery(queryString)
-									.setLong("sessionId", toSessionId.longValue())
-									.setLong("subjectId", sa.getUniqueId().longValue())
-									.list()
-									.iterator();
-				List classes = hibSession.createQuery(queryString2)
-									.setLong("sessionId", toSessionId.longValue())
-									.setLong("subjectId", sa.getUniqueId().longValue())
-									.setCacheable(true)
-									.list();
-				while (bannerCourseIt.hasNext()){
-					BannerCourse bc = (BannerCourse) bannerCourseIt.next();
-					for(Iterator bannerConfigsIt = bc.getBannerConfigs().iterator(); bannerConfigsIt.hasNext();){
-						BannerConfig bcfg = (BannerConfig) bannerConfigsIt.next();
-						for(Iterator bannerSectionsIt = bcfg.getBannerSections().iterator(); bannerSectionsIt.hasNext();){
-							BannerSection bannerSection = (BannerSection) bannerSectionsIt.next();
-							bannerSection.updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, false);
+				Transaction trns = null;
+				try {
+					if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
+						trns = hibSession.beginTransaction();
+					iLog.info("Updating Class External Ids for Subject Area:  " + sa.getSubjectAreaAbbreviation());
+					@SuppressWarnings("unchecked")
+					List<BannerCourse> bannerCourses = hibSession.createQuery(queryString)
+										.setLong("sessionId", toSessionId.longValue())
+										.setLong("subjectId", sa.getUniqueId().longValue())
+										.list();
+					@SuppressWarnings("unchecked")
+					List<Class_> classes = hibSession.createQuery(queryString2)
+										.setLong("sessionId", toSessionId.longValue())
+										.setLong("subjectId", sa.getUniqueId().longValue())
+										.setCacheable(true)
+										.list();
+					for (BannerCourse bc : bannerCourses){
+						for(BannerConfig bcfg : bc.getBannerConfigs()){
+							for(BannerSection bannerSection : bcfg.getBannerSections()){
+								bannerSection.updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, false);
+							}
+						}
+						hibSession.evict(bc);
+					}
+					if (trns != null && trns.isActive()) {
+						trns.commit();
+					}
+					hibSession.flush();
+					for(Class_ c : classes){
+						hibSession.evict(c);
+					}
+				} catch (Exception e){
+					iLog.error("Failed to update classs suffixes for session: " + toSession.getLabel(), e);
+					if (trns != null){
+						if (trns.isActive()){
+							trns.rollback();
 						}
 					}
-					hibSession.evict(bc);
-				}
-				hibSession.flush();
-				for(Iterator cIt = classes.iterator(); cIt.hasNext();){
-					hibSession.evict((Class_) cIt.next());
-				}
+					throw e;
+				}	
 			}
 		}
 	}
 	private void rollForwardBannerSessionData(Session toSession,
 			Session fromSession) {
-		BannerSession toBs = BannerSession.findBannerSessionForSession(toSession, null);
-		if (toBs == null) {
-			BannerSession fromBs = BannerSession.findBannerSessionForSession(fromSession, null);
-			toBs = new BannerSession();
-			toBs.setBannerCampus(fromBs.getBannerCampus());
-			String oldYearStr = fromBs.getBannerTermCode().substring(0,4);
-			int year = Integer.parseInt(oldYearStr);
-			year++;
-			String newYearStr = Integer.toString(year) + fromBs.getBannerTermCode().substring(4, 6);
-			toBs.setBannerTermCode(newYearStr);
-			toBs.setStoreDataForBanner(fromBs.isStoreDataForBanner());
-			toBs.setSendDataToBanner(new Boolean(false));
-			toBs.setLoadingOfferingsFile(new Boolean(false));
-			toBs.setSession(toSession);
-			toBs.setStudentCampus(fromBs.getStudentCampus());
-			toBs.setSubjectAreaPrefixDelimiter(fromBs.getSubjectAreaPrefixDelimiter());
-			toBs.setUseSubjectAreaPrefixAsCampus(fromBs.getUseSubjectAreaPrefixAsCampus());
-			BannerSessionDAO.getInstance().save(toBs);
-		}
+		Transaction trns = null;
+		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
+		try {
+			if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
+				trns = hibSession.beginTransaction();
+
+			BannerSession toBs = BannerSession.findBannerSessionForSession(toSession, null);
+			if (toBs == null) {
+				BannerSession fromBs = BannerSession.findBannerSessionForSession(fromSession, null);
+				toBs = new BannerSession();
+				toBs.setBannerCampus(fromBs.getBannerCampus());
+				String oldYearStr = fromBs.getBannerTermCode().substring(0,4);
+				int year = Integer.parseInt(oldYearStr);
+				year++;
+				String newYearStr = Integer.toString(year) + fromBs.getBannerTermCode().substring(4, 6);
+				toBs.setBannerTermCode(newYearStr);
+				toBs.setStoreDataForBanner(fromBs.isStoreDataForBanner());
+				toBs.setSendDataToBanner(new Boolean(false));
+				toBs.setLoadingOfferingsFile(new Boolean(false));
+				toBs.setSession(toSession);
+				toBs.setStudentCampus(fromBs.getStudentCampus());
+				toBs.setSubjectAreaPrefixDelimiter(fromBs.getSubjectAreaPrefixDelimiter());
+				toBs.setUseSubjectAreaPrefixAsCampus(fromBs.getUseSubjectAreaPrefixAsCampus());
+				BannerSessionDAO.getInstance().save(toBs);
+				if (trns != null && trns.isActive()) {
+					trns.commit();
+				}
+			}
+		} catch (Exception e){
+			iLog.error("Failed to roll banner session data: " + toSession.getLabel(), e);
+			if (trns != null){
+				if (trns.isActive()){
+					trns.rollback();
+				}
+				throw e;
+			}
+		}	
 	}
 
 	private ExternalSessionRollForwardCustomizationInterface getExternalSessionRollForwardCustomization() throws Exception{

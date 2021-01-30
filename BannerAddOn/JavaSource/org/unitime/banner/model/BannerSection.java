@@ -66,6 +66,7 @@ import org.unitime.timetable.model.PreferenceLevel;
 import org.unitime.timetable.model.RoomPref;
 import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.Solution;
+import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.TeachingResponsibility;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
@@ -1378,4 +1379,35 @@ public class BannerSection extends BaseBannerSection {
 		}
 		return lastSentCohortRestrictions;
 	}
+
+	@SuppressWarnings("unchecked")
+	public static ArrayList<InstructionalOffering> findOfferingsMissingBannerSections(
+			org.unitime.timetable.model.Session academicSession, Session hibSession) {
+		ArrayList<InstructionalOffering> offeringList = new ArrayList<InstructionalOffering>();
+		String query = " select distinct c.schedulingSubpart.instrOfferingConfig.instructionalOffering"
+				+ " from Class_ c inner join c.schedulingSubpart.instrOfferingConfig.instructionalOffering.courseOfferings as co"
+				+ " where c.schedulingSubpart.instrOfferingConfig.instructionalOffering.session = :sessionId"
+				+ "  and 0 = (select count(bs)"
+				+ "               from BannerSection bs inner join bs.bannerSectionToClasses as bstc"
+				+ "               where bstc.classId = c.uniqueId)";
+		offeringList.addAll(hibSession.createQuery(query).setLong("sessionId", academicSession.getUniqueId().longValue()).list());
+		
+		return offeringList;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static ArrayList<InstructionalOffering> findOfferingsMissingBannerSectionsForSubjectArea(
+			SubjectArea subjectArea, Session hibSession) {
+		ArrayList<InstructionalOffering> offeringList = new ArrayList<InstructionalOffering>();
+		String query = " select distinct c.schedulingSubpart.instrOfferingConfig.instructionalOffering"
+				+ " from Class_ c inner join c.schedulingSubpart.instrOfferingConfig.instructionalOffering.courseOfferings as co"
+				+ " where co.subjectArea.uniqueId = :subjId"
+				+ "  and 0 = (select count(bs)"
+				+ "               from BannerSection bs inner join bs.bannerSectionToClasses as bstc"
+				+ "               where bstc.classId = c.uniqueId)";
+		offeringList.addAll(hibSession.createQuery(query).setLong("subjId", subjectArea.getUniqueId().longValue()).list());
+		
+		return offeringList;
+	}
+
 }

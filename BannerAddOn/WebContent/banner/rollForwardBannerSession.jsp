@@ -116,6 +116,10 @@
 			<html:optionsCollection property="fromSessions" value="uniqueId" label="label" /></html:select>
 			</td>			
 		</tr>
+		<tr>
+			<td valign="top" nowrap ><html:checkbox name="<%=frmName%>" property="createMissingBannerSections"/> Create Missing Banner Sections. 
+			</td>			
+		</tr>
 		<tr><td>&nbsp;<br>&nbsp;<br></td></tr>
 				<tr>
 			<td align="right">

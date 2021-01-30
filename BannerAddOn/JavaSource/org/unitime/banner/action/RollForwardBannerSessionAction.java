@@ -96,7 +96,7 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
         if (op != null && op.equals(rsc.getMessage("button.rollForward"))) {
     		sessionContext.checkPermission(rollForwardBannerSessionForm.getSessionToRollForwardTo(), "Session", Right.SessionRollForward);
             ActionMessages errors = rollForwardBannerSessionForm.validate(mapping, request);
-            if (errors.size() == 0 && rollForwardBannerSessionForm.getRollForwardBannerSession().booleanValue()) {
+            if (errors.size() == 0 && (rollForwardBannerSessionForm.getRollForwardBannerSession().booleanValue() || rollForwardBannerSessionForm.getCreateMissingBannerSections().booleanValue())) {
             	solverServerService.getQueueProcessor().add(new BannerRollForwardQueueItem(
             			SessionDAO.getInstance().get(rollForwardBannerSessionForm.getSessionToRollForwardTo()), 
             			sessionContext.getUser(),
@@ -209,6 +209,11 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 				setStatus("Banner Session Data ...");
 				sessionRollForward.rollBannerSessionDataForward(iErrors, iForm);	
 	        }
+        	if (iErrors.isEmpty() && iForm.getCreateMissingBannerSections()) {
+    				setStatus("Create Missing Banner Section Data ...");
+    				sessionRollForward.createMissingBannerSections(iErrors, iForm);	
+    	        }
+    	
 	        iProgress++;
 	        if (!iErrors.isEmpty()) {
 	        	setError(new Exception(((ActionMessage)iErrors.get().next()).getValues()[0].toString()));
@@ -221,14 +226,15 @@ public class RollForwardBannerSessionAction extends RollForwardSessionAction {
 		public String name() {
 			List<String> names = new ArrayList<String>();
         	if (iForm.getRollForwardBannerSession()) names.add("banner session");
-        	String name = names.toString().replace("[", "").replace("]", "");
+         	if (iForm.getCreateMissingBannerSections()) names.add("add missing banner sections");
+             	String name = names.toString().replace("[", "").replace("]", "");
         	if (name.length() > 50) name = name.substring(0, 47) + "...";
         	return name;
 		}
 
 		@Override
 		public double progress() {
-			return 100 * iProgress / 1;
+			return 100 * iProgress / ((iForm.getRollForwardBannerSession()?1:0) + (iForm.getCreateMissingBannerSections()?1:0));
 		}
 
 		@Override

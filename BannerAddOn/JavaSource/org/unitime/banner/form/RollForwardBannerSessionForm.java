@@ -44,6 +44,7 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 
 	private Long sessionToRollBannerDataForwardFrom;
 	private Boolean rollForwardBannerSession;
+	private Boolean createMissingBannerSections;
 	
 	/**
 	 * 
@@ -59,6 +60,14 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 	public void setSessionToRollBannerDataForwardFrom(
 			Long sessionToRollBannerDataForwardFrom) {
 		this.sessionToRollBannerDataForwardFrom = sessionToRollBannerDataForwardFrom;
+	}
+
+	public Boolean getCreateMissingBannerSections() {
+		return createMissingBannerSections;
+	}
+
+	public void setCreateMissingBannerSections(Boolean createMissingBannerSections) {
+		this.createMissingBannerSections = createMissingBannerSections;
 	}
 
 	public void validateSessionToRollForwardTo(ActionErrors errors){
@@ -93,6 +102,7 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 		super.init();
 
 		rollForwardBannerSession = new Boolean(false);
+		createMissingBannerSections = new Boolean(false);
 		sessionToRollBannerDataForwardFrom = null;
 	}
 
@@ -107,6 +117,7 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 		form.setSessionToRollForwardTo(getSessionToRollForwardTo());
 		form.setRollForwardBannerSession(getRollForwardBannerSession());
 		form.setSessionToRollBannerDataForwardFrom(getSessionToRollBannerDataForwardFrom());
+		form.setCreateMissingBannerSections(getCreateMissingBannerSections());
 	}
 	
 	public Object clone() {
