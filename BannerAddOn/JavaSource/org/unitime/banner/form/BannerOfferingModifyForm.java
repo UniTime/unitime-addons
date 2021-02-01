@@ -39,6 +39,7 @@ import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
+import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Preference;
@@ -371,8 +372,9 @@ public class BannerOfferingModifyForm extends ActionForm {
 	}
 
 	    
-	public void addToBannerSections(BannerSession bsess, BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent){
-		this.showLimitOverride = new Boolean(bs.isCrossListedSection(null));
+	public void addToBannerSections(BannerSession bsess, BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent, Boolean canShowLimitOverridesIfNeeded){
+		
+		this.showLimitOverride = new Boolean(canShowLimitOverridesIfNeeded?bs.isCrossListedSection(null):false);
 		this.bannerSectionLabels.add(bs.bannerSectionLabel());
 		this.bannerSectionLabelIndents.add(indent);
 		this.bannerSectionIds.add(bs.getUniqueId().toString());
@@ -508,7 +510,11 @@ public class BannerOfferingModifyForm extends ActionForm {
 	}
 
 	public void setShowLimitOverride(Boolean showLimitOverride) {
-		this.showLimitOverride = showLimitOverride;
+		if (ApplicationProperties.getProperty("tmtbl.banner.section.limit.overrides_allowed", "true").equalsIgnoreCase("true")) {
+			this.showLimitOverride = showLimitOverride;
+		} else {
+			this.showLimitOverride = new Boolean(false);	
+		}
 	}
 
 	public List getLimitOverrides() {

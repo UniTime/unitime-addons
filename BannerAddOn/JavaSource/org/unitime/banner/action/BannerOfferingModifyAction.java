@@ -51,6 +51,7 @@ import org.unitime.banner.model.dao.BannerConfigDAO;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.commons.Debug;
+import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.Department;
@@ -252,6 +253,7 @@ public class BannerOfferingModifyAction extends Action {
     		ArrayList<Class_> classesList = new ArrayList<Class_>(classes);
             Collections.sort(classesList, new ClassComparator(ClassComparator.COMPARE_BY_ITYPE) );
 	    	Boolean readOnlyClass = new Boolean(false);
+	    	boolean canShowLimitOverridesIfNeeded = (ApplicationProperties.getProperty("tmtbl.banner.section.limit.overrides_allowed", "true").equalsIgnoreCase("true"));
 	    	for(Class_ cls : classesList){
 	    		if (cls.isCancelled().booleanValue()){
 	    			continue;
@@ -263,7 +265,7 @@ public class BannerOfferingModifyAction extends Action {
 		    			readOnlyClass = new Boolean(!sessionContext.hasPermission(cls, Right.MultipleClassSetupClass));
 		    		}
 		    		BannerSection bs = BannerSection.findBannerSectionForBannerCourseAndClass(bc, cls);
-		    		frm.addToBannerSections(bsess, bs, cls, classAssignmentProxy, readOnlyClass, indent);
+		    		frm.addToBannerSections(bsess, bs, cls, classAssignmentProxy, readOnlyClass, indent, canShowLimitOverridesIfNeeded);
 		    	}
 	    		loadClasses(frm, bsess, bc, cls.getChildClasses(), new Boolean(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
 	    	}
