@@ -133,7 +133,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 		}
 	}
 
-	private void rollForwardBannerCourseData(Session toSession) {
+	private void rollForwardBannerCourseData(Session toSession) throws Exception {
 		Long toSessionId = toSession.getUniqueId();
 		BannerSession bs = BannerSession.findBannerSessionForSession(toSessionId, null);
 		if (bs.isStoreDataForBanner().booleanValue()){
@@ -232,7 +232,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 		}
 	}
 
-	private void updateClassSuffixes(Session toSession) {
+	private void updateClassSuffixes(Session toSession) throws Exception {
 		Long toSessionId = toSession.getUniqueId();
 		org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
 		BannerSession bs = BannerSession.findBannerSessionForSession(toSessionId, hibSession);
@@ -296,7 +296,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 		}
 	}
 	private void rollForwardBannerSessionData(Session toSession,
-			Session fromSession) {
+			Session fromSession) throws Exception {
 		Transaction trns = null;
 		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
 		try {
