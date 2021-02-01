@@ -1357,6 +1357,9 @@ public class BannerSection extends BaseBannerSection {
 				trans.commit();
 			}
 		} catch (Exception e) {
+			if (trans != null && trans.isActive()) {
+				trans.rollback();
+			}
 			Debug.info("Failed to save Last Sent Banner Restrictions for " + this.getCrn().toString());
 		}
 		
