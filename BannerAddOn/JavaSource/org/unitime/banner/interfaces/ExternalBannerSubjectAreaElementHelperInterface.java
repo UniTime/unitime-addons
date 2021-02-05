@@ -34,5 +34,6 @@ public interface ExternalBannerSubjectAreaElementHelperInterface {
 	
 	public String getBannerSubjectAreaAbbreviation(BannerSection bannerSection, BannerSession bannerSession, Class_ clazz);
 	public String getBannerSubjectAreaAbbreviation(SubjectArea subjectArea, BannerSession bannerSession);
+	public String getBannerSubjectAreaAbbreviation(String subjectArea, BannerSession bannerSession);
 	
 }

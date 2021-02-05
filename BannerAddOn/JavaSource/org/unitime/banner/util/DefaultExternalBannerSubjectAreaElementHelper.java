@@ -58,18 +58,24 @@ ExternalBannerSubjectAreaElementHelperInterface {
 
 	@Override
 	public String getBannerSubjectAreaAbbreviation(SubjectArea subjectArea, BannerSession bannerSession) {
+		return(getBannerSubjectAreaAbbreviation(subjectArea.getSubjectAreaAbbreviation(), bannerSession));
+	}
+
+	@Override
+	public String getBannerSubjectAreaAbbreviation(String subjectArea, BannerSession bannerSession) {
 		String subj = null;
-		if (bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
+		if (subjectArea != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
 			String delimiter = ((bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("")) ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
-			if (subjectArea.getSubjectAreaAbbreviation().indexOf(delimiter) >= 0) {
-				subj = subjectArea.getSubjectAreaAbbreviation().substring(subjectArea.getSubjectAreaAbbreviation().indexOf(delimiter) + delimiter.length());				
+			if (subjectArea.indexOf(delimiter) >= 0) {
+				subj = subjectArea.substring(subjectArea.indexOf(delimiter) + delimiter.length());				
 			}
 		}
 		if (subj == null) {
-			return (subjectArea.getSubjectAreaAbbreviation());
+			return (subjectArea);
 		} else {
 			return(subj);
 		}
 	}
+
 
 }

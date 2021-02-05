@@ -1226,7 +1226,7 @@ public class BannerSection extends BaseBannerSection {
 
 	}
 
-	private static ExternalBannerSubjectAreaElementHelperInterface getExternalSubjectAreaElementHelper(){
+	public static ExternalBannerSubjectAreaElementHelperInterface getExternalSubjectAreaElementHelper(){
 		if (externalSubjectAreaElementHelper == null){
             String className = ApplicationProperties.getProperty("tmtbl.banner.subjectArea.element.helper");
         	if (className != null && className.trim().length() > 0){

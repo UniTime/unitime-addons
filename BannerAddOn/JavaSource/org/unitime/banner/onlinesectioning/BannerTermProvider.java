@@ -19,6 +19,7 @@
 */
 package org.unitime.banner.onlinesectioning;
 
+import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerSessionDAO;
 import org.unitime.timetable.ApplicationProperties;
@@ -59,7 +60,12 @@ public class BannerTermProvider implements ExternalTermProvider {
 	
 	@Override
 	public String getExternalSubject(AcademicSessionInfo session, String subjectArea, String courseNumber) {
-		return subjectArea;
+		BannerSession bannerSession = BannerSession.findBannerSessionForSession(session.getUniqueId(), null);
+		if (bannerSession != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()){
+			return BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(subjectArea, bannerSession);
+		}
+		else	
+			return subjectArea;
 	}
 
 	@Override
