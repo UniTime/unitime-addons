@@ -612,6 +612,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aac.setAcademicClassification(ac);
 				aac.setMajor(posMajor);
 				aac.setStudent(student);
+				aac.setWeight(1.0);
 				student.addToareaClasfMajors(aac);
 				changed = true;
 			}
