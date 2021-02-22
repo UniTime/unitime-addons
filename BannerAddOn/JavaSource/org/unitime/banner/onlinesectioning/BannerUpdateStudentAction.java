@@ -64,12 +64,15 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OverrideReservation;
 import org.unitime.timetable.model.PosMajor;
+import org.unitime.timetable.model.PosMajorConcentration;
+import org.unitime.timetable.model.PosMinor;
 import org.unitime.timetable.model.Reservation;
 import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentAccomodation;
 import org.unitime.timetable.model.StudentAreaClassificationMajor;
+import org.unitime.timetable.model.StudentAreaClassificationMinor;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
@@ -105,8 +108,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private static final long serialVersionUID = 1L;
 	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iCampus, iStudentCampus;
 	private List<String[]> iGroups = new ArrayList<String[]>();
-	private List<String[]> iAcadAreaClasfMj = new ArrayList<String[]>();
+	private List<ACM> iAcadAreaClasfMj = new ArrayList<ACM>();
 	private boolean iUpdateAcadAreaClasfMj = false;
+	private List<ACM> iAcadAreaClasfMn = new ArrayList<ACM>();
+	private boolean iUpdateAcadAreaClasfMn = false;
 	private List<String[]> iOverrides = new ArrayList<String[]>();
 	private Set<Integer> iCRNs = new TreeSet<Integer>();
 	private transient Session iSession;
@@ -140,15 +145,38 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
-	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus) {
+	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus, String concentration, double weight) {
 		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty() || major == null || major.isEmpty()) return this;
 		iUpdateAcadAreaClasfMj = true;
-		iAcadAreaClasfMj.add(new String[] {academicArea, classification, major, campus});
+		ACM acm = new ACM(academicArea, classification, major, campus, concentration, weight);
+		for (ACM other: iAcadAreaClasfMj) {
+			if (other.equals(acm)) {
+				other.update(acm);
+				return this;
+			}
+		}
+		iAcadAreaClasfMj.add(acm);
 		return this;
 	}
 	
 	public BannerUpdateStudentAction updateAcadAreaClassificationMajors(boolean update) {
 		iUpdateAcadAreaClasfMj = update;
+		return this;
+	}
+	
+	public BannerUpdateStudentAction withAcadAreaClassificationMinor(String minor, String campus) {
+		if (minor == null || minor.isEmpty()) return this;
+		iUpdateAcadAreaClasfMn = true;
+		ACM acm = new ACM(minor, campus);
+		for (ACM other: iAcadAreaClasfMn) {
+			if (other.equals(acm)) return this;
+		}
+		iAcadAreaClasfMn.add(acm);
+		return this;
+	}
+	
+	public BannerUpdateStudentAction updateAcadAreaClassificationMinors(boolean update) {
+		iUpdateAcadAreaClasfMn = update;
 		return this;
 	}
 
@@ -234,17 +262,25 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				if (iEmail != null)
 					helper.getAction().addOptionBuilder().setKey("email").setValue(iEmail);
 				if (!iAcadAreaClasfMj.isEmpty()) {
-					for (String[] areaClasf: iAcadAreaClasfMj) {
-						String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2], campus = areaClasf[3];
+					for (ACM acm: iAcadAreaClasfMj) {
 						if (iStudentCampus == null || iStudentCampus.isEmpty()) {
-							if (campus != null && !campus.equals(iCampus)) continue;
+							if (acm.hasCampus() && !acm.getCampus().equals(iCampus)) continue;
 						} else {
-							if (campus != null && !campus.matches(iStudentCampus)) continue;
+							if (acm.hasCampus() && !acm.getCampus().matches(iStudentCampus)) continue;
 						}
-						helper.getAction().addOptionBuilder().setKey("curriculum").setValue(area + "/" + major + " " + clasf);
+						helper.getAction().addOptionBuilder().setKey("curriculum").setValue(acm.toString());
 					}
 				}
-					
+				if (!iAcadAreaClasfMn.isEmpty()) {
+					for (ACM acm: iAcadAreaClasfMn) {
+						if (iStudentCampus == null || iStudentCampus.isEmpty()) {
+							if (acm.hasCampus() && !acm.getCampus().equals(iCampus)) continue;
+						} else {
+							if (acm.hasCampus() && !acm.getCampus().matches(iStudentCampus)) continue;
+						}
+						helper.getAction().addOptionBuilder().setKey("minor").setValue(acm.toString());
+					}
+				}
 				
 				Student student = getStudent(helper);
 
@@ -426,6 +462,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			student.setSchedulePreference(0);
 			student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
 			student.setAreaClasfMajors(new HashSet<StudentAreaClassificationMajor>());
+			student.setAreaClasfMinors(new HashSet<StudentAreaClassificationMinor>());
 			student.setCourseDemands(new HashSet<CourseDemand>());
 			student.setGroups(new HashSet<StudentGroup>());
 			student.setAccomodations(new HashSet<StudentAccomodation>());
@@ -561,6 +598,94 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 	}
 	
+	protected static PosMinor findPosMinor(org.hibernate.Session hibSession, Long sessionId, String minor) {
+		PosMinor conc = (PosMinor)hibSession.createQuery(
+                "select m from PosMinor m where "+
+                "m.session.uniqueId = :sessionId and "+
+                "m.externalUniqueId = :minor").
+         setLong("sessionId", sessionId).
+         setString("minor", minor).
+         setCacheable(true).
+         setMaxResults(1).
+         uniqueResult(); 
+		if (conc != null) return conc;
+		return (PosMinor)hibSession.createQuery(
+				"select m from PosMinor m where "+
+                "m.session.uniqueId = :sessionId and "+
+                "m.code = :minor").
+         setLong("sessionId", sessionId).
+         setString("minor", minor).
+         setCacheable(true).
+         setMaxResults(1).
+         uniqueResult();
+    }
+	
+	protected static PosMajorConcentration findPosMajorConcentration(org.hibernate.Session hibSession, Long sessionId, String area, String major, String concentration) {
+		PosMajorConcentration conc = (PosMajorConcentration)hibSession.createQuery(
+                "select c from PosMajorConcentration c inner join c.major m inner join m.academicAreas a where "+
+                "m.session.uniqueId = :sessionId and "+
+                "c.externalUniqueId = :concentration and " +
+                "m.externalUniqueId = :major and " +
+                "a.externalUniqueId = :area").
+         setLong("sessionId", sessionId).
+         setString("area", area).
+         setString("major", major).
+         setString("concentration", concentration).
+         setCacheable(true).
+         uniqueResult(); 
+		if (conc != null) return conc;
+		return (PosMajorConcentration)hibSession.createQuery(
+                "select c from PosMajorConcentration c inner join c.major m inner join m.academicAreas a where "+
+                "m.session.uniqueId = :sessionId and "+
+                "c.code = :concentration and " +
+                "m.code = :major and " +
+                "a.academicAreaAbbreviation = :area").
+         setLong("sessionId", sessionId).
+         setString("area", area).
+         setString("major", major).
+         setString("concentration", concentration).
+         setCacheable(true).
+         uniqueResult();
+    }
+	
+	protected PosMajorConcentration getPosMajorConcentration(OnlineSectioningHelper helper, PosMajor posMajor, String area, String major, String concentration) {
+		if (iLocking) {
+			synchronized (("Concentration:" + iSession.getReference() + ":" + area + ":" + major + ":" + concentration).intern()) {
+				PosMajorConcentration conc = findPosMajorConcentration(helper.getHibSession(), iSession.getUniqueId(), area, major, concentration);
+				if (conc != null) return conc;
+				conc = new PosMajorConcentration();
+				conc.setExternalUniqueId(concentration);
+				conc.setCode(concentration);
+				conc.setName(concentration);
+				conc.setMajor(posMajor);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					posMajor.addToconcentrations(conc);
+					conc.setUniqueId((Long)hibSession.save(conc));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.getHibSession().update(conc);
+				helper.info("Added Concentration:  " + concentration + " to Major:  " + area + "/" + major);
+				return conc;
+			}
+		} else {
+			PosMajorConcentration conc = findPosMajorConcentration(helper.getHibSession(), iSession.getUniqueId(), area, major, concentration);
+			if (conc == null) {
+				conc = new PosMajorConcentration();
+				conc.setExternalUniqueId(concentration);
+				conc.setCode(concentration);
+				conc.setName(concentration);
+				conc.setMajor(posMajor);
+				posMajor.addToconcentrations(conc);
+				conc.setUniqueId((Long)helper.getHibSession().save(conc));
+				helper.info("Added Concentration:  " + concentration + " to Major:  " + area + "/" + major);
+			}
+			return conc;
+		}
+	}
+	
 	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper, UpdateResult result) {
 		boolean changed = false;
 		if (!eq(iFName, student.getFirstName())) {
@@ -584,41 +709,111 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			result.setStudentId((Long)helper.getHibSession().save(student));
 		
 		if (iUpdateAcadAreaClasfMj) {
-			List<StudentAreaClassificationMajor> remaining = new ArrayList<StudentAreaClassificationMajor>(student.getAreaClasfMajors());
-			aac: for (String[] areaClasf: iAcadAreaClasfMj) {
-				String area = areaClasf[0], clasf = areaClasf[1], major = areaClasf[2], campus = areaClasf[3];
-				if (iStudentCampus == null || iStudentCampus.isEmpty()) {
-					if (campus != null && !campus.equals(iCampus)) continue;
+			if (!iAcadAreaClasfMj.isEmpty()) {
+				double total = 0.0;
+				for (ACM acm: iAcadAreaClasfMj) {
+					total += acm.getWeight();
+				}
+				if (total == 0.0) {
+					for (ACM acm: iAcadAreaClasfMj)
+						acm.setWeight(1.0 / iAcadAreaClasfMj.size());
 				} else {
-					if (campus != null && !campus.matches(iStudentCampus)) continue;
+					double factor = 1.0 / total;
+					for (ACM acm: iAcadAreaClasfMj)
+						acm.setWeight(factor * acm.getWeight());
+				}
+			}
+			
+			List<StudentAreaClassificationMajor> remaining = new ArrayList<StudentAreaClassificationMajor>(student.getAreaClasfMajors());
+			aac: for (ACM acm: iAcadAreaClasfMj) {
+				if (iStudentCampus == null || iStudentCampus.isEmpty()) {
+					if (acm.hasCampus() && !acm.getCampus().equals(iCampus)) continue;
+				} else {
+					if (acm.hasCampus() && !acm.getCampus().matches(iStudentCampus)) continue;
 				}
 				for (Iterator<StudentAreaClassificationMajor> i = remaining.iterator(); i.hasNext(); ) {
 					StudentAreaClassificationMajor aac = i.next();
-					if ((area.equalsIgnoreCase(aac.getAcademicArea().getExternalUniqueId()) || area.equalsIgnoreCase(aac.getAcademicArea().getAcademicAreaAbbreviation())) &&
-						(clasf.equalsIgnoreCase(aac.getAcademicClassification().getExternalUniqueId()) || clasf.equalsIgnoreCase(aac.getAcademicClassification().getCode())) &&
-						(major.equalsIgnoreCase(aac.getMajor().getExternalUniqueId()) || major.equalsIgnoreCase(aac.getMajor().getCode()))) {
+					if (acm.matches(aac)) {
+						if (acm.getWeight() != (aac.getWeight() == null ? 1.0 : aac.getWeight().doubleValue())) {
+							aac.setWeight(acm.getWeight());
+							helper.getHibSession().update(aac);
+							changed = true;
+						}
 						i.remove(); continue aac;
 					}
 				}
 				
-				AcademicArea aa = getAcademicArea(helper, area);
+				AcademicArea aa = getAcademicArea(helper, acm.getArea());
 				
-				AcademicClassification ac = getAcademicClassification(helper, clasf);
+				AcademicClassification ac = getAcademicClassification(helper, acm.getClassification());
 				
-				PosMajor posMajor = getPosMajor(helper, aa, area, major);
+				PosMajor posMajor = getPosMajor(helper, aa, acm.getArea(), acm.getMajor());
+				
+				PosMajorConcentration conc = (acm.hasConcentration() ? getPosMajorConcentration(helper, posMajor, acm.getArea(), acm.getMajor(), acm.getConcentration()) : null);
 
 				StudentAreaClassificationMajor aac = new StudentAreaClassificationMajor();
 				aac.setAcademicArea(aa);
 				aac.setAcademicClassification(ac);
 				aac.setMajor(posMajor);
 				aac.setStudent(student);
-				aac.setWeight(1.0);
+				aac.setConcentration(conc);
+				aac.setWeight(acm.getWeight());
 				student.addToareaClasfMajors(aac);
 				changed = true;
 			}
 			
 			for (StudentAreaClassificationMajor aac: remaining) {
 				student.getAreaClasfMajors().remove(aac);
+				helper.getHibSession().delete(aac);
+				changed = true;
+			}
+		}
+		
+		if (iUpdateAcadAreaClasfMn) {
+			List<StudentAreaClassificationMinor> remaining = new ArrayList<StudentAreaClassificationMinor>(student.getAreaClasfMinors());
+			aac: for (ACM acm: iAcadAreaClasfMn) {
+				if (iStudentCampus == null || iStudentCampus.isEmpty()) {
+					if (acm.hasCampus() && !acm.getCampus().equals(iCampus)) continue;
+				} else {
+					if (acm.hasCampus() && !acm.getCampus().matches(iStudentCampus)) continue;
+				}
+				for (Iterator<StudentAreaClassificationMinor> i = remaining.iterator(); i.hasNext(); ) {
+					StudentAreaClassificationMinor aac = i.next();
+					if (acm.matches(aac)) {
+						i.remove(); continue aac;
+					}
+				}
+				
+				PosMinor posMinor = findPosMinor(helper.getHibSession(), iSession.getUniqueId(), acm.getMinor());
+				if (posMinor == null) {
+					helper.warn("Minor " + acm.getMinor() + " does not exist.");
+					continue aac;
+				}
+
+				StudentAreaClassificationMinor aac = new StudentAreaClassificationMinor();
+				for (AcademicArea a: posMinor.getAcademicAreas()) {
+					aac.setAcademicArea(a);
+					break;
+				}
+				if (aac.getAcademicArea() == null) {
+					helper.warn("Minor " + acm.getMinor() + " does not have an academic area.");
+					continue aac;
+				}
+				for (StudentAreaClassificationMajor m: student.getAreaClasfMajors())
+					if (m.getWeight() != null && m.getWeight() > 0.0) {
+						aac.setAcademicClassification(m.getAcademicClassification());
+						break;
+					}
+				if (aac.getAcademicClassification() == null)
+					aac.setAcademicClassification(getAcademicClassification(helper, "00"));
+				aac.setMinor(posMinor);
+				aac.setStudent(student);
+				student.addToareaClasfMinors(aac);
+				changed = true;
+			}
+			
+			for (StudentAreaClassificationMinor aac: remaining) {
+				student.getAreaClasfMinors().remove(aac);
 				helper.getHibSession().delete(aac);
 				changed = true;
 			}
@@ -1478,5 +1673,93 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
             } catch (Exception e) {}
         }
         return false;
+    }
+    
+    private static class ACM implements Serializable {
+    	private static final long serialVersionUID = 1L;
+    	private String iArea, iMajor, iClassification, iConcentration, iCampus, iMinor;
+    	private double iWeight = 1.0;
+    	
+    	public ACM(String minor, String campus) {
+    		iMinor = minor; iCampus = campus;
+    	}
+		public ACM(String area, String classification, String major, String campus, String concentration, double weight) {
+    		iArea = area; iMajor = major; iClassification = classification; iCampus = campus;
+    		iConcentration = concentration; iWeight = weight;
+    	}
+    	
+    	public String getArea() { return iArea; }
+    	public String getMajor() { return iMajor; }
+    	public String getMinor() { return iMinor; }
+    	public String getCampus() { return iCampus; }
+    	public boolean hasCampus() { return iCampus != null && !iCampus.isEmpty(); }
+    	public String getClassification() { return iClassification; }
+    	public String getConcentration() { return iConcentration; }
+    	public boolean hasConcentration() { return iConcentration != null && !iConcentration.isEmpty(); }
+    	public double getWeight() { return iWeight; }
+    	public void setWeight(double weight) { iWeight = weight; }
+    	
+    	public void update(ACM acm) {
+    		if (!hasConcentration() && acm.hasConcentration()) iConcentration = acm.getConcentration();
+    		iWeight = Math.min(1.0, iWeight + acm.getWeight());
+    	}
+    	
+    	public boolean sameArea(AcademicArea area) {
+    		return getArea().equalsIgnoreCase(area.getExternalUniqueId()) || getArea().equalsIgnoreCase(area.getAcademicAreaAbbreviation());
+    	}
+    	
+    	public boolean sameClassification(AcademicClassification clasf) {
+    		return getClassification().equalsIgnoreCase(clasf.getExternalUniqueId()) || getClassification().equalsIgnoreCase(clasf.getCode());
+    	}
+    	
+    	public boolean sameMajor(PosMajor major) {
+    		return getMajor().equalsIgnoreCase(major.getExternalUniqueId()) || getMajor().equalsIgnoreCase(major.getCode());
+    	}
+    	
+    	public boolean sameMinor(PosMinor minor) {
+    		return getMinor().equalsIgnoreCase(minor.getExternalUniqueId()) || getMinor().equalsIgnoreCase(minor.getCode());
+    	}
+    	
+    	public boolean sameConcentration(PosMajorConcentration conc) {
+    		if (hasConcentration())
+    			return conc != null && (getConcentration().equalsIgnoreCase(conc.getExternalUniqueId()) || getConcentration().equalsIgnoreCase(conc.getCode()));
+    		else
+    			return conc == null;
+    	}
+    	
+    	public boolean matches(StudentAreaClassificationMajor aac) {
+    		return sameArea(aac.getAcademicArea()) && sameClassification(aac.getAcademicClassification()) && sameMajor(aac.getMajor()) && sameConcentration(aac.getConcentration());
+    	}
+    	
+    	public boolean matches(StudentAreaClassificationMinor aac) {
+    		return sameMinor(aac.getMinor());
+    	}
+    	
+    	@Override
+    	public String toString() {
+    		if (getMinor() != null) return getMinor();
+    		return getArea() + "/" + getMajor() + (hasConcentration() ? "-" + getConcentration() : "") + " " + getClassification();
+    	}
+    	
+    	@Override
+    	public int hashCode() {
+    		return toString().hashCode();
+    	}
+    	
+    	@Override
+    	public boolean equals(Object o) {
+    		if (o == null || !(o instanceof ACM)) return false;
+    		ACM acm = (ACM)o;
+    		return equals(getCampus(), acm.getCampus())
+    				&& equals(getArea(), acm.getArea())
+    				&& equals(getMajor(), acm.getMajor())
+    				&& equals(getMinor(), acm.getMinor())
+    				&& equals(getClassification(), acm.getClassification())
+    				&& equals(getConcentration(), acm.getConcentration());
+    	}
+    	
+    	public static boolean equals(Object o1, Object o2) {
+    		return (o1 == null ? o2 == null : o1.equals(o2));
+    	}
     }
 }

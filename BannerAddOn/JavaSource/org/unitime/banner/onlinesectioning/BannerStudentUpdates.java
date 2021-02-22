@@ -165,21 +165,74 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		if (studentMajorsElement != null) {
 			// Student XML format
 			update.updateAcadAreaClassificationMajors(true);
+			String firstClassification = null;
+			if (studentAcadAreaClassElement != null) {
+				for (Iterator<?> k = studentAcadAreaClassElement.elementIterator("acadAreaClass"); k.hasNext(); ) {
+					Element areaClassElement = (Element)k.next();
+					firstClassification = areaClassElement.attributeValue("academicClass");
+					break;
+				}
+			}
 			for (Iterator<?> j = studentMajorsElement.elementIterator("major"); j.hasNext(); ) {
 				Element majorElement = (Element)j.next();
-				if (majorElement.attributeValue("academicClass") == null && studentAcadAreaClassElement != null) {
+				List<String> concentrations = new ArrayList<String>();
+				for (Iterator<?> k = majorElement.elementIterator("concentration"); k.hasNext(); ) {
+					Element concentrationElement = (Element)k.next();
+					concentrations.add(concentrationElement.getText());
+				}
+				String classification = majorElement.attributeValue("academicClass");
+				if (classification == null && studentAcadAreaClassElement != null) {
+					classification = firstClassification;
 					for (Iterator<?> k = studentAcadAreaClassElement.elementIterator("acadAreaClass"); k.hasNext(); ) {
 						Element areaClassElement = (Element)k.next();
-						if (majorElement.attributeValue("academicArea").equals(areaClassElement.attributeValue("academicArea")))
-							update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), areaClassElement.attributeValue("academicClass"), majorElement.attributeValue("code"), majorElement.attributeValue("campus"));
+						if (majorElement.attributeValue("academicArea").equals(areaClassElement.attributeValue("academicArea"))) {
+							classification = areaClassElement.attributeValue("academicClass");
+							break;
+						}
 					}
+				}
+				if (concentrations.isEmpty()) {
+					update.withAcadAreaClassificationMajor(
+							majorElement.attributeValue("academicArea"),
+							classification,
+							majorElement.attributeValue("code"),
+							majorElement.attributeValue("campus"),
+							null,
+							"Y".equalsIgnoreCase(majorElement.attributeValue("primary")) ? 1.0 : 0.0);
 				} else {
-					update.withAcadAreaClassificationMajor(majorElement.attributeValue("academicArea"), majorElement.attributeValue("academicClass"), majorElement.attributeValue("code"), majorElement.attributeValue("campus"));
+					int idx = 0;
+					for (String concentration: concentrations) {
+						update.withAcadAreaClassificationMajor(
+								majorElement.attributeValue("academicArea"),
+								classification,
+								majorElement.attributeValue("code"),
+								majorElement.attributeValue("campus"),
+								concentration,
+								idx > 0 ? 0.0 : "Y".equalsIgnoreCase(majorElement.attributeValue("primary")) ? 1.0 : 0.0);
+						idx++;
+					}
 				}
 			}
 		} else {
 			// Old banner update message format
-			update.withAcadAreaClassificationMajor(studentElement.attributeValue("academicArea"), studentElement.attributeValue("classification"), studentElement.attributeValue("major"), studentElement.attributeValue("campus"));
+			update.withAcadAreaClassificationMajor(
+					studentElement.attributeValue("academicArea"),
+					studentElement.attributeValue("classification"),
+					studentElement.attributeValue("major"),
+					studentElement.attributeValue("campus"),
+					studentElement.attributeValue("concentration"),
+					1.0);
+		}
+		Element studentMinorsElement = studentElement.element("studentMinors");
+		if (studentMinorsElement != null) {
+			// Student XML format
+			update.updateAcadAreaClassificationMinors(true);
+			for (Iterator<?> j = studentMinorsElement.elementIterator("minor"); j.hasNext(); ) {
+				Element minorElement = (Element)j.next();
+				update.withAcadAreaClassificationMinor(
+						minorElement.attributeValue("code"),
+						minorElement.attributeValue("campus"));
+			}
 		}
 		
 		Element studentGroupsElement = studentElement.element("studentGroups");
@@ -470,7 +523,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 								}
 							}
 						} catch (Exception e) {
-							error("[" + externalId + "] Failed to update student: " + e.getMessage());
+							error("[" + externalId + "] Failed to update student: " + e.getMessage(), e);
 							iFailedStudents.add(externalId);
 						}
 						// Update future terms as needed
@@ -514,7 +567,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 										case NO_CHANGE:
 										}
 									} catch (Exception e) {
-										error("[" + externalId + "] Failed to update future student: " + e.getMessage());
+										error("[" + externalId + "] Failed to update future student: " + e.getMessage(), e);
 										iFailedFutureStudents.add(externalId + " (" + future.getBannerTermCode() + ")");
 										break;
 									}
