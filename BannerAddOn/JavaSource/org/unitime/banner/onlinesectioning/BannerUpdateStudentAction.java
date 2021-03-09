@@ -60,6 +60,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.CourseRequest;
 import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
 import org.unitime.timetable.model.CourseRequestOption;
+import org.unitime.timetable.model.Degree;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OverrideReservation;
@@ -145,10 +146,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
-	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus, String concentration, double weight) {
+	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus, String concentration, String degree, double weight) {
 		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty() || major == null || major.isEmpty()) return this;
 		iUpdateAcadAreaClasfMj = true;
-		ACM acm = new ACM(academicArea, classification, major, campus, concentration, weight);
+		ACM acm = new ACM(academicArea, classification, major, campus, concentration, degree, weight);
 		for (ACM other: iAcadAreaClasfMj) {
 			if (other.equals(acm)) {
 				other.update(acm);
@@ -686,6 +687,62 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 	}
 	
+	protected static Degree findDegree(org.hibernate.Session hibSession, Long sessionId, String degree) {
+		Degree deg = (Degree)hibSession.createQuery(
+                "select d from Degree d where "+
+                "d.session.uniqueId = :sessionId and "+
+                "d.externalUniqueId = :degree").
+         setLong("sessionId", sessionId).
+         setString("degree", degree).
+         setCacheable(true).
+         uniqueResult(); 
+		if (deg != null) return deg;
+		return (Degree)hibSession.createQuery(
+                "select d from Degree d where "+
+                "d.session.uniqueId = :sessionId and "+
+                "d.reference = :degree").
+         setLong("sessionId", sessionId).
+         setString("degree", degree).
+         setCacheable(true).
+         uniqueResult();
+    }
+	
+	protected Degree getDegree(OnlineSectioningHelper helper, String degree) {
+		if (iLocking) {
+			synchronized (("Degree:" + iSession.getReference() + ":" + degree).intern()) {
+				Degree deg = findDegree(helper.getHibSession(), iSession.getUniqueId(), degree);
+				if (deg != null) return deg;
+				deg = new Degree();
+				deg.setExternalUniqueId(degree);
+				deg.setReference(degree);
+				deg.setLabel(degree);
+				deg.setSession(iSession);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					deg.setUniqueId((Long)hibSession.save(deg));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.getHibSession().update(deg);
+				helper.info("Added Degree:  " + degree);
+				return deg;
+			}
+		} else {
+			Degree deg = findDegree(helper.getHibSession(), iSession.getUniqueId(), degree);
+			if (deg == null) {
+				deg = new Degree();
+				deg.setExternalUniqueId(degree);
+				deg.setReference(degree);
+				deg.setLabel(degree);
+				deg.setSession(iSession);
+				deg.setUniqueId((Long)helper.getHibSession().save(deg));
+				helper.info("Added Degree:  " + degree);
+			}
+			return deg;
+		}
+	}
+	
 	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper, UpdateResult result) {
 		boolean changed = false;
 		if (!eq(iFName, student.getFirstName())) {
@@ -734,7 +791,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				for (Iterator<StudentAreaClassificationMajor> i = remaining.iterator(); i.hasNext(); ) {
 					StudentAreaClassificationMajor aac = i.next();
 					if (acm.matches(aac)) {
-						if (acm.getWeight() != (aac.getWeight() == null ? 1.0 : aac.getWeight().doubleValue())) {
+						if (!acm.sameDegree(aac.getDegree())) {
+							aac.setDegree(acm.hasDegree() ? getDegree(helper, acm.getDegree()) : null);
+							aac.setWeight(acm.getWeight());
+							helper.getHibSession().update(aac);
+							changed = true;
+						} else if (!acm.sameWeight(aac.getWeight())) {
 							aac.setWeight(acm.getWeight());
 							helper.getHibSession().update(aac);
 							changed = true;
@@ -750,6 +812,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				PosMajor posMajor = getPosMajor(helper, aa, acm.getArea(), acm.getMajor());
 				
 				PosMajorConcentration conc = (acm.hasConcentration() ? getPosMajorConcentration(helper, posMajor, acm.getArea(), acm.getMajor(), acm.getConcentration()) : null);
+				
+				Degree degree = (acm.hasDegree() ? getDegree(helper, acm.getDegree()) : null);
 
 				StudentAreaClassificationMajor aac = new StudentAreaClassificationMajor();
 				aac.setAcademicArea(aa);
@@ -757,6 +821,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aac.setMajor(posMajor);
 				aac.setStudent(student);
 				aac.setConcentration(conc);
+				aac.setDegree(degree);
 				aac.setWeight(acm.getWeight());
 				student.addToareaClasfMajors(aac);
 				changed = true;
@@ -1677,15 +1742,15 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     
     private static class ACM implements Serializable {
     	private static final long serialVersionUID = 1L;
-    	private String iArea, iMajor, iClassification, iConcentration, iCampus, iMinor;
+    	private String iArea, iMajor, iClassification, iConcentration, iCampus, iMinor, iDegree;
     	private double iWeight = 1.0;
     	
     	public ACM(String minor, String campus) {
     		iMinor = minor; iCampus = campus;
     	}
-		public ACM(String area, String classification, String major, String campus, String concentration, double weight) {
+		public ACM(String area, String classification, String major, String campus, String concentration, String degree, double weight) {
     		iArea = area; iMajor = major; iClassification = classification; iCampus = campus;
-    		iConcentration = concentration; iWeight = weight;
+    		iConcentration = concentration; iDegree = degree; iWeight = weight;
     	}
     	
     	public String getArea() { return iArea; }
@@ -1696,6 +1761,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	public String getClassification() { return iClassification; }
     	public String getConcentration() { return iConcentration; }
     	public boolean hasConcentration() { return iConcentration != null && !iConcentration.isEmpty(); }
+    	public String getDegree() { return iDegree; }
+    	public boolean hasDegree() { return iDegree != null && !iDegree.isEmpty(); }
     	public double getWeight() { return iWeight; }
     	public void setWeight(double weight) { iWeight = weight; }
     	
@@ -1727,6 +1794,20 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			return conc == null;
     	}
     	
+    	public boolean sameDegree(Degree deg) {
+    		if (hasDegree())
+    			return deg != null && (getDegree().equalsIgnoreCase(deg.getExternalUniqueId()) || getDegree().equalsIgnoreCase(deg.getReference()));
+    		else
+    			return deg == null;
+    	}
+    	
+    	public boolean sameWeight(Double weight) {
+    		if (weight == null)
+    			return getWeight() == 1.0;
+    		else
+    			return getWeight() == weight;
+    	}
+    	
     	public boolean matches(StudentAreaClassificationMajor aac) {
     		return sameArea(aac.getAcademicArea()) && sameClassification(aac.getAcademicClassification()) && sameMajor(aac.getMajor()) && sameConcentration(aac.getConcentration());
     	}
@@ -1750,8 +1831,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	public boolean equals(Object o) {
     		if (o == null || !(o instanceof ACM)) return false;
     		ACM acm = (ACM)o;
-    		return equals(getCampus(), acm.getCampus())
-    				&& equals(getArea(), acm.getArea())
+    		return equals(getArea(), acm.getArea())
     				&& equals(getMajor(), acm.getMajor())
     				&& equals(getMinor(), acm.getMinor())
     				&& equals(getClassification(), acm.getClassification())
