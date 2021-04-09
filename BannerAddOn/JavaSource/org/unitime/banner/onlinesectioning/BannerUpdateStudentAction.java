@@ -86,6 +86,7 @@ import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer.Lock;
+import org.unitime.timetable.onlinesectioning.custom.CustomStudentEnrollmentHolder;
 import org.unitime.timetable.onlinesectioning.model.XCourseRequest;
 import org.unitime.timetable.onlinesectioning.model.XEnrollment;
 import org.unitime.timetable.onlinesectioning.model.XIndividualReservation;
@@ -97,6 +98,7 @@ import org.unitime.timetable.onlinesectioning.model.XSection;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
 import org.unitime.timetable.onlinesectioning.server.CheckMaster;
 import org.unitime.timetable.onlinesectioning.server.CheckMaster.Master;
+import org.unitime.timetable.onlinesectioning.updates.CheckOfferingAction;
 import org.unitime.timetable.onlinesectioning.updates.NotifyStudentAction;
 import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
 import org.unitime.timetable.util.Constants;
@@ -366,6 +368,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							}
 						}
 						action.addEnrollment(enrollment);
+					}
+
+					if (oldStudent != null && server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing()) {
+						for (XRequest oldRequest: oldStudent.getRequests()) {
+							XEnrollment oldEnrollment = (oldRequest instanceof XCourseRequest ? ((XCourseRequest)oldRequest).getEnrollment() : null);
+							if (oldEnrollment == null) continue; // free time or not assigned
+							
+							if (CheckOfferingAction.isCheckNeeded(server, helper, oldEnrollment))
+								server.execute(server.createAction(CheckOfferingAction.class).forOfferings(oldEnrollment.getOfferingId()).skipStudents(oldStudent.getStudentId()), helper.getUser());
+						}
 					}
 
 					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).oldStudent(oldStudent), helper.getUser());
