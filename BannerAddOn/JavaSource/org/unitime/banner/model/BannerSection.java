@@ -538,7 +538,10 @@ public class BannerSection extends BaseBannerSection {
 		String orphanedBannerSectionsQuery = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.classId not in ( select c.uniqueId from Class_ c )";
 		HashSet<BannerCourse> orphanedCourses = new HashSet<BannerCourse>();
 
-		Transaction trans = hibSession.beginTransaction();
+		Transaction trans = hibSession.getTransaction();
+		if (!trans.isActive()) {
+			trans.begin();
+		}
 		List<BannerSection> orphanedBannerCourses = (List<BannerSection>) hibSession.createQuery(orphanedBannerCoursesQuery)
 		.setFlushMode(FlushMode.MANUAL)
 		.list();
