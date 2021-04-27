@@ -21,8 +21,6 @@
 package org.unitime.banner.util;
 
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -133,20 +131,18 @@ public class BannerChangeAction implements ExternalClassEditAction,
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalInstructionalOfferingAddAction#performExternalInstructionalOfferingAddAction(org.unitime.timetable.model.InstructionalOffering, org.hibernate.Session)
 	 */
-	@SuppressWarnings("unchecked")
 	public void performExternalInstructionalOfferingAddAction(
 			InstructionalOffering instructionalOffering, Session hibSession) {
 		if (BannerSession.shouldCreateBannerDataForSession(instructionalOffering.getSession(), hibSession)){
 			Transaction trans = null;
 			if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
 				trans = hibSession.beginTransaction();
-			for(Iterator it = instructionalOffering.getCourseOfferings().iterator(); it.hasNext();){
-				CourseOffering co = (CourseOffering) it.next();
+			for(CourseOffering co : instructionalOffering.getCourseOfferings()){
 				if (BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), hibSession) == null) {
 					BannerCourse bc = new BannerCourse();
 					bc.setCourseOffering(co);
 					bc.setCourseOfferingId(co.getUniqueId());
-					hibSession.save(bc);
+					bc.setUniqueId((Long)hibSession.save(bc));
 				}
 			}
 			if (trans != null)
@@ -157,12 +153,10 @@ public class BannerChangeAction implements ExternalClassEditAction,
 	/* (non-Javadoc)
 	 * @see org.unitime.timetable.interfaces.ExternalInstructionalOfferingDeleteAction#performExternalInstructionalOfferingDeleteAction(org.unitime.timetable.model.InstructionalOffering, org.hibernate.Session)
 	 */
-	@SuppressWarnings("unchecked")
 	public void performExternalInstructionalOfferingDeleteAction(
 			InstructionalOffering instructionalOffering, Session hibSession) {
 		if (BannerSession.shouldCreateBannerDataForSession(instructionalOffering.getSession(), hibSession)){
-			for(Iterator it = instructionalOffering.getCourseOfferings().iterator(); it.hasNext();){
-				CourseOffering co = (CourseOffering) it.next();
+			for(CourseOffering co : instructionalOffering.getCourseOfferings()){
 				BannerCourse bc = BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), hibSession);		
 				if (bc != null){
 					hibSession.delete(bc);
@@ -209,37 +203,29 @@ public class BannerChangeAction implements ExternalClassEditAction,
 		SendBannerMessage.sendBannerMessage(bannerSections, BannerMessageAction.UPDATE, hibSession);
 	}
 
-	@SuppressWarnings("unchecked")
 	public void performExternalCourseOfferingRemoveAction(
 			CourseOffering courseOffering, Session hibSession) {
 		if (BannerSession.shouldCreateBannerDataForSession(courseOffering.getSubjectArea().getSession(), hibSession)){
-			List<BannerCourse> bannerCourses = BannerCourse.findBannerCoursesForCourseOffering(courseOffering.getUniqueId(), hibSession);
-			if (!bannerCourses.isEmpty()){
-				for (BannerCourse bc : bannerCourses){
-					for(Iterator bcfgIt = bc.getBannerConfigs().iterator(); bcfgIt.hasNext();){
-						BannerConfig bcfg = (BannerConfig) bcfgIt.next();
-						for(Iterator bsIt = bcfg.getBannerSections().iterator(); bsIt.hasNext();){
-							BannerSection bs = (BannerSection) bsIt.next();
-							SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
-						}
+			for (BannerCourse bc : BannerCourse.findBannerCoursesForCourseOffering(courseOffering.getUniqueId(), hibSession)){
+				for(BannerConfig bcfg : bc.getBannerConfigs()){
+					for(BannerSection bs : bcfg.getBannerSections()){
+						SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
 					}
-					hibSession.delete(bc);
 				}
+				hibSession.delete(bc);
 			}
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public void performExternalInstructionalOfferingInCrosslistAddAction(
 			InstructionalOffering instructionalOffering, Session hibSession) {
 		if (BannerSession.shouldCreateBannerDataForSession(instructionalOffering.getSession(), hibSession)){
-			for(Iterator it = instructionalOffering.getCourseOfferings().iterator(); it.hasNext();){
-				CourseOffering co = (CourseOffering) it.next();
+			for(CourseOffering co : instructionalOffering.getCourseOfferings()){
 				if (BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), hibSession) == null) {
 					BannerCourse bc = new BannerCourse();
 					bc.setCourseOffering(co);
 					bc.setCourseOfferingId(co.getUniqueId());
-					hibSession.save(bc);
+					bc.setUniqueId((Long)hibSession.save(bc));
 				}
 			}
 		}

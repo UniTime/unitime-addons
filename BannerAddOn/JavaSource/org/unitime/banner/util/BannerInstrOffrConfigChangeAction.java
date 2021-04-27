@@ -87,7 +87,6 @@ public class BannerInstrOffrConfigChangeAction implements
 		
 	}
 
-	@SuppressWarnings("unchecked")
 	private void defaultGradableItypesIfNull(InstructionalOffering instructionalOffering, Session hibSession){
 		for (InstrOfferingConfig ioc : (Set<InstrOfferingConfig>) instructionalOffering.getInstrOfferingConfigs()){
 			int lowestItype = Integer.MAX_VALUE;
@@ -106,7 +105,7 @@ public class BannerInstrOffrConfigChangeAction implements
 			for (BannerConfig bc : configs){
 				if (bc.getGradableItype() == null){
 					if (lowestItype == Integer.MAX_VALUE){
-						for(SchedulingSubpart ss : (Set<SchedulingSubpart>)ioc.getSchedulingSubparts()){
+						for(SchedulingSubpart ss : ioc.getSchedulingSubparts()){
 							if (ss.getItype().getItype().intValue() < lowestItype){
 								lowestItype = ss.getItype().getItype().intValue();
 								itype = ss.getItype();
@@ -115,7 +114,12 @@ public class BannerInstrOffrConfigChangeAction implements
 					}
 					if (itype != null){
 						bc.setGradableItype(itype);
-						Transaction trans = hibSession.beginTransaction();
+						Transaction trans = hibSession.getTransaction();
+						if (trans == null) {
+							trans = hibSession.beginTransaction();
+						} else if (!trans.isActive()) {
+							trans.begin();
+						}
 						hibSession.update(bc);
 						trans.commit();
 						hibSession.flush();
@@ -128,7 +132,12 @@ public class BannerInstrOffrConfigChangeAction implements
 			InstructionalOffering instructionalOffering, Session hibSession) {
 		List<BannerSection> sections = BannerSection.findBannerSectionsForInstructionalOffering(instructionalOffering, hibSession);
 		for (BannerSection bs : sections){
-			Transaction trans = hibSession.beginTransaction();
+			Transaction trans = hibSession.getTransaction();
+			if (trans == null) {
+				trans = hibSession.beginTransaction();
+			} else if (!trans.isActive()) {
+				trans.begin();
+			}
 			if (bs.getSectionIndex() == null){
 				bs.assignNewSectionIndex(hibSession);
 			}
