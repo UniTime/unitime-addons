@@ -101,7 +101,10 @@ public class BannerSectionCrosslistHelper {
 	}
 
 	private void saveChangesToBannerSectionIfNecessary(BannerSection bs){
-		Transaction trans = hibSession.beginTransaction();
+		Transaction trans = hibSession.getTransaction();
+		if (!trans.isActive()) {
+			trans.begin();
+		}
 		hibSession.update(bs);
 		trans.commit();
 		hibSession.flush();
@@ -110,16 +113,10 @@ public class BannerSectionCrosslistHelper {
 	
 	private void doBasicCrossListing(){
 		// All courses should be cross listed, no exceptions found.
-		
-        // declare the variables
-		Iterator<?> iC_;
-		Iterator<?> iInOffConfig;
-		Iterator<?> iSS;
-
-		for (iInOffConfig = instructionalOffering.getInstrOfferingConfigs().iterator(); iInOffConfig.hasNext();){
-			for(iSS = ((InstrOfferingConfig) iInOffConfig.next()).getSchedulingSubparts().iterator(); iSS.hasNext();){
-				for (iC_ = ((SchedulingSubpart) iSS.next()).getClasses().iterator(); iC_.hasNext();){
-					crossListSections(BannerSection.findBannerSectionsForClass(((Class_) iC_.next()), hibSession));
+		for (InstrOfferingConfig ioc : instructionalOffering.getInstrOfferingConfigs()){
+			for(SchedulingSubpart ss : ioc.getSchedulingSubparts()){
+				for (Class_ c : ss.getClasses()){
+					crossListSections(BannerSection.findBannerSectionsForClass(c, hibSession));
 				}
 			}
 		}
@@ -135,7 +132,12 @@ public class BannerSectionCrosslistHelper {
 			if (bannerSections.isEmpty()){
 				if (c.getParentClass() != null && c.getParentClass().getSchedulingSubpart().getItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype())){
 					List<BannerSection> parentBannerSections = BannerSection.findBannerSectionsForClass(c.getParentClass(), hibSession);
-					Transaction trans = hibSession.beginTransaction();
+					Transaction trans = hibSession.getTransaction();
+					if (trans == null) {
+						trans = hibSession.beginTransaction();
+					} else if (!trans.isActive()) {
+						trans.begin();
+					}
 					for(BannerSection bs : parentBannerSections){
 						bs.addClass(c, hibSession);
 						hibSession.update(bs);
@@ -167,7 +169,12 @@ public class BannerSectionCrosslistHelper {
 					
 					if (!removeSet.isEmpty()){
 						for(BannerSection bs : removeSet){
-							Transaction trans = hibSession.beginTransaction();
+							Transaction trans = hibSession.getTransaction();
+							if (trans == null) {
+								trans = hibSession.beginTransaction();
+							} else if (!trans.isActive()) {
+								trans.begin();
+							}
 							BannerConfig bc = bs.getBannerConfig();
 							bs.removeClass(c, hibSession);
 							if (bs.getBannerSectionToClasses().isEmpty()) {
@@ -185,10 +192,13 @@ public class BannerSectionCrosslistHelper {
 					}
 					if (!addSet.isEmpty()){
 						for(BannerSection bs : addSet){
-							Transaction trans = hibSession.beginTransaction();
+							Transaction trans = hibSession.getTransaction();
+							if (trans == null || !trans.isActive())
+								trans = hibSession.beginTransaction();
 							BannerConfig bc = bs.getBannerConfig();
 							bs.addClass(c, hibSession);
 							hibSession.update(bc);
+							hibSession.flush();
 							trans.commit();
 							hibSession.refresh(bc);
 						}
@@ -272,19 +282,24 @@ public class BannerSectionCrosslistHelper {
 
 	private void addBannerSectionFor(CourseOffering courseOffering, Class_ cls){
 		BannerConfig bc = BannerConfig.findBannerConfigForInstrOffrConfigAndCourseOffering(cls.getSchedulingSubpart().getInstrOfferingConfig(), courseOffering, hibSession);
-		Transaction trans = hibSession.beginTransaction();
+		Transaction trans = hibSession.getTransaction();
+		if (trans == null) {
+			trans = hibSession.beginTransaction();
+		} else if (!trans.isActive()) {
+			trans.begin();
+		}
 		if(bc == null) {
 			bc = new BannerConfig();
 			BannerCourse bannerCourse = BannerCourse.findBannerCourseForCourseOffering(courseOffering.getUniqueId(), hibSession);
 			if (bannerCourse == null){
 				bannerCourse = new  BannerCourse();
 				bannerCourse.setCourseOfferingId(courseOffering.getUniqueId());
-				hibSession.save(bannerCourse);
+				bannerCourse.setUniqueId((Long)hibSession.save(bannerCourse));
 			}
 			bc.setBannerCourse(bannerCourse);
 			bc.setInstrOfferingConfigId(cls.getSchedulingSubpart().getInstrOfferingConfig().getUniqueId());
 			bannerCourse.addTobannerConfigs(bc);
-			hibSession.save(bc);
+			bc.setUniqueId((Long)hibSession.save(bc));
 		}
 		BannerSection bs = new BannerSection();
 		bs.setBannerConfig(bc);
@@ -338,12 +353,7 @@ public class BannerSectionCrosslistHelper {
 	}
 
 	private void removeCrosslistFromSections(List<BannerSection> sections){
-        // declare the variables
-        BannerSection aSection;
-		Iterator<BannerSection> iBS;
-        
-		for(iBS = sections.iterator(); iBS.hasNext();){
-			aSection = (BannerSection) iBS.next();
+ 		for(BannerSection aSection : sections){
 			if (aSection.getCrossListIdentifier() != null){
 				updateCrosslistIdForBannerSectionIfNecessaryAndSave(aSection, null);
 				if (aSection.getCrn() != null){

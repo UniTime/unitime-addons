@@ -20,6 +20,7 @@
 
 package org.unitime.banner.model;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -538,7 +539,10 @@ public class BannerSection extends BaseBannerSection {
 		String orphanedBannerSectionsQuery = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.classId not in ( select c.uniqueId from Class_ c )";
 		HashSet<BannerCourse> orphanedCourses = new HashSet<BannerCourse>();
 
-		Transaction trans = hibSession.beginTransaction();
+		Transaction trans = hibSession.getTransaction();
+		if (!trans.isActive()) {
+			trans.begin();
+		}
 		List<BannerSection> orphanedBannerCourses = (List<BannerSection>) hibSession.createQuery(orphanedBannerCoursesQuery)
 		.setFlushMode(FlushMode.MANUAL)
 		.list();
@@ -775,7 +779,7 @@ public class BannerSection extends BaseBannerSection {
 		if (io != null && io.getOfferingCoordinators() != null){
 			for (OfferingCoordinator oc : io.getOfferingCoordinators()){
 				if (oc.getResponsibility() == null || !oc.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
-						instructorPercents.put(oc.getInstructor(), new Integer(0));
+						instructorPercents.put(oc.getInstructor(), 0);
 				}
 			}
 		}
@@ -808,12 +812,12 @@ public class BannerSection extends BaseBannerSection {
 								if ((ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) && instructorPercents.containsKey(ci.getInstructor()) && totalPercent > 0){
 									int pct = instructorPercents.get(ci.getInstructor()).intValue();
 									pct += (ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0);
-									instructorPercents.put(ci.getInstructor(),new Integer(pct));
+									instructorPercents.put(ci.getInstructor(), Integer.valueOf(pct));
 								} else {
 									if ((ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) && totalPercent > 0)
-										instructorPercents.put(ci.getInstructor(),new Integer(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
+										instructorPercents.put(ci.getInstructor(), Integer.valueOf(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
 									else {
-										instructorPercents.put(ci.getInstructor(),new Integer(0));
+										instructorPercents.put(ci.getInstructor(), 0);
 									}
 								}
 	
@@ -831,7 +835,7 @@ public class BannerSection extends BaseBannerSection {
 			DepartmentalInstructor firstInstructorWithNonZeroPercent = null;
 			for(DepartmentalInstructor instructor : instructorPercents.keySet()){
 				int pct = instructorPercents.get(instructor).intValue()/numClassesWithInstructors;
-				instructorPercents.put(instructor, new Integer(pct));
+				instructorPercents.put(instructor, Integer.valueOf(pct));
 				if (pct > 0 && firstInstructorWithNonZeroPercent == null){
 					firstInstructorWithNonZeroPercent = instructor;
 				}
@@ -839,7 +843,7 @@ public class BannerSection extends BaseBannerSection {
 			}
 			if (totalPct != 100 && firstInstructorWithNonZeroPercent != null){
 				int pct = instructorPercents.get(firstInstructorWithNonZeroPercent).intValue() + (100 - totalPct);
-				instructorPercents.put(firstInstructorWithNonZeroPercent, new Integer(pct));
+				instructorPercents.put(firstInstructorWithNonZeroPercent, Integer.valueOf(pct));
 			}
 		}
 		return(instructorPercents);
@@ -1204,7 +1208,23 @@ public class BannerSection extends BaseBannerSection {
             String className = ApplicationProperties.getProperty("tmtbl.banner.campus.element.helper");
         	if (className != null && className.trim().length() > 0){
         		try {
-        			externalCampusCodeElementHelper = (ExternalBannerCampusCodeElementHelperInterface) (Class.forName(className).newInstance());
+ 					externalCampusCodeElementHelper = (ExternalBannerCampusCodeElementHelperInterface) Class.forName(className).getDeclaredConstructor().newInstance();
+				} catch (IllegalArgumentException e) {
+					Debug.error("Illegal Argument Exception for: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+				} catch (InvocationTargetException e) {
+					Debug.error("Invocation Target Exception for: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+				} catch (NoSuchMethodException e) {
+					Debug.error("No Such Method Exception for: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
+				} catch (SecurityException e) {
+					Debug.error("Security Exception for: " + className + " using the default campus code element helper.");
+					e.printStackTrace();
+					externalCampusCodeElementHelper = new DefaultExternalBannerCampusCodeElementHelper();
 				} catch (InstantiationException e) {
 					Debug.error("Failed to instantiate instance of: " + className + " using the default campus code element helper.");
 					e.printStackTrace();
@@ -1231,7 +1251,23 @@ public class BannerSection extends BaseBannerSection {
             String className = ApplicationProperties.getProperty("tmtbl.banner.subjectArea.element.helper");
         	if (className != null && className.trim().length() > 0){
         		try {
-        			externalSubjectAreaElementHelper = (ExternalBannerSubjectAreaElementHelperInterface) (Class.forName(className).newInstance());
+					externalSubjectAreaElementHelper = (ExternalBannerSubjectAreaElementHelperInterface) Class.forName(className).getDeclaredConstructor().newInstance();
+				} catch (IllegalArgumentException e) {
+					Debug.error("Illegal Argument Exception for: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+				} catch (InvocationTargetException e) {
+					Debug.error("Invocation Target Exception for: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+				} catch (NoSuchMethodException e) {
+					Debug.error("No Such Method Exception for: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
+				} catch (SecurityException e) {
+					Debug.error("Security Exception for: " + className + " using the default subject area element helper.");
+					e.printStackTrace();
+					externalSubjectAreaElementHelper = new DefaultExternalBannerSubjectAreaElementHelper();
 				} catch (InstantiationException e) {
 					Debug.error("Failed to instantiate instance of: " + className + " using the default subject area element helper.");
 					e.printStackTrace();
@@ -1318,7 +1354,7 @@ public class BannerSection extends BaseBannerSection {
 		}
 		for (BannerCohortRestriction bcr : notMatchedRestrictions) {
 			BannerCohortRestriction newBcr = bcr.clone();
-			newBcr.setRemoved(new Boolean(true));
+			newBcr.setRemoved(Boolean.TRUE);
 			mergedRestrictions.add(newBcr);
 		}
         return(mergedRestrictions);
