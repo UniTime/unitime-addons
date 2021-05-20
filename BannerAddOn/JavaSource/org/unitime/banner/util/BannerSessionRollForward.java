@@ -71,6 +71,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 		try {
 			rollForwardBannerSessionData(toSession, fromSession);
 			rollForwardBannerCourseData(toSession);
+			cleanUpBadLinkIdentifiers(toSession);
 			updateClassSuffixes(toSession);
 		} catch (Exception e) {
 			iLog.error("Failed to roll banner session data forward.", e);
@@ -105,7 +106,61 @@ public class BannerSessionRollForward extends SessionRollForward {
 		}
 		
 	}
-	
+		
+	private void cleanUpBadLinkIdentifiers(Session toSession) {
+		Long toSessionId = toSession.getUniqueId();
+		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
+		BannerSession bs = BannerSession.findBannerSessionForSession(toSessionId, hibSession);
+		if (bs.isStoreDataForBanner().booleanValue()){			
+			@SuppressWarnings("unchecked")
+			TreeSet<InstructionalOffering> offeringsToRebuild = new TreeSet<InstructionalOffering>(new InstructionalOfferingComparator(null));
+			
+			StringBuffer sb = new StringBuffer();
+			sb.append("select bs1")
+			  .append(" from BannerSection bs1, BannerSection bs2, BannerSession bsess1, BannerSession bsess2, CourseOffering co1, CourseOffering co2")
+			  .append(" where bs1.session = :sessionId")
+			  .append(" and bs1.session != bs2.session")
+			  .append(" and bsess1.session = bs1.session")
+			  .append(" and bsess2.session = bs2.session")
+			  .append(" and bsess1.bannerTermCode = bsess2.bannerTermCode")
+			  .append(" and co1.uniqueId = bs1.bannerConfig.bannerCourse.courseOfferingId")
+			  .append(" and co2.uniqueId = bs2.bannerConfig.bannerCourse.courseOfferingId")
+			  .append(" and (case when bsess1.useSubjectAreaPrefixAsCampus = true then")
+			  .append("   case when bsess1.subjectAreaPrefixDelimiter is not null and bsess1.subjectAreaPrefixDelimiter != '' then")
+			  .append(" substr(co1.subjectArea.subjectAreaAbbreviation, regexp_instr(co1.subjectArea.subjectAreaAbbreviation, bsess1.subjectAreaPrefixDelimiter, 1, 1, 1))")
+			  .append(" else substr(co1.subjectArea.subjectAreaAbbreviation, regexp_instr(co1.subjectArea.subjectAreaAbbreviation, ' - ', 1, 1, 1)) end")
+			  .append(" else  co1.subjectArea.subjectAreaAbbreviation end) = ")
+			  .append(" (case when bsess2.useSubjectAreaPrefixAsCampus = true then ")
+			  .append(" case when bsess2.subjectAreaPrefixDelimiter is not null and bsess2.subjectAreaPrefixDelimiter != '' then")
+			  .append(" substr(co2.subjectArea.subjectAreaAbbreviation, regexp_instr(co2.subjectArea.subjectAreaAbbreviation, bsess2.subjectAreaPrefixDelimiter, 1, 1, 1))")
+			  .append(" else substr(co2.subjectArea.subjectAreaAbbreviation, regexp_instr(co2.subjectArea.subjectAreaAbbreviation, ' - ', 1, 1, 1)) end")
+			  .append(" else  co2.subjectArea.subjectAreaAbbreviation end)")
+			  .append(" and substr(co1.courseNbr, 1, 5) = substr(co2.courseNbr, 1, 5)")
+			  .append(" and bs1.linkIdentifier = bs2.linkIdentifier")
+			  .append(" order by co1.subjectArea.subjectAreaAbbreviation, co1.courseNbr, co2.subjectArea.subjectAreaAbbreviation ")
+			  ;
+			@SuppressWarnings("unchecked")
+			List<BannerSection> sectionsToFix = (List<BannerSection>) hibSession.createQuery(sb.toString()).setLong("sessionId", toSession.getUniqueId()).list();
+			for (BannerSection bannerSectionToFix : sectionsToFix) {
+				bannerSectionToFix.setLinkIdentifier(null);
+				bannerSectionToFix.setLinkConnector(null);
+				offeringsToRebuild.add(bannerSectionToFix.getFirstClass().getSchedulingSubpart().getInstrOfferingConfig().getInstructionalOffering());
+			}
+			
+			BannerInstrOffrConfigChangeAction biocca = null;
+			for (InstructionalOffering io : offeringsToRebuild) {
+				iLog.info("Rebuild Banner Sections for Offering:  " + io.getCourseNameWithTitle());
+				biocca = new BannerInstrOffrConfigChangeAction();
+				biocca.updateInstructionalOffering(io, hibSession);
+				hibSession.evict(io);
+			}	
+			hibSession.flush();
+			hibSession.clear();
+
+		}		
+
+	}
+
 	@SuppressWarnings("unchecked")
 	public void createMissingBannerSections(ActionMessages errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
 		Session academicSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollForwardTo());
