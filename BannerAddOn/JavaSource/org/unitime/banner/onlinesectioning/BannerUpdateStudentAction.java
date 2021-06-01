@@ -48,6 +48,7 @@ import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.defaults.ApplicationProperty;
+import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.WaitListMode;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.interfaces.ExternalUidTranslation;
 import org.unitime.timetable.interfaces.ExternalUidTranslation.Source;
@@ -87,6 +88,7 @@ import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningServer.Lock;
 import org.unitime.timetable.onlinesectioning.custom.CustomStudentEnrollmentHolder;
+import org.unitime.timetable.onlinesectioning.model.XCourseId;
 import org.unitime.timetable.onlinesectioning.model.XCourseRequest;
 import org.unitime.timetable.onlinesectioning.model.XEnrollment;
 import org.unitime.timetable.onlinesectioning.model.XIndividualReservation;
@@ -369,6 +371,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						}
 						action.addEnrollment(enrollment);
 					}
+					
+					OnlineSectioningServer.ServerCallback<Boolean> offeringChecked = new OnlineSectioningServer.ServerCallback<Boolean>() {
+						@Override
+						public void onFailure(Throwable exception) {
+							helper.error("Offering check failed: " + exception.getMessage(), exception);
+						}
+						@Override
+						public void onSuccess(Boolean result) {
+						}
+					};
 
 					if (oldStudent != null && server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing()) {
 						for (XRequest oldRequest: oldStudent.getRequests()) {
@@ -376,11 +388,67 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							if (oldEnrollment == null) continue; // free time or not assigned
 							
 							if (CheckOfferingAction.isCheckNeeded(server, helper, oldEnrollment))
-								server.execute(server.createAction(CheckOfferingAction.class).forOfferings(oldEnrollment.getOfferingId()).skipStudents(oldStudent.getStudentId()), helper.getUser());
+								server.execute(server.createAction(CheckOfferingAction.class).forOfferings(oldEnrollment.getOfferingId()).skipStudents(oldStudent.getStudentId()), helper.getUser(), offeringChecked);
 						}
+					}
+					
+					if (newStudent != null && server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing()) {
+						Set<Long> offeringIds = new HashSet<Long>();
+						for (XRequest newRequest: newStudent.getRequests()) {
+							if (newRequest instanceof XCourseRequest) { // only course requests
+								XCourseRequest cr = (XCourseRequest) newRequest;
+								if (cr.getEnrollment() == null && cr.isWaitlist() && !cr.isAlternative()) { // wait-listed and not assigned
+									for (String[] override: iOverrides) {
+										String subject = override[1], course = override[2];
+										for (XCourseId c: cr.getCourseIds()) {
+											if (c.getCourseName().startsWith(subject + " " + course) && cr.isOverridePending(c)) {
+												// has a matching override and a pending override status
+												offeringIds.add(c.getOfferingId());
+											}
+										}
+									}
+								}
+							}
+						}
+						if (!offeringIds.isEmpty() && student.getWaitListMode() == WaitListMode.WaitList)
+							server.execute(server.createAction(CheckOfferingAction.class).forOfferings(offeringIds).forStudents(newStudent.getStudentId()), helper.getUser(), offeringChecked);
 					}
 
 					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).oldStudent(oldStudent), helper.getUser());
+ 				} else if (server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing() && student.getWaitListMode() == WaitListMode.WaitList) {
+ 					// no change in the enrollments --> still check the wait-listed override changes
+					XStudent newStudent = server.getStudent(student.getUniqueId());
+					if (newStudent != null) {
+						Set<Long> offeringIds = new HashSet<Long>();
+						for (XRequest newRequest: newStudent.getRequests()) {
+							if (newRequest instanceof XCourseRequest) { // only course requests
+								XCourseRequest cr = (XCourseRequest) newRequest;
+								if (cr.getEnrollment() == null && cr.isWaitlist() && !cr.isAlternative()) { // wait-listed and not assigned
+									for (String[] override: iOverrides) {
+										String subject = override[1], course = override[2];
+										for (XCourseId c: cr.getCourseIds()) {
+											if (c.getCourseName().startsWith(subject + " " + course) && cr.isOverridePending(c)) {
+												// has a matching override and a pending override status
+												offeringIds.add(c.getOfferingId());
+											}
+										}
+									}
+								}
+							}
+						}
+						if (!offeringIds.isEmpty()) {
+							server.execute(server.createAction(CheckOfferingAction.class).forOfferings(offeringIds).forStudents(newStudent.getStudentId()), helper.getUser(),
+							new OnlineSectioningServer.ServerCallback<Boolean>() {
+								@Override
+								public void onFailure(Throwable exception) {
+									helper.error("Offering check failed: " + exception.getMessage(), exception);
+								}
+								@Override
+								public void onSuccess(Boolean result) {
+								}
+							});
+						}
+					}
 				}
 			
 				helper.commitTransaction();
