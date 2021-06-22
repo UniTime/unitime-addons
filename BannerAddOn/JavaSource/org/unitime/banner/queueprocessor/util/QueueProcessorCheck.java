@@ -59,6 +59,7 @@ public class QueueProcessorCheck {
 			OracleConnector jdbc = null;
 			try {
 				jdbc = new OracleConnector(
+						BannerCaller.getBannerUrl(),
 						BannerCaller.getBannerHost(),
 						BannerCaller.getBannerDatabase(),
 						BannerCaller.getBannerPort(),
