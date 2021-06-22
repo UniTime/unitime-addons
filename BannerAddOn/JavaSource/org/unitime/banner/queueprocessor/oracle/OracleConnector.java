@@ -42,11 +42,13 @@ public class OracleConnector {
 	private String url = "jdbc:oracle:thin:@";
 	private Connection conn = null;
 
-	public OracleConnector(String host, String db, String port, String user,
+	public OracleConnector(String urlFormat, String host, String db, String port, String user,
 			String password) throws ClassNotFoundException, SQLException {
 
 		// construct the url
-		url = url + host + ":" + port + ":" + db;
+//		url = url + host + ":" + port + ":" + db;
+		
+		url = urlFormat.replace("{host}", host).replace("{port}", port).replace("{db}", db);
 
 		// load the Oracle driver and establish a connection
 		try {

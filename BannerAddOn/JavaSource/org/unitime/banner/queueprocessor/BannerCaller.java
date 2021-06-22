@@ -38,6 +38,14 @@ public abstract class BannerCaller {
 		super();
 	}
 
+	public static String getBannerUrl() throws Exception{
+		String bannerHost = ApplicationProperties.getProperty("banner.url", "jdbc:oracle:thin:@{host}:{port}:{db}");
+        if (bannerHost == null || bannerHost.trim().length() == 0){
+        	throw new Exception("Missing required custom application property:  'banner.url', this property must be set to define the connection string format used to connect the host machine for the banner database.");
+        }
+		return bannerHost;
+	}
+	
 	public static String getBannerHost() throws Exception{
 		String bannerHost = ApplicationProperties.getProperty("banner.host");
         if (bannerHost == null || bannerHost.trim().length() == 0){
@@ -83,6 +91,7 @@ public abstract class BannerCaller {
 		OracleConnector jdbc = null;
 		try {
 			jdbc = new OracleConnector(
+					QueuedItem.getBannerUrl(),
 					QueuedItem.getBannerHost(), 
 					QueuedItem.getBannerDatabase(),
 					QueuedItem.getBannerPort(),
