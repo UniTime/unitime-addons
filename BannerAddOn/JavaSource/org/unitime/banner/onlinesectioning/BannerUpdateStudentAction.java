@@ -414,7 +414,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							server.execute(server.createAction(CheckOfferingAction.class).forOfferings(offeringIds).forStudents(newStudent.getStudentId()), helper.getUser(), offeringChecked);
 					}
 
-					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).oldStudent(oldStudent), helper.getUser());
+					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).fromAction(name()).oldStudent(oldStudent), helper.getUser());
  				} else if (server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing() && student.getWaitListMode() == WaitListMode.WaitList) {
  					// no change in the enrollments --> still check the wait-listed override changes
 					XStudent newStudent = server.getStudent(student.getUniqueId());

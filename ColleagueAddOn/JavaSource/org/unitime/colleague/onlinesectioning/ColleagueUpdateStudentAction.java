@@ -252,7 +252,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 						action.addEnrollment(enrollment);
 					}
 
-					server.execute(server.createAction(NotifyStudentAction.class).forStudent(iStudentId).oldStudent(oldStudent), helper.getUser());
+					server.execute(server.createAction(NotifyStudentAction.class).forStudent(iStudentId).fromAction(name()).oldStudent(oldStudent), helper.getUser());
 				}
 			
 				helper.commitTransaction();
