@@ -1190,7 +1190,20 @@ public class BannerSection extends BaseBannerSection {
 			list());
     }
 
-    public static CourseOffering findCourseOfferingForCrnAndTermCode(Integer crn, String termCode){
+    public static BannerSection findBannerSectionForCrnAndTermCode(Integer crn, String termCode){
+    	return(findBannerSectionForCrnAndTermCode((new BannerSectionDAO()).getSession(), crn, termCode));
+    }
+    
+ 	public static BannerSection findBannerSectionForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
+    	return ((BannerSection)hibSession.
+			createQuery("select bs from BannerSession bsess, BannerSection bs where " +
+					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn").
+			setString("termCode",termCode).
+			setInteger("crn", crn).
+			uniqueResult());
+    }
+
+	public static CourseOffering findCourseOfferingForCrnAndTermCode(Integer crn, String termCode){
     	return(findCourseOfferingForCrnAndTermCode((new BannerSectionDAO()).getSession(), crn, termCode));
     }
   
@@ -1203,7 +1216,7 @@ public class BannerSection extends BaseBannerSection {
 			uniqueResult());
     }
     
-	private ExternalBannerCampusCodeElementHelperInterface getExternalCampusCodeElementHelper(){
+	public static ExternalBannerCampusCodeElementHelperInterface getExternalCampusCodeElementHelper(){
 		if (externalCampusCodeElementHelper == null){
             String className = ApplicationProperties.getProperty("tmtbl.banner.campus.element.helper");
         	if (className != null && className.trim().length() > 0){

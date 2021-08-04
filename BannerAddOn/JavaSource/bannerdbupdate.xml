@@ -1206,4 +1206,29 @@ END section_processor;		]]>
 				references %SCHEMA%.student_group (uniqueid) on delete cascade
 		</sql>
 	</update>
+ 	<update version="14" date="19-Jul-2021" comment="Banner Response Data Changes">
+ 	 	<plsql>alter table %SCHEMA%.banner_response add session_id number(20)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response add subject_area_id number(20)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response add banner_section_id number(20)</plsql>
+		<plsql>alter table %SCHEMA%.banner_response add campus varchar2(5 char)</plsql>
+		<mysql>alter table %SCHEMA%.banner_response add session_id decimal(20, 0)</mysql>
+		<mysql>alter table %SCHEMA%.banner_response add subject_area_id decimal(20, 0)</mysql>
+		<mysql>alter table %SCHEMA%.banner_response add banner_section_id decimal(20, 0)</mysql>
+		<mysql>alter table %SCHEMA%.banner_response add campus varchar(5)</mysql>
+		<sql>alter table %SCHEMA%.banner_response add constraint fk_ban_rsp_to_sess foreign key (session_id)
+					references %SCHEMA%.sessions (uniqueid) on delete set null</sql>
+		<sql>alter table %SCHEMA%.banner_response add constraint fk_ban_rsp_to_sa foreign key (subject_area_id)
+					references %SCHEMA%.subject_area (uniqueid) on delete set null</sql>
+		<sql>alter table %SCHEMA%.banner_response add constraint fk_ban_rsp_to_bs foreign key (banner_section_id)
+					references %SCHEMA%.banner_section (uniqueid) on delete set null</sql>
+  	</update>
+ 	<update version="15" date="19-Jul-2021" comment="Banner Response Modify seq_numb Length to Match banner_section.section_index">
+  			<plsql>
+			alter table %SCHEMA%.banner_response modify seq_numb varchar2(10 char)
+		</plsql>
+		<mysql>
+			alter table %SCHEMA%.banner_response modify seq_numb varchar(10)
+		</mysql>
+  	</update>
+
  </dbupdate>

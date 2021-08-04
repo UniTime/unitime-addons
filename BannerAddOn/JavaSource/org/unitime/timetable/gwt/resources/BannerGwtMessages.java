@@ -19,7 +19,6 @@
 */
 package org.unitime.timetable.gwt.resources;
 
-
 public interface BannerGwtMessages extends GwtMessages {
 
 	@DefaultMessage("Banner Instructional Method Cohort Restriction")
@@ -27,6 +26,9 @@ public interface BannerGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Banner Instructional Method Cohort Restrictions")
 	String pageBannerInstrMethodCohortRestrictions();
+
+	@DefaultMessage("Banner Message Responses")
+	String pageBannerResponses();
 
 	@DefaultMessage("Instructional Method")
 	String fieldInstructionalMethod();
@@ -39,6 +41,9 @@ public interface BannerGwtMessages extends GwtMessages {
 
 	@DefaultMessage("Remove(d)")
 	String fieldRemoved();
+	
+	@DefaultMessage("All Managers")
+	String itemAllManagers();
 
 	@DefaultMessage("Include")
 	String labelInclude();
@@ -63,5 +68,94 @@ public interface BannerGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Cannot change the Cohort for an Instructional Method Cohort Restriction")
 	String exceptionRestrictionCannotChangeCohort();
+
+	@DefaultMessage("manager")
+	String tagManager();
+	
+	@DefaultMessage("crn")
+	String tagCrn();
+
+	@DefaultMessage("Loading banner responses ...")
+	String waitLoadingBannerResponses();
+	
+	@DefaultMessage("Failed to load banner responses: {0}")
+	String failedToLoadBannerResponses(String reason);
+
+	@DefaultMessage("No banner responses matching the above filter found.")
+	String errorNoMatchingBannerResponsesFound();
+
+	@DefaultMessage("Sec Id")
+	String colBannerSectionNumber();
+
+	@DefaultMessage("Activity Date")
+	String colActivityDate();
+
+	@DefaultMessage("Action")
+	String colAction();
+
+	@DefaultMessage("Campus")
+	String colCampus();
+
+	@DefaultMessage("CRN")
+	String colCrn();
+
+	@DefaultMessage("Xlst")
+	String colCrosslistGroup();
+
+	@DefaultMessage("Message")
+	String colMessage();
+
+	@DefaultMessage("Type")
+	String colType();
+
+	@DefaultMessage("Loading banner responses ...")
+	String waitLoadingBannerQueueResponses();
+	
+	@DefaultMessage("Activity Date Not Set.")
+	String warnActivityDateNotSet();
+
+	@DefaultMessage("CRN:")
+	String propCrn();
+	
+	@DefaultMessage("Course Number:")
+	String propCourseNumber();
+
+	@DefaultMessage("Course Number")
+	String fieldCourseNumber();
+
+	@DefaultMessage("crsNbr")
+	String tagCourseNumber();
+	
+	@DefaultMessage("Message:")
+	String propMessage();
+
+	@DefaultMessage("xlst")
+	String tagXlst();
+
+	@DefaultMessage("Cross List Group")
+	String fieldXlst();
+
+	@DefaultMessage("Cross List Group:")
+	String propXlst();
+
+	@DefaultMessage("message")
+	String tagMessage();
+
+	@DefaultMessage("action")
+	String tagAction();
+
+	@DefaultMessage("respType")
+	String tagResponseType();
+	
+	@DefaultMessage("Max Results:")
+	String propMaxResults();
+	
+	@DefaultMessage("Max Results")
+	String fieldMaxResults();
+
+	@DefaultMessage("maxResults")
+	String tagMaxResults();
+
+	
 
 }

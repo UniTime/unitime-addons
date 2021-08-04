@@ -17,20 +17,10 @@
  * limitations under the License.
  * 
 */
-package org.unitime.localization.messages;
+package org.unitime.timetable.gwt.resources;
 
-import org.unitime.banner.action.BannerCourseSearchAction;
+public interface BannerGwtResources extends GwtResources {
 
-public interface BannerMessages extends CourseMessages {
-
-	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchBannerCourses",
-		apply = BannerCourseSearchAction.class
-	)
-	String actionSearchBannerOfferings();
-
-	@DefaultMessage("Banner Offering data was not correct:  {0}")
-	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
+	//TODO:  If needed put any banner specific resources here.
 
 }

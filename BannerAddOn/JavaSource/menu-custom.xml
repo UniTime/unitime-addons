@@ -23,8 +23,19 @@
 	<menu name="Courses">
 		<menu name="Banner">
 			<item name="Message Responses" page="bannerMessageResponses.do">
-							<condition>
-					<hasPermission name="InstructionalOfferings"/>
+				<condition>
+					<and>
+						<propertyEquals name="banner.menu.display_orig_message_responses" value="true" defaultValue="false"/>
+						<hasPermission name="InstructionalOfferings"/>
+					</and>
+				</condition>
+			</item>
+			<item name="Message Responses" page="bannerResponses" type="gwt">
+				<condition>
+					<and>
+						<propertyEquals name="banner.menu.display_new_message_responses" value="true" defaultValue="true"/>
+						<hasPermission name="InstructionalOfferings"/>
+					</and>
 				</condition>
 			</item>
 			<item name="Banner Offerings" page="bannerOfferingShowSearch.do">

@@ -17,20 +17,22 @@
  * limitations under the License.
  * 
 */
-package org.unitime.localization.messages;
+package org.unitime.banner.defaults;
 
-import org.unitime.banner.action.BannerCourseSearchAction;
-
-public interface BannerMessages extends CourseMessages {
-
-	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchBannerCourses",
-		apply = BannerCourseSearchAction.class
-	)
-	String actionSearchBannerOfferings();
-
-	@DefaultMessage("Banner Offering data was not correct:  {0}")
-	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
+public enum BannerRelatedSessionAttribute {
+	BannerResponsesLastFilter("BannerReponses.LastFilter", "Banner Responses: last used filter"),
+	;
+	
+	String iKey, iDefault, iDescription;
+	BannerRelatedSessionAttribute(String key, String defaultValue, String description) {
+		iKey = key; iDefault = defaultValue; iDescription = defaultValue;
+	}
+	BannerRelatedSessionAttribute(String key, String description) {
+		this(key, null, description);
+	}
+	
+	public String key() { return iKey; }
+	public String defaultValue() { return iDefault; }
+	public String description() { return iDescription; }
 
 }

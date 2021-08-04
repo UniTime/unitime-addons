@@ -19,6 +19,8 @@
 */
 package org.unitime.banner.model.base;
 
+import java.util.List;
+
 import org.unitime.banner.model.BannerResponse;
 import org.unitime.banner.model.dao._RootDAO;
 import org.unitime.banner.model.dao.BannerResponseDAO;
@@ -38,5 +40,20 @@ public abstract class BaseBannerResponseDAO extends _RootDAO<BannerResponse,Long
 
 	public Class<BannerResponse> getReferenceClass() {
 		return BannerResponse.class;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerResponse> findBySession(org.hibernate.Session hibSession, Long sessionId) {
+		return hibSession.createQuery("from BannerResponse x where x.session.uniqueId = :sessionId").setLong("sessionId", sessionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerResponse> findByBannerSection(org.hibernate.Session hibSession, Long bannerSectionId) {
+		return hibSession.createQuery("from BannerResponse x where x.bannerSection.uniqueId = :bannerSectionId").setLong("bannerSectionId", bannerSectionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerResponse> findBySubjectArea(org.hibernate.Session hibSession, Long subjectAreaId) {
+		return hibSession.createQuery("from BannerResponse x where x.subjectArea.uniqueId = :subjectAreaId").setLong("subjectAreaId", subjectAreaId).list();
 	}
 }

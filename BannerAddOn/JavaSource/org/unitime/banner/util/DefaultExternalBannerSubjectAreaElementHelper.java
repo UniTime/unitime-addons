@@ -58,13 +58,17 @@ ExternalBannerSubjectAreaElementHelperInterface {
 
 	@Override
 	public String getBannerSubjectAreaAbbreviation(SubjectArea subjectArea, BannerSession bannerSession) {
+		BannerSession bs = bannerSession;
+		if (bs == null) {
+			bs = BannerSession.findBannerSessionForSession(subjectArea.getSession(), null);
+		}
 		return(getBannerSubjectAreaAbbreviation(subjectArea.getSubjectAreaAbbreviation(), bannerSession));
 	}
 
 	@Override
 	public String getBannerSubjectAreaAbbreviation(String subjectArea, BannerSession bannerSession) {
 		String subj = null;
-		if (subjectArea != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
+		if (subjectArea != null && bannerSession != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
 			String delimiter = ((bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("")) ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
 			if (subjectArea.indexOf(delimiter) >= 0) {
 				subj = subjectArea.substring(subjectArea.indexOf(delimiter) + delimiter.length());				

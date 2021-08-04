@@ -17,20 +17,9 @@
  * limitations under the License.
  * 
 */
-package org.unitime.localization.messages;
 
-import org.unitime.banner.action.BannerCourseSearchAction;
+alter table banner_response modify seq_numb varchar(10)
 
-public interface BannerMessages extends CourseMessages {
-
-	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchBannerCourses",
-		apply = BannerCourseSearchAction.class
-	)
-	String actionSearchBannerOfferings();
-
-	@DefaultMessage("Banner Offering data was not correct:  {0}")
-	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
-
-}
+update application_config set value='15' where name='tmtbl.db.banner.version';
+  
+commit;

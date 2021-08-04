@@ -17,20 +17,20 @@
  * limitations under the License.
  * 
 */
-package org.unitime.localization.messages;
+package org.unitime.timetable.gwt.shared;
 
-import org.unitime.banner.action.BannerCourseSearchAction;
+import org.unitime.timetable.gwt.command.client.GwtRpcException;
 
-public interface BannerMessages extends CourseMessages {
+public class BannerResponseException extends GwtRpcException {
 
-	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchBannerCourses",
-		apply = BannerCourseSearchAction.class
-	)
-	String actionSearchBannerOfferings();
+	private static final long serialVersionUID = -1012367508116745560L;
 
-	@DefaultMessage("Banner Offering data was not correct:  {0}")
-	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
+	public BannerResponseException() {
+		super();
+	}
+	
+	public BannerResponseException(String message) {
+		super(message);
+	}
 
 }

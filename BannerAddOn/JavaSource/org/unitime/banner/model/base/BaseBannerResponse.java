@@ -23,6 +23,9 @@ import java.io.Serializable;
 import java.util.Date;
 
 import org.unitime.banner.model.BannerResponse;
+import org.unitime.banner.model.BannerSection;
+import org.unitime.timetable.model.Session;
+import org.unitime.timetable.model.SubjectArea;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
@@ -46,7 +49,11 @@ public abstract class BaseBannerResponse implements Serializable {
 	private String iMessage;
 	private String iPacketId;
 	private Long iQueueId;
+	private String iCampus;
 
+	private Session iSession;
+	private BannerSection iBannerSection;
+	private SubjectArea iSubjectArea;
 
 	public static String PROP_UNIQUEID = "uniqueId";
 	public static String PROP_SEQNO = "sequenceNumber";
@@ -63,6 +70,7 @@ public abstract class BaseBannerResponse implements Serializable {
 	public static String PROP_MESSAGE = "message";
 	public static String PROP_PACKET_ID = "packetId";
 	public static String PROP_QUEUE_ID = "queueId";
+	public static String PROP_CAMPUS = "campus";
 
 	public BaseBannerResponse() {
 		initialize();
@@ -120,6 +128,18 @@ public abstract class BaseBannerResponse implements Serializable {
 	public Long getQueueId() { return iQueueId; }
 	public void setQueueId(Long queueId) { iQueueId = queueId; }
 
+	public String getCampus() { return iCampus; }
+	public void setCampus(String campus) { iCampus = campus; }
+
+	public Session getSession() { return iSession; }
+	public void setSession(Session session) { iSession = session; }
+
+	public BannerSection getBannerSection() { return iBannerSection; }
+	public void setBannerSection(BannerSection bannerSection) { iBannerSection = bannerSection; }
+
+	public SubjectArea getSubjectArea() { return iSubjectArea; }
+	public void setSubjectArea(SubjectArea subjectArea) { iSubjectArea = subjectArea; }
+
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerResponse)) return false;
 		if (getUniqueId() == null || ((BannerResponse)o).getUniqueId() == null) return false;
@@ -139,6 +159,8 @@ public abstract class BaseBannerResponse implements Serializable {
 		return "BannerResponse[" +
 			"\n	Action: " + getAction() +
 			"\n	ActivityDate: " + getActivityDate() +
+			"\n	BannerSection: " + getBannerSection() +
+			"\n	Campus: " + getCampus() +
 			"\n	CourseNumber: " + getCourseNumber() +
 			"\n	Crn: " + getCrn() +
 			"\n	ExternalId: " + getExternalId() +
@@ -147,6 +169,8 @@ public abstract class BaseBannerResponse implements Serializable {
 			"\n	QueueId: " + getQueueId() +
 			"\n	SectionNumber: " + getSectionNumber() +
 			"\n	SequenceNumber: " + getSequenceNumber() +
+			"\n	Session: " + getSession() +
+			"\n	SubjectArea: " + getSubjectArea() +
 			"\n	SubjectCode: " + getSubjectCode() +
 			"\n	TermCode: " + getTermCode() +
 			"\n	Type: " + getType() +

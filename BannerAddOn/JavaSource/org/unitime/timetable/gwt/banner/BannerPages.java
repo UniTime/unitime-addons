@@ -19,15 +19,15 @@
 */
 package org.unitime.timetable.gwt.banner;
 
-import org.unitime.timetable.gwt.banner.test.TestPage;
+import org.unitime.timetable.gwt.client.responses.BannerResponsesPage;
 import org.unitime.timetable.gwt.resources.BannerGwtMessages;
 
 import com.google.gwt.user.client.ui.Widget;
 
 public enum BannerPages {
-	bannerTest(new PageFactory() {
-		public Widget create() { return new TestPage(); }
-		public String name(BannerGwtMessages messages) { return "Banner Test Page"; }
+	bannerResponses(new PageFactory() {
+		public Widget create() { return new BannerResponsesPage(); }
+		public String name(BannerGwtMessages messages) { return messages.pageBannerResponses(); }
 		}),
 	;
 

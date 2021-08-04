@@ -19,6 +19,7 @@
 */
 package org.unitime.banner.dataexchange;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -296,7 +297,7 @@ public class BannerMessage {
 			}
 			id += instructor.getExternalUniqueId();
 			instructorElement.addAttribute("ID", id);
-			instructorElement.addAttribute("PERCENT", (new Integer(pct)).toString());
+			instructorElement.addAttribute("PERCENT", (Integer.toString(pct)));
 			
 			if (instructor.getFirstName() != null && instructor.getFirstName().trim().length() > 0){
 				instructorElement.addAttribute("FIRST_NAME", instructor.getFirstName().trim());
@@ -321,7 +322,7 @@ public class BannerMessage {
             String className = ApplicationProperties.getProperty("tmtbl.banner.session.element.helper");
         	if (className != null && className.trim().length() > 0){
         		try {
-					externalSessionElementHelper = (ExternalBannerSessionElementHelperInterface) (Class.forName(className).newInstance());
+					externalSessionElementHelper = (ExternalBannerSessionElementHelperInterface) (Class.forName(className).getDeclaredConstructor().newInstance());
 				} catch (InstantiationException e) {
 					Debug.error("Failed to instantiate instance of: " + className + " using the default session element helper.");
 					e.printStackTrace();
@@ -332,6 +333,22 @@ public class BannerMessage {
 	        		externalSessionElementHelper = new DefaultExternalBannerSessionElementHelper();
 				} catch (ClassNotFoundException e) {
 					Debug.error("Failed to find class: " + className + " using the default session element helper.");
+					e.printStackTrace();
+	        		externalSessionElementHelper = new DefaultExternalBannerSessionElementHelper();
+				} catch (IllegalArgumentException e) {
+					Debug.error("Illegal argument exception: " + className + " using the default session element helper.");
+					e.printStackTrace();
+	        		externalSessionElementHelper = new DefaultExternalBannerSessionElementHelper();
+				} catch (InvocationTargetException e) {
+					Debug.error("Invocation target exception: " + className + " using the default session element helper.");
+					e.printStackTrace();
+	        		externalSessionElementHelper = new DefaultExternalBannerSessionElementHelper();
+				} catch (NoSuchMethodException e) {
+					Debug.error("No such method exception: " + className + " using the default session element helper.");
+					e.printStackTrace();
+	        		externalSessionElementHelper = new DefaultExternalBannerSessionElementHelper();
+				} catch (SecurityException e) {
+					Debug.error("Security exception: " + className + " using the default session element helper.");
 					e.printStackTrace();
 	        		externalSessionElementHelper = new DefaultExternalBannerSessionElementHelper();
 				}
@@ -378,7 +395,7 @@ public class BannerMessage {
 					sectionElement.addAttribute("LAB_HRS", (bannerSection.getBannerConfig().getLabHours().toString()));
 				}
 			}
-			sectionElement.addAttribute("MAX_ENRL", ((new Integer(bannerSection.calculateMaxEnrl(hibSession))).toString()));
+			sectionElement.addAttribute("MAX_ENRL", ((Integer.toString(bannerSection.calculateMaxEnrl(hibSession)))));
 
 			sectionElement.addAttribute("CREDIT_HRS", "");
 			if (bannerSection.getBannerConfig().getGradableItype() != null) {
@@ -487,7 +504,7 @@ public class BannerMessage {
 				crossListElement.addAttribute("GROUP", bannerSection.getCrossListIdentifier());
 				crossListElement.addAttribute("EXTERNAL_ID", bannerSection.getCrossListIdentifier());
 				if (!BannerMessageAction.DELETE.equals(xmlAction)){
-					crossListElement.addAttribute("MAX_ENRL",(new Integer(bannerSection.maxEnrollBasedOnClasses(hibSession))).toString());
+					crossListElement.addAttribute("MAX_ENRL",(Integer.toString(bannerSection.maxEnrollBasedOnClasses(hibSession))));
 					for(Iterator<Integer> crnIt = ts.iterator(); crnIt.hasNext();){
 						Element memberElement = crossListElement.addElement("MEMBER");
 						memberElement.addAttribute("CRN", crnIt.next().toString());

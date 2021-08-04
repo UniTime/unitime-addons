@@ -17,20 +17,18 @@
  * limitations under the License.
  * 
 */
-package org.unitime.localization.messages;
 
-import org.unitime.banner.action.BannerCourseSearchAction;
+alter table banner_response add session_id decimal(20, 0);
+alter table banner_response add subject_area_id decimal(20, 0);
+alter table banner_response add banner_section_id decimal(20, 0);
+alter table banner_response add campus varchar(5);
+alter table banner_response add constraint fk_ban_rsp_to_sess foreign key (session_id)
+			references sessions (uniqueid) on delete set null;
+alter table banner_response add constraint fk_ban_rsp_to_sa foreign key (subject_area_id)
+			references subject_area (uniqueid) on delete set null;
+alter table banner_response add constraint fk_ban_rsp_to_bs foreign key (banner_section_id)
+			references banner_section (uniqueid) on delete set null;
 
-public interface BannerMessages extends CourseMessages {
-
-	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchBannerCourses",
-		apply = BannerCourseSearchAction.class
-	)
-	String actionSearchBannerOfferings();
-
-	@DefaultMessage("Banner Offering data was not correct:  {0}")
-	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
-
-}
+update application_config set value='14' where name='tmtbl.db.banner.version';
+  
+commit;

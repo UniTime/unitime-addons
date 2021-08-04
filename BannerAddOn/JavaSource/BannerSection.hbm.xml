@@ -51,7 +51,7 @@
 			column="section_index"
 			type="java.lang.String"
 			not-null="false"
-			length="3"
+			length="10"
 		/>
 		
 		<property
