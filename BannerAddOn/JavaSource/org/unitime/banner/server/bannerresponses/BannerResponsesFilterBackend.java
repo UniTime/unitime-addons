@@ -617,7 +617,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 
 
 		@SuppressWarnings("unchecked")
-		List<BannerResponse> bannerResponses = hibQuery.setMaxResults(limit).setCacheable(true).list();
+		List<BannerResponse> bannerResponses = hibQuery.setMaxResults(limit).setCacheable(false).list();
 		
 		for (BannerResponse br: bannerResponses) {
 			if (query != null && !query.match(new BannerResponsesMatcher(br, sessionId, userDepartments))) continue;
