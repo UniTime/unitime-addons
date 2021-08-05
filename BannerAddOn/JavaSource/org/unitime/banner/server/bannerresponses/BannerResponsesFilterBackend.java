@@ -184,7 +184,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 	@Override
 	public void enumarate(BannerResponsesFilterRpcRequest request, FilterRpcResponse response, SessionContext context) {
 
-		for (BannerResponse bannerResponse: bannerResponses(request.getSessionId(), request.getOptions(), new Query(request.getText()), null, Department.getUserDepartments(context.getUser()))) {
+		for (BannerResponse bannerResponse: bannerResponses(request.getSessionId(), request.getOptions(), new Query(request.getText()), null, Department.getUserDepartments(context.getUser()),context.getUser().getCurrentAuthority().hasRight(Right.DepartmentIndependent))) {
 			response.addResult(new Entity(
 					bannerResponse.getUniqueId(),
 					bannerResponse.filterLabelShort(),
@@ -264,6 +264,10 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 			for (Department d : managed) {
 				for (SubjectArea sa : d.getSubjectAreas()) {
 					iManaged.add(sa.getSubjectAreaAbbreviation());
+					String bannerAbbv = BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(sa, null);
+					if (!bannerAbbv.equals(sa.getSubjectAreaAbbreviation())) {
+						iManaged.add(sa.getSubjectAreaAbbreviation());
+					}
 				}
 			}
 		}
@@ -352,7 +356,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		return subjects;
 	}
 	
-	private static ArrayList<Set<String>> subjectsToSearchFor(Long sessionId, Set<String> subj, Set<String> department, Set<String> manager) {
+	private static ArrayList<Set<String>> subjectsToSearchFor(Long sessionId, Set<String> subj, Set<String> department, Set<String> manager, boolean userIsDeptIndependent, Set<Department> userDepartments) {
 		Set<String> searchSubjs = new TreeSet<String>();
 		Set<String> bannerSearchSubjs = new TreeSet<String>();
 		ArrayList<Set<String>> subjects = new ArrayList<Set<String>>();
@@ -414,6 +418,18 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				bannerSearchSubjs.retainAll(bannerSubjs);
 			}
 		}
+		if (searchSubjs.isEmpty() && !userIsDeptIndependent) {
+			for (Department d: userDepartments) {
+				for ( SubjectArea sa : d.getSubjectAreas()) {
+					String bannerAbbv = BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(sa, null);
+					searchSubjs.add(sa.getSubjectAreaAbbreviation());
+					if (bannerAbbv != sa.getSubjectAreaAbbreviation()) {
+						bannerSearchSubjs.add(bannerAbbv);
+					}
+				}
+			}
+
+		}
 		return subjects;
 	}
 	
@@ -453,7 +469,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		}
 	}
 		
-	private static String getBannerResponseHqlQuery(Long sessionId, Map<String, Set<String>> options, String ignoreCommand) {
+	private static String getBannerResponseHqlQuery(Long sessionId, Map<String, Set<String>> options, String ignoreCommand, boolean userIsDeptIndependent, Set<Department> userDepartments) {
 		Set<String> subj = (options == null || "subj".equals(ignoreCommand) ? null : options.get("subj"));
 		Set<String> crsNbr = (options == null || "crsnbr".equals(ignoreCommand) ? null : options.get("crsnbr"));
 		Set<String> crn = (options == null || "crn".equals(ignoreCommand) ? null : options.get("crn"));
@@ -473,7 +489,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		  .append(" and br.crn >= bs.bannerTermCrnProperties.minCrn")
 		  .append(" and br.crn <= bs.bannerTermCrnProperties.maxCrn")
 		  ;
-		ArrayList<Set<String>> searchSubjects = subjectsToSearchFor(sessionId, subj, department, manager);
+		ArrayList<Set<String>> searchSubjects = subjectsToSearchFor(sessionId, subj, department, manager, userIsDeptIndependent, userDepartments);
 		if (!searchSubjects.get(0).isEmpty()) {
 			sb.append(" and ( 0 < (select count(br2.uniqueId) from BannerResponse br2 where br2.uniqueId = br.uniqueId ");
 			addOrConstraintsIfNeeded(sb, "br2", "subjectArea.subjectAreaAbbreviation", searchSubjects.get(0), -1, false, false, true);
@@ -557,7 +573,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		return sb.toString();
 	}
 
-	public static List<BannerResponse> bannerResponses(Long sessionId, Map<String, Set<String>> options, Query query, String ignoreCommand, Set<Department> userDepartments) {
+	public static List<BannerResponse> bannerResponses(Long sessionId, Map<String, Set<String>> options, Query query, String ignoreCommand, Set<Department> userDepartments, boolean userIsDeptIndependent) {
 		org.hibernate.Session hibSession = BannerResponseDAO.getInstance().getSession();
 		List<BannerResponse> ret = new ArrayList<BannerResponse>();
 		Set<String> to = (options == null || "to".equals(ignoreCommand) ? null : options.get("to"));
@@ -579,7 +595,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		}
 
 		
-		org.hibernate.Query hibQuery = hibSession.createQuery(getBannerResponseHqlQuery(sessionId, options, ignoreCommand));
+		org.hibernate.Query hibQuery = hibSession.createQuery(getBannerResponseHqlQuery(sessionId, options, ignoreCommand, userIsDeptIndependent, userDepartments));
 		if (from != null && from.size() >= 1) {
 			Date date = null;
 			String fromOption = from.iterator().next();

@@ -62,7 +62,7 @@ public class BannerResponsesPageBackend implements GwtRpcImplementation<BannerRe
 						  .bannerResponses(
 							context.getUser().getCurrentAcademicSessionId(), 
 							request.getFilter().getOptions(), 
-							new Query(request.getFilter().getText()), null, Department.getUserDepartments(context.getUser()))) 
+							new Query(request.getFilter().getText()), null, Department.getUserDepartments(context.getUser()), context.getUser().getCurrentAuthority().hasRight(Right.DepartmentIndependent))) 
 			    {
 				BannerResponseInterface bri = new BannerResponseInterface();
 				bri.setUniqueId(br.getUniqueId());
