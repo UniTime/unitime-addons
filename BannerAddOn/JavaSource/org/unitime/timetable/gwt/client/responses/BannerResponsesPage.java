@@ -49,6 +49,8 @@ import org.unitime.timetable.gwt.shared.InstructorInterface.DepartmentInterface;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -85,7 +87,7 @@ public class BannerResponsesPage extends SimpleForm {
 		iSearch.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				search();
+				search(true);
 			}
 		});
 	
@@ -155,12 +157,26 @@ public class BannerResponsesPage extends SimpleForm {
 				}
 			}
 		});
+
+		History.addValueChangeHandler(new ValueChangeHandler<String>() {
+		    @Override
+		    public void onValueChange(ValueChangeEvent<String> event) {
+		        if (event.getValue() == null) return;
+		        iFilterBox.setValue(event.getValue().replace("%20", " "), true);
+		        if (iTable.isVisible()) search(false); // call search without calling History.newItem(...)
+		    }
+		});
+		
+		if (History.getToken() != null && !History.getToken().isEmpty())
+		    iFilterBox.setValue(History.getToken().replace("%20", " "), true);
 			
-}
+		}
 
-	void search() {
+	void search(boolean callHistoryNewItem) {
 
-		History.newItem(iFilterBox.getValue(), false);
+		if (callHistoryNewItem) {
+			History.newItem(iFilterBox.getValue(), false);
+		}
 		LoadingWidget.getInstance().show(MESSAGES.waitLoadingBannerQueueResponses());
 		final BannerResponsesFilterRpcRequest filter = iFilterBox.getElementsRequest();
 		RPC.execute(new BannerResponsesPageRequest(filter), new AsyncCallback<GwtRpcResponseList<BannerResponseInterface>>() {
