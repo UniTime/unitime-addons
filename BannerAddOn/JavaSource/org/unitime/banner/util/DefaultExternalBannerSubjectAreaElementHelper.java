@@ -68,7 +68,7 @@ ExternalBannerSubjectAreaElementHelperInterface {
 	@Override
 	public String getBannerSubjectAreaAbbreviation(String subjectArea, BannerSession bannerSession) {
 		String subj = null;
-		if (subjectArea != null && bannerSession != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
+		if (subjectArea != null && bannerSession != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
 			String delimiter = ((bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("")) ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
 			if (subjectArea.indexOf(delimiter) >= 0) {
 				subj = subjectArea.substring(subjectArea.indexOf(delimiter) + delimiter.length());				
