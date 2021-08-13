@@ -139,111 +139,119 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 
 	}
 	
-	private void processResponseWithNoMatchingSentMessage(Element rootElement) throws Exception {
-
-		HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
-		HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
-		if (rootElement.getName().equalsIgnoreCase(rootName)) {
-			beginTransaction();
-			for (Iterator<Element> eIt = rootElement.elementIterator(bannerResponseName); eIt.hasNext();) {
-				Element bannerResponseElement = (Element) eIt.next();
-				BannerSectionInfoHelper bsi = getBannerSectionInfoHelperForResponseElement(bannerResponseElement, bannerSections, bannerCrosslists);
-				BannerResponse resp = createBannerResponseForResponseElement(bannerResponseElement, bsi, bannerSections, bannerCrosslists); 
-				getHibSession().save(resp);
-			}
-			commitTransaction();
-		}
-		
-	}
-		
-	private void processMessageWithMatchingSentMessage(Element rootElement, Element matchingSentRootElement) throws Exception{
- 		if (rootElement.getName().equalsIgnoreCase(rootName)) {
+	private void processResponseWithNoMatchingSentMessage(Element rootElement)  {
+		try {
 			HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
 			HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
-			ArrayList<BannerSectionInfoHelper> sentMessages = new ArrayList<BannerSectionInfoHelper>();
-			
-			setSentTermCode(getRequiredStringAttribute(matchingSentRootElement, "TERM_CODE", "SCHEDULE"));
-			
-			beginTransaction();
-			Iterator<Element> matchingSentMessageElementIterator = matchingSentRootElement.elementIterator();
-			int order = 0;
-			boolean createMessagesForAllSentElements = !BannerMessage.BannerMessageAction.AUDIT.toString().equals(getRequiredStringAttribute(matchingSentRootElement, "ACTION", "SCHEDULE"));
-			if (createMessagesForAllSentElements) {
-				while (matchingSentMessageElementIterator.hasNext()) {
-					Element e = matchingSentMessageElementIterator.next();
-					BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForSentElement(e, bannerSections, bannerCrosslists, order);
-					sentMessages.add(bsih);	
-					order++;
+			if (rootElement.getName().equalsIgnoreCase(rootName)) {
+				beginTransaction();
+				for (Iterator<Element> eIt = rootElement.elementIterator(bannerResponseName); eIt.hasNext();) {
+					Element bannerResponseElement = (Element) eIt.next();
+					BannerSectionInfoHelper bsi = getBannerSectionInfoHelperForResponseElement(bannerResponseElement, bannerSections, bannerCrosslists);
+					BannerResponse resp = createBannerResponseForResponseElement(bannerResponseElement, bsi, bannerSections, bannerCrosslists); 
+					getHibSession().save(resp);
 				}
+				commitTransaction();
 			}
-					
-			int lastMatchedSent = -1;
-			int currentMatchedSent = -1;
-			String packetId = getRequiredStringAttribute(rootElement, "PACKET_ID", rootName);
-			Iterator<Element> responseElementIterator = rootElement.elementIterator();
-			while (responseElementIterator.hasNext()) {
-				Element responseMessage = responseElementIterator.next();
-				String action = getOptionalStringAttribute(responseMessage, "ACTION");
-				BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForResponseElement(responseMessage, bannerSections, bannerCrosslists);
-				if (action == null) {
-					createMessagesForAllSentElements = false;
-					BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
-					getHibSession().save(resp);
-					break;
-				} else {
-					BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
-					String xlstGrp = getOptionalStringAttribute(responseMessage, "XLST_GROUP");
-					if (xlstGrp == null) {
-		 				if (bsih.getSentSection()) {
-		 					bsih.setReceivedSectionResponse(true);
-		 					currentMatchedSent = bsih.getSentSectionPosition();
-		 				}
-					} else {
-						if (bsih.getSentCrosslist()) {
-							bsih.setReceivedCrosslistResponse(true);
-							currentMatchedSent = bsih.getSentCrosslistPosition();
-						}
+		} catch (Exception e) {
+            fatal("Unable to store response message, reason: "+e.getMessage(),e);
+			rollbackTransaction();
+		}
+	}
+		
+	private void processMessageWithMatchingSentMessage(Element rootElement, Element matchingSentRootElement) {
+		try {
+	 		if (rootElement.getName().equalsIgnoreCase(rootName)) {
+				HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
+				HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
+				ArrayList<BannerSectionInfoHelper> sentMessages = new ArrayList<BannerSectionInfoHelper>();
+				
+				setSentTermCode(getRequiredStringAttribute(matchingSentRootElement, "TERM_CODE", "SCHEDULE"));
+				
+				beginTransaction();
+				Iterator<Element> matchingSentMessageElementIterator = matchingSentRootElement.elementIterator();
+				int order = 0;
+				boolean createMessagesForAllSentElements = !BannerMessage.BannerMessageAction.AUDIT.toString().equals(getRequiredStringAttribute(matchingSentRootElement, "ACTION", "SCHEDULE"));
+				if (createMessagesForAllSentElements) {
+					while (matchingSentMessageElementIterator.hasNext()) {
+						Element e = matchingSentMessageElementIterator.next();
+						BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForSentElement(e, bannerSections, bannerCrosslists, order);
+						sentMessages.add(bsih);	
+						order++;
 					}
-					
-					String dateStr = getRequiredStringAttribute(responseMessage, "ACTIVITY_DATE", bannerResponseName);
-					DateFormat df = new SimpleDateFormat("MM/dd/yyyy H:m:s");
-					Date endTimestamp = null;				
-					try {
-						endTimestamp = df.parse(dateStr);
-					} catch (ParseException e) {
-						e.printStackTrace();
-					}
-					createNoChangeBannerResponsesForUnmatchedSentMessages(
-							createMessagesForAllSentElements, 
-							sentMessages, 
-							lastMatchedSent, 
-							currentMatchedSent,
-							endTimestamp,
-							packetId);
-					lastMatchedSent = currentMatchedSent;
-					getHibSession().save(resp);
-					
-				}				
-			}
+				}
 						
-			String dateStr = getRequiredStringAttribute(rootElement, "END_TIMESTAMP", rootName);
-			DateFormat df = new SimpleDateFormat("yyyy-MM-dd H:m:s");
-			Date endTimestamp = null;				
-			try {
-				endTimestamp = df.parse(dateStr);
-			} catch (ParseException e) {
-				e.printStackTrace();
+				int lastMatchedSent = -1;
+				int currentMatchedSent = -1;
+				String packetId = getRequiredStringAttribute(rootElement, "PACKET_ID", rootName);
+				Iterator<Element> responseElementIterator = rootElement.elementIterator();
+				while (responseElementIterator.hasNext()) {
+					Element responseMessage = responseElementIterator.next();
+					String action = getOptionalStringAttribute(responseMessage, "ACTION");
+					BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForResponseElement(responseMessage, bannerSections, bannerCrosslists);
+					if (action == null) {
+						createMessagesForAllSentElements = false;
+						BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
+						getHibSession().save(resp);
+						break;
+					} else {
+						BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
+						String xlstGrp = getOptionalStringAttribute(responseMessage, "XLST_GROUP");
+						if (xlstGrp == null) {
+			 				if (bsih.getSentSection()) {
+			 					bsih.setReceivedSectionResponse(true);
+			 					currentMatchedSent = bsih.getSentSectionPosition();
+			 				}
+						} else {
+							if (bsih.getSentCrosslist()) {
+								bsih.setReceivedCrosslistResponse(true);
+								currentMatchedSent = bsih.getSentCrosslistPosition();
+							}
+						}
+						
+						String dateStr = getRequiredStringAttribute(responseMessage, "ACTIVITY_DATE", bannerResponseName);
+						DateFormat df = new SimpleDateFormat("MM/dd/yyyy H:m:s");
+						Date endTimestamp = null;				
+						try {
+							endTimestamp = df.parse(dateStr);
+						} catch (ParseException e) {
+							e.printStackTrace();
+						}
+						createNoChangeBannerResponsesForUnmatchedSentMessages(
+								createMessagesForAllSentElements, 
+								sentMessages, 
+								lastMatchedSent, 
+								currentMatchedSent,
+								endTimestamp,
+								packetId);
+						lastMatchedSent = currentMatchedSent;
+						getHibSession().save(resp);
+						
+					}				
+				}
+							
+				String dateStr = getRequiredStringAttribute(rootElement, "END_TIMESTAMP", rootName);
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd H:m:s");
+				Date endTimestamp = null;				
+				try {
+					endTimestamp = df.parse(dateStr);
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+				
+				createNoChangeBannerResponsesForUnmatchedSentMessages(
+						createMessagesForAllSentElements, 
+						sentMessages, 
+						lastMatchedSent, 
+						sentMessages.size(),
+						endTimestamp,
+						packetId);
+				
+				commitTransaction();
 			}
-			
-			createNoChangeBannerResponsesForUnmatchedSentMessages(
-					createMessagesForAllSentElements, 
-					sentMessages, 
-					lastMatchedSent, 
-					sentMessages.size(),
-					endTimestamp,
-					packetId);
-			
-			commitTransaction();
+		} catch (Exception e) {
+			fatal("Unable to store response message, reason: "+e.getMessage(),e);
+			rollbackTransaction();
 		}
 	}
 	
