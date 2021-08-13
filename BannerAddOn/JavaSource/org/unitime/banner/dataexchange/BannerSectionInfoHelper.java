@@ -18,6 +18,7 @@
  * 
 */package org.unitime.banner.dataexchange;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.unitime.banner.model.BannerSection;
@@ -87,17 +88,19 @@ public class BannerSectionInfoHelper {
 		setMissingFieldsIfPossible();		
 	}
 	
-	@SuppressWarnings("unused")
 	private BannerSection getControllingBannerSectionForCrosslist(String termCode, String crossListIdentifier) {
-		return (BannerSection) BannerSectionDAO
+		@SuppressWarnings("unchecked")
+		ArrayList<BannerSection> controllingBannerSections = (ArrayList<BannerSection>) BannerSectionDAO
 				.getInstance()
 				.getSession()
 				.createQuery("select bs from BannerSession bsess, BannerSection bs, CourseOffering co where bsess.bannerTermCode = :termCode and bs.session = bsess.session and bs.crossListIdentifier = :xlst and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId and co.isControl = true")
 				.setString("termCode", termCode)
-				.setString("xlst", crossListIdentifier)
-				.uniqueResult()
-				;
-		
+				.setString("xlst", crossListIdentifier).list();
+		if (controllingBannerSections.size() != 1) {
+			return null;
+		} else {
+			return controllingBannerSections.get(0);
+		}
 	}
 	private void setMissingFieldsIfPossible() {
 		if (getBannerSectionId() != null) {
@@ -252,7 +255,7 @@ public class BannerSectionInfoHelper {
 	
 	public SubjectArea findSubjectAreaInBannerSession(BannerSession bannerSession, String subject, String campus) {
 		String lookupSubject = null;
-		if (bannerSession.isUseSubjectAreaPrefixAsCampus()) {
+		if (bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
 			lookupSubject = campus + ((bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("")) ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ") + getSubject();
 		} else {
 			lookupSubject = subject;
