@@ -1514,15 +1514,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	}
     	
     	
-    	Set<CourseDemand> deletes = new HashSet<CourseDemand>();
     	Set<CourseDemand> exDropDeletes = new HashSet<CourseDemand>();
     	if (!enrollments.isEmpty()) {
     		for (StudentClassEnrollment enrollment: enrollments.values()) {
     			CourseRequest cr = course2request.get(enrollment.getCourseOffering());
     			if (cr != null && remaining.contains(cr.getCourseDemand())) {
-    				deletes.add(cr.getCourseDemand());
     				if (cr.getCourseRequestOverrideIntent() == CourseRequestOverrideIntent.EX_DROP)
     					exDropDeletes.add(cr.getCourseDemand());
+    				else if (iResetWaitList || cr.getCourseDemand().isWaitlist()) {
+    					cr.getCourseDemand().setWaitlist(false);
+    					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    				}
     			}
     			student.getClassEnrollments().remove(enrollment);
     			helper.getHibSession().delete(enrollment);
@@ -1530,18 +1532,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     		changed = true;
     	}
 
-    	if ((fixCourseDemands || !deletes.isEmpty()) && student.getUniqueId() != null) {
-    		// removed unused course demands (only when not in the registration mode)
-    		if (student.getSession().getStatusType() == null || !student.getSession().getStatusType().canPreRegisterStudents())
-    			for (CourseDemand cd: (fixCourseDemands ? remaining : deletes)) {
-        			if (cd.getFreeTime() != null)
-        				helper.getHibSession().delete(cd.getFreeTime());
-        			for (CourseRequest cr: cd.getCourseRequests())
-        				helper.getHibSession().delete(cr);
-        			student.getCourseDemands().remove(cd);
-        			helper.getHibSession().delete(cd);
-        		}
-    		else if (!exDropDeletes.isEmpty()) {
+    	if ((fixCourseDemands || !exDropDeletes.isEmpty()) && student.getUniqueId() != null) {
+    		// removed intended extended course drops
+    		if (!exDropDeletes.isEmpty()) {
     			for (CourseDemand cd: exDropDeletes) {
         			if (cd.getFreeTime() != null)
         				helper.getHibSession().delete(cd.getFreeTime());
