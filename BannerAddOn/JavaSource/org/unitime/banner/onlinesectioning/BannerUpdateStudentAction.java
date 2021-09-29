@@ -127,11 +127,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private String iIgnoreGroupRegExp = null;
 	private boolean iUpdateClasses = true;
 	private boolean iLocking = false;
+	private boolean iResetWaitList = false;
 	private Set<String> iCampusCodes = null;
 	
 	public BannerUpdateStudentAction() {
 		iOverrideTypes = ApplicationProperties.getProperty("banner.overrides.regexp");
 		iIgnoreGroupRegExp = ApplicationProperties.getProperty("banner.ignoreGroups.regexp");
+		iResetWaitList = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.resetWhenEnrolled"));
 	}
 	
 	public BannerUpdateStudentAction forStudent(String externalId, String termCode) {
@@ -1502,6 +1504,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
         			enrollment.setCourseRequest(cr);
         			changed = true;
         		}
+    		}
+    		
+    		if (iResetWaitList && cr.getCourseDemand().isWaitlist()) {
+    			cr.getCourseDemand().setWaitlist(false);
+    			changed = true;
+    			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
     		}
     	}
     	
