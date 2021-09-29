@@ -60,6 +60,7 @@ import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.CourseRequest;
 import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
+import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideStatus;
 import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.Degree;
 import org.unitime.timetable.model.InstrOfferingConfig;
@@ -93,6 +94,7 @@ import org.unitime.timetable.onlinesectioning.model.XCourseRequest;
 import org.unitime.timetable.onlinesectioning.model.XEnrollment;
 import org.unitime.timetable.onlinesectioning.model.XIndividualReservation;
 import org.unitime.timetable.onlinesectioning.model.XOffering;
+import org.unitime.timetable.onlinesectioning.model.XOverride;
 import org.unitime.timetable.onlinesectioning.model.XRequest;
 import org.unitime.timetable.onlinesectioning.model.XReservation;
 import org.unitime.timetable.onlinesectioning.model.XReservationType;
@@ -398,15 +400,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							if (newRequest instanceof XCourseRequest) { // only course requests
 								XCourseRequest cr = (XCourseRequest) newRequest;
 								if (cr.getEnrollment() == null && cr.isWaitlist() && !cr.isAlternative()) { // wait-listed and not assigned
-									for (String[] override: iOverrides) {
-										String subject = override[1], course = override[2];
-										for (XCourseId c: cr.getCourseIds()) {
-											if (c.getCourseName().startsWith(subject + " " + course) && cr.isOverridePending(c)) {
-												// has a matching override and a pending override status
-												offeringIds.add(c.getOfferingId());
-											}
-										}
-									}
+									for (XCourseId c: cr.getCourseIds())
+										if (isOfferingCheckNeeded(cr, c))
+											offeringIds.add(c.getOfferingId());
 								}
 							}
 						}
@@ -424,15 +420,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							if (newRequest instanceof XCourseRequest) { // only course requests
 								XCourseRequest cr = (XCourseRequest) newRequest;
 								if (cr.getEnrollment() == null && cr.isWaitlist() && !cr.isAlternative()) { // wait-listed and not assigned
-									for (String[] override: iOverrides) {
-										String subject = override[1], course = override[2];
-										for (XCourseId c: cr.getCourseIds()) {
-											if (c.getCourseName().startsWith(subject + " " + course) && cr.isOverridePending(c)) {
-												// has a matching override and a pending override status
-												offeringIds.add(c.getOfferingId());
-											}
-										}
-									}
+									for (XCourseId c: cr.getCourseIds())
+										if (isOfferingCheckNeeded(cr, c))
+											offeringIds.add(c.getOfferingId());
 								}
 							}
 						}
@@ -1511,7 +1501,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
         		if (enrollment.getCourseRequest() == null || !cr.equals(enrollment.getCourseRequest())) {
         			enrollment.setCourseRequest(cr);
         			changed = true;
-        		}       		
+        		}
     		}
     	}
     	
@@ -1921,5 +1911,36 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	public static boolean equals(Object o1, Object o2) {
     		return (o1 == null ? o2 == null : o1.equals(o2));
     	}
+    }
+    
+    protected boolean isOfferingCheckNeeded(XCourseRequest cr, XCourseId c) {
+    	if ("pending-only".equals(ApplicationProperties.getProperty("banner.checkOffering.condition"))) {
+    		for (String[] override: iOverrides) {
+    			String subject = override[1], course = override[2];
+    			if (c.getCourseName().startsWith(subject + " " + course)) {
+					XOverride o = cr.getOverride(c);
+		    		if (o != null && o.getStatus() == CourseRequestOverrideStatus.PENDING.ordinal())
+		    			return true;
+				}
+        	}
+    	} else {
+			XOverride o = cr.getOverride(c);
+			if (o == null) {
+				// no override needed -> go ahead and check
+				return true;
+			} else if (o.getStatus() == CourseRequestOverrideStatus.APPROVED.ordinal()) {
+				// override approved -> go ahead and check
+			} else if (o.getStatus() == CourseRequestOverrideStatus.PENDING.ordinal()) {
+				// override pending -> check that an override was granted
+				for (String[] override: iOverrides) {
+	    			String subject = override[1], course = override[2];
+	    			if (c.getCourseName().startsWith(subject + " " + course)) {
+	    				// has a matching override and a pending override status
+	    				return true;
+	    			}
+				}
+			}
+		}
+    	return false;
     }
 }
