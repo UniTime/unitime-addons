@@ -200,6 +200,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			sb.append("select distinct bc from BannerCourse bc, CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId")
 			  .append(" and bc.courseOfferingId = co.uniqueIdRolledForwardFrom")
 			  .append(" and co.uniqueId not in (select bc2.courseOfferingId from BannerCourse bc2)")
+			  .append(" and 0 < (select count(bs) from BannerSection bs where bs.bannerConfig.bannerCourse = bc)")
 			  .append(" and co.subjectArea.uniqueId = :subjectId");
 			String queryString = sb.toString();
 			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
