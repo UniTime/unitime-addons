@@ -47,6 +47,7 @@ import org.unitime.timetable.model.CourseRequestOption;
 import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
+import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
 import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
@@ -126,6 +127,10 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 		return enrollments;
 	}
 	
+	public boolean isResetWaitListToggle() {
+		return "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.resetWhenEnrolled"));
+	}
+	
 	protected boolean updateClassEnrollments(Student student, Map<CourseOffering, List<Class_>> courseToClassEnrollments, OnlineSectioningHelper helper) {
 		boolean changed = false;
 		Date ts = new Date();
@@ -185,7 +190,23 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     			fixCourseDemands = true;
         		changed = true;
     		} else {
-    			remaining.remove(cr.getCourseDemand());
+    			if (!remaining.remove(cr.getCourseDemand()) && cr.getCourseDemand().getCourseRequests().size() > 1) {
+    				// course demand has been already removed -> need to split the course demand
+    				cr.getCourseDemand().getCourseRequests().remove(cr);
+    				CourseDemand cd = new CourseDemand();
+        			cd.setTimestamp(ts);
+        			cd.setCourseRequests(new HashSet<CourseRequest>());
+        			cd.setEnrollmentMessages(new HashSet<StudentEnrollmentMessage>());
+        			cd.setStudent(student);
+        			student.getCourseDemands().add(cd);
+        			cd.setAlternative(false);
+        			cd.setPriority(nextPriority++);
+        			cd.setWaitlist(false);
+        			cr.setCourseDemand(cd);
+        			cd.getCourseRequests().add(cr);
+        			fixCourseDemands = true;
+        			changed = true;
+    			}
     			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
 					StudentEnrollmentMessage message = i.next();
 					helper.getHibSession().delete(message);
@@ -208,32 +229,48 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
         		if (enrollment.getCourseRequest() == null || !cr.equals(enrollment.getCourseRequest())) {
         			enrollment.setCourseRequest(cr);
         			changed = true;
-        		}       		
+        		}
+    		}
+    		
+    		if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle()) {
+    			cr.getCourseDemand().setWaitlist(false);
+    			changed = true;
+    			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
     		}
     	}
     	
-    	Set<CourseDemand> deletes = new HashSet<CourseDemand>();
+    	
+    	Set<CourseDemand> exDropDeletes = new HashSet<CourseDemand>();
     	if (!enrollments.isEmpty()) {
     		for (StudentClassEnrollment enrollment: enrollments.values()) {
     			CourseRequest cr = course2request.get(enrollment.getCourseOffering());
-    			if (cr != null && remaining.contains(cr.getCourseDemand()))
-    				deletes.add(cr.getCourseDemand());
+    			if (cr != null && remaining.contains(cr.getCourseDemand())) {
+    				if (cr.getCourseRequestOverrideIntent() == CourseRequestOverrideIntent.EX_DROP)
+    					exDropDeletes.add(cr.getCourseDemand());
+    				else if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle()) {
+    					cr.getCourseDemand().setWaitlist(false);
+    					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    				}
+    			}
     			student.getClassEnrollments().remove(enrollment);
     			helper.getHibSession().delete(enrollment);
     		}
     		changed = true;
     	}
 
-    	if ((fixCourseDemands || !deletes.isEmpty()) && student.getUniqueId() != null) {
-    		// removed unused course demands
-    		for (CourseDemand cd: (fixCourseDemands ? remaining : deletes)) {
-    			if (cd.getFreeTime() != null)
-    				helper.getHibSession().delete(cd.getFreeTime());
-    			for (CourseRequest cr: cd.getCourseRequests())
-    				helper.getHibSession().delete(cr);
-    			student.getCourseDemands().remove(cd);
-    			helper.getHibSession().delete(cd);
+    	if ((fixCourseDemands || !exDropDeletes.isEmpty()) && student.getUniqueId() != null) {
+    		// removed intended extended course drops
+    		if (!exDropDeletes.isEmpty()) {
+    			for (CourseDemand cd: exDropDeletes) {
+        			if (cd.getFreeTime() != null)
+        				helper.getHibSession().delete(cd.getFreeTime());
+        			for (CourseRequest cr: cd.getCourseRequests())
+        				helper.getHibSession().delete(cr);
+        			student.getCourseDemands().remove(cd);
+        			helper.getHibSession().delete(cd);
+        		}
     		}
+    		// fix priorities
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
     			cd.setPriority(priority++);
