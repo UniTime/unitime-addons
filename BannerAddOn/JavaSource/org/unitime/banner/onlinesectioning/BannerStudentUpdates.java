@@ -336,6 +336,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		int iNrThreads;
 		Iterator<?> iStudentElementIterator;
 		int iStudentElementCount = 0;
+		boolean iCheckSkipStudent;
 		
 		Set<String> iFailedStudents = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 		Set<String> iProblemStudents = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
@@ -356,6 +357,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					Integer.parseInt(ApplicationProperties.getProperty("banner.studentUpdates.nrThreads", "1")),
 					1 + iStudentElementCount / 10);
 			iStudentElementIterator = rootElement.elementIterator("student");
+			iCheckSkipStudent = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.studentUpdates.checkSkipStudents", "true"));
 		}
 		
 		public void process() {
@@ -465,6 +467,13 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 				return sessionIds;
 			}
 			
+			protected boolean hasStudent(BannerSession session, String externalId, org.hibernate.Session hibSession) {
+				return ((Number)hibSession.createQuery(
+						"select count(s) from Student s where s.externalUniqueId = :externalId and s.session = :sessionId"
+						).setString("externalId", externalId).setLong("sessionId", session.getSession().getUniqueId())
+						.uniqueResult()).intValue() > 0;
+			}
+			
 			void processStudent(Element studentElement, org.hibernate.Session hibSession, boolean locking) {
 				long t0 = System.currentTimeMillis();
 				try {
@@ -488,8 +497,12 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					
 					for (BannerSession bs: sessionIds) {
 						if (!update.isApplicable(bs)) {
-							debug("[" + externalId + "] Skipping campus " + bs.getBannerCampus());
-							continue;
+							if (iCheckSkipStudent && hasStudent(bs, externalId, hibSession)) {
+								warn("[" + externalId + "] Cannot skip campus " + bs.getBannerCampus() + " -- student already exists in " + bs.getSession().getLabel());
+							} else {
+								debug("[" + externalId + "] Skipping campus " + bs.getBannerCampus());
+								continue;
+							}
 						}
 						Long sessionId = bs.getSession().getUniqueId();
 						UpdateResult result = null;
