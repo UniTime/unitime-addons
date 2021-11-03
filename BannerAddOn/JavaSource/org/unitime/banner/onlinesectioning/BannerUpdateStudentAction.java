@@ -128,12 +128,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private boolean iUpdateClasses = true;
 	private boolean iLocking = false;
 	private boolean iResetWaitList = false;
+	private boolean iDelayOfferingChecks = true;
 	private Set<String> iCampusCodes = null;
 	
 	public BannerUpdateStudentAction() {
 		iOverrideTypes = ApplicationProperties.getProperty("banner.overrides.regexp");
 		iIgnoreGroupRegExp = ApplicationProperties.getProperty("banner.ignoreGroups.regexp");
 		iResetWaitList = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.resetWhenEnrolled"));
+		iDelayOfferingChecks = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.delayOfferingChecks"));
 	}
 	
 	public BannerUpdateStudentAction forStudent(String externalId, String termCode) {
@@ -391,25 +393,34 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							XEnrollment oldEnrollment = (oldRequest instanceof XCourseRequest ? ((XCourseRequest)oldRequest).getEnrollment() : null);
 							if (oldEnrollment == null) continue; // free time or not assigned
 							
-							if (CheckOfferingAction.isCheckNeeded(server, helper, oldEnrollment))
-								server.execute(server.createAction(CheckOfferingAction.class).forOfferings(oldEnrollment.getOfferingId()).skipStudents(oldStudent.getStudentId()), helper.getUser(), offeringChecked);
+							if (CheckOfferingAction.isCheckNeeded(server, helper, oldEnrollment)) {
+								if (iDelayOfferingChecks)
+									result.addCheckOfferingForOthers(oldEnrollment.getOfferingId());
+								else
+									server.execute(server.createAction(CheckOfferingAction.class).forOfferings(oldEnrollment.getOfferingId()).skipStudents(oldStudent.getStudentId()), helper.getUser(), offeringChecked);
+							}
 						}
 					}
 					
-					if (newStudent != null && server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing()) {
+					if (newStudent != null && server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing() && student.getWaitListMode() == WaitListMode.WaitList) {
 						Set<Long> offeringIds = new HashSet<Long>();
 						for (XRequest newRequest: newStudent.getRequests()) {
 							if (newRequest instanceof XCourseRequest) { // only course requests
 								XCourseRequest cr = (XCourseRequest) newRequest;
 								if (cr.getEnrollment() == null && cr.isWaitlist() && !cr.isAlternative()) { // wait-listed and not assigned
 									for (XCourseId c: cr.getCourseIds())
-										if (isOfferingCheckNeeded(cr, c))
-											offeringIds.add(c.getOfferingId());
+										if (isOfferingCheckNeeded(cr, c)) {
+											if (iDelayOfferingChecks)
+												result.addCheckOfferingForMe(c.getOfferingId());
+											else
+												offeringIds.add(c.getOfferingId());
+										}
 								}
 							}
 						}
-						if (!offeringIds.isEmpty() && student.getWaitListMode() == WaitListMode.WaitList)
+						if (!offeringIds.isEmpty()) {
 							server.execute(server.createAction(CheckOfferingAction.class).forOfferings(offeringIds).forStudents(newStudent.getStudentId()), helper.getUser(), offeringChecked);
+						}
 					}
 
 					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).fromAction(name()).oldStudent(oldStudent), helper.getUser());
@@ -423,8 +434,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 								XCourseRequest cr = (XCourseRequest) newRequest;
 								if (cr.getEnrollment() == null && cr.isWaitlist() && !cr.isAlternative()) { // wait-listed and not assigned
 									for (XCourseId c: cr.getCourseIds())
-										if (isOfferingCheckNeeded(cr, c))
-											offeringIds.add(c.getOfferingId());
+										if (isOfferingCheckNeeded(cr, c)) {
+											if (iDelayOfferingChecks) 
+												result.addCheckOfferingForMe(c.getOfferingId());
+											else
+												offeringIds.add(c.getOfferingId());
+										}
 								}
 							}
 						}
@@ -1705,11 +1720,90 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		public int flag() { return 1 << ordinal(); }
 	}
 	
+	public static class OfferingCheck implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private Long iOfferingId;
+		private Set<Long> iExcludeStudents;
+		private Set<Long> iIncludeStudents;
+		private boolean iAllStudents = false;
+		
+		public OfferingCheck(Long offeringId) {
+			iOfferingId = offeringId;
+		}
+		
+		public Long getOfferingId() { return iOfferingId; }
+		@Override
+		public int hashCode() { return iOfferingId.hashCode(); }
+		@Override
+		public boolean equals(Object o) {
+			if (o == null || !(o instanceof OfferingCheck)) return false;
+			return getOfferingId().equals(((OfferingCheck)o).getOfferingId());
+		}
+		
+		public boolean hasExcludeStudents() { return iExcludeStudents != null && !iExcludeStudents.isEmpty(); }
+		public void addExcludeStudent(Long studentId) {
+			if (iExcludeStudents == null) iExcludeStudents = new HashSet<Long>();
+			iExcludeStudents.add(studentId);
+		}
+		public Set<Long> getExcludeStudents() { return iExcludeStudents; }
+		
+		public boolean hasIncludeStudents() { return iIncludeStudents != null && !iIncludeStudents.isEmpty(); }
+		public void addIncludeStudent(Long studentId) {
+			if (iIncludeStudents == null) iIncludeStudents = new HashSet<Long>();
+			iIncludeStudents.add(studentId);
+		}
+		public Set<Long> getIncludeStudents() { return iIncludeStudents; }
+		
+		public boolean isAllStudents() { return iAllStudents; }
+		public void setAllStudents(boolean allStudents) { iAllStudents = allStudents; }
+		
+		public boolean merge(OfferingCheck check) {
+			if (!check.equals(this)) return false;
+			setAllStudents(isAllStudents() || check.isAllStudents());
+			if (check.hasIncludeStudents()) {
+				if (iIncludeStudents == null) iIncludeStudents = new HashSet<Long>();
+				iIncludeStudents.addAll(check.getIncludeStudents());
+			}
+			if (check.hasExcludeStudents()) {
+				if (iExcludeStudents == null) iExcludeStudents = new HashSet<Long>();
+				iExcludeStudents.addAll(check.getExcludeStudents());
+			}
+			return true;
+		}
+		
+		public CheckOfferingAction createCheckOfferingAction(OnlineSectioningServer server) {
+			CheckOfferingAction action = server.createAction(CheckOfferingAction.class);
+			action.forOfferings(getOfferingId());
+			if (isAllStudents()) {
+				if (hasExcludeStudents())
+					action.skipStudents(getExcludeStudents());
+			} else if (hasIncludeStudents()) {
+				action.forStudents(getIncludeStudents());
+			}
+			return action;
+		}
+		
+		@Override
+		public String toString() {
+			if (isAllStudents()) {
+				if (hasExcludeStudents())
+					return getOfferingId() + "(all but " + getExcludeStudents().size() + " students)";
+				else
+					return getOfferingId() + "(all students)";
+			} else if (hasIncludeStudents()) {
+				return getOfferingId() + "(only " + getIncludeStudents().size() + " students)";
+			} else {
+				return getOfferingId().toString();
+			}
+		}
+	}
+	
 	public static class UpdateResult implements Serializable {
 		private static final long serialVersionUID = 1L;
 		private Status iStatus = Status.OK;
 		private int iChanges = 0;
 		private Long iStudentId = null;
+		private List<OfferingCheck> iOfferingChecks = null;
 		
 		public Status getStatus() { return iStatus; }
 		public void setStatus(Status status) { iStatus = status; }
@@ -1727,6 +1821,21 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 		public void setStudentId(Long studentId) { iStudentId = studentId; }
 		public Long getStudentId() { return iStudentId; }
+		
+		public boolean hasOfferingChecks() { return iOfferingChecks != null && !iOfferingChecks.isEmpty(); }
+		public void addCheckOfferingForOthers(Long offeringId) {
+			if (iOfferingChecks == null) iOfferingChecks = new ArrayList<OfferingCheck>();
+			OfferingCheck check = new OfferingCheck(offeringId);
+			check.setAllStudents(true); check.addExcludeStudent(iStudentId);
+			iOfferingChecks.add(check);
+		}
+		public void addCheckOfferingForMe(Long offeringId) {
+			if (iOfferingChecks == null) iOfferingChecks = new ArrayList<OfferingCheck>();
+			OfferingCheck check = new OfferingCheck(offeringId);
+			check.setAllStudents(false); check.addIncludeStudent(iStudentId);
+			iOfferingChecks.add(check);
+		}
+		public Collection<OfferingCheck> getOfferingChecks() { return iOfferingChecks; }
 	}
 
 	public static class Pair {

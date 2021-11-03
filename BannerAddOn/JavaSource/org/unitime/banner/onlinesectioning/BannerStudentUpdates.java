@@ -19,6 +19,7 @@
 */
 package org.unitime.banner.onlinesectioning;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.logging.LogFactory;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
@@ -42,10 +44,12 @@ import org.unitime.banner.model.QueueIn;
 import org.unitime.banner.model.QueueOut;
 import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.Change;
+import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.OfferingCheck;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.Status;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.UpdateResult;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
+import org.unitime.timetable.dataexchange.DataExchangeHelper;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
@@ -347,6 +351,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		
 		Set<UpdateRequest> iUpdateRequests = Collections.newSetFromMap(new ConcurrentHashMap<UpdateRequest, Boolean>());
 		Map<Long, Set<Long>> iSession2studentIds = new HashMap<Long, Set<Long>>();
+		Map<Long, List<OfferingCheck>> iSession2OfferingChecks = new HashMap<Long, List<OfferingCheck>>();
 		
 		MessageProcessor(Element rootElement) {
 			for (Iterator<?> i = rootElement.elementIterator("student"); i.hasNext(); ) {
@@ -382,6 +387,21 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 						try {
 							worker.join();
 						} catch (InterruptedException e) {}
+					}
+				}
+				for (Map.Entry<Long, List<OfferingCheck>> e: iSession2OfferingChecks.entrySet()) {
+					Long sessionId = e.getKey();
+					List<OfferingCheck> offeringChecks = e.getValue();
+					try {
+						OnlineSectioningServer server = (iContainer == null ? null : iContainer.getSolver(sessionId.toString()));
+						if (server != null && server.isReady()) {
+							for (final OfferingCheck check: offeringChecks) {
+								info("Running offering check for " + check.getOfferingId() + " in " + server.getAcademicSession() + ": " + check);
+								server.execute(check.createCheckOfferingAction(server), user(), new CheckOfferingsCallback(check.getOfferingId(), server.getAcademicSession().toString()));
+							}
+						}
+					} catch (Exception exception) {
+						error("Offering checks failed: " + exception.getMessage(), exception);
 					}
 				}
 				long end = System.currentTimeMillis();
@@ -511,6 +531,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 							if (server != null && server.isReady()) {
 								try {
 									result = server.execute(update, user());
+									checkForOfferingChecks(sessionId, result);
 								} finally {
 									_RootDAO.closeCurrentThreadSessions();
 								}
@@ -557,6 +578,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 										if (server != null && server.isReady()) {
 											try {
 												result = server.execute(update, user());
+												checkForOfferingChecks(sessionId, result);
 											} finally {
 												_RootDAO.closeCurrentThreadSessions();
 											}
@@ -602,6 +624,27 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					}
 				} finally {
 					updateElementCount(t0);
+				}
+			}
+		}
+		
+		protected void checkForOfferingChecks(Long sessionId, UpdateResult result) {
+			if (result != null && result.hasOfferingChecks()) {
+				synchronized (iSession2OfferingChecks) {
+					List<OfferingCheck> checks = iSession2OfferingChecks.get(sessionId);
+					if (checks == null) {
+						checks = new ArrayList<OfferingCheck>();
+						iSession2OfferingChecks.put(sessionId, checks);
+					}
+					for (OfferingCheck ch: result.getOfferingChecks()) {
+						boolean added = false;
+						for (OfferingCheck check: checks) {
+							if (check.merge(ch)) { added = true; break; }
+						}
+						if (!added) {
+							checks.add(ch);
+						}
+					}
 				}
 			}
 		}
@@ -720,6 +763,26 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		public boolean equals(Object o) {
 			if (o == null || !(o instanceof UpdateRequest)) return false;
 			return getExternalId().equals(((UpdateRequest)o).getExternalId()) && getBannerTerm().equals(((UpdateRequest)o).getBannerTerm());
+		}
+	}
+	
+	protected static class CheckOfferingsCallback implements OnlineSectioningServer.ServerCallback<Boolean>, Serializable {
+		private static final long serialVersionUID = 1L;
+		private Long iOfferingId;
+		private String iSession;
+		
+		CheckOfferingsCallback(Long offeringId, String session) {
+			iOfferingId = offeringId;
+			iSession = session;
+		}
+		
+		@Override
+		public void onFailure(Throwable exception) {
+			LogFactory.getLog(DataExchangeHelper.class).error("Offering check for " + iOfferingId + " in " + iSession + " failed: " + exception.getMessage(), exception);
+		}
+		@Override
+		public void onSuccess(Boolean result) {
+			LogFactory.getLog(DataExchangeHelper.class).error("Offering check for " + iOfferingId + " in " + iSession + " succeeded, returning : " + result);
 		}
 	}
 
