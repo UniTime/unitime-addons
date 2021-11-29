@@ -157,6 +157,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus, String concentration, String degree, double weight) {
+		if (campus != null && !campus.isEmpty()) withCampus(campus);
 		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty() || major == null || major.isEmpty()) return this;
 		iUpdateAcadAreaClasfMj = true;
 		ACM acm = new ACM(academicArea, classification, major, campus, concentration, degree, weight);
