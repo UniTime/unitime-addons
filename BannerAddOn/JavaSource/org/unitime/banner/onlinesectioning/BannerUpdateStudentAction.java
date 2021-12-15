@@ -69,6 +69,7 @@ import org.unitime.timetable.model.OverrideReservation;
 import org.unitime.timetable.model.PosMajor;
 import org.unitime.timetable.model.PosMajorConcentration;
 import org.unitime.timetable.model.PosMinor;
+import org.unitime.timetable.model.Program;
 import org.unitime.timetable.model.Reservation;
 import org.unitime.timetable.model.Roles;
 import org.unitime.timetable.model.Session;
@@ -156,11 +157,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
-	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus, String concentration, String degree, double weight) {
+	public BannerUpdateStudentAction withAcadAreaClassificationMajor(String academicArea, String classification, String major, String campus, String concentration, String degree, String program, double weight) {
 		if (campus != null && !campus.isEmpty()) withCampus(campus);
 		if (academicArea == null || academicArea.isEmpty() || classification == null || classification.isEmpty() || major == null || major.isEmpty()) return this;
 		iUpdateAcadAreaClasfMj = true;
-		ACM acm = new ACM(academicArea, classification, major, campus, concentration, degree, weight);
+		ACM acm = new ACM(academicArea, classification, major, campus, concentration, degree, program, weight);
 		for (ACM other: iAcadAreaClasfMj) {
 			if (other.equals(acm)) {
 				other.update(acm);
@@ -831,6 +832,62 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 	}
 	
+	protected static Program findProgram(org.hibernate.Session hibSession, Long sessionId, String program) {
+		Program prog = (Program)hibSession.createQuery(
+                "select d from Program d where "+
+                "d.session.uniqueId = :sessionId and "+
+                "d.externalUniqueId = :program").
+         setLong("sessionId", sessionId).
+         setString("program", program).
+         setCacheable(true).
+         uniqueResult(); 
+		if (prog != null) return prog;
+		return (Program)hibSession.createQuery(
+                "select d from Program d where "+
+                "d.session.uniqueId = :sessionId and "+
+                "d.reference = :program").
+         setLong("sessionId", sessionId).
+         setString("program", program).
+         setCacheable(true).
+         uniqueResult();
+    }
+	
+	protected Program getProgram(OnlineSectioningHelper helper, String program) {
+		if (iLocking) {
+			synchronized (("Program:" + iSession.getReference() + ":" + program).intern()) {
+				Program prog = findProgram(helper.getHibSession(), iSession.getUniqueId(), program);
+				if (prog != null) return prog;
+				prog = new Program();
+				prog.setExternalUniqueId(program);
+				prog.setReference(program);
+				prog.setLabel(program);
+				prog.setSession(iSession);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					prog.setUniqueId((Long)hibSession.save(prog));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.getHibSession().update(prog);
+				helper.info("Added Program:  " + program);
+				return prog;
+			}
+		} else {
+			Program prog = findProgram(helper.getHibSession(), iSession.getUniqueId(), program);
+			if (prog == null) {
+				prog = new Program();
+				prog.setExternalUniqueId(program);
+				prog.setReference(program);
+				prog.setLabel(program);
+				prog.setSession(iSession);
+				prog.setUniqueId((Long)helper.getHibSession().save(prog));
+				helper.info("Added Program:  " + program);
+			}
+			return prog;
+		}
+	}
+	
 	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper, UpdateResult result) {
 		boolean changed = false;
 		if (!eq(iFName, student.getFirstName())) {
@@ -879,13 +936,20 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				for (Iterator<StudentAreaClassificationMajor> i = remaining.iterator(); i.hasNext(); ) {
 					StudentAreaClassificationMajor aac = i.next();
 					if (acm.matches(aac)) {
+						boolean needUpdate = false;
 						if (!acm.sameDegree(aac.getDegree())) {
 							aac.setDegree(acm.hasDegree() ? getDegree(helper, acm.getDegree()) : null);
+							needUpdate = true;
+						}
+						if (!acm.sameProgram(aac.getProgram())) {
+							aac.setProgram(acm.hasProgram() ? getProgram(helper, acm.getProgram()) : null);
+							needUpdate = true;
+						}
+						if (!acm.sameWeight(aac.getWeight())) {
 							aac.setWeight(acm.getWeight());
-							helper.getHibSession().update(aac);
-							changed = true;
-						} else if (!acm.sameWeight(aac.getWeight())) {
-							aac.setWeight(acm.getWeight());
+							needUpdate = true;
+						}
+						if (needUpdate) {
 							helper.getHibSession().update(aac);
 							changed = true;
 						}
@@ -902,6 +966,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				PosMajorConcentration conc = (acm.hasConcentration() ? getPosMajorConcentration(helper, posMajor, acm.getArea(), acm.getMajor(), acm.getConcentration()) : null);
 				
 				Degree degree = (acm.hasDegree() ? getDegree(helper, acm.getDegree()) : null);
+				Program program = (acm.hasProgram() ? getProgram(helper, acm.getProgram()) : null);
 
 				StudentAreaClassificationMajor aac = new StudentAreaClassificationMajor();
 				aac.setAcademicArea(aa);
@@ -910,6 +975,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aac.setStudent(student);
 				aac.setConcentration(conc);
 				aac.setDegree(degree);
+				aac.setProgram(program);
 				aac.setWeight(acm.getWeight());
 				student.addToareaClasfMajors(aac);
 				changed = true;
@@ -1923,15 +1989,15 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     
     private static class ACM implements Serializable {
     	private static final long serialVersionUID = 1L;
-    	private String iArea, iMajor, iClassification, iConcentration, iCampus, iMinor, iDegree;
+    	private String iArea, iMajor, iClassification, iConcentration, iCampus, iMinor, iDegree, iProgram;
     	private double iWeight = 1.0;
     	
     	public ACM(String minor, String campus) {
     		iMinor = minor; iCampus = campus;
     	}
-		public ACM(String area, String classification, String major, String campus, String concentration, String degree, double weight) {
+		public ACM(String area, String classification, String major, String campus, String concentration, String degree, String program, double weight) {
     		iArea = area; iMajor = major; iClassification = classification; iCampus = campus;
-    		iConcentration = concentration; iDegree = degree; iWeight = weight;
+    		iConcentration = concentration; iDegree = degree; iProgram = program; iWeight = weight;
     	}
     	
     	public String getArea() { return iArea; }
@@ -1944,6 +2010,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     	public boolean hasConcentration() { return iConcentration != null && !iConcentration.isEmpty(); }
     	public String getDegree() { return iDegree; }
     	public boolean hasDegree() { return iDegree != null && !iDegree.isEmpty(); }
+    	public String getProgram() { return iProgram; }
+    	public boolean hasProgram() { return iProgram != null && !iProgram.isEmpty(); }
     	public double getWeight() { return iWeight; }
     	public void setWeight(double weight) { iWeight = weight; }
     	
@@ -1980,6 +2048,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			return deg != null && (getDegree().equalsIgnoreCase(deg.getExternalUniqueId()) || getDegree().equalsIgnoreCase(deg.getReference()));
     		else
     			return deg == null;
+    	}
+    	
+    	public boolean sameProgram(Program prog) {
+    		if (hasProgram())
+    			return prog != null && (getProgram().equalsIgnoreCase(prog.getExternalUniqueId()) || getProgram().equalsIgnoreCase(prog.getReference()));
+    		else
+    			return prog == null;
     	}
     	
     	public boolean sameWeight(Double weight) {

@@ -203,6 +203,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 							majorElement.attributeValue("campus"),
 							null,
 							majorElement.attributeValue("degree"),
+							majorElement.attributeValue("program"),
 							"Y".equalsIgnoreCase(majorElement.attributeValue("primary")) ? 1.0 : 0.0);
 				} else {
 					int idx = 0;
@@ -214,6 +215,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 								majorElement.attributeValue("campus"),
 								concentration,
 								majorElement.attributeValue("degree"),
+								majorElement.attributeValue("program"),
 								idx > 0 ? 0.0 : "Y".equalsIgnoreCase(majorElement.attributeValue("primary")) ? 1.0 : 0.0);
 						idx++;
 					}
@@ -228,6 +230,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					studentElement.attributeValue("campus"),
 					studentElement.attributeValue("concentration"),
 					studentElement.attributeValue("degree"),
+					studentElement.attributeValue("program"),
 					1.0);
 		}
 		Element studentMinorsElement = studentElement.element("studentMinors");
