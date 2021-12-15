@@ -782,7 +782,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		}
 		@Override
 		public void onSuccess(Boolean result) {
-			LogFactory.getLog(DataExchangeHelper.class).error("Offering check for " + iOfferingId + " in " + iSession + " succeeded, returning : " + result);
+			LogFactory.getLog(DataExchangeHelper.class).info("Offering check for " + iOfferingId + " in " + iSession + " succeeded, returning : " + result);
 		}
 	}
 
