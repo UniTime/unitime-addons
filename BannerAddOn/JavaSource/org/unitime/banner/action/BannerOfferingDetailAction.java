@@ -212,7 +212,7 @@ public class BannerOfferingDetailAction extends Action {
         
 
         // Load Instr Offering
-        Long bannerCourseOfferingId = new Long(bannerCourseOfferingIdStr);
+        Long bannerCourseOfferingId = Long.valueOf(bannerCourseOfferingIdStr);
         BannerCourseDAO bcDao = new BannerCourseDAO();
         BannerCourse bc = bcDao.get(bannerCourseOfferingId);
         CourseOffering co = bc.getCourseOffering(bcDao.getSession());
@@ -276,7 +276,7 @@ public class BannerOfferingDetailAction extends Action {
         // Catalog Link
         String linkLookupClass = ApplicationProperties.getProperty("tmtbl.catalogLink.lookup.class");
         if (linkLookupClass!=null && linkLookupClass.trim().length()>0) {
-        	ExternalLinkLookup lookup = (ExternalLinkLookup) (Class.forName(linkLookupClass).newInstance());
+        	ExternalLinkLookup lookup = (ExternalLinkLookup) (Class.forName(linkLookupClass).getDeclaredConstructor().newInstance());
        		Map results = lookup.getLink(io);
             if (results==null)
                 throw new Exception (lookup.getErrorMessage());
@@ -295,7 +295,7 @@ public class BannerOfferingDetailAction extends Action {
     public Long getInstructionalOfferingIdForBannerCourseIdStr(String bannerCourseId){
     	
         // Load Instr Offering
-        Long bannerCourseOfferingId = new Long(bannerCourseId);
+        Long bannerCourseOfferingId = Long.valueOf(bannerCourseId);
         BannerCourseDAO bcDao = new BannerCourseDAO();
         BannerCourse bc = bcDao.get(bannerCourseOfferingId);
         CourseOffering co = bc.getCourseOffering(bcDao.getSession());

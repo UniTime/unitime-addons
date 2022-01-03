@@ -242,7 +242,7 @@ public class BannerOfferingModifyAction extends Action {
     		if (ss.getClasses() == null || ss.getClasses().size() == 0)
     			throw new Exception("Initial setup of Instructional Offering Config has not been completed.");
     		if (ss.getParentSubpart() == null){
-        		loadClasses(frm, bsess, bc, ss.getClasses(), new Boolean(true), new String(), null, cap);
+        		loadClasses(frm, bsess, bc, ss.getClasses(), Boolean.valueOf(true), new String(), null, cap);
         	}
         }
       }
@@ -252,7 +252,7 @@ public class BannerOfferingModifyAction extends Action {
     	if (classes != null && classes.size() > 0){
     		ArrayList<Class_> classesList = new ArrayList<Class_>(classes);
             Collections.sort(classesList, new ClassComparator(ClassComparator.COMPARE_BY_ITYPE) );
-	    	Boolean readOnlyClass = new Boolean(false);
+	    	Boolean readOnlyClass = Boolean.valueOf(false);
 	    	boolean canShowLimitOverridesIfNeeded = (ApplicationProperties.getProperty("tmtbl.banner.section.limit.overrides_allowed", "true").equalsIgnoreCase("true"));
 	    	for(Class_ cls : classesList){
 	    		if (cls.isCancelled().booleanValue()){
@@ -260,14 +260,14 @@ public class BannerOfferingModifyAction extends Action {
 	    		}
 	    		if (previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype())){
 	    			if (!isReadOnly.booleanValue()){
-		    			readOnlyClass = new Boolean(isReadOnly.booleanValue());
+		    			readOnlyClass = Boolean.valueOf(isReadOnly.booleanValue());
 		    		} else {
-		    			readOnlyClass = new Boolean(!sessionContext.hasPermission(cls, Right.MultipleClassSetupClass));
+		    			readOnlyClass = Boolean.valueOf(!sessionContext.hasPermission(cls, Right.MultipleClassSetupClass));
 		    		}
 		    		BannerSection bs = BannerSection.findBannerSectionForBannerCourseAndClass(bc, cls);
 		    		frm.addToBannerSections(bsess, bs, cls, classAssignmentProxy, readOnlyClass, indent, canShowLimitOverridesIfNeeded);
 		    	}
-	    		loadClasses(frm, bsess, bc, cls.getChildClasses(), new Boolean(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
+	    		loadClasses(frm, bsess, bc, cls.getChildClasses(), Boolean.valueOf(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
 	    	}
     	}
     }
@@ -359,7 +359,7 @@ public class BannerOfferingModifyAction extends Action {
 		
 		for(;it1.hasNext();){
 			boolean changed = false;
-			Long sectionId = new Long(it1.next().toString());
+			Long sectionId = Long.valueOf(it1.next().toString());
 			String bannerSectionIndex = (String)it2.next();
 			if (bannerSectionIndex != null){
 				bannerSectionIndex = bannerSectionIndex.toUpperCase();
@@ -371,7 +371,7 @@ public class BannerOfferingModifyAction extends Action {
 				changed = true;
 			}
 			String consentStr = it3.next().toString();
-			Long consentId = new Long((consentStr.equals("-")?"-1":consentStr.toString()));
+			Long consentId = Long.valueOf((consentStr.equals("-")?"-1":consentStr.toString()));
 			if (consentId.equals(-1)){
 				consentId = null;
 			}
@@ -389,7 +389,7 @@ public class BannerOfferingModifyAction extends Action {
 			String creditStr = it4.next().toString();
 			Float credit = null;
 			if (creditStr != null && creditStr.trim().length() > 0){
-				credit = new Float(creditStr);
+				credit = Float.valueOf(creditStr);
 			}
 			if ((bs.getOverrideCourseCredit() != null && credit == null) ||
 				(bs.getOverrideCourseCredit() == null && credit != null) ||
@@ -401,7 +401,7 @@ public class BannerOfferingModifyAction extends Action {
 				String limitStr = it5.next().toString();
 				Integer limit = null;
 				if (limitStr != null && limitStr.trim().length() > 0){
-					limit = new Integer(limitStr);
+					limit = Integer.valueOf(limitStr);
 				}
 				if ((bs.getOverrideLimit() != null && limit == null) ||
 					(bs.getOverrideLimit() == null && limit != null) ||
@@ -414,7 +414,7 @@ public class BannerOfferingModifyAction extends Action {
 				}
 			}
 			String campusOverrideIdStr = it6.next().toString();
-			Long campusOverrideId = new Long((campusOverrideIdStr.equals("-")?"-1":campusOverrideIdStr.toString()));
+			Long campusOverrideId = Long.valueOf((campusOverrideIdStr.equals("-")?"-1":campusOverrideIdStr.toString()));
 			if (campusOverrideId.equals(-1)){
 				campusOverrideId = null;
 			}

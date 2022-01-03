@@ -333,7 +333,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 	protected void postLoadAction() {
 		beginTransaction();
 		BannerSession bs = BannerSession.findBannerSessionForSession(session, getHibSession());
-		bs.setLoadingOfferingsFile(new Boolean(false));
+		bs.setLoadingOfferingsFile(Boolean.valueOf(false));
 		getHibSession().update(bs);
 		flush(true);
 	}
@@ -342,7 +342,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 	protected void preLoadAction() {
 		beginTransaction();
 		BannerSession bs = BannerSession.findBannerSessionForSession(session, getHibSession());
-		bs.setLoadingOfferingsFile(new Boolean(true));
+		bs.setLoadingOfferingsFile(Boolean.valueOf(true));
 		getHibSession().update(bs);
 		flush(true);
 	}

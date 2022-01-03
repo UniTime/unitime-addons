@@ -109,20 +109,20 @@ public class BannerOfferingShowSearchAction extends Action {
 //	    BannerCourseSearchAction.setupInstrOffrListSpecificFormFilters(httpSession, frm);
 	    /*
 	    if (request.getParameter("subjectAreaId") != null){
-	    	frm.setDivSec(request.getParameter("divSec")==null?Boolean.FALSE:new Boolean(request.getParameter("divSec")));
-	    	frm.setDemand(request.getParameter("demand")==null?Boolean.FALSE:new Boolean(request.getParameter("demand")));
-	    	frm.setProjectedDemand(request.getParameter("projectedDemand")==null?Boolean.FALSE:new Boolean(request.getParameter("projectedDemand")));
-	    	frm.setMinPerWk(request.getParameter("minPerWk")==null?Boolean.FALSE:new Boolean(request.getParameter("minPerWk")));
-	    	frm.setLimit(request.getParameter("limit")==null?Boolean.FALSE:new Boolean(request.getParameter("limit")));
-	    	frm.setRoomLimit(request.getParameter("roomLimit")==null?Boolean.FALSE:new Boolean(request.getParameter("roomLimit")));
-	    	frm.setManager(request.getParameter("manager")==null?Boolean.FALSE:new Boolean(request.getParameter("manager")));
-	    	frm.setDatePattern(request.getParameter("datePattern")==null?Boolean.FALSE:new Boolean(request.getParameter("datePattern")));
-	    	frm.setTimePattern(request.getParameter("timePattern")==null?Boolean.FALSE:new Boolean(request.getParameter("timePattern")));
-	    	frm.setPreferences(request.getParameter("preferences")==null?Boolean.FALSE:new Boolean(request.getParameter("preferences")));
-	    	frm.setInstructor(request.getParameter("instructor")==null?Boolean.FALSE:new Boolean(request.getParameter("instructor")));
-	    	frm.setTimetable(request.getParameter("timetable")==null?Boolean.FALSE:new Boolean(request.getParameter("timetable")));
-	    	frm.setCredit(request.getParameter("credit")==null?Boolean.FALSE:new Boolean(request.getParameter("credit")));
-	    	frm.setSchedulePrintNote(request.getParameter("schedulePrintNote")==null?Boolean.FALSE:new Boolean(request.getParameter("schedulePrintNote")));
+	    	frm.setDivSec(request.getParameter("divSec")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("divSec")));
+	    	frm.setDemand(request.getParameter("demand")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("demand")));
+	    	frm.setProjectedDemand(request.getParameter("projectedDemand")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("projectedDemand")));
+	    	frm.setMinPerWk(request.getParameter("minPerWk")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("minPerWk")));
+	    	frm.setLimit(request.getParameter("limit")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("limit")));
+	    	frm.setRoomLimit(request.getParameter("roomLimit")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("roomLimit")));
+	    	frm.setManager(request.getParameter("manager")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("manager")));
+	    	frm.setDatePattern(request.getParameter("datePattern")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("datePattern")));
+	    	frm.setTimePattern(request.getParameter("timePattern")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("timePattern")));
+	    	frm.setPreferences(request.getParameter("preferences")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("preferences")));
+	    	frm.setInstructor(request.getParameter("instructor")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("instructor")));
+	    	frm.setTimetable(request.getParameter("timetable")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("timetable")));
+	    	frm.setCredit(request.getParameter("credit")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("credit")));
+	    	frm.setSchedulePrintNote(request.getParameter("schedulePrintNote")==null?Boolean.FALSE:Boolean.valueOf(request.getParameter("schedulePrintNote")));
 	    }
 	    */
 	    // Subject Area is saved to the session - Perform automatic search
@@ -145,7 +145,7 @@ public class BannerOfferingShowSearchAction extends Action {
 							request, 
 							"bannerOfferingSearch.do?doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+frm.getCourseNbr(), 
 							"Instructional Offerings ("+
-								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
+								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 								(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
 								")", 
 							true, true);
@@ -174,7 +174,7 @@ public class BannerOfferingShowSearchAction extends Action {
 							request, 
 							"bannerOfferingSearch.do?doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+frm.getCourseNbr(), 
 							"Instructional Offerings ("+
-								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
+								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 								(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
 								")", 
 							true, true);

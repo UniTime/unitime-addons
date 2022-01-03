@@ -133,13 +133,13 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 	@PreAuthorize("checkPermission('AcademicSessionEdit')")
 	public void save(Record record, SessionContext context, Session hibSession) {
 		String action = record.getField(2);
-		Boolean removed = new Boolean(record.getField(3));
+		Boolean removed = Boolean.valueOf(record.getField(3));
 		BannerInstrMethodCohortRestriction restriction = new BannerInstrMethodCohortRestriction();
 		org.unitime.timetable.model.Session sess = SessionDAO.getInstance().get(context.getUser().getCurrentAcademicSessionId(), hibSession);
 		restriction.setSession(sess);
-		InstructionalMethod im = InstructionalMethodDAO.getInstance().get(new Long(record.getField(0)));
+		InstructionalMethod im = InstructionalMethodDAO.getInstance().get(Long.valueOf(record.getField(0)));
 		restriction.setInstructionalMethod(im);
-		StudentGroup cohort = StudentGroupDAO.getInstance().get(new Long(record.getField(1)));
+		StudentGroup cohort = StudentGroupDAO.getInstance().get(Long.valueOf(record.getField(1)));
 		restriction.setCohort(cohort);
 		validateUniqueSessionInstrMethodCohort(restriction, hibSession);
 		validateRestrictionsHaveSameActionForInstrMethod(restriction, action, removed, hibSession);
@@ -187,7 +187,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 	protected void update(BannerInstrMethodCohortRestriction restriction, Record record, SessionContext context, Session hibSession) {
 		if (restriction == null) return;
 		String action = record.getField(2);
-		Boolean removed = new Boolean(record.getField(3));
+		Boolean removed = Boolean.valueOf(record.getField(3));
 		if (restriction.getUniqueId() != null && !ToolBox.equals(restriction.getInstructionalMethod().getUniqueId().toString(), record.getField(0))) {
 			throw new RuntimeException(MESSAGES.exceptionRestrictionCannotChangeInstrMethod());	
 		}

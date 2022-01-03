@@ -22,7 +22,8 @@ package org.unitime.banner.server.bannerresponses;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.unitime.banner.defaults.BannerRelatedSessionAttribute;
 import org.unitime.banner.model.BannerResponse;
 import org.unitime.localization.impl.Localization;
@@ -42,7 +43,7 @@ import org.unitime.timetable.security.rights.Right;
 @GwtRpcImplements(BannerResponsesPageRequest.class)
 public class BannerResponsesPageBackend implements GwtRpcImplementation<BannerResponsesPageRequest, GwtRpcResponseList<BannerResponseInterface>> {
 
-	private static Logger sLog = Logger.getLogger(BannerResponsesPageBackend.class);
+	private static Log sLog = LogFactory.getLog(BannerResponsesPageBackend.class);
 	protected static final BannerGwtConstants CONSTANTS = Localization.create(BannerGwtConstants.class);
 	private static DateFormat sDateFormat = Localization.getDateFormat(CONSTANTS.timeStampFormat());
 	private static DecimalFormat sDF = new DecimalFormat("0.0");

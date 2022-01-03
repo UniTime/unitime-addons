@@ -199,7 +199,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 						for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 							Date startDate = dateIt.next();
 							Date endDate = dates.get(startDate);				
-							MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, null, null, null, bldgAbbv, roomNbr, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
+							MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, null, null, null, bldgAbbv, roomNbr, Double.valueOf(hours).toString(), colleagueSection, clazz, alternatingWeeks);
 							elements.add(me);
 						}
 					}
@@ -208,7 +208,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					for(Iterator<Date> dateIt = dates.keySet().iterator(); dateIt.hasNext();){
 						Date startDate = dateIt.next();
 						Date endDate = dates.get(startDate);				
-						MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, null, null, null, null, null, new Double(hours).toString(), colleagueSection, clazz, alternatingWeeks);
+						MeetingElement me = new MeetingElement(clazz.getSchedulingSubpart().getItype().getItype(), clazz.getSchedulingSubpart().getItype().getSis_ref(), startDate, endDate, null, null, null, null, null, Double.valueOf(hours).toString(), colleagueSection, clazz, alternatingWeeks);
 						elements.add(me);
 					}
 				}
@@ -659,7 +659,7 @@ public class MeetingElement implements Comparable<MeetingElement> {
 										} else if (me.getHoursToArrange() == null && getHoursToArrange() == null){
 											return(0);
 										} else {
-											return(new Float(getHoursToArrange()).compareTo(new Float(me.getHoursToArrange())));
+											return(Float.valueOf(getHoursToArrange()).compareTo(Float.valueOf(me.getHoursToArrange())));
 										}
 									}
 								} else {

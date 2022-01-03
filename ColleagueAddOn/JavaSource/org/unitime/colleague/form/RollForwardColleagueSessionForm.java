@@ -90,7 +90,7 @@ public class RollForwardColleagueSessionForm extends RollForwardSessionForm  {
 	public void init() {
 		super.init();
 
-		rollForwardColleagueSession = new Boolean(false);
+		rollForwardColleagueSession = Boolean.valueOf(false);
 		sessionToRollColleagueDataForwardFrom = null;
 	}
 

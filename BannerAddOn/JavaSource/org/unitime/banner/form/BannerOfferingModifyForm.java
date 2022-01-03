@@ -166,7 +166,7 @@ public class BannerOfferingModifyForm extends ActionForm {
     		String sectionId = (String)this.getBannerSectionSectionIds().get(index);
     		if (sectionId == null || sectionId.trim().length() == 0){
     			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "Section Index cannot be null: " + (String) this.getBannerSectionLabels().get(index)));
-    			this.getClassHasErrors().set(index, new Boolean(true));    			
+    			this.getClassHasErrors().set(index, Boolean.valueOf(true));    			
     		}
     		if (sectionId != null){
 	    		sectionId = sectionId.toUpperCase();
@@ -174,29 +174,29 @@ public class BannerOfferingModifyForm extends ActionForm {
 			    	Matcher matcher = pattern.matcher(sectionId);
 			    	if (!matcher.find()) {
 		    			errors.add("invalid section id", new ActionMessage("errors.generic", "Section Index can only consist of numbers or alpha characters: " + (String) this.getBannerSectionLabels().get(index)));
-		    			this.getClassHasErrors().set(index, new Boolean(true));    			
+		    			this.getClassHasErrors().set(index, Boolean.valueOf(true));    			
 			    	}
 		    	}
 		    	catch (Exception e) {
 			        errors.add("courseNbr", new ActionMessage("errors.generic", "Section Index cannot be matched to regular expression: " + sectionIdRegex + ". Reason: " + e.getMessage()));
-	    			this.getClassHasErrors().set(index, new Boolean(true));    			
+	    			this.getClassHasErrors().set(index, Boolean.valueOf(true));    			
 		    	}
     		}
     		idSet.add(sectionId);
     		if (idSet.size() != (prevSize + 1)){
     			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "Section Index must be unique for: " + (String) this.getBannerSectionLabels().get(index)));
-    			this.getClassHasErrors().set(index, new Boolean(true)); 
+    			this.getClassHasErrors().set(index, Boolean.valueOf(true)); 
     		} else {
     			prevSize++;
     		}
     		if (sectionId.equals("999")) {
     			errors.add("maxSectionId", new ActionMessage("errors.generic", "Section Index must be less than 999: " + (String) this.getBannerSectionLabels().get(index)));
-    			this.getClassHasErrors().set(index, new Boolean(true));     			
+    			this.getClassHasErrors().set(index, Boolean.valueOf(true));     			
     		}
     		if (!this.getBannerSectionOriginalSectionIds().contains((String)this.getBannerSectionSectionIds().get(index))){
     			if (!BannerSection.isSectionIndexUniqueForCourse(co.getInstructionalOffering().getSession(), co, hibSession, (String)this.getBannerSectionSectionIds().get(index))){
         			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "New Section Index must be unique for: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, new Boolean(true));   				
+        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
     			}
     		}
     		if (this.showLimitOverride.booleanValue()){
@@ -204,36 +204,36 @@ public class BannerOfferingModifyForm extends ActionForm {
 				Integer limit = null;
 				if (limitStr != null && limitStr.trim().length() > 0){
 					try {
-						limit = new Integer(limitStr);
+						limit = Integer.valueOf(limitStr);
 					} catch (Exception e) {
 	        			errors.add("limitOverride", new ActionMessage("errors.generic", "The limit override must be an integer number: " + (String) this.getBannerSectionLabels().get(index)));
-	        			this.getClassHasErrors().set(index, new Boolean(true));   				
+	        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
 					}
 					
 				}
 				String classLimitStr = (String)this.getClassLimits().get(index);
-    			Integer classLimit = new Integer(classLimitStr);
+    			Integer classLimit = Integer.valueOf(classLimitStr);
     			if (limit != null && limit.intValue() > classLimit.intValue()){
         			errors.add("limitOverride", new ActionMessage("errors.generic", "The limit override cannot get greater than the class limit: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, new Boolean(true));   				
+        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
     			}
     			if (limit != null && limit.intValue() < 0){
     				errors.add("limitOverride", new ActionMessage("errors.generic", "The limit override must be greater than or equal to 0: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, new Boolean(true));   	
+        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   	
     			}
     		}
     		String creditOverrideStr = (String)this.getCourseCreditOverrides().get(index);
     		Float creditOverride = null;
     		if (creditOverrideStr != null && creditOverrideStr.trim().length() > 0){
     			try {
-					creditOverride = new Float(creditOverrideStr);
+					creditOverride = Float.valueOf(creditOverrideStr);
 				} catch (Exception e) {
         			errors.add("creditOverride", new ActionMessage("errors.generic", "The course credit override must be a number: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, new Boolean(true));   				
+        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
 				}
 				if (creditOverride != null && creditOverride < 0){
     				errors.add("creditOverride", new ActionMessage("errors.generic", "The course credit override must be greater than or equal to 0: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, new Boolean(true));   						
+        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   						
 				}
     		}
     	}
@@ -242,7 +242,7 @@ public class BannerOfferingModifyForm extends ActionForm {
     private void initClassHasErrorsToFalse(){
 		this.setClassHasErrors(DynamicList.getInstance(new ArrayList(), factoryClasses));
 		for(Iterator it = this.getBannerSectionIds().iterator(); it.hasNext();){
-			this.getClassHasErrors().add(new Boolean(false));
+			this.getClassHasErrors().add(Boolean.valueOf(false));
 			it.next();
 		}
     }
@@ -261,9 +261,9 @@ public class BannerOfferingModifyForm extends ActionForm {
     	instrOffrConfigId = null;
     	instrOfferingName = "";
     	origSubparts = "";
-    	configIsEditable = new Boolean(false);
-    	showLimitOverride = new Boolean(false);
-    	showLabHours = new Boolean(false);
+    	configIsEditable = Boolean.valueOf(false);
+    	showLimitOverride = Boolean.valueOf(false);
+    	showLabHours = Boolean.valueOf(false);
     	resetLists();
     }
     
@@ -374,7 +374,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 	    
 	public void addToBannerSections(BannerSession bsess, BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent, Boolean canShowLimitOverridesIfNeeded){
 		
-		this.showLimitOverride = new Boolean(canShowLimitOverridesIfNeeded?bs.isCrossListedSection(null):false);
+		this.showLimitOverride = Boolean.valueOf(canShowLimitOverridesIfNeeded?bs.isCrossListedSection(null):false);
 		this.bannerSectionLabels.add(bs.bannerSectionLabel());
 		this.bannerSectionLabelIndents.add(indent);
 		this.bannerSectionIds.add(bs.getUniqueId().toString());
@@ -383,7 +383,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 		this.itypes.add(cls.getSchedulingSubpart().getItype().getSis_ref());
 		this.consents.add(bs.effectiveConsentType()==null?null:bs.effectiveConsentType().getUniqueId());
 		this.readOnlyClasses.add(isReadOnly.toString());
-		this.classHasErrors.add(new Boolean(false).toString());	
+		this.classHasErrors.add(Boolean.valueOf(false).toString());	
 		this.datePatterns.add(bs.buildDatePatternHtml(classAssignmentProxy));
 		this.times.add(bs.buildAssignedTimeHtml(classAssignmentProxy));
 		this.rooms.add(bs.buildAssignedRoomHtml(classAssignmentProxy));
@@ -513,7 +513,7 @@ public class BannerOfferingModifyForm extends ActionForm {
 		if (ApplicationProperties.getProperty("tmtbl.banner.section.limit.overrides_allowed", "true").equalsIgnoreCase("true")) {
 			this.showLimitOverride = showLimitOverride;
 		} else {
-			this.showLimitOverride = new Boolean(false);	
+			this.showLimitOverride = Boolean.valueOf(false);	
 		}
 	}
 

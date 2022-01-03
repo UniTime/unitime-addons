@@ -45,7 +45,7 @@
 				    				sessionContext,
 				    		        WebSolver.getClassAssignmentProxy(session),
 				    		        frm, 
-				    		        new Long(frm.getSubjectAreaId()),	
+				    		        Long.valueOf(frm.getSubjectAreaId()),	
 				    		        true, 
 				    		        frm.getCourseNbr()==null || frm.getCourseNbr().length()==0,
 				    		        out,

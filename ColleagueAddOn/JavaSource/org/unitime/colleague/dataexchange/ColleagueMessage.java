@@ -240,7 +240,7 @@ public class ColleagueMessage {
 			}
 			id += instructor.getExternalUniqueId();
 			instructorElement.addAttribute("ID", id);
-			instructorElement.addAttribute("PERCENT", (new Integer(pct)).toString());
+			instructorElement.addAttribute("PERCENT", (Integer.valueOf(pct)).toString());
 			
 			if (instructor.getFirstName() != null && instructor.getFirstName().trim().length() > 0){
 				instructorElement.addAttribute("FIRST_NAME", instructor.getFirstName().trim());
@@ -337,8 +337,8 @@ public class ColleagueMessage {
 			if (section.findSchedType() != null){
 				sectionElement.addAttribute("SCHED_TYPE", section.findSchedType());
 			}
-			sectionElement.addAttribute("MAX_ENRL", ((new Integer(section.calculateMaxEnrl(hibSession))).toString()));
-			sectionElement.addAttribute("NUM_WEEKS", ((new Integer(section.findNumWeeks())).toString()));
+			sectionElement.addAttribute("MAX_ENRL", ((Integer.valueOf(section.calculateMaxEnrl(hibSession))).toString()));
+			sectionElement.addAttribute("NUM_WEEKS", ((Integer.valueOf(section.findNumWeeks())).toString()));
 			sectionElement.addAttribute("MEETING_PATTERN", section.findMeetingPattern());
 
 			CourseCreditUnitConfig courseCreditUnitConfig = courseOffering.getCredit();

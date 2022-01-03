@@ -120,14 +120,14 @@ public class ColleagueSuffixDefs implements AdminTable {
 	@PreAuthorize("checkPermission('AcademicSessionEdit')")
 	public void save(Record record, SessionContext context, Session hibSession) {
 		ColleagueSuffixDef suffix = new ColleagueSuffixDef();
-		suffix.setSubjectAreaId(record.getField(0)== null?null:new Long(record.getField(0)));
-		suffix.setItypeId(record.getField(1)== null?null:new Integer(record.getField(1)));
+		suffix.setSubjectAreaId(record.getField(0)== null?null:Long.valueOf(record.getField(0)));
+		suffix.setItypeId(record.getField(1)== null?null:Integer.valueOf(record.getField(1)));
 		suffix.setCourseSuffix(record.getField(2));
 		suffix.setItypePrefix(record.getField(3));
 		suffix.setPrefix(record.getField(4));
 		suffix.setSuffix(record.getField(5));
-		suffix.setMinSectionNum(new Integer(record.getField(6)));
-		suffix.setMaxSectionNum(new Integer(record.getField(7)));
+		suffix.setMinSectionNum(Integer.valueOf(record.getField(6)));
+		suffix.setMaxSectionNum(Integer.valueOf(record.getField(7)));
 		suffix.setCampusCode(record.getField(8));
 		suffix.setNote(record.getField(9));
 		ColleagueSession collSession = ColleagueSession.findColleagueSessionForSession(context.getUser().getCurrentAcademicSessionId(), hibSession);
@@ -157,14 +157,14 @@ public class ColleagueSuffixDefs implements AdminTable {
 				!ToolBox.equals(suffix.getCampusCode(), record.getField(8)) ||
 				!ToolBox.equals(suffix.getNote(), record.getField(9))
 				;
-			suffix.setSubjectAreaId(record.getField(0) == null?null:new Long(record.getField(0)));
-			suffix.setItypeId(record.getField(1) == null?null:new Integer(record.getField(1)));
+			suffix.setSubjectAreaId(record.getField(0) == null?null:Long.valueOf(record.getField(0)));
+			suffix.setItypeId(record.getField(1) == null?null:Integer.valueOf(record.getField(1)));
 			suffix.setCourseSuffix(record.getField(2));
 			suffix.setItypePrefix(record.getField(3));
 			suffix.setPrefix(record.getField(4));
 			suffix.setSuffix(record.getField(5));
-			suffix.setMinSectionNum(new Integer(record.getField(6)));
-			suffix.setMaxSectionNum(new Integer(record.getField(7)));
+			suffix.setMinSectionNum(Integer.valueOf(record.getField(6)));
+			suffix.setMaxSectionNum(Integer.valueOf(record.getField(7)));
 			suffix.setCampusCode(record.getField(8));
 			suffix.setNote(record.getField(9));
 			hibSession.saveOrUpdate(suffix);

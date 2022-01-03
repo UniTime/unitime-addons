@@ -57,8 +57,6 @@ public class BannerResponsesFilterBox extends UniTimeFilterBox<BannerResponseInt
 	private static DateTimeFormat sLocalDateFormat = DateTimeFormat.getFormat(CONSTANTS.eventDateFormat());
 	private ListBox iDepartments;
 	private ListBox iManagers;
-	private Chip iLastDept;
-	private Chip iLastManager;
 	private FilterBox.CustomFilter iOther = null;
 	private TextBox iCrsNbrBox = new TextBox();
 	private TextBox iCrnBox = new TextBox();
@@ -462,8 +460,6 @@ public class BannerResponsesFilterBox extends UniTimeFilterBox<BannerResponseInt
 		addValueChangeHandler(new ValueChangeHandler<String>() {
 			@Override
 			public void onValueChange(ValueChangeEvent<String> event) {
-				iLastDept = getChip("department");
-				iLastManager = getChip("manager");
 				if (!isFilterPopupShowing()) {
 					iDepartments.setSelectedIndex(0);
 					for (int i = 1; i < iDepartments.getItemCount(); i++) {

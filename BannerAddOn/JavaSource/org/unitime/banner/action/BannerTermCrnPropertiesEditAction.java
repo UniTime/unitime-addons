@@ -91,7 +91,7 @@ public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatch
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
         BannerTermCrnPropertiesEditForm bannerTermCrnPropertiesEditForm = (BannerTermCrnPropertiesEditForm) form;		
-		Long id =  new Long(Long.parseLong(request.getParameter("bannerTermCrnPropertiesId")));
+		Long id =  Long.valueOf(Long.parseLong(request.getParameter("bannerTermCrnPropertiesId")));
 		BannerTermCrnProperties bannerTermCrnProperties = BannerTermCrnProperties.getBannerTermCrnPropertiesById(id);
 		bannerTermCrnPropertiesEditForm.setBannerTermProperties(bannerTermCrnProperties);
 		bannerTermCrnPropertiesEditForm.setBannerTermCode(bannerTermCrnProperties.getBannerTermCode());
@@ -185,14 +185,14 @@ public class BannerTermCrnPropertiesEditAction extends SpringAwareLookupDispatch
             bannerTermCrnProperties.setLastCrn(bannerTermCrnPropertiesEditForm.getLastCrn());
             bannerTermCrnProperties.setMinCrn(bannerTermCrnPropertiesEditForm.getMinCrn());
             bannerTermCrnProperties.setMaxCrn(bannerTermCrnPropertiesEditForm.getMaxCrn());
-            bannerTermCrnProperties.setSearchFlag(bannerTermCrnPropertiesEditForm.getSearchFlag()==null?new Boolean(false):bannerTermCrnPropertiesEditForm.getSearchFlag());
+            bannerTermCrnProperties.setSearchFlag(bannerTermCrnPropertiesEditForm.getSearchFlag()==null?Boolean.valueOf(false):bannerTermCrnPropertiesEditForm.getSearchFlag());
             HashSet<BannerSession> origSessions = new HashSet<BannerSession>();
             if (bannerTermCrnProperties.getBannerSessions() != null) {
             		origSessions.addAll(bannerTermCrnProperties.getBannerSessions());
                 bannerTermCrnProperties.getBannerSessions().clear();
             }
             for (String bsId : bannerTermCrnPropertiesEditForm.getBannerSessionIds()) {
-            		BannerSession bs = BannerSession.getBannerSessionById(new Long(bsId));
+            		BannerSession bs = BannerSession.getBannerSessionById(Long.valueOf(bsId));
             		bannerTermCrnProperties.addTobannerSessions(bs);
             		bs.setBannerTermCrnProperties(bannerTermCrnProperties);
             		origSessions.remove(bs);

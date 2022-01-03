@@ -115,7 +115,7 @@ public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
 						request, 
 						"bannerOfferingSearch.do?op=Back&doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+URLEncoder.encode(frm.getCourseNbr(), "utf-8"), 
 						"Banner Offerings ("+
-							(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
+							(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 							(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
 							")", 
 						true, true);
@@ -162,7 +162,7 @@ public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
         boolean fetchAssignments = true;
         boolean fetchReservations = false;
         
-        return(InstructionalOffering.search(sessionId, new Long(form.getSubjectAreaId()), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
+        return(InstructionalOffering.search(sessionId, Long.valueOf(form.getSubjectAreaId()), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
         
     }
 

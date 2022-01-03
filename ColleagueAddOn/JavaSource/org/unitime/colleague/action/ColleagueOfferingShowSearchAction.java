@@ -125,7 +125,7 @@ public class ColleagueOfferingShowSearchAction extends Action {
 							request, 
 							"colleagueOfferingSearch.do?doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+frm.getCourseNbr(), 
 							"Colleague Offerings ("+
-								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
+								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 								(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
 								")", 
 							true, true);
@@ -154,7 +154,7 @@ public class ColleagueOfferingShowSearchAction extends Action {
 							request, 
 							"colleagueOfferingSearch.do?doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+frm.getCourseNbr(), 
 							"Colleague Offerings ("+
-								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(new Long(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
+								(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
 								(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
 								")", 
 							true, true);

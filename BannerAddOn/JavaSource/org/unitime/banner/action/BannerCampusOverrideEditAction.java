@@ -85,7 +85,7 @@ public class BannerCampusOverrideEditAction extends SpringAwareLookupDispatchAct
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
         BannerCampusOverrideEditForm bannerCampusOverrideForm = (BannerCampusOverrideEditForm) form;		
-		Long id =  new Long(Long.parseLong(request.getParameter("campusOverrideId")));
+		Long id =  Long.valueOf(Long.parseLong(request.getParameter("campusOverrideId")));
 		BannerCampusOverride bannerCampusOverride = BannerCampusOverride.getBannerCampusOverrideById(id);
 		bannerCampusOverrideForm.setBannerCampusOverride(bannerCampusOverride);
 		bannerCampusOverrideForm.setBannerCampusCode(bannerCampusOverride.getBannerCampusCode());
@@ -142,7 +142,7 @@ public class BannerCampusOverrideEditAction extends SpringAwareLookupDispatchAct
            
             campusOverride.setBannerCampusName(bannerCampusOverrideEditForm.getBannerCampusName());
             campusOverride.setBannerCampusCode(bannerCampusOverrideEditForm.getBannerCampusCode());
-            campusOverride.setVisible(bannerCampusOverrideEditForm.getVisible() == null?new Boolean(false):bannerCampusOverrideEditForm.getVisible());
+            campusOverride.setVisible(bannerCampusOverrideEditForm.getVisible() == null?Boolean.valueOf(false):bannerCampusOverrideEditForm.getVisible());
 
             hibSession.saveOrUpdate(campusOverride);
 

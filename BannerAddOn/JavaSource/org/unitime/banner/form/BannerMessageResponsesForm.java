@@ -181,9 +181,9 @@ public class BannerMessageResponsesForm extends ActionForm {
 
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		iN = 100;
-		iDepartmentId = new Long(-1);
-        iSubjAreaId = new Long(-1);
-        iManagerId = new Long(-1);
+		iDepartmentId = Long.valueOf(-1);
+        iSubjAreaId = Long.valueOf(-1);
+        iManagerId = Long.valueOf(-1);
 		iCourseNumber = null;
 		iCrn = null;
 		iXlst = null;
@@ -230,7 +230,7 @@ public class BannerMessageResponsesForm extends ActionForm {
         setDepartmentId((Long)request.getSession().getAttribute("BannerMessageResponses.DepartmentId"));
 
 		setManagerId((Long)request.getSession().getAttribute("BannerMessageResponses.ManagerId"));
-		setManagerId(new Long(-1));
+		setManagerId(Long.valueOf(-1));
 		
 		setSubjAreaId((Long) request.getSession().getAttribute(
 				"BannerMessageResponses.SubjAreaId"));
@@ -251,37 +251,37 @@ public class BannerMessageResponsesForm extends ActionForm {
 		setShowHistory((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.ShowHistory"));
 		if (request.getSession().getAttribute("BannerMessageResponses.ActionAudit") == null ) {
-			setActionAudit(new Boolean(true));
+			setActionAudit(Boolean.valueOf(true));
 		} else {
 			setActionAudit((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.ActionAudit"));
 		}
 		if (request.getSession().getAttribute("BannerMessageResponses.ActionUpdate") == null ) {
-			setActionUpdate(new Boolean(true));
+			setActionUpdate(Boolean.valueOf(true));
 		} else {
 			setActionUpdate((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.ActionUpdate"));
 		}
 		if (request.getSession().getAttribute("BannerMessageResponses.ActionDelete") == null ) {
-			setActionDelete(new Boolean(true));
+			setActionDelete(Boolean.valueOf(true));
 		} else {
 			setActionDelete((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.ActionDelete"));
 		}
 		if (request.getSession().getAttribute("BannerMessageResponses.TypeSuccess") == null ) {
-			setTypeSuccess(new Boolean(true));
+			setTypeSuccess(Boolean.valueOf(true));
 		} else {
 			setTypeSuccess((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.TypeSuccess"));
 		}
 		if (request.getSession().getAttribute("BannerMessageResponses.TypeError") == null ) {
-			setTypeError(new Boolean(true));
+			setTypeError(Boolean.valueOf(true));
 		} else {
 			setTypeError((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.TypeError"));
 		}
 		if (request.getSession().getAttribute("BannerMessageResponses.TypeWarning") == null ) {
-			setTypeWarning(new Boolean(true));
+			setTypeWarning(Boolean.valueOf(true));
 		} else {
 			setTypeWarning((Boolean) request.getSession().getAttribute(
 				"BannerMessageResponses.TypeWarning"));
@@ -291,7 +291,7 @@ public class BannerMessageResponsesForm extends ActionForm {
 
 	public void save(HttpServletRequest request) {
 		request.getSession().setAttribute("BannerMessageResponses.N",
-				new Integer(getN()));
+				Integer.valueOf(getN()));
 
 		if (getSubjAreaId() == null) {
 			request.getSession().removeAttribute(

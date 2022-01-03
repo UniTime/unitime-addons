@@ -172,9 +172,9 @@ public class ColleagueMessageResponsesForm extends ActionForm {
 
 	public void reset(ActionMapping mapping, HttpServletRequest request) {
 		iN = 100;
-		iDepartmentId = new Long(-1);
-        iSubjAreaId = new Long(-1);
-        iManagerId = new Long(-1);
+		iDepartmentId = Long.valueOf(-1);
+        iSubjAreaId = Long.valueOf(-1);
+        iManagerId = Long.valueOf(-1);
 		iCourseNumber = null;
 		iColleagueId = null;
 		iRespType = null;
@@ -220,7 +220,7 @@ public class ColleagueMessageResponsesForm extends ActionForm {
         setDepartmentId((Long)request.getSession().getAttribute("ColleagueMessageResponses.DepartmentId"));
 
 		setManagerId((Long)request.getSession().getAttribute("ColleagueMessageResponses.ManagerId"));
-		setManagerId(new Long(-1));
+		setManagerId(Long.valueOf(-1));
 		
 		setSubjAreaId((Long) request.getSession().getAttribute(
 				"ColleagueMessageResponses.SubjAreaId"));
@@ -239,37 +239,37 @@ public class ColleagueMessageResponsesForm extends ActionForm {
 		setShowHistory((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.ShowHistory"));
 		if (request.getSession().getAttribute("ColleagueMessageResponses.ActionAudit") == null ) {
-			setActionAudit(new Boolean(true));
+			setActionAudit(Boolean.valueOf(true));
 		} else {
 			setActionAudit((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.ActionAudit"));
 		}
 		if (request.getSession().getAttribute("ColleagueMessageResponses.ActionUpdate") == null ) {
-			setActionUpdate(new Boolean(true));
+			setActionUpdate(Boolean.valueOf(true));
 		} else {
 			setActionUpdate((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.ActionUpdate"));
 		}
 		if (request.getSession().getAttribute("ColleagueMessageResponses.ActionDelete") == null ) {
-			setActionDelete(new Boolean(true));
+			setActionDelete(Boolean.valueOf(true));
 		} else {
 			setActionDelete((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.ActionDelete"));
 		}
 		if (request.getSession().getAttribute("ColleagueMessageResponses.TypeSuccess") == null ) {
-			setTypeSuccess(new Boolean(true));
+			setTypeSuccess(Boolean.valueOf(true));
 		} else {
 			setTypeSuccess((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.TypeSuccess"));
 		}
 		if (request.getSession().getAttribute("ColleagueMessageResponses.TypeError") == null ) {
-			setTypeError(new Boolean(true));
+			setTypeError(Boolean.valueOf(true));
 		} else {
 			setTypeError((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.TypeError"));
 		}
 		if (request.getSession().getAttribute("ColleagueMessageResponses.TypeWarning") == null ) {
-			setTypeWarning(new Boolean(true));
+			setTypeWarning(Boolean.valueOf(true));
 		} else {
 			setTypeWarning((Boolean) request.getSession().getAttribute(
 				"ColleagueMessageResponses.TypeWarning"));
@@ -279,7 +279,7 @@ public class ColleagueMessageResponsesForm extends ActionForm {
 
 	public void save(HttpServletRequest request) {
 		request.getSession().setAttribute("ColleagueMessageResponses.N",
-				new Integer(getN()));
+				Integer.valueOf(getN()));
 
 		if (getSubjAreaId() == null) {
 			request.getSession().removeAttribute(

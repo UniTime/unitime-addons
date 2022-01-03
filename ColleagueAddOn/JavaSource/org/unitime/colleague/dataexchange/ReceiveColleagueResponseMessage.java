@@ -117,7 +117,7 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 					resp.setQueueId(queueId);
 					getHibSession().save(resp);
 					
-					ColleagueSection colleagueSection = csDao.get(new Long(resp.getExternalId()), getHibSession());
+					ColleagueSection colleagueSection = csDao.get(Long.valueOf(resp.getExternalId()), getHibSession());
 					if (colleagueSection != null){
 						if ((colleagueSection.getColleagueId() == null) && (resp.getColleagueId() != null)){
 							colleagueSection.setColleagueId(resp.getColleagueId());

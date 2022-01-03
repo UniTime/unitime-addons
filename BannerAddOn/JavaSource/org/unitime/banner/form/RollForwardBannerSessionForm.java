@@ -101,8 +101,8 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 	public void init() {
 		super.init();
 
-		rollForwardBannerSession = new Boolean(false);
-		createMissingBannerSections = new Boolean(false);
+		rollForwardBannerSession = Boolean.valueOf(false);
+		createMissingBannerSections = Boolean.valueOf(false);
 		sessionToRollBannerDataForwardFrom = null;
 	}
 

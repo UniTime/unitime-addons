@@ -140,8 +140,8 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 				csd = findColleagueSuffixDefForTermCodeItypeSuffix(termCode, null, null, null);
 				if (csd == null){
 					csd = new ColleagueSuffixDef();
-					csd.setMinSectionNum(new Integer(1));
-					csd.setMaxSectionNum(new Integer(99));
+					csd.setMinSectionNum(Integer.valueOf(1));
+					csd.setMaxSectionNum(Integer.valueOf(99));
 				}
 			} else if (csdSubjectArea == null && csdItype == null && csdCourseSuffix != null) {
 				csd = csdCourseSuffix;
@@ -174,10 +174,10 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
 					//  only one character is left to be used so the min/max cannot exceed 9
 					if (csd.getMinSectionNum().intValue() > 10){
-						csd.setMinSectionNum(new Integer(1));
+						csd.setMinSectionNum(Integer.valueOf(1));
 					}
 					if (csd.getMaxSectionNum().intValue() > 10){
-						csd.setMaxSectionNum(new Integer(10));
+						csd.setMaxSectionNum(Integer.valueOf(10));
 					}
 				}
 			} else if (csdSubjectArea != null && csdItype == null && csdCourseSuffix != null ) {
@@ -205,10 +205,10 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
 					//  only one character is left to be used so the min/max cannot exceed 9
 					if (csd.getMinSectionNum().intValue() > 10){
-						csd.setMinSectionNum(new Integer(1));
+						csd.setMinSectionNum(Integer.valueOf(1));
 					}
 					if (csd.getMaxSectionNum().intValue() > 10){
-						csd.setMaxSectionNum(new Integer(10));
+						csd.setMaxSectionNum(Integer.valueOf(10));
 					}
 				}			
 			} else if (csdSubjectArea != null && csdItype != null && csdCourseSuffix == null ) {
@@ -236,10 +236,10 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
 					//  only one character is left to be used so the min/max cannot exceed 9
 					if (csd.getMinSectionNum().intValue() > 10){
-						csd.setMinSectionNum(new Integer(1));
+						csd.setMinSectionNum(Integer.valueOf(1));
 					}
 					if (csd.getMaxSectionNum().intValue() > 10){
-						csd.setMaxSectionNum(new Integer(10));
+						csd.setMaxSectionNum(Integer.valueOf(10));
 					}
 				}			
 			} else {
@@ -269,10 +269,10 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 					// the section identifier can only be 3 characters, if two are taken with prefix or suffixes
 					//  only one character is left to be used so the min/max cannot exceed 9
 					if (csd.getMinSectionNum().intValue() > 10){
-						csd.setMinSectionNum(new Integer(1));
+						csd.setMinSectionNum(Integer.valueOf(1));
 					}
 					if (csd.getMaxSectionNum().intValue() > 10){
-						csd.setMaxSectionNum(new Integer(10));
+						csd.setMaxSectionNum(Integer.valueOf(10));
 					}
 				}			
 			}

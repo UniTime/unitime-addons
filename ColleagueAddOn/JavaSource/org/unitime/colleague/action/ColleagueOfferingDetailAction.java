@@ -132,7 +132,7 @@ public class ColleagueOfferingDetailAction extends Action {
 	        if (op.equals("Resend to Colleague")) {
 	        	response.sendRedirect(response.encodeURL("colleagueOfferingDetail.do?co="+frm.getCourseOfferingId()));
 	        	ColleagueSectionDAO csDao = ColleagueSectionDAO.getInstance();
-	        	List<ColleagueSection> colleagueSections = ColleagueSection.findColleagueSectionsForCourseOfferingId(new Long(frm.getCourseOfferingId()), csDao.getSession());
+	        	List<ColleagueSection> colleagueSections = ColleagueSection.findColleagueSectionsForCourseOfferingId(Long.valueOf(frm.getCourseOfferingId()), csDao.getSession());
 	        	
 	        	SendColleagueMessage.sendColleagueMessage(colleagueSections, MessageAction.UPDATE, csDao.getSession());
 	        } else {
@@ -205,7 +205,7 @@ public class ColleagueOfferingDetailAction extends Action {
         
 
         // Load Instr Offering
-        Long courseOfferingId = new Long(courseOfferingIdStr);
+        Long courseOfferingId = Long.valueOf(courseOfferingIdStr);
         CourseOfferingDAO coDao = new CourseOfferingDAO();
 
         CourseOffering co = coDao.get(courseOfferingId);
@@ -269,7 +269,7 @@ public class ColleagueOfferingDetailAction extends Action {
         // Catalog Link
         String linkLookupClass = ApplicationProperties.getProperty("tmtbl.catalogLink.lookup.class");
         if (linkLookupClass!=null && linkLookupClass.trim().length()>0) {
-        	ExternalLinkLookup lookup = (ExternalLinkLookup) (Class.forName(linkLookupClass).newInstance());
+        	ExternalLinkLookup lookup = (ExternalLinkLookup) (Class.forName(linkLookupClass).getDeclaredConstructor().newInstance());
        		Map results = lookup.getLink(io);
             if (results==null)
                 throw new Exception (lookup.getErrorMessage());
@@ -289,7 +289,7 @@ public class ColleagueOfferingDetailAction extends Action {
     public Long getInstructionalOfferingIdForCourseIdStr(String courseId){
     	
         // Load Instr Offering
-        Long courseOfferingId = new Long(courseId);
+        Long courseOfferingId = Long.valueOf(courseId);
         CourseOfferingDAO coDao = new CourseOfferingDAO();
         CourseOffering co = coDao.get(courseOfferingId);
         if (co != null && co.getInstructionalOffering() != null){

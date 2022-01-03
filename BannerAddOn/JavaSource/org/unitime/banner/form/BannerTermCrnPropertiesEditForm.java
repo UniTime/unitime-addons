@@ -161,7 +161,7 @@ public class BannerTermCrnPropertiesEditForm extends ActionForm {
     public ArrayList<Long> getBannerSessionIdsConvertedToLongs(){
     		ArrayList<Long> ids = new ArrayList<Long>();
     		for (String id : getBannerSessionIds()) {
-    			ids.add(new Long(id));
+    			ids.add(Long.valueOf(id));
     		}
     		return(ids);
     }
@@ -206,7 +206,7 @@ public class BannerTermCrnPropertiesEditForm extends ActionForm {
 				}
             }
             for (String bsIdStr : getBannerSessionIds()) {
-            		BannerSession bs = BannerSession.getBannerSessionById(new Long(bsIdStr));
+            		BannerSession bs = BannerSession.getBannerSessionById(Long.valueOf(bsIdStr));
             	    if (!bs.getBannerTermCode().equals(bannerTermCode)) {
         				errors.add("bannerTermProperties", new ActionMessage("errors.generic", "Banner Term Code (" + bs.getBannerTermCode() + ") for the BannerSession: " + bs.getLabel() + " does not match the selected Term Code(" + bannerTermCode + ")"));            	    	
             	    }

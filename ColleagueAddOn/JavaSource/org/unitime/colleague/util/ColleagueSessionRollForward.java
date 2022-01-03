@@ -123,7 +123,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 					//       creating section indexes that are never used.
 					//
 					// toCs.setSectionIndex(fromCs.getSectionIndex());
-					toCs.setDeleted(new Boolean(false));
+					toCs.setDeleted(Boolean.valueOf(false));
 					toCs.setColleagueCourseNumber(fromCs.getColleagueCourseNumber());
 					CourseOffering fromCourseOffering = CourseOffering.findByUniqueId(fromCs.getCourseOfferingId());
 					CourseOffering toCourseOffering = CourseOffering.findByIdRolledForwardFrom(toSession.getUniqueId(), fromCourseOffering.getUniqueId());
@@ -260,9 +260,9 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			toCs = new ColleagueSession();
 			toCs.setColleagueCampus(fromCs.getColleagueCampus());
 			toCs.setColleagueTermCode(toSession.getAcademicTerm());
-			toCs.setSendDataToColleague(new Boolean(false));
-			toCs.setStoreDataForColleague(new Boolean(true));
-			toCs.setLoadingOfferingsFile(new Boolean(false));
+			toCs.setSendDataToColleague(Boolean.valueOf(false));
+			toCs.setStoreDataForColleague(Boolean.valueOf(true));
+			toCs.setLoadingOfferingsFile(Boolean.valueOf(false));
 			toCs.setSession(toSession);
 			toCs.setUniqueIdRolledForwardFrom(fromSession.getUniqueId());
 			ColleagueSessionDAO.getInstance().save(toCs);
@@ -274,7 +274,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
             String className = ApplicationProperties.getProperty("tmtbl.colleague.session.rollForward.custom");
         	if (className != null && className.trim().length() > 0){
         		try {
-					externalSessionRollForwardCustomization = (ExternalSessionRollForwardCustomizationInterface) (Class.forName(className).newInstance());
+					externalSessionRollForwardCustomization = (ExternalSessionRollForwardCustomizationInterface) (Class.forName(className).getDeclaredConstructor().newInstance());
 				} catch (InstantiationException e) {
 					iLog.error("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action.", e);
 					throw (new Exception("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action."));

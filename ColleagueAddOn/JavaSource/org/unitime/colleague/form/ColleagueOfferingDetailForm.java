@@ -120,7 +120,7 @@ public class ColleagueOfferingDetailForm extends ActionForm {
         demand = null;
         projectedDemand = null;
         limit = null;
-        unlimited = new Boolean(false);
+        unlimited = Boolean.valueOf(false);
         notOffered = null;
         instrOfferingName = "";
         instrOfferingNameNoTitle = "";
@@ -300,7 +300,7 @@ public class ColleagueOfferingDetailForm extends ActionForm {
      * @return No. of course offerings in the instr offering
      */
     public Integer getCourseOfferingCount() {
-        return new Integer(this.courseOfferings.size());
+        return Integer.valueOf(this.courseOfferings.size());
     }
     
     public String getNextId() { return nextId; }

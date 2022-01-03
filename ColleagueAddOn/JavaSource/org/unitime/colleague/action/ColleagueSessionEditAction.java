@@ -87,7 +87,7 @@ public class ColleagueSessionEditAction extends SpringAwareLookupDispatchAction 
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
         ColleagueSessionEditForm sessionEditForm = (ColleagueSessionEditForm) form;		
-		Long id =  new Long(Long.parseLong(request.getParameter("sessionId")));
+		Long id =  Long.valueOf(Long.parseLong(request.getParameter("sessionId")));
 		ColleagueSession colleagueSession = ColleagueSession.getColleagueSessionById(id);
 		sessionEditForm.setSession(colleagueSession);
 		sessionEditForm.setAcadSessionId(colleagueSession.getSession().getUniqueId());
@@ -158,9 +158,9 @@ public class ColleagueSessionEditAction extends SpringAwareLookupDispatchAction 
             sessn.setSession(SessionDAO.getInstance().get(sessionEditForm.getAcadSessionId()));
             sessn.setColleagueCampus(sessionEditForm.getColleagueCampus());
             sessn.setColleagueTermCode(sessionEditForm.getColleagueTermCode());
-            sessn.setStoreDataForColleague(sessionEditForm.getStoreDataForColleague() == null?new Boolean(false):sessionEditForm.getStoreDataForColleague());
-            sessn.setSendDataToColleague(sessionEditForm.getSendDataToColleague() == null?new Boolean(false):sessionEditForm.getSendDataToColleague());
-            sessn.setLoadingOfferingsFile(sessionEditForm.getLoadingOfferingsFile() == null?new Boolean(false):sessionEditForm.getLoadingOfferingsFile());
+            sessn.setStoreDataForColleague(sessionEditForm.getStoreDataForColleague() == null?Boolean.valueOf(false):sessionEditForm.getStoreDataForColleague());
+            sessn.setSendDataToColleague(sessionEditForm.getSendDataToColleague() == null?Boolean.valueOf(false):sessionEditForm.getSendDataToColleague());
+            sessn.setLoadingOfferingsFile(sessionEditForm.getLoadingOfferingsFile() == null?Boolean.valueOf(false):sessionEditForm.getLoadingOfferingsFile());
 
             hibSession.saveOrUpdate(sessn);
 

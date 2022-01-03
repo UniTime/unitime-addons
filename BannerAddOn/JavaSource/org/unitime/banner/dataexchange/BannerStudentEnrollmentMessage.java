@@ -161,8 +161,8 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	            student.setFirstName("Name");
 	            student.setLastName("Unknown");
 	            student.setExternalUniqueId(id);
-	            student.setFreeTimeCategory(new Integer(0));
-	            student.setSchedulePreference(new Integer(0));
+	            student.setFreeTimeCategory(Integer.valueOf(0));
+	            student.setSchedulePreference(Integer.valueOf(0));
 	            student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
 	            student.setCourseDemands(new HashSet<CourseDemand>());
 	            studentId = (Long)getHibSession().save(student);

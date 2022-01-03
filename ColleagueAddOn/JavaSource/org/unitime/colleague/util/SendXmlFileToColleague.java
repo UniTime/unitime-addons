@@ -21,7 +21,7 @@ package org.unitime.colleague.util;
 
 import java.io.File;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.LogFactory;
 import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
 import org.unitime.colleague.queueprocessor.QueuedItem;
@@ -44,9 +44,6 @@ public class SendXmlFileToColleague {
 
 	public static void main(String[] args) {
 		try {
-		   // Configure logging
-	       org.apache.log4j.PropertyConfigurator.configure(ApplicationProperties.getProperties());
-	        
 	       // Configure hibernate
 	       HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
@@ -62,7 +59,7 @@ public class SendXmlFileToColleague {
 	       // Close hibernate
 	       HibernateUtil.closeHibernate();
 		} catch (Exception e) {
-		   Logger.getLogger(SendXmlFileToColleague.class).error("Error: " +e.getMessage(), e);
+		   LogFactory.getLog(SendXmlFileToColleague.class).error("Error: " +e.getMessage(), e);
 		}
     }
 	

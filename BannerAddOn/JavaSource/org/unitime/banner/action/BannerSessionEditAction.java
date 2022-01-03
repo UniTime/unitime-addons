@@ -87,7 +87,7 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
         BannerSessionEditForm sessionEditForm = (BannerSessionEditForm) form;		
-		Long id =  new Long(Long.parseLong(request.getParameter("sessionId")));
+		Long id =  Long.valueOf(Long.parseLong(request.getParameter("sessionId")));
 		BannerSession bannerSession = BannerSession.getBannerSessionById(id);
 		sessionEditForm.setSession(bannerSession);
 		sessionEditForm.setAcadSessionId(bannerSession.getSession().getUniqueId());
@@ -175,9 +175,9 @@ public class BannerSessionEditAction extends SpringAwareLookupDispatchAction {
             sessn.setSession(SessionDAO.getInstance().get(sessionEditForm.getAcadSessionId()));
             sessn.setBannerCampus(sessionEditForm.getBannerCampus());
             sessn.setBannerTermCode(sessionEditForm.getBannerTermCode());
-            sessn.setStoreDataForBanner(sessionEditForm.getStoreDataForBanner() == null?new Boolean(false):sessionEditForm.getStoreDataForBanner());
-            sessn.setSendDataToBanner(sessionEditForm.getSendDataToBanner() == null?new Boolean(false):sessionEditForm.getSendDataToBanner());
-            sessn.setLoadingOfferingsFile(sessionEditForm.getLoadingOfferingsFile() == null?new Boolean(false):sessionEditForm.getLoadingOfferingsFile());
+            sessn.setStoreDataForBanner(sessionEditForm.getStoreDataForBanner() == null?Boolean.valueOf(false):sessionEditForm.getStoreDataForBanner());
+            sessn.setSendDataToBanner(sessionEditForm.getSendDataToBanner() == null?Boolean.valueOf(false):sessionEditForm.getSendDataToBanner());
+            sessn.setLoadingOfferingsFile(sessionEditForm.getLoadingOfferingsFile() == null?Boolean.valueOf(false):sessionEditForm.getLoadingOfferingsFile());
             sessn.setFutureSessionUpdateModeInt(sessionEditForm.getFutureUpdateMode());
             sessn.setFutureSession(sessionEditForm.getFutureSessionId() == null ? null : BannerSessionDAO.getInstance().get(sessionEditForm.getFutureSessionId()));
             sessn.setStudentCampus(sessionEditForm.getStudentCampus());

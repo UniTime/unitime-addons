@@ -99,9 +99,9 @@ public class ColleagueSessions implements AdminTable {
 		ColleagueSession colleagueSession = new ColleagueSession();
 		colleagueSession.setColleagueCampus(record.getField(0));
 		colleagueSession.setColleagueTermCode(record.getField(1));
-		colleagueSession.setStoreDataForColleague(new Boolean(record.getField(2)));
-		colleagueSession.setSendDataToColleague(new Boolean(record.getField(3)));
-		colleagueSession.setLoadingOfferingsFile(new Boolean(record.getField(4)));
+		colleagueSession.setStoreDataForColleague(Boolean.valueOf(record.getField(2)));
+		colleagueSession.setSendDataToColleague(Boolean.valueOf(record.getField(3)));
+		colleagueSession.setLoadingOfferingsFile(Boolean.valueOf(record.getField(4)));
 		org.unitime.timetable.model.Session session = SessionDAO.getInstance().get(context.getUser().getCurrentAcademicSessionId(), hibSession);
 		colleagueSession.setSession(session);
 		record.setUniqueId((Long)hibSession.save(colleagueSession));
@@ -130,18 +130,18 @@ public class ColleagueSessions implements AdminTable {
 		colleagueSession.setColleagueTermCode(record.getField(1));
 		
 		boolean doStoreDataForColleague = false;
-		if (!colleagueSession.isStoreDataForColleague() && new Boolean(record.getField(2))){
+		if (!colleagueSession.isStoreDataForColleague() && Boolean.valueOf(record.getField(2))){
 			doStoreDataForColleague = true;
 		}
-		colleagueSession.setStoreDataForColleague(new Boolean(record.getField(2)));
+		colleagueSession.setStoreDataForColleague(Boolean.valueOf(record.getField(2)));
 		
 		boolean doSendDataToColleague = false;
-		if (!colleagueSession.isSendDataToColleague() && new Boolean(record.getField(3))){
+		if (!colleagueSession.isSendDataToColleague() && Boolean.valueOf(record.getField(3))){
 			doSendDataToColleague = true;
 		}
-		colleagueSession.setSendDataToColleague(new Boolean(record.getField(3)));
+		colleagueSession.setSendDataToColleague(Boolean.valueOf(record.getField(3)));
 		
-		colleagueSession.setLoadingOfferingsFile(new Boolean(record.getField(4)));
+		colleagueSession.setLoadingOfferingsFile(Boolean.valueOf(record.getField(4)));
 		hibSession.saveOrUpdate(colleagueSession);
 		ChangeLog.addChange(hibSession,
 				context,

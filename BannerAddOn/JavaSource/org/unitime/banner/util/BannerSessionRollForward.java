@@ -370,8 +370,8 @@ public class BannerSessionRollForward extends SessionRollForward {
 				String newYearStr = Integer.toString(year) + fromBs.getBannerTermCode().substring(4, 6);
 				toBs.setBannerTermCode(newYearStr);
 				toBs.setStoreDataForBanner(fromBs.isStoreDataForBanner());
-				toBs.setSendDataToBanner(new Boolean(false));
-				toBs.setLoadingOfferingsFile(new Boolean(false));
+				toBs.setSendDataToBanner(Boolean.valueOf(false));
+				toBs.setLoadingOfferingsFile(Boolean.valueOf(false));
 				toBs.setSession(toSession);
 				toBs.setStudentCampus(fromBs.getStudentCampus());
 				toBs.setSubjectAreaPrefixDelimiter(fromBs.getSubjectAreaPrefixDelimiter());
@@ -397,7 +397,7 @@ public class BannerSessionRollForward extends SessionRollForward {
             String className = ApplicationProperties.getProperty("tmtbl.banner.session.rollForward.custom");
         	if (className != null && className.trim().length() > 0){
         		try {
-					externalSessionRollForwardCustomization = (ExternalSessionRollForwardCustomizationInterface) (Class.forName(className).newInstance());
+					externalSessionRollForwardCustomization = (ExternalSessionRollForwardCustomizationInterface) (Class.forName(className).getDeclaredConstructor().newInstance());
 				} catch (InstantiationException e) {
 					iLog.error("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action.", e);
 					throw (new Exception("Failed to instantiate instance of: " + className + " unable to perfor custom roll forward action."));

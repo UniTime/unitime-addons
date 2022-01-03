@@ -277,8 +277,8 @@ public class ColleagueSection extends BaseColleagueSection {
    			return(null);
    		}
    		ColleagueSuffixDef suffix = new ColleagueSuffixDef();
-   		suffix.setMinSectionNum(new Integer(1));
-   		suffix.setMaxSectionNum(new Integer(99));
+   		suffix.setMinSectionNum(Integer.valueOf(1));
+   		suffix.setMaxSectionNum(Integer.valueOf(99));
    		suffix.setPrefix("X");
    		String sectionIndex = null;
    		try {
@@ -587,7 +587,7 @@ public class ColleagueSection extends BaseColleagueSection {
 			e.printStackTrace();
 		}
 		SendColleagueMessage.sendColleagueMessage(colleagueSection, MessageAction.DELETE, hibSession);
-		colleagueSection.setDeleted(new Boolean(true));
+		colleagueSection.setDeleted(Boolean.valueOf(true));
 		hibSession.update(colleagueSection);
 	}
 
@@ -826,7 +826,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		if (io != null && io.getOfferingCoordinators() != null){
 			for (OfferingCoordinator oc : io.getOfferingCoordinators()){
 				if (oc.getResponsibility() == null || !oc.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
-						instructorPercents.put(oc.getInstructor(), new Integer(0));
+						instructorPercents.put(oc.getInstructor(), Integer.valueOf(0));
 				}
 			}
 		}
@@ -860,12 +860,12 @@ public class ColleagueSection extends BaseColleagueSection {
 								if ((ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) && instructorPercents.containsKey(ci.getInstructor()) && totalPercent > 0){
 									int pct = instructorPercents.get(ci.getInstructor()).intValue();
 									pct += (ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0);
-									instructorPercents.put(ci.getInstructor(),new Integer(pct));
+									instructorPercents.put(ci.getInstructor(),Integer.valueOf(pct));
 								} else {
 									if ((ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)) && totalPercent > 0)
-										instructorPercents.put(ci.getInstructor(),new Integer(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
+										instructorPercents.put(ci.getInstructor(),Integer.valueOf(ci.getPercentShare() != null?(((ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue())*100/totalPercent)):0));
 									else {
-										instructorPercents.put(ci.getInstructor(),new Integer(0));
+										instructorPercents.put(ci.getInstructor(),Integer.valueOf(0));
 									}
 								}
 	
@@ -883,7 +883,7 @@ public class ColleagueSection extends BaseColleagueSection {
 			DepartmentalInstructor firstInstructorWithNonZeroPercent = null;
 			for(DepartmentalInstructor instructor : instructorPercents.keySet()){
 				int pct = instructorPercents.get(instructor).intValue()/numClassesWithInstructors;
-				instructorPercents.put(instructor, new Integer(pct));
+				instructorPercents.put(instructor, Integer.valueOf(pct));
 				if (pct > 0 && firstInstructorWithNonZeroPercent == null){
 					firstInstructorWithNonZeroPercent = instructor;
 				}
@@ -891,7 +891,7 @@ public class ColleagueSection extends BaseColleagueSection {
 			}
 			if (totalPct != 100 && firstInstructorWithNonZeroPercent != null){
 				int pct = instructorPercents.get(firstInstructorWithNonZeroPercent).intValue() + (100 - totalPct);
-				instructorPercents.put(firstInstructorWithNonZeroPercent, new Integer(pct));
+				instructorPercents.put(firstInstructorWithNonZeroPercent, Integer.valueOf(pct));
 			}
 		}
 		return(instructorPercents);
@@ -1414,7 +1414,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		cs.setDeleted(new Boolean(false));
+		cs.setDeleted(Boolean.valueOf(false));
 		cs.setSession(courseOffering.getInstructionalOffering().getSession());
 		cs.addClass(cls, hibSession);
 

@@ -55,7 +55,7 @@ public class BannerCampusOverride extends BaseBannerCampusOverride {
 /*[CONSTRUCTOR MARKER BEGIN]*/
 	public BannerCampusOverride () {
 		super();
-		this.setVisible(new Boolean(true));
+		this.setVisible(Boolean.valueOf(true));
 	}
 
 	/**

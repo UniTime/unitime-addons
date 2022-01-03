@@ -96,14 +96,14 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public void reset(ActionMapping arg0, HttpServletRequest arg1) {
 		op = "";
         nextId = previousId = null;
-        subjectAreaId = new Integer(0);
-    	instrOfferingId = new Long(0);
-    	courseOfferingId = new Long(0);
+        subjectAreaId = Integer.valueOf(0);
+    	instrOfferingId = Long.valueOf(0);
+    	courseOfferingId = Long.valueOf(0);
         instrOfferingName = null;
-    	instrOffrConfigLimit = new Integer(0);
-    	instrOffrConfigId = new Long(0);
+    	instrOffrConfigLimit = Integer.valueOf(0);
+    	instrOffrConfigId = Long.valueOf(0);
     	deletedRestrRowNum = null;
-    	displayExternalId = new Boolean(false);
+    	displayExternalId = Boolean.valueOf(false);
     	proxy = null;	
     	resetLists();
 	}
@@ -154,14 +154,14 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 			// Only display the class name and display flag for the first instructor
 			if(i == 0) {
 				this.sectionLabels.add(section.colleagueSectionLabel());
-				this.showDisplay.add(new Boolean(true));
+				this.showDisplay.add(Boolean.valueOf(true));
 				this.times.add(section.buildAssignedTimeHtml(getProxy()));
 				this.rooms.add(section.buildAssignedRoomHtml(getProxy()));
 				this.externalIds.add(section.getColleagueId() == null?"":section.getColleagueId());
 			}
 			else {
 				this.sectionLabels.add("");
-				this.showDisplay.add(new Boolean(false));
+				this.showDisplay.add(Boolean.valueOf(false));
 				this.times.add("");
 				this.rooms.add("");
 				this.externalIds.add("");
@@ -169,7 +169,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 			this.sectionLabelIndents.add(indent);
 			this.sectionIds.add(section.getUniqueId().toString());
 			this.readOnlySections.add(isReadOnly.toString());
-			this.sectionHasErrors.add(new Boolean(false));
+			this.sectionHasErrors.add(Boolean.valueOf(false));
 	
 			if(restrictions.size() > 0) {
 				this.restrictionUids.add(restriction.getUniqueId().toString());
@@ -178,7 +178,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 				this.restrictionUids.add("");
 			}
 			
-			this.allowDeletes.add(new Boolean(restrictions.size() > 1));
+			this.allowDeletes.add(Boolean.valueOf(restrictions.size() > 1));
 		} while (++i < restrictions.size());
 	}
 
@@ -207,7 +207,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	}
 
 	public void addRestriction() {
-		int pos = new Integer(this.getAddRestrictonId()).intValue();
+		int pos = Integer.valueOf(this.getAddRestrictonId()).intValue();
 		this.sectionLabels.add(pos + 1, "");
 		this.showDisplay.add(pos + 1, Boolean.FALSE);
 		this.times.add(pos + 1, "");
@@ -231,7 +231,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	    	}
 	    	
 			String sectionId = (String) sectionIds.get(i);
-		    ColleagueSection c = cdao.get(new Long(sectionId));
+		    ColleagueSection c = cdao.get(Long.valueOf(sectionId));
 
 		    org.hibernate.Session hibSession = cdao.getSession();
         	Transaction tx = hibSession.beginTransaction();
@@ -248,7 +248,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
             	}
                 String restrictionId = (String) getRestrictionUids().get(i);
                 if (restrictionId.length() > 0  && !("-".equals(restrictionId))) {
-	                ColleagueRestriction colleagueRestriction =  new ColleagueRestrictionDAO().get(new Long(restrictionId));
+	                ColleagueRestriction colleagueRestriction =  new ColleagueRestrictionDAO().get(Long.valueOf(restrictionId));
 	                c.addTocolleagueRestrictions(colleagueRestriction);
 	            };
             };
@@ -271,7 +271,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	    	}
 	    	
 			String sectionId = (String) sectionIds.get(i);
-		    ColleagueSection c = cdao.get(new Long(sectionId));
+		    ColleagueSection c = cdao.get(Long.valueOf(sectionId));
 
 		    org.hibernate.Session hibSession = cdao.getSession();
         	Transaction tx = hibSession.beginTransaction();
