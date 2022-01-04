@@ -30,6 +30,7 @@ import org.unitime.banner.queueprocessor.exception.LoggableException;
 import org.unitime.commons.Debug;
 import org.unitime.commons.hibernate.util.HibernateUtil;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.solver.jgroups.SolverServerImplementation;
 
 /*
  * based on code contributed by Aaron Tyler and Dagmar Murray
@@ -61,6 +62,12 @@ public class ProcessQueue {
 		if (ApplicationProperties.getProperty("queueprocessor.looptimes") != null) {
 			loop_times = Integer.parseInt(ApplicationProperties.getProperty("queueprocessor.looptimes"));
 		}
+		
+		String logfilename = ApplicationProperties.getProperty("queueprocessor.logfilename", "queueprocessor.log"); 
+		SolverServerImplementation.configureLogging(
+				logfilename,
+				ApplicationProperties.getProperties()
+				);
 		
 		try {
 			HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
