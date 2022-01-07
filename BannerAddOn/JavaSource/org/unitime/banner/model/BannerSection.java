@@ -797,8 +797,8 @@ public class BannerSection extends BaseBannerSection {
 						if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
 							if (ci.getResponsibility() == null || !ci.getResponsibility().hasOption(TeachingResponsibility.Option.auxiliary)){
 								totalPercent += (ci.getPercentShare() != null?(ci.getPercentShare().intValue() < 0?-1*ci.getPercentShare().intValue():ci.getPercentShare().intValue()):0);
-								instructorCount++;
 							}
+							instructorCount++;
 						}
 					}
 					if (instructorCount > 0){
