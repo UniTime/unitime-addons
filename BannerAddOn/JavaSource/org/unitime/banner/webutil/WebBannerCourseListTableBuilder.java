@@ -44,6 +44,7 @@ import org.unitime.commons.web.htmlgen.TableRow;
 import org.unitime.commons.web.htmlgen.TableStream;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.Department;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.LearningManagementSystemInfo;
@@ -58,7 +59,8 @@ import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.webutil.Navigation;
 import org.unitime.timetable.webutil.WebInstructionalOfferingTableBuilder;
-
+import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.defaults.ApplicationProperty;
 
 /**
  * @author says
@@ -290,6 +292,10 @@ public class WebBannerCourseListTableBuilder extends
      		cell = this.initCell(" &nbsp;", 1, false);
      		row.addContent(cell);	
      	}
+		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
+			cell = this.initCell(" &nbsp;", 1, false);
+			row.addContent(cell);
+		}
         table.addContent(row);
 		}
 
@@ -445,7 +451,11 @@ public class WebBannerCourseListTableBuilder extends
          	cell.addContent(bs.buildRestrictionHtml());
          	row.addContent(cell);
      	}
-
+		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
+			Department fundingDept = c.getEffectiveFundingDept();
+			cell = this.initCell(fundingDept == null ?"": fundingDept.getManagingDeptAbbv(), 1, false);
+			row.addContent(cell);
+		}
 
     	table.addContent(row);
 	}
@@ -478,9 +488,12 @@ public class WebBannerCourseListTableBuilder extends
     		if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(io.getSessionId())) {
      		span++;	
      		}
-     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(io.getSession().getUniqueId())) {
+    		if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(io.getSession().getUniqueId())) {
      		span++;
-     	}
+    		}
+    		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
+    			span++;
+    		}
         TableCell cell = this.initCell(null, span, true);
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
@@ -575,7 +588,10 @@ public class WebBannerCourseListTableBuilder extends
      		cell = this.headerCell("Restrictions", 2, 1);
 			row.addContent(cell);
      	}
-		
+		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
+			cell = this.headerCell("Funding Dept", 2, 1);
+			row.addContent(cell);
+		}
     	table.addContent(row);
     	table.addContent(row2);
    }
