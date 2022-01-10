@@ -59,7 +59,6 @@ import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.webutil.Navigation;
 import org.unitime.timetable.webutil.WebInstructionalOfferingTableBuilder;
-import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.defaults.ApplicationProperty;
 
 /**
@@ -452,9 +451,7 @@ public class WebBannerCourseListTableBuilder extends
          	row.addContent(cell);
      	}
 		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
-			Department fundingDept = c.getEffectiveFundingDept();
-			cell = this.initCell(fundingDept == null ?"": fundingDept.getManagingDeptAbbv(), 1, false);
-			row.addContent(cell);
+			row.addContent(buildFundingDepartment(c, isEditable));
 		}
 
     	table.addContent(row);
@@ -589,7 +586,7 @@ public class WebBannerCourseListTableBuilder extends
 			row.addContent(cell);
      	}
 		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
-			cell = this.headerCell("Funding Dept", 2, 1);
+			cell = this.headerCell(MSG.columnFundingDepartment(), 2, 1);
 			row.addContent(cell);
 		}
     	table.addContent(row);
