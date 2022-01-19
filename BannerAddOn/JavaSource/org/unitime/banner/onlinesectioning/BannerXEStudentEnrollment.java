@@ -39,6 +39,7 @@ import org.unitime.banner.model.QueueOut;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.Pair;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.shared.SectioningException;
+import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.WaitListMode;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
@@ -48,6 +49,7 @@ import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
+import org.unitime.timetable.model.WaitList.WaitListType;
 import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningLog;
@@ -236,6 +238,8 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     			cr.getCourseDemand().setWaitlist(false);
     			changed = true;
     			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    			if (student.getWaitListMode() == WaitListMode.WaitList)
+    				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession());
     		}
     	}
     	
@@ -250,6 +254,8 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     				else if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle()) {
     					cr.getCourseDemand().setWaitlist(false);
     					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    					if (student.getWaitListMode() == WaitListMode.WaitList)
+    	    				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession());
     				}
     			}
     			student.getClassEnrollments().remove(enrollment);

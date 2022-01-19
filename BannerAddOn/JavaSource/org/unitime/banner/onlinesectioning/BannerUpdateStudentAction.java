@@ -82,6 +82,7 @@ import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentGroupType;
 import org.unitime.timetable.model.StudentNote;
+import org.unitime.timetable.model.WaitList.WaitListType;
 import org.unitime.timetable.model.dao.AcademicAreaDAO;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningAction;
@@ -515,8 +516,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			if (iUpdateClasses && updateStudentOverrides(student, null, helper, result))
 				result.add(Change.OVERRIDES);
 
-			if (iUpdateClasses && updateClassEnrollments(student, getEnrollments(helper, result), helper))
+			if (iUpdateClasses && updateClassEnrollments(student, getEnrollments(helper, result), helper)) {
 				result.add(Change.CLASSES);
+			}
 			
 			helper.commitTransaction();
 		} catch (Exception e) {
@@ -1592,6 +1594,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			cr.getCourseDemand().setWaitlist(false);
     			changed = true;
     			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    			if (student.getWaitListMode() == WaitListMode.WaitList)
+    				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession()); 
     		}
     	}
     	
@@ -1606,6 +1610,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     				else if (iResetWaitList || cr.getCourseDemand().isWaitlist()) {
     					cr.getCourseDemand().setWaitlist(false);
     					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    					if (student.getWaitListMode() == WaitListMode.WaitList)
+    	    				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession());
     				}
     			}
     			student.getClassEnrollments().remove(enrollment);
