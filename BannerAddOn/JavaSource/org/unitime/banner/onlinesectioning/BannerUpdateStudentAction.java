@@ -55,6 +55,7 @@ import org.unitime.timetable.interfaces.ExternalUidTranslation.Source;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicClassification;
 import org.unitime.timetable.model.Advisor;
+import org.unitime.timetable.model.Campus;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseDemand;
 import org.unitime.timetable.model.CourseOffering;
@@ -890,6 +891,62 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 	}
 	
+	protected static Campus findCampus(org.hibernate.Session hibSession, Long sessionId, String campus) {
+		Campus camp = (Campus)hibSession.createQuery(
+                "select d from Campus d where "+
+                "d.session.uniqueId = :sessionId and "+
+                "d.externalUniqueId = :campus").
+         setLong("sessionId", sessionId).
+         setString("campus", campus).
+         setCacheable(true).
+         uniqueResult(); 
+		if (camp != null) return camp;
+		return (Campus)hibSession.createQuery(
+                "select d from Campus d where "+
+                "d.session.uniqueId = :sessionId and "+
+                "d.reference = :campus").
+         setLong("sessionId", sessionId).
+         setString("campus", campus).
+         setCacheable(true).
+         uniqueResult();
+    }
+	
+	protected Campus getCampus(OnlineSectioningHelper helper, String campus) {
+		if (iLocking) {
+			synchronized (("Campus:" + iSession.getReference() + ":" + campus).intern()) {
+				Campus camp = findCampus(helper.getHibSession(), iSession.getUniqueId(), campus);
+				if (camp != null) return camp;
+				camp = new Campus();
+				camp.setExternalUniqueId(campus);
+				camp.setReference(campus);
+				camp.setLabel(campus);
+				camp.setSession(iSession);
+				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
+				try {
+					camp.setUniqueId((Long)hibSession.save(camp));
+					hibSession.flush();
+				} finally {
+					hibSession.close();
+				}
+				helper.getHibSession().update(camp);
+				helper.info("Added Campus:  " + campus);
+				return camp;
+			}
+		} else {
+			Campus camp = findCampus(helper.getHibSession(), iSession.getUniqueId(), campus);
+			if (camp == null) {
+				camp = new Campus();
+				camp.setExternalUniqueId(campus);
+				camp.setReference(campus);
+				camp.setLabel(campus);
+				camp.setSession(iSession);
+				camp.setUniqueId((Long)helper.getHibSession().save(camp));
+				helper.info("Added Campus:  " + campus);
+			}
+			return camp;
+		}
+	}
+	
 	protected boolean updateStudentDemographics(Student student, OnlineSectioningHelper helper, UpdateResult result) {
 		boolean changed = false;
 		if (!eq(iFName, student.getFirstName())) {
@@ -947,6 +1004,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							aac.setProgram(acm.hasProgram() ? getProgram(helper, acm.getProgram()) : null);
 							needUpdate = true;
 						}
+						if (!acm.sameCampus(aac.getCampus())) {
+							aac.setCampus(acm.hasCampus() ? getCampus(helper, acm.getCampus()) : null);
+							needUpdate = true;
+						}
 						if (!acm.sameWeight(aac.getWeight())) {
 							aac.setWeight(acm.getWeight());
 							needUpdate = true;
@@ -969,6 +1030,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				
 				Degree degree = (acm.hasDegree() ? getDegree(helper, acm.getDegree()) : null);
 				Program program = (acm.hasProgram() ? getProgram(helper, acm.getProgram()) : null);
+				Campus campus = (acm.hasCampus() ? getCampus(helper, acm.getCampus()) : null);
 
 				StudentAreaClassificationMajor aac = new StudentAreaClassificationMajor();
 				aac.setAcademicArea(aa);
@@ -978,6 +1040,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aac.setConcentration(conc);
 				aac.setDegree(degree);
 				aac.setProgram(program);
+				aac.setCampus(campus);
 				aac.setWeight(acm.getWeight());
 				student.addToareaClasfMajors(aac);
 				changed = true;
@@ -2061,6 +2124,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			return prog != null && (getProgram().equalsIgnoreCase(prog.getExternalUniqueId()) || getProgram().equalsIgnoreCase(prog.getReference()));
     		else
     			return prog == null;
+    	}
+    	
+    	public boolean sameCampus(Campus camp) {
+    		if (hasCampus())
+    			return camp != null && (getCampus().equalsIgnoreCase(camp.getExternalUniqueId()) || getCampus().equalsIgnoreCase(camp.getReference()));
+    		else
+    			return camp == null;
     	}
     	
     	public boolean sameWeight(Double weight) {

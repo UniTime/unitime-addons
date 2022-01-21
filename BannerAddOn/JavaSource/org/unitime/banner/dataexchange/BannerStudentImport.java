@@ -33,6 +33,7 @@ import org.unitime.timetable.dataexchange.StudentImport;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.model.AcademicArea;
 import org.unitime.timetable.model.AcademicClassification;
+import org.unitime.timetable.model.Campus;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Degree;
@@ -57,10 +58,10 @@ public class BannerStudentImport extends StudentImport {
 	protected Student importStudent(Element element, String externalId, Hashtable<String, Student> students, Session session, Set<Long> updatedStudents,
 			Map<String, AcademicArea> abbv2area, Map<String, AcademicClassification> code2clasf, Map<String, PosMajor> code2major, Map<String, PosMinor> code2minor,
 			Map<String, StudentGroup> code2group, Map<String, StudentAccomodation> code2accomodation, Map<String, PosMajorConcentration> code2conc,
-			Map<String, Degree> code2degree, Map<String, Program> code2program) {
+			Map<String, Degree> code2degree, Map<String, Program> code2program, Map<String, Campus> code2campus) {
 	
 		Student student = super.importStudent(element, externalId, students, session, updatedStudents,
-				abbv2area, code2clasf, code2major, code2minor, code2group, code2accomodation, code2conc, code2degree, code2program);
+				abbv2area, code2clasf, code2major, code2minor, code2group, code2accomodation, code2conc, code2degree, code2program, code2campus);
 		
 		if (updateStudentOverrides(element, session, student))
 			updatedStudents.add(student.getUniqueId());
