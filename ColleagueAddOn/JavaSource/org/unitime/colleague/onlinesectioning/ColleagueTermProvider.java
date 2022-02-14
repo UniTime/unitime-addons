@@ -71,4 +71,9 @@ public class ColleagueTermProvider implements ExternalTermProvider {
 		return(courseNumber);
 	}
 
+	@Override
+	public String getExternalCourseCampus(AcademicSessionInfo session, String subjectArea, String courseNumber) {
+		return session.getCampus();
+	}
+
 }

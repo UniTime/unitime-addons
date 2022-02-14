@@ -81,4 +81,16 @@ public class BannerTermProvider implements ExternalTermProvider {
 		return iCourseNumberLength;
 	}
 
+	@Override
+	public String getExternalCourseCampus(AcademicSessionInfo session, String subjectArea, String courseNumber) {
+		BannerSession bannerSession = BannerSession.findBannerSessionForSession(session.getUniqueId(), null);
+		if (bannerSession != null && Boolean.TRUE.equals(bannerSession.isUseSubjectAreaPrefixAsCampus())) {
+			String delimiter = bannerSession.getSubjectAreaPrefixDelimiter();
+			if (delimiter == null || delimiter.isEmpty()) delimiter = " - ";
+			if (subjectArea.indexOf(delimiter) >= 0)
+				return subjectArea.substring(0, subjectArea.indexOf(delimiter));
+		}
+		return bannerSession.getBannerCampus();
+	}
+
 }
