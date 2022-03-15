@@ -234,7 +234,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
         		}
     		}
     		
-    		if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle()) {
+    		if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle() && !co.equals(cr.getCourseDemand().getWaitListSwapWithCourseOffering())) {
     			cr.getCourseDemand().setWaitlist(false);
     			changed = true;
     			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());

@@ -1653,7 +1653,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
         		}
     		}
     		
-    		if (iResetWaitList && cr.getCourseDemand().isWaitlist()) {
+    		if (iResetWaitList && cr.getCourseDemand().isWaitlist() && !co.equals(cr.getCourseDemand().getWaitListSwapWithCourseOffering())) {
     			cr.getCourseDemand().setWaitlist(false);
     			changed = true;
     			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
