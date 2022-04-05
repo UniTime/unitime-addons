@@ -15,11 +15,11 @@
  *
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
 */
 
-alter table banner_response modify seq_numb varchar(10)
+alter table banner_response modify seq_numb varchar(10);
 
 update application_config set value='15' where name='tmtbl.db.banner.version';
-  
+
 commit;
