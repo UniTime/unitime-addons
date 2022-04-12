@@ -1670,7 +1670,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			if (cr != null && remaining.contains(cr.getCourseDemand())) {
     				if (cr.getCourseRequestOverrideIntent() == CourseRequestOverrideIntent.EX_DROP)
     					exDropDeletes.add(cr.getCourseDemand());
-    				else if (iResetWaitList || cr.getCourseDemand().isWaitlist()) {
+    				else if (iResetWaitList && cr.getCourseDemand().isWaitlist()) {
     					cr.getCourseDemand().setWaitlist(false);
     					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
     					if (student.getWaitListMode() == WaitListMode.WaitList)
