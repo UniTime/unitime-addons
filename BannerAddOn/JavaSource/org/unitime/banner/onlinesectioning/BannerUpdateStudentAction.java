@@ -2181,13 +2181,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			String subject = override[1], course = override[2];
     			if (c.getCourseName().startsWith(subject + " " + course)) {
 					XOverride o = cr.getOverride(c);
-		    		if (o != null && o.getStatus() == CourseRequestOverrideStatus.PENDING.ordinal())
+		    		if (o != null && o.getStatus() != null && o.getStatus() == CourseRequestOverrideStatus.PENDING.ordinal())
 		    			return true;
 				}
         	}
     	} else {
 			XOverride o = cr.getOverride(c);
-			if (o == null) {
+			if (o == null || o.getStatus() == null) {
 				// no override needed -> go ahead and check
 				return true;
 			} else if (o.getStatus() == CourseRequestOverrideStatus.APPROVED.ordinal()) {
