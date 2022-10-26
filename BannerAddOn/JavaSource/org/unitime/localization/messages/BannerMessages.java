@@ -51,4 +51,67 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Create Missing Banner Sections.")
 	String checkCreateMissingBannerSections();
+	
+	@DefaultMessage("Banner Offerings")
+	String sectBannerOfferings();
+	
+	@DefaultMessage("S")
+	String accessSearchBannerOfferings();
+	
+	@DefaultMessage("Search/Display Banner Offerings (Alt+{0})")
+	String titleSearchBannerOfferings(String accessKey);
+	
+	@DefaultMessage("Courses Not Offered")
+	String labelCoursesNotOffered();
+	
+	@DefaultMessage("Offered Courses")
+	String labelOfferedCourses();
+	
+	@DefaultMessage("There are no courses currently offered for this subject.")
+	String infoNoCoursesOffered();
+	
+	@DefaultMessage("All courses are currently being offered for this subject.")
+	String infoAllCoursesOffered();
+	
+	@DefaultMessage("Print Indicator.")
+	String titlePrintIndicator();
+	
+	@DefaultMessage("Section is gradable.")
+	String titleGradableSection();
+	
+	@DefaultMessage("Instr Type")
+	String colInstrType();
+	
+	@DefaultMessage("Sec&nbsp;Id")
+	String colSecId();
+	
+	@DefaultMessage("Grade")
+	String colGradable();
+	
+	@DefaultMessage("Lab Hours")
+	String colLabHours();
+	
+	@DefaultMessage("Print")
+	String colPrint();
+	
+	@DefaultMessage("Xlst")
+	String colXlst();
+	
+	@DefaultMessage("Link&nbsp;Id")
+	String colLinkId();
+	
+	@DefaultMessage("Link Conn")
+	String colLinkConn();
+	
+	@DefaultMessage("Instr. Method")
+	String colInstrMethod();
+	
+	@DefaultMessage("Class Label")
+	String colClassLabel();
+	
+	@DefaultMessage("LMS Code")
+	String colLMSCode();
+	
+	@DefaultMessage("Restrictions")
+	String colRestrictions();
 }

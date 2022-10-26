@@ -42,9 +42,10 @@ import org.unitime.commons.web.htmlgen.TableCell;
 import org.unitime.commons.web.htmlgen.TableHeaderCell;
 import org.unitime.commons.web.htmlgen.TableRow;
 import org.unitime.commons.web.htmlgen.TableStream;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
-import org.unitime.timetable.model.Department;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.LearningManagementSystemInfo;
@@ -65,9 +66,9 @@ import org.unitime.timetable.defaults.ApplicationProperty;
  * @author says
  *
  */
-public class WebBannerCourseListTableBuilder extends
-		WebInstructionalOfferingTableBuilder {
- 
+public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTableBuilder {
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
+	
 	private Comparator iClassComparator = new ClassComparator(ClassComparator.COMPARE_BY_ITYPE);
 
 	/**
@@ -77,7 +78,6 @@ public class WebBannerCourseListTableBuilder extends
 	}
 	
 	
-    @SuppressWarnings("unchecked")
 	public void htmlTableForBannerOfferings(
 			SessionContext context,
             ClassAssignmentProxy classAssignment, 
@@ -149,8 +149,8 @@ public class WebBannerCourseListTableBuilder extends
     		if(displayHeader) {
     		    try {
     		    	if (allCoursesAreGiven)
-    		    		outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#notOffered\">Courses Not Offered</A></DIV>");
-    			    outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"offered\"></A>Offered Courses</DIV>");
+    		    		outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#notOffered\">" + BMSG.labelCoursesNotOffered() + "</A></DIV>");
+    			    outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"offered\"></A>" + BMSG.labelOfferedCourses() + "</DIV>");
     			} catch (IOException e) {
     				e.printStackTrace();
     			}
@@ -172,7 +172,7 @@ public class WebBannerCourseListTableBuilder extends
             } else {
                 if(displayHeader)
     				try {
-    					outputStream.print("<font class=\"error\">There are no courses currently offered for this subject.</font>");
+    					outputStream.print("<font class=\"error\">" + BMSG.infoNoCoursesOffered() + "</font>");
     				} catch (IOException e) {
     					e.printStackTrace();
     				}
@@ -184,8 +184,8 @@ public class WebBannerCourseListTableBuilder extends
     	        try {
     				outputStream.print("<br>");
     				if (allCoursesAreGiven)
-    					outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#offered\">Offered Courses</A></DIV>");
-    		        outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"notOffered\"></A>Not Offered Courses</DIV>");
+    					outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#offered\">" + BMSG.labelOfferedCourses() + "</A></DIV>");
+    		        outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"notOffered\"></A>" + BMSG.labelCoursesNotOffered() + "</DIV>");
     			} catch (IOException e) {
     				e.printStackTrace();
     			}
@@ -206,7 +206,7 @@ public class WebBannerCourseListTableBuilder extends
             } else {
                 if(displayHeader)
     				try {
-    					outputStream.print("<font class=\"normal\">&nbsp;<br>All courses are currently being offered for this subject.</font>");
+    					outputStream.print("<font class=\"normal\">&nbsp;<br>" + BMSG.infoAllCoursesOffered() + "</font>");
     				} catch (IOException e) {
     					e.printStackTrace();
     				}
@@ -277,7 +277,7 @@ public class WebBannerCourseListTableBuilder extends
 	        TableCell cell = null;
     	    if (configName==null || configName.trim().length()==0)
     	        configName = ioc.getUniqueId().toString();
-    	    cell = this.initNormalCell("Configuration " + configName, isEditable);
+    	    cell = this.initNormalCell(MSG.labelConfiguration(configName), isEditable);
     	    cell.setStyle("padding-left: " + indent + "px;");
         	cell.setNoWrap(true);
     	    row.addContent(cell);
@@ -382,7 +382,7 @@ public class WebBannerCourseListTableBuilder extends
     	cell = initNormalCell(Integer.toString(bs.calculateMaxEnrl(hibSession)), isEditable);
     	cell.setAlign("right");
     	row.addContent(cell);
-		cell = initNormalCell((bs.getBannerConfig().getGradableItype() != null && bs.getBannerConfig().getGradableItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype()))?"<IMG border='0' alt='Yes' title='Section is gradable.' align='absmiddle' src='images/accept.png'>":"", isEditable);
+		cell = initNormalCell((bs.getBannerConfig().getGradableItype() != null && bs.getBannerConfig().getGradableItype().getItype().equals(c.getSchedulingSubpart().getItype().getItype()))?"<IMG border='0' alt='Yes' title='" + BMSG.titleGradableSection() + "' align='absmiddle' src='images/accept.png'>":"", isEditable);
 		cell.setAlign("center");
 	   	row.addContent(cell);
 		if (BannerSection.displayLabHours()){
@@ -390,7 +390,7 @@ public class WebBannerCourseListTableBuilder extends
 	     	cell.setAlign("right");
 	     	row.addContent(cell);
 		}
-	   	cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/accept.png'>":""), isEditable);
+	   	cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='" + BMSG.titlePrintIndicator() + "' align='absmiddle' src='images/accept.png'>":""), isEditable);
 		cell.setAlign("center");
 		row.addContent(cell);
 		cell = initNormalCell(bs.getCrossListIdentifier(), isEditable);
@@ -525,37 +525,37 @@ public class WebBannerCourseListTableBuilder extends
     	TableHeaderCell cell = null;
     	cell = this.headerCell(LABEL, 2, 1);
     	row.addContent(cell);
-    	cell = this.headerCell("Instr Type", 2, 1);
+    	cell = this.headerCell(BMSG.colInstrType(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Sec&nbsp;Id", 2, 1);
+    	cell = this.headerCell(BMSG.colSecId(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Limit", 2, 1);
+    	cell = this.headerCell(MSG.columnLimit(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Grade", 2, 1);
+		cell = this.headerCell(BMSG.colGradable(), 2, 1);
 		row.addContent(cell);
 		if (BannerSection.displayLabHours()){
-			cell = this.headerCell("Lab Hours", 2, 1);
+			cell = this.headerCell(BMSG.colLabHours(), 2, 1);
 			row.addContent(cell);
 		}
-		cell = this.headerCell("Print", 2, 1);
+		cell = this.headerCell(BMSG.colPrint(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Xlst", 2, 1);
+		cell = this.headerCell(BMSG.colXlst(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Link&nbsp;Id", 2, 1);
+		cell = this.headerCell(BMSG.colLinkId(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Link Conn", 2, 1);
+		cell = this.headerCell(BMSG.colLinkConn(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Consent", 2, 1);
+		cell = this.headerCell(MSG.columnConsent(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Instr. Method", 2, 1);
+		cell = this.headerCell(BMSG.colInstrMethod(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Credit", 2, 1);
+		cell = this.headerCell(MSG.columnCredit(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Campus", 2, 1);
+		cell = this.headerCell(MSG.columnCampus(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Class Label", 2, 1);
+		cell = this.headerCell(BMSG.colClassLabel(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("DatePattern", 2, 1);
+		cell = this.headerCell(MSG.columnDatePattern(), 2, 1);
 		row.addContent(cell);
 		
 		cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, 3);
@@ -575,14 +575,14 @@ public class WebBannerCourseListTableBuilder extends
 		cell.setStyleClass("WebTableHeaderSecondRow");
 		row2.addContent(cell);
 		
-		cell = this.headerCell("Instructors", 2, 1);
+		cell = this.headerCell(MSG.columnInstructors(), 2, 1);
 		row.addContent(cell);
 		if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(sessionId)) {
-			cell = this.headerCell("LMS Code", 2, 1);
+			cell = this.headerCell(BMSG.colLMSCode(), 2, 1);
 			row.addContent(cell);
 		}
      	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(sessionId)) {
-     		cell = this.headerCell("Restrictions", 2, 1);
+     		cell = this.headerCell(BMSG.colRestrictions(), 2, 1);
 			row.addContent(cell);
      	}
 		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {

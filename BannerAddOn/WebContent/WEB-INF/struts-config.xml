@@ -23,7 +23,6 @@
    <form-beans>
    		<!-- Custom forms -->
       <form-bean name="bannerMessageResponsesForm" type="org.unitime.banner.form.BannerMessageResponsesForm" />
-	  <form-bean name="bannerOfferingListForm" type="org.unitime.banner.form.BannerCourseListForm" />
 	  <form-bean name="bannerOfferingDetailForm" type="org.unitime.banner.form.BannerOfferingDetailForm" />
 	  <form-bean name="bannerOfferingModifyForm" type="org.unitime.banner.form.BannerOfferingModifyForm" />
 	  <form-bean name="bannerSessionListForm" type="org.unitime.banner.form.BannerSessionListForm" />
@@ -54,76 +53,7 @@
        		path="/bannerMessageResponses.do" />
       </action>
 
-      <action
-         path="/bannerOfferingSearch"
-         attribute="bannerOfferingListForm"
-         input="bannerOfferingSearchTile"
-         name="bannerOfferingListForm"
-         parameter="doit"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-        <forward 
-        	name="showBannerOfferingList" 
-        	path="bannerOfferingListTile" />
-        <forward 
-        	name="showBannerOfferingSearch" 
-        	path="bannerOfferingSearchTile" />
-        <forward 
-        	name="showBannerOfferingDetail" 
-        	path="/bannerOfferingDetail.do" />
-        <forward 
-        	name="editBannerOffering" 
-        	path="bannerOfferingEditTile" />
-      </action>
-      
-      <action
-         path="/bannerOfferingShowSearch"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         attribute="bannerOfferingListForm"
-         input="bannerOfferingSearchTile"
-         name="bannerOfferingListForm"
-         scope="request"
-         validate="false">
-        <forward 
-        	name="showBannerOfferingList" 
-        	path="bannerOfferingListTile" />
-        <forward 
-        	name="showBannerOfferingSearch" 
-        	path="bannerOfferingSearchTile" />
-      </action>
-
-      <action
-         path="/bannerOfferingChange"
-         attribute="bannerOfferingListForm"
-         input="bannerOfferingListTile"
-         name="bannerOfferingListForm"
-         parameter="doit"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-        <forward 
-        	name="showBannerOfferingList" 
-        	path="bannerOfferingListTile" />
-        <forward 
-        	name="showBannerOfferingSearch" 
-        	path="bannerOfferingSearchTile" />
-      </action>
-
-     <action
-         path="/bannerOfferingList"
-         attribute="bannerOfferingListForm"
-         input="bannerOfferingListTile"
-         name="bannerOfferingListForm"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-         <forward 
-         	name="showBannerOfferingList" 
-         	path="bannerOfferingListTile" />
-      </action>
-
-      	<action
+         	<action
           path="/bannerOfferingDetail"
           type="org.springframework.web.struts.DelegatingActionProxy"
           attribute="bannerOfferingDetailForm"
@@ -133,7 +63,7 @@
           validate="false">
 	      <forward
 	        name="showBannerOfferings" 
-	        path="/bannerOfferingShowSearch.do" />
+	        path="/bannerOfferingSearch.action" />
 	      <forward
 	        name="showBannerConfigDetail" 
 	        path="bannerOfferingDetailTile" />

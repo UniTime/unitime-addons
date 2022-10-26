@@ -45,7 +45,9 @@
 
 	String crsNbr = (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
 %>
-<loc:bundle name="BannerMessages" >
+<loc:bundle name="CourseMessages">
+<loc:bundle name="BannerMessages" id="BMSG">
+
 
 	<bean:define name="bannerOfferingDetailForm" property="instrOfferingName" id="instrOfferingName"/>
 	<TABLE width="93%" border="0" cellspacing="0" cellpadding="3">
@@ -65,7 +67,7 @@
 							<A  title="Back to Banner Course Offering List (Alt+I)" 
 								accesskey="I"
 								class="l7" 
-								href="bannerOfferingShowSearch.do?doit=Search&subjectAreaId=<bean:write name="bannerOfferingDetailForm" property="subjectAreaId" />&courseNbr=<%=crsNbr%>#A<bean:write name="bannerOfferingDetailForm" property="instrOfferingId" />"
+								href="bannerOfferingSearch.action?doit=Search&form.subjectAreaId=<bean:write name="bannerOfferingDetailForm" property="subjectAreaId" />&form.courseNbr=<%=crsNbr%>#A<bean:write name="bannerOfferingDetailForm" property="instrOfferingId" />"
 							><bean:write name="bannerOfferingDetailForm" property="instrOfferingName" /></A> 
 					</tt:section-title>						
 					<bean:define id="instrOfferingId">
@@ -257,4 +259,5 @@
 		</TR>
 
 	</TABLE>
+	</loc:bundle>
 	</loc:bundle>

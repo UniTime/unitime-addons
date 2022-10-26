@@ -38,7 +38,7 @@
 					</and>
 				</condition>
 			</item>
-			<item name="Banner Offerings" page="bannerOfferingShowSearch.do">
+			<item name="Banner Offerings" page="bannerOfferingSearch.action">
 							<condition>
 					<hasPermission name="InstructionalOfferings"/>
 				</condition>

@@ -26,16 +26,6 @@
 		<put name="title" type="string" value="Banner Message Responses"/>
 		<put name="body" value="/banner/bannerMessageResponses.jsp" />
   	</definition>
-  	<definition	name="bannerOfferingSearchTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Banner Offerings"/>
-		<put name="body" value="/banner/bannerOfferingSearch.jsp" />
-		<put name="action" value="bannerOfferingSearch" />
-		<put name="showNavigation" value="true" />
-  	</definition> 	
-  	<definition	name="bannerOfferingListTile" extends="bannerOfferingSearchTile">
-		<put name="body2" value="/banner/bannerOfferingList.jsp" />
-		<put name="action2" value="bannerOfferingChange" />
-  	</definition>
   	<definition	name="bannerOfferingDetailTile" extends="pageLayoutDef">
 		<put name="title" type="string" value="Banner Offering Detail"/>
 		<put name="body" value="/banner/bannerOfferingDetail.jsp" />

@@ -23,46 +23,49 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeSet;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.unitime.commons.Debug;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.security.SessionContext;
-import org.unitime.timetable.util.Constants;
 
 
 /**
  * @author Stephanie Schluttenhofer
  */
-public class BannerCourseListForm extends ActionForm {
-
-	/**
-	 * Comment for <code>serialVersionUID</code>
-	 */
+public class BannerCourseListForm implements UniTimeForm {
 	private static final long serialVersionUID = -8198014538320654542L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
 
 	private TreeSet<InstructionalOffering> instructionalOfferings;
-
-	private Collection subjectAreas;
-
+	private Collection<SubjectArea> subjectAreas;
 	private String subjectAreaId;
-
 	private String courseNbr;
-
 	private Boolean showNotOffered;
-
 	private String buttonAction;
-
 	private String subjectAreaAbbv;
-
 	private Boolean isControl;
-
 	private String ctrlInstrOfferingId;
+	
+	public BannerCourseListForm() {
+		reset();
+	}
+	
+	@Override
+	public void validate(UniTimeAction action) {
+		if (subjectAreaId == null || subjectAreaId.trim().isEmpty())
+			action.addFieldError("subjectAreaIds", MSG.errorSubjectRequired());
+	}
+	
+	@Override
+	public void reset() {
+		courseNbr = "";
+		instructionalOfferings = new TreeSet<InstructionalOffering>();
+		subjectAreas = new ArrayList<SubjectArea>();
+	}
+
 	
 	/**
 	 * @return Returns the ctrlInstrOfferingId.
@@ -136,7 +139,7 @@ public class BannerCourseListForm extends ActionForm {
 	 *            The courseNbr to set.
 	 */
 	public void setCourseNbr(String courseNbr) {
-		this.courseNbr = courseNbr.toUpperCase();
+		this.courseNbr = courseNbr;
 	}
 
 	/**
@@ -152,20 +155,6 @@ public class BannerCourseListForm extends ActionForm {
 	 */
 	public void setSubjectAreaId(String subjectAreaId) {
 		this.subjectAreaId = subjectAreaId;
-	}
-
-	// --------------------------------------------------------- Methods
-	/**
-	 * Method reset
-	 * 
-	 * @param mapping
-	 * @param request
-	 */
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-
-		courseNbr = "";
-		instructionalOfferings = new TreeSet<InstructionalOffering>();
-		subjectAreas = new ArrayList();
 	}
 
 	/**
@@ -194,7 +183,7 @@ public class BannerCourseListForm extends ActionForm {
 	 * @param subjectAreas
 	 *            The subjectAreas to set.
 	 */
-	public void setSubjectAreas(Collection subjectAreas) {
+	public void setSubjectAreas(Collection<SubjectArea> subjectAreas) {
 		this.subjectAreas = subjectAreas;
 	}
 
@@ -213,41 +202,9 @@ public class BannerCourseListForm extends ActionForm {
 		this.showNotOffered = showNotOffered;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.apache.struts.action.ActionForm#validate(org.apache.struts.action.ActionMapping,
-	 *      javax.servlet.http.HttpServletRequest)
-	 */
-	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
-
-		if (subjectAreaId == null || subjectAreaId.trim().length() == 0 || subjectAreaId.equals(Constants.BLANK_OPTION_VALUE)) {
-			errors.add("subjectAreaId", new ActionMessage("errors.required", "Subject Area"));
-		}
-
-		return errors;
-	}
 
 	public void setCollections(SessionContext sessionContext, TreeSet<InstructionalOffering> instructionalOfferings) throws Exception {
 		setSubjectAreas(SubjectArea.getUserSubjectAreas(sessionContext.getUser()));
 		setInstructionalOfferings(instructionalOfferings);
-
 	}
-
-
-    protected void finalize() throws Throwable {
-        Debug.debug("!!! Finalizing InstructionalOfferingListForm ... ");
-        instructionalOfferings=null;
-        subjectAreas=null;
-        subjectAreaId=null;
-        courseNbr=null;
-        showNotOffered=null;
-        buttonAction=null;
-        subjectAreaAbbv=null;
-        isControl=null;
-        ctrlInstrOfferingId=null;
-        super.finalize();
-    }
-	
 }
