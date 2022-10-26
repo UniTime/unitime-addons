@@ -21,11 +21,6 @@
 <tiles-definitions>
 	
 	<!-- Custom tiles definitions -->
-
-   	<definition	name="rollForwardColleagueSessionTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Roll Forward Colleague Session"/>
-		<put name="body" value="/colleague/rollForwardColleagueSession.jsp" />
-  	</definition>
    	<definition	name="colleagueMessageResponsesTile" extends="pageLayoutDef">
 		<put name="title" type="string" value="Colleague Message Responses"/>
 		<put name="body" value="/colleague/colleagueMessageResponses.jsp" />

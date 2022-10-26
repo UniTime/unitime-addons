@@ -19,9 +19,7 @@
 */
 package org.unitime.localization.messages;
 
-import org.unitime.colleague.action.ColleagueCourseSearchAction;
-
-public interface ColleagueMessages extends CourseMessages {
+public interface ColleagueMessages extends Messages {
 
 	@DefaultMessage("Assign Restrictions")
 	String actionAssignRestrictions();
@@ -33,10 +31,6 @@ public interface ColleagueMessages extends CourseMessages {
 	String accessUpdateSectionRestrictionAssignment();
 
 	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchColleagueCourses",
-		apply = ColleagueCourseSearchAction.class
-	)
 	String actionSearchColleagueOfferings();
 
 	@DefaultMessage("Update")
@@ -73,4 +67,18 @@ public interface ColleagueMessages extends CourseMessages {
 	@DefaultMessage("Edit Colleague Restrictions")
 	String titleAssignRestrictions();
 
+	@DefaultMessage("Colleague Session")
+	String rollForwardColleagueSession();
+	
+	@DefaultMessage("Colleague Session Data")
+	String rollForwardColleagueSessionData();
+	
+	@DefaultMessage("Failed to roll colleague session data forward.")
+	String errorFailedToRollForwardColleagueSessionData();
+	
+	@DefaultMessage("Failed to perform custom roll colleague session data forward action: {0}")
+	String errorFailedToRollForwardCustomData(String error);
+	
+	@DefaultMessage("Roll Colleague Session Data Forward From Session:")
+	String propRollColleagueSessionDataFrom();
 }

@@ -17,116 +17,86 @@
  * limitations under the License.
  * 
 --%>
-<%@ page language="java" pageEncoding="ISO-8859-1"%>
-<%@ page import="org.unitime.colleague.form.RollForwardColleagueSessionForm"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean"	prefix="bean"%>
-<%@ taglib uri="http://struts.apache.org/tags-html"	prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
- 
-<html> 
-	<head>
-		<title>Roll Forward Session</title>
-	</head>
-	<body>
-<script language="javascript">displayLoading();</script>
-	<%// Get Form 
-			String frmName = "rollForwardColleagueSessionForm";
-			RollForwardColleagueSessionForm frm = (RollForwardColleagueSessionForm) request
-					.getAttribute(frmName);
-%>
-		<html:form action="/rollForwardColleagueSession">
-		<TABLE border="0" cellspacing="5" cellpadding="5">
-		<logic:messagesPresent>
-		<TR>
-			<TD align="left" class="errorCell">
-					<B><U>ERRORS</U></B><BR>
-				<BLOCKQUOTE>
-				<UL>
-				    <html:messages id="error">
-				      <LI>
-						${error}
-				      </LI>
-				    </html:messages>
-			    </UL>
-			    </BLOCKQUOTE>
-			</TD>
-		</TR>
-		</logic:messagesPresent>
-	<logic:notEmpty name="table" scope="request">
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
+<s:form action="rollForwardColleagueSession">
+<table class="unitime-MainTable">
+	<s:if test="!fieldErrors.isEmpty()">
+		<TR><TD align="left" class="errorTable">
+			<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror escape="false"/>
+		</TD></TR>
+	</s:if>
+
+	<s:if test="#request.table != null">
 		<TR><TD>
 			<tt:section-header>
-				<tt:section-title>Roll Forward(s) In Progress</tt:section-title>
-				<%--
-				<html:submit property="op" accesskey="R" styleClass="btn" onclick="displayLoading();">Refresh</html:submit>
-				--%>
+				<tt:section-title><loc:message name="sectRollForwardsInProgress"/></tt:section-title>
 			</tt:section-header>
 		</TD></TR>
 		<TR><TD>
-			<TABLE width="100%" border="0" cellspacing="0" cellpadding="3">
-				<bean:write name="table" scope="request" filter="false"/>
-			</TABLE>
+			<table class='unitime-Table' style="width:100%;">
+				<s:property value="#request.table" escapeHtml="false"/>
+			</table>
 		</TD></TR>
 		<TR><TD>&nbsp;</TD></TR>
-	</logic:notEmpty>
-	<logic:notEmpty name="log" scope="request">
+	</s:if>
+	
+	<s:hidden name="log" value="%{#request.logid}" id="log"/>
+	<s:if test="#request.log != null">
 		<TR>
-			<TD colspan='2'>
+			<TD>
 				<tt:section-header>
 					<tt:section-title>
-						Log of <bean:write name="logname" scope="request" filter="false"/>
+						<loc:message name="sectionRollForwardLog"><s:property value="#request.logname"/></loc:message>
 					</tt:section-title>
-					<bean:define id="logid" name="logid" scope="request"/>
-					<input type="hidden" name="log" value="<%=logid%>">
-					<html:submit onclick="displayLoading();" accesskey="R" property="op" value="Refresh" title="Refresh Log (Alt+R)"/>
+					<s:submit name="op" value="%{#msg.actionRefreshLog()}"
+						accesskey="%{#msg.accessRefreshLog()}" title="%{#msg.titleRefreshLog(#msg.accessRefreshLog())}"/>
 				</tt:section-header>
 			</TD>
 		</TR>
 		<TR>
-  			<TD colspan='2'>
+  			<TD>
   				<blockquote>
-	  				<bean:write name="log" scope="request" filter="false"/>
+  					<s:property value="#request.log" escapeHtml="false"/>
   				</blockquote>
   			</TD>
 		</TR>
-	</logic:notEmpty>
-				
+	</s:if>
+
 	<TR><TD>
 		<tt:section-header>
-			<tt:section-title>Roll Forward Actions</tt:section-title>
-					<html:submit property="op" accesskey="M" styleClass="btn" onclick="displayLoading();">
-					<bean:message key="button.rollForward" />
-				</html:submit>
+			<tt:section-title><loc:message name="sectRollForwardActions"/></tt:section-title>
+				<s:submit name="op" value="%{#msg.actionRollForward()}"
+						accesskey="%{#msg.accessRollForward()}" title="%{#msg.titleRollForward(#msg.accessRollForward())}"/>
 		</tt:section-header>
 	</TD></TR>
-		
 		<tr>
-			<td valign="top" nowrap ><b>Session To Roll Foward To: </b>
-			<html:select style="width:200;" property="sessionToRollForwardTo" onchange="displayLoading();submit();">
-			<html:optionsCollection property="toSessions" value="uniqueId" label="label"  /></html:select>
+			<td valign="middle" nowrap ><b><loc:message name="propSessionToRollForwardTo"/></b>
+			<s:select name="form.sessionToRollForwardTo" style="min-width:200px;" onchange="document.getElementById('log').value = '';submit();"
+				list="form.toSessions" listKey="uniqueId" listValue="label"/>
+		</tr>
+		<tr><td>&nbsp;</td></tr>
+		<tr>
+			<td valign="top" nowrap ><s:checkbox name="form.rollForwardColleagueSession"/> <loc:message name="propRollColleagueSessionDataFrom" id="CMSG"/>
+			<s:select name="form.sessionToRollColleagueDataForwardFrom" style="min-width:200px;"
+				list="form.fromSessions" listKey="uniqueId" listValue="label"/>
 			</td>			
 		</tr>
 		<tr>
-		<td>&nbsp;
-		</td>
+			<td class="WelcomeRowHead">
+			&nbsp;
+			</td>
 		</tr>
 		<tr>
-			<td valign="top" nowrap ><html:checkbox name="<%=frmName%>" property="rollForwardColleagueSession"/> Roll Colleague Session Data Forward From Session: 
-			<html:select style="width:200;" property="sessionToRollColleagueDataForwardFrom">
-			<html:optionsCollection property="fromSessions" value="uniqueId" label="label" /></html:select>
-			</td>			
-		</tr>
-		<tr><td>&nbsp;<br>&nbsp;<br></td></tr>
-				<tr>
-			<td align="right">
-					<html:submit property="op" accesskey="M" styleClass="btn" onclick="displayLoading();">
-						<bean:message key="button.rollForward" />
-					</html:submit>
+			<td align="right" colspan="2">
+				<s:submit name="op" value="%{#msg.actionRollForward()}"
+					accesskey="%{#msg.accessRollForward()}" title="%{#msg.titleRollForward(#msg.accessRollForward())}"/>
 			</TD>
 		</TR>
-		</TABLE>
-		</html:form>
-	<script language="javascript">hideLoading();</script>
-	</body>
-</html>
-
+	</table>
+</s:form>
+</loc:bundle>
+</loc:bundle>

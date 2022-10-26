@@ -44,6 +44,7 @@ import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
+import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.interfaces.ExternalLinkLookup;
@@ -65,7 +66,8 @@ import org.unitime.timetable.webutil.BackTracker;
 
 @Service("/colleagueOfferingDetail")
 public class ColleagueOfferingDetailAction extends Action {
-	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
+	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 
 	@Autowired SessionContext sessionContext;
 
@@ -122,7 +124,7 @@ public class ColleagueOfferingDetailAction extends Action {
 		    if (courseOfferingId==null && frm.getCourseOfferingId()!=null)
 		    	courseOfferingId=frm.getCourseOfferingId().toString();
 			if(courseOfferingId==null || courseOfferingId.trim().length()==0)
-			    throw new Exception (MSG.missingCourseOfferingId(courseOfferingId));
+			    throw new Exception (CMSG.missingCourseOfferingId(courseOfferingId));
 			else  {
 		    	sessionContext.checkPermission(getInstructionalOfferingIdForCourseIdStr(courseOfferingId), "InstructionalOffering", Right.InstructionalOfferingDetail);
 

@@ -225,7 +225,7 @@
     </target>
 
 	<target name="compile-java" depends="prepare">
-		<javac debug="${java.debug}" optimize="${java.optimize}" destdir="${build.dir}" includeantruntime="false">
+		<javac debug="${java.debug}" optimize="${java.optimize}" destdir="${build.dir}" includeantruntime="false" encoding="utf-8">
 			<compilerarg value="-XDignore.symbol.file"/>
 			<src path="${build_src.dir}" />
 			<classpath refid="build.classpath" />

@@ -51,7 +51,7 @@
 					<hasPermission name="AcademicSessions"/>
 				</condition>
 			</item>
-			<item name="Roll Forward Colleague Session" page="rollForwardColleagueSession.do">
+			<item name="Roll Forward Colleague Session" page="rollForwardColleagueSession.action">
 				<condition>
 					<hasPermission name="SessionRollForward"/>
 				</condition>

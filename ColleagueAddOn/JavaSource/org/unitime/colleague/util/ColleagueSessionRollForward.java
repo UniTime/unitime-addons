@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.unitime.colleague.form.RollForwardColleagueSessionForm;
 import org.unitime.colleague.interfaces.ExternalSessionRollForwardCustomizationInterface;
 import org.unitime.colleague.model.ColleagueRestriction;
@@ -39,7 +37,10 @@ import org.unitime.colleague.model.dao.ColleagueRestrictionDAO;
 import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.colleague.model.dao.ColleagueSessionDAO;
 import org.unitime.colleague.model.dao.ColleagueSuffixDefDAO;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Session;
@@ -53,6 +54,7 @@ import org.unitime.timetable.util.SessionRollForward;
  *
  */
 public class ColleagueSessionRollForward extends SessionRollForward {
+	protected static final ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 	private static ExternalSessionRollForwardCustomizationInterface externalSessionRollForwardCustomization;
 
 	/**
@@ -62,7 +64,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 		super(log);
 	}
 	
-	public void rollColleagueSessionDataForward(ActionMessages errors, RollForwardColleagueSessionForm rollForwardColleagueSessionForm){
+	public void rollColleagueSessionDataForward(RollForwardErrors errors, RollForwardColleagueSessionForm rollForwardColleagueSessionForm){
 		Session toSession = Session.getSessionById(rollForwardColleagueSessionForm.getSessionToRollForwardTo());
 		Session fromSession = Session.getSessionById(rollForwardColleagueSessionForm.getSessionToRollColleagueDataForwardFrom());
 		
@@ -74,8 +76,10 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			//rollForwardColleagueCourseData(toSession);
 			//updateClassSuffixes(toSession);
 		} catch (Exception e) {
-			iLog.error("Failed to roll colleague session data forward.", e);
-			errors.add("rollForward", new ActionMessage("errors.rollForward", "Colleague Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to roll colleague session data forward."));
+			String type = CMSG.rollForwardColleagueSessionData();
+			String msg = CMSG.errorFailedToRollForwardColleagueSessionData();
+			iLog.error(msg, e);
+			errors.addFieldError("rollForward", MSG.errorRollingForward(type, fromSession.getLabel(), toSession.getLabel(), msg));
 		}
 		try {
 			ExternalSessionRollForwardCustomizationInterface customRollForwardAction = getExternalSessionRollForwardCustomization();
@@ -83,12 +87,15 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 				customRollForwardAction.doCustomRollFowardAction(fromSession, toSession);
 			}
 		} catch (Exception e) {
-			iLog.error("Failed to perform custom roll collegue session data forward action.", e);
-			errors.add("rollForward", new ActionMessage("errors.rollForward", "Colleague Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to perform custom roll collegue session data forward action: " + e.getMessage()));
+			String type = CMSG.rollForwardColleagueSessionData();
+			String msg = CMSG.errorFailedToRollForwardCustomData(e.getMessage());
+			iLog.error(msg, e);
+			errors.addFieldError("rollForward", MSG.errorRollingForward(type, fromSession.getLabel(), toSession.getLabel(), msg));
 		}
 		
 	}
 
+	@SuppressWarnings("unused")
 	private void rollForwardColleagueCourseData(Session toSession) {
 		Long toSessionId = toSession.getUniqueId();
 		ColleagueSession cs = ColleagueSession.findColleagueSessionForSession(toSessionId, null);
@@ -160,6 +167,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void updateClassSuffixes(Session toSession) {
 		Long toSessionId = toSession.getUniqueId();
 		ColleagueSession bs = ColleagueSession.findColleagueSessionForSession(toSessionId, null);

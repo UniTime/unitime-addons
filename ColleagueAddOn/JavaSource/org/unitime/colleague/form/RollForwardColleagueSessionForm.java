@@ -21,12 +21,10 @@ package org.unitime.colleague.form;
 
 import java.util.ArrayList;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.unitime.colleague.model.ColleagueSession;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.ColleagueMessages;
+import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
 import org.unitime.timetable.form.RollForwardSessionForm;
 import org.unitime.timetable.model.Session;
 
@@ -36,23 +34,14 @@ import org.unitime.timetable.model.Session;
  *
  */
 public class RollForwardColleagueSessionForm extends RollForwardSessionForm  {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -5708531647077677270L;
-	/**
-	 * 
-	 */
+	protected static final ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 
 	private Long sessionToRollColleagueDataForwardFrom;
 	private Boolean rollForwardColleagueSession;
 	
-	/**
-	 * 
-	 */
 	public RollForwardColleagueSessionForm() {
-		// do nothing
+		super();
 	}
 
 	public Long getSessionToRollColleagueDataForwardFrom() {
@@ -64,17 +53,17 @@ public class RollForwardColleagueSessionForm extends RollForwardSessionForm  {
 		this.sessionToRollColleagueDataForwardFrom = sessionToRollColleagueDataForwardFrom;
 	}
 
-	public void validateSessionToRollForwardTo(ActionErrors errors){
+	public void validateSessionToRollForwardTo(RollForwardErrors errors){
 
 		Session s = Session.getSessionById(getSessionToRollForwardTo());
 		if (s == null){
-   			errors.add("mustSelectSession", new ActionMessage("errors.rollForward.missingToSession"));
+			errors.addFieldError("mustSelectSession", MSG.errorRollForwardMissingToSession());
    			return;
 		}
 		
 		if (getRollForwardColleagueSession().booleanValue()){
 			ArrayList<ColleagueSession> list = new ArrayList<ColleagueSession>();
-			validateRollForward(errors, s, getSessionToRollColleagueDataForwardFrom(), "Colleague Session", list);			
+			validateRollForward(errors, s, getSessionToRollColleagueDataForwardFrom(), CMSG.rollForwardColleagueSession(), list);			
  		}
 	
 	}
@@ -86,16 +75,12 @@ public class RollForwardColleagueSessionForm extends RollForwardSessionForm  {
 	public void setRollForwardColleagueSession(Boolean rollForwardColleagueSession) {
 		this.rollForwardColleagueSession = rollForwardColleagueSession;
 	}
-	
-	public void init() {
-		super.init();
 
+	@Override
+	public void reset() {
+		super.reset();
 		rollForwardColleagueSession = Boolean.valueOf(false);
 		sessionToRollColleagueDataForwardFrom = null;
-	}
-
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		init();
 	}
 	
 	public void copyTo(RollForwardColleagueSessionForm form) {

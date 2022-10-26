@@ -20,6 +20,8 @@
 package org.unitime.colleague.action;
 
 import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unitime.colleague.form.ColleagueCourseListForm;
 import org.unitime.localization.impl.Localization;
-import org.unitime.localization.impl.LocalizedLookupDispatchAction;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.localization.messages.Messages;
 import org.unitime.timetable.defaults.SessionAttribute;
@@ -44,6 +45,7 @@ import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
+import org.unitime.timetable.spring.struts.SpringAwareLookupDispatchAction;
 import org.unitime.timetable.webutil.BackTracker;
 
 
@@ -53,7 +55,7 @@ import org.unitime.timetable.webutil.BackTracker;
  */
 
 @Service("/colleagueOfferingSearch")
-public class ColleagueCourseSearchAction extends LocalizedLookupDispatchAction {
+public class ColleagueCourseSearchAction extends SpringAwareLookupDispatchAction {
 	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
 
 	@Autowired SessionContext sessionContext;
@@ -164,5 +166,11 @@ public class ColleagueCourseSearchAction extends LocalizedLookupDispatchAction {
         
     }
 
+	@Override
+	protected Map<String, String> getKeyMethodMap() {
+		Map<String, String> ret = new HashMap<String, String>();
+		ret.put(MSG.actionSearchColleagueOfferings(), "searchColleagueCourses"); 
+		return ret;
+	}
 	
 }

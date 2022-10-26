@@ -37,6 +37,7 @@ import org.unitime.colleague.model.dao.ColleagueRestrictionDAO;
 import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
+import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.model.Preference;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.util.DynamicList;
@@ -47,8 +48,8 @@ import org.unitime.timetable.util.DynamicListObjectFactory;
  * @author Stephanie Schluttenhofer
  */
 public class SectionRestrictionAssignmentForm extends ActionForm {
-
-	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
+	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 	
 	private String op;
     private Integer subjectAreaId;
@@ -125,7 +126,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
 		ActionErrors errors = new ActionErrors();
 
-        if(op.equals(MSG.actionUpdateSectionRestrictionAssignment()) || op.equals(MSG.actionNextIO()) || op.equals(MSG.actionPreviousIO())) {	
+        if(op.equals(CMSG.actionUpdateSectionRestrictionAssignment()) || op.equals(MSG.actionNextIO()) || op.equals(MSG.actionPreviousIO())) {	
             // Check Added Restrictions
 	        for (int i = 0; i < sectionIds.size(); i++) {
 	        	String sectionId = (String) sectionIds.get(i);
@@ -133,7 +134,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	        	for (int j = i + 1; j < sectionIds.size(); j++) {
 	        		if (((String) restrictionUids.get(j)).length() > 0) {
 		        		if(sectionIds.get(j).equals(sectionId) && restrictionUids.get(j).equals(restrictionUid)) {
-		        			errors.add("duplicateRestriction", new ActionMessage("errors.generic", MSG.errorDuplicateRestrictionForSection()));
+		        			errors.add("duplicateRestriction", new ActionMessage("errors.generic", CMSG.errorDuplicateRestrictionForSection()));
 		        		}
 	        		}
 	        	}

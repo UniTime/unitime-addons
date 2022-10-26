@@ -22,7 +22,6 @@
 
    <form-beans>
    		<!-- Custom forms -->
-      <form-bean name="rollForwardColleagueSessionForm" type="org.unitime.colleague.form.RollForwardColleagueSessionForm" />
       <form-bean name="colleagueMessageResponsesForm" type="org.unitime.colleague.form.ColleagueMessageResponsesForm" />
 	  <form-bean name="colleagueOfferingListForm" type="org.unitime.colleague.form.ColleagueCourseListForm" />
 	  <form-bean name="colleagueOfferingDetailForm" type="org.unitime.colleague.form.ColleagueOfferingDetailForm" />
@@ -33,22 +32,6 @@
 
    <action-mappings>
    	<!-- Custom actions -->
-	  <action
-      attribute="rollForwardColleagueSessionForm"
-      input="rollForwardColleagueSessionTile"
-      name="rollForwardColleagueSessionForm"
-      path="/rollForwardColleagueSession"
-      scope="request"
-      validate="false"
-      type="org.springframework.web.struts.DelegatingActionProxy" >
-       <forward 
-       		name="displayRollForwardColleagueSessionForm" 
-       		path="rollForwardColleagueSessionTile" />
-       <forward 
-       		name="submit" 
-       		path="/rollForwardColleagueSession.do" />
-      </action>
-
 	  <action
       attribute="colleagueMessageResponsesForm"
       input="colleagueMessageResponsesTile"

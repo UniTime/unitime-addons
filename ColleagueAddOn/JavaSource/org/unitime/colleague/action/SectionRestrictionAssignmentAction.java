@@ -44,6 +44,7 @@ import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.colleague.util.ColleagueInstrOffrConfigChangeAction;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
+import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.defaults.CommonValues;
 import org.unitime.timetable.defaults.UserProperty;
 import org.unitime.timetable.model.ChangeLog;
@@ -66,8 +67,8 @@ import org.unitime.timetable.solver.WebSolver;
  */
 @Service("/sectionRestrictionAssignment")
 public class SectionRestrictionAssignmentAction extends Action {
-
-	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
+	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 	
 	@Autowired SessionContext sessionContext;
 	
@@ -160,16 +161,16 @@ public class SectionRestrictionAssignmentAction extends Action {
         request.setAttribute("restrictionList", restrictions);
 
         // First access to screen
-        if(op.equalsIgnoreCase(MSG.actionAssignRestrictions())) {
+        if(op.equalsIgnoreCase(CMSG.actionAssignRestrictions())) {
             doLoad(request, frm, instrOffrConfigId, ioc, co);
         }
         
-		if(op.equals(MSG.actionUpdateSectionRestrictionAssignment()) ||
+		if(op.equals(CMSG.actionUpdateSectionRestrictionAssignment()) ||
         		op.equals(MSG.actionNextIO()) ||
         		op.equals(MSG.actionPreviousIO()) ||
-        		op.equals(MSG.actionUnassignAllRestrictionsFromConfig())) {
+        		op.equals(CMSG.actionUnassignAllRestrictionsFromConfig())) {
 
-            if (op.equals(MSG.actionUnassignAllRestrictionsFromConfig())) {
+            if (op.equals(CMSG.actionUnassignAllRestrictionsFromConfig())) {
             	frm.unassignAllRestrictions();
 //            	ColleagueInstrOffrConfigChangeAction ciocca = new ColleagueInstrOffrConfigChangeAction();
 //            	ciocca.performExternalInstrOffrConfigChangeAction(ioc.getInstructionalOffering(), iocDao.getSession());
@@ -207,12 +208,12 @@ public class SectionRestrictionAssignmentAction extends Action {
                 	
 
     	            if (op.equals(MSG.actionNextIO())) {
-    	            	response.sendRedirect(response.encodeURL("sectionRestrictionAssignment.do?uid="+frm.getNextId()+"&co="+ co.getUniqueId().toString()+"&op="+URLEncoder.encode(MSG.actionAssignRestrictions(), "UTF-8")));
+    	            	response.sendRedirect(response.encodeURL("sectionRestrictionAssignment.do?uid="+frm.getNextId()+"&co="+ co.getUniqueId().toString()+"&op="+URLEncoder.encode(CMSG.actionAssignRestrictions(), "UTF-8")));
     	            	return null;
     	            }
 
     	            if (op.equals(MSG.actionPreviousIO())) {
-    	            	response.sendRedirect(response.encodeURL("sectionRestrictionAssignment.do?uid="+frm.getPreviousId()+"&co="+ co.getUniqueId().toString()+"&op="+URLEncoder.encode(MSG.actionAssignRestrictions(), "UTF-8")));
+    	            	response.sendRedirect(response.encodeURL("sectionRestrictionAssignment.do?uid="+frm.getPreviousId()+"&co="+ co.getUniqueId().toString()+"&op="+URLEncoder.encode(CMSG.actionAssignRestrictions(), "UTF-8")));
     	            	return null;
     	            }
 
@@ -234,7 +235,7 @@ public class SectionRestrictionAssignmentAction extends Action {
         	frm.deleteRestriction();
         }
 
-        if (op.equals(MSG.altAdd())) {
+        if (op.equals(CMSG.altAdd())) {
         	frm.addRestriction();
         }
 
