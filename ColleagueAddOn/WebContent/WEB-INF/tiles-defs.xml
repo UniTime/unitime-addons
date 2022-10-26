@@ -25,16 +25,6 @@
 		<put name="title" type="string" value="Colleague Message Responses"/>
 		<put name="body" value="/colleague/colleagueMessageResponses.jsp" />
   	</definition>
-  	<definition	name="colleagueOfferingSearchTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Colleague Offerings"/>
-		<put name="body" value="/colleague/colleagueOfferingSearch.jsp" />
-		<put name="action" value="colleagueOfferingSearch" />
-		<put name="showNavigation" value="true" />
-  	</definition> 	
-  	<definition	name="colleagueOfferingListTile" extends="colleagueOfferingSearchTile">
-		<put name="body2" value="/colleague/colleagueOfferingList.jsp" />
-		<put name="action2" value="colleagueOfferingChange" />
-  	</definition>
   	<definition	name="colleagueOfferingDetailTile" extends="pageLayoutDef">
 		<put name="title" type="string" value="Colleague Offering Detail"/>
 		<put name="body" value="/colleague/colleagueOfferingDetail.jsp" />

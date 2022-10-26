@@ -27,7 +27,7 @@
 					<hasPermission name="InstructionalOfferings"/>
 				</condition>
 			</item>
-			<item name="Colleague Offerings" page="colleagueOfferingShowSearch.do">
+			<item name="Colleague Offerings" page="colleagueOfferingSearch.action">
 							<condition>
 					<hasPermission name="InstructionalOfferings"/>
 				</condition>

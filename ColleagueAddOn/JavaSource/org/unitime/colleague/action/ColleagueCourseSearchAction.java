@@ -20,32 +20,26 @@
 package org.unitime.colleague.action;
 
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.hibernate.HibernateException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.colleague.form.ColleagueCourseListForm;
+import org.unitime.colleague.webutil.WebColleagueCourseListTableBuilder;
+import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
-import org.unitime.localization.messages.Messages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
+import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
-import org.unitime.timetable.spring.struts.SpringAwareLookupDispatchAction;
 import org.unitime.timetable.webutil.BackTracker;
 
 
@@ -53,124 +47,215 @@ import org.unitime.timetable.webutil.BackTracker;
 /**
  * @author Stephanie Schluttenhofer
  */
+@Action(value="colleagueOfferingSearch", results = {
+		@Result(name = "showColleagueOfferingList", type = "tiles", location = "colleagueOfferingSearch.tiles"),
+		@Result(name = "showColleagueOfferingSearch", type = "tiles", location = "colleagueOfferingSearch.tiles"),
+		@Result(name = "showColleagueOfferingDetail", type = "redirect", location = "/colleagueOfferingDetail.do",
+			params = {"op" , "view", "co", "${co}"}
+		)
+	})
+@TilesDefinition(name = "colleagueOfferingSearch.tiles", extend =  "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Colleague Offerings"),
+		@TilesPutAttribute(name = "body", value = "/colleague/colleagueOfferingSearch.jsp"),
+		@TilesPutAttribute(name = "showNavigation", value = "true"),
+		@TilesPutAttribute(name = "showSolverWarnings", value = "assignment")
+})
+public class ColleagueCourseSearchAction extends UniTimeAction<ColleagueCourseListForm> {
+	private static final long serialVersionUID = 6887043745334166211L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 
-@Service("/colleagueOfferingSearch")
-public class ColleagueCourseSearchAction extends SpringAwareLookupDispatchAction {
-	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
+	private String doit;
+	private Long co;
+	private boolean showTable = false;
 
-	@Autowired SessionContext sessionContext;
-	
-	protected Messages getMessages() {
-		return MSG;
-	}
-		
-	/** 
-	 * Method execute
-	 * @param mapping
-	 * @param form
-	 * @param request
-	 * @param response
-	 * @return ActionForward
-	 * @throws HibernateException
-	 */
-
-	public ActionForward searchColleagueCourses(
-			ActionMapping mapping,
-			ActionForm form,
-			HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
-
-
-	        sessionContext.checkPermission(Right.InstructionalOfferings);
-        
-	        // Check that a valid subject area is selected
-		    ColleagueCourseListForm frm = (ColleagueCourseListForm) form;
-		    ActionMessages errors = null;
-		    errors = frm.validate(mapping, request);
-		    
-		    // Validation fails
-		    if(errors.size()>0) {
-			    saveErrors(request, errors);
-			    frm.setCollections(sessionContext, null);
-			    return mapping.findForward("showColleagueOfferingSearch");
-		    }
-	        
-		    // Set Session Variables
-		    sessionContext.setAttribute(SessionAttribute.OfferingsSubjectArea, frm.getSubjectAreaId().toString());
-		    sessionContext.setAttribute(SessionAttribute.OfferingsCourseNumber, frm.getCourseNbr());
-	        
-	        // Perform Search
-		    frm.setCollections(sessionContext, getInstructionalOfferings(sessionContext.getUser().getCurrentAcademicSessionId(), request, frm));
-		    TreeSet<InstructionalOffering> instructionalOfferings = frm.getInstructionalOfferings();
+	public Long getCo() { return co; }
+	public void setCo(Long co) { this.co = co; }
+	public String getDoit() { return doit; }
+	public void setDoit(String doit) { this.doit = doit; }
+	public boolean isShowTable() { return showTable; }
+	public void setShowTable(boolean showTable) { this.showTable = showTable; }
 			
-			// No results returned
-			if (instructionalOfferings.isEmpty()) {
-			    errors.add("searchResult", new ActionMessage("errors.generic", "No records matching the search criteria were found."));
-			    saveErrors(request, errors);
-			    return mapping.findForward("showColleagueOfferingSearch");
-			} 
-			else {
-
-				BackTracker.markForBack(
-						request, 
-						"colleagueOfferingSearch.do?op=Back&doit=Search&loadInstrFilter=1&subjectAreaId="+frm.getSubjectAreaId()+"&courseNbr="+URLEncoder.encode(frm.getCourseNbr(), "utf-8"), 
-						"Colleague Offerings ("+
-							(frm.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(frm.getSubjectAreaId()))).getSubjectAreaAbbreviation():frm.getSubjectAreaAbbv())+
-							(frm.getCourseNbr()==null || frm.getCourseNbr().length()==0?"":" "+frm.getCourseNbr())+
-							")", 
-						true, true);
-
-				if (request.getParameter("op")==null || 
-			            (request.getParameter("op")!=null && !request.getParameter("op").equalsIgnoreCase("Back")) )  {
-			        
-				    // Search produces 1 result - redirect to colleague offering detail
-				    if(instructionalOfferings.size()==1 && instructionalOfferings.first().getCourseOfferings().size() == 1) {
-				    	Long courseOfferingId = ((CourseOffering)instructionalOfferings.first().getCourseOfferings().iterator().next()).getUniqueId();
-				    	if (courseOfferingId != null){
-					        request.setAttribute("op", "view");
-					        request.setAttribute("co", courseOfferingId.toString());   
-					        return mapping.findForward("showColleagueOfferingDetail");
-				    	}
-				    }
-			    }
-			    
-			    return mapping.findForward("showColleagueOfferingList");
-			}
+	@Override
+	public String execute() throws Exception {
+		if (form == null) form = new ColleagueCourseListForm();
+		sessionContext.checkPermission(Right.InstructionalOfferings);
+		
+		if (CMSG.actionSearchColleagueOfferings().equals(doit) || "Search".equals(doit)) {
+			return searchColleagueCourses();
 		}
-	
-	
-	public ActionForward exportPdf(
-			ActionMapping mapping,
-			ActionForm form,
-			HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
+		
+		BackTracker.markForBack(request, null, null, false, true); //clear back list
+        
+        // Check if subject area / course number saved to session
+	    Object sa = sessionContext.getAttribute(SessionAttribute.OfferingsSubjectArea);
+	    Object cn = sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
+	    String subjectAreaId = "";
+	    String courseNbr = "";
 	    
-        ActionForward fwd = searchColleagueCourses(mapping, form, request, response);
-                
-        return fwd;
+	    if ( (sa==null || sa.toString().trim().length()==0) 
+	            && (cn==null || cn.toString().trim().length()==0) ) {
+		    // use session variables from class search  
+		    sa = sessionContext.getAttribute(SessionAttribute.ClassesSubjectAreas);
+		    cn = sessionContext.getAttribute(SessionAttribute.ClassesCourseNumber);
+		    
+		    // Use first subject area
+		    if (sa!=null) {
+		       String saStr = sa.toString();
+		       if (saStr.indexOf(",")>0) {
+		           sa = saStr.substring(0, saStr.indexOf(","));
+		       }
+		    }
+	    }
+	    	    
+	    // Subject Area is saved to the session - Perform automatic search
+	    if(sa!=null) {
+	        subjectAreaId = sa.toString();
+	        
+	        try {
+	            
+		        if(cn!=null && cn.toString().trim().length()>0)
+		            courseNbr = cn.toString();
+		        
+		        Debug.debug("Subject Area: " + subjectAreaId);
+		        Debug.debug("Course Number: " + courseNbr);
+		        
+		        form.setSubjectAreaId(subjectAreaId);
+		        form.setCourseNbr(courseNbr);
+		        
+		        if(doSearch()) {
+					BackTracker.markForBack(
+							request, 
+							"colleagueOfferingSearch.action?doit=Search&form.subjectAreaId="+form.getSubjectAreaId()+"&form.courseNbr="+form.getCourseNbr(), 
+							CMSG.sectColleagueOfferings() + " ("+
+								(form.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(form.getSubjectAreaId()))).getSubjectAreaAbbreviation():form.getSubjectAreaAbbv())+
+								(form.getCourseNbr()==null || form.getCourseNbr().length()==0?"":" "+form.getCourseNbr())+
+								")", 
+							true, true);
+					setShowTable(true);
+		            return "showColleagueOfferingList";
+		        	
+		        }
+	        }
+	        catch (NumberFormatException nfe) {
+	            Debug.error("Subject Area Id session attribute is corrupted. Resetting ... ");
+	            sessionContext.removeAttribute(SessionAttribute.OfferingsSubjectArea);
+	            sessionContext.removeAttribute(SessionAttribute.OfferingsCourseNumber);
+	        }
+	    }
+	    
+	    // No session attribute found - Load subject areas
+	    else {	        
+	        form.setCollections(sessionContext, null);
+	        
+	        // Check if only 1 subject area exists
+	        Set s = (Set) form.getSubjectAreas();
+	        if(s.size()==1) {
+	            Debug.debug("Exactly 1 subject area found ... ");
+	            form.setSubjectAreaId(((SubjectArea) s.iterator().next()).getUniqueId().toString());
+		        if (doSearch()) {
+					BackTracker.markForBack(
+							request, 
+							"colleagueOfferingSearch.action?doit=Search&form.subjectAreaId="+form.getSubjectAreaId()+"&form.courseNbr="+form.getCourseNbr(), 
+							CMSG.sectColleagueOfferings() + " ("+
+								(form.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(form.getSubjectAreaId()))).getSubjectAreaAbbreviation():form.getSubjectAreaAbbv())+
+								(form.getCourseNbr()==null || form.getCourseNbr().length()==0?"":" "+form.getCourseNbr())+
+								")", 
+							true, true);
+					setShowTable(true);
+		            return "showColleagueOfferingList";
+		        }
+	        }
+	    }
+	    
+	    setShowTable(false);
+        return "showColleagueOfferingSearch";
+	}
+
+	public String searchColleagueCourses() throws Exception {
+		sessionContext.checkPermission(Right.InstructionalOfferings);
+        
+        // Check that a valid subject area is selected
+	    form.validate(this);
+	    
+	    // Validation fails
+	    if (hasFieldErrors()) {
+		    form.setCollections(sessionContext, null);
+		    setShowTable(false);
+		    return "showColleagueOfferingSearch";
+	    }
+        
+	    // Set Session Variables
+	    sessionContext.setAttribute(SessionAttribute.OfferingsSubjectArea, form.getSubjectAreaId().toString());
+	    sessionContext.setAttribute(SessionAttribute.OfferingsCourseNumber, form.getCourseNbr());
+        
+        // Perform Search
+	    form.setCollections(sessionContext, getInstructionalOfferings());
+	    TreeSet<InstructionalOffering> instructionalOfferings = form.getInstructionalOfferings();
+		
+		// No results returned
+		if (instructionalOfferings.isEmpty()) {
+			addFieldError("searchResult", MSG.errorNoRecords());
+			setShowTable(false);
+		    return "showColleagueOfferingSearch";
+		} else {
+
+			BackTracker.markForBack(
+					request, 
+					"colleagueOfferingSearch.action?op=Back&doit=Search&form.subjectAreaId="+form.getSubjectAreaId()+"&form.courseNbr="+URLEncoder.encode(form.getCourseNbr(), "utf-8"),
+					CMSG.sectColleagueOfferings() + " ("+
+						(form.getSubjectAreaAbbv()==null?((new SubjectAreaDAO()).get(Long.valueOf(form.getSubjectAreaId()))).getSubjectAreaAbbreviation():form.getSubjectAreaAbbv())+
+						(form.getCourseNbr()==null || form.getCourseNbr().length()==0?"":" "+form.getCourseNbr())+
+						")", 
+					true, true);
+
+			if ("Back".equals(op)) {
+		        
+			    // Search produces 1 result - redirect to colleague offering detail
+			    if(instructionalOfferings.size()==1 && instructionalOfferings.first().getCourseOfferings().size() == 1) {
+			    	Long courseOfferingId = ((CourseOffering)instructionalOfferings.first().getCourseOfferings().iterator().next()).getUniqueId();
+			    	if (courseOfferingId != null){
+			    		setCo(courseOfferingId);   
+				        return "showColleagueOfferingDetail";
+			    	}
+			    }
+		    }
+		    
+			setShowTable(true);
+		    return "showColleagueOfferingList";
+		}
 	}
 	
 	
-	@SuppressWarnings("unchecked")
-	public static TreeSet<InstructionalOffering> getInstructionalOfferings(
-            Long sessionId, HttpServletRequest request, ColleagueCourseListForm form) {
-                
+	public TreeSet<InstructionalOffering> getInstructionalOfferings() {
+		Long sessionId = sessionContext.getUser().getCurrentAcademicSessionId();
         boolean fetchStructure = true;
         boolean fetchCredits = false;
         boolean fetchInstructors = false;
         boolean fetchPreferences = false;
         boolean fetchAssignments = true;
         boolean fetchReservations = false;
-        
         return(InstructionalOffering.search(sessionId, Long.valueOf(form.getSubjectAreaId()), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
-        
     }
-
-	@Override
-	protected Map<String, String> getKeyMethodMap() {
-		Map<String, String> ret = new HashMap<String, String>();
-		ret.put(MSG.actionSearchColleagueOfferings(), "searchColleagueCourses"); 
-		return ret;
+	
+	private boolean doSearch() throws Exception {
+	    form.setCollections(sessionContext, getInstructionalOfferings());
+	    return !form.getInstructionalOfferings().isEmpty();
 	}
 	
+	public String printTable() throws Exception {
+		if (form.getInstructionalOfferings() != null && form.getInstructionalOfferings().size() > 0){
+			new WebColleagueCourseListTableBuilder().htmlTableForColleagueOfferings(
+				sessionContext,
+				getClassAssignmentService().getAssignment(),
+		        form, 
+		        Long.valueOf(form.getSubjectAreaId()),	
+		        true, 
+		        form.getCourseNbr()==null || form.getCourseNbr().length()==0,
+		        getPageContext().getOut(),
+		        request.getParameter("backType"),
+		        request.getParameter("backId"));
+		}
+		return "";
+	}
 }

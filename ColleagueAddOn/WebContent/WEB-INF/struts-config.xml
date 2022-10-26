@@ -23,7 +23,6 @@
    <form-beans>
    		<!-- Custom forms -->
       <form-bean name="colleagueMessageResponsesForm" type="org.unitime.colleague.form.ColleagueMessageResponsesForm" />
-	  <form-bean name="colleagueOfferingListForm" type="org.unitime.colleague.form.ColleagueCourseListForm" />
 	  <form-bean name="colleagueOfferingDetailForm" type="org.unitime.colleague.form.ColleagueOfferingDetailForm" />
       <form-bean name="sectionRestrictionAssignmentForm" type="org.unitime.colleague.form.SectionRestrictionAssignmentForm" />
 
@@ -48,75 +47,6 @@
        		path="/colleagueMessageResponses.do" />
       </action>
 
-      <action
-         path="/colleagueOfferingSearch"
-         attribute="colleagueOfferingListForm"
-         input="colleagueOfferingSearchTile"
-         name="colleagueOfferingListForm"
-         parameter="doit"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-        <forward 
-        	name="showColleagueOfferingList" 
-        	path="colleagueOfferingListTile" />
-        <forward 
-        	name="showColleagueOfferingSearch" 
-        	path="colleagueOfferingSearchTile" />
-        <forward 
-        	name="showColleagueOfferingDetail" 
-        	path="/colleagueOfferingDetail.do" />
-        <forward 
-        	name="editColleagueOffering" 
-        	path="colleagueOfferingEditTile" />
-      </action>
-      
-      <action
-         path="/colleagueOfferingShowSearch"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         attribute="colleagueOfferingListForm"
-         input="colleagueOfferingSearchTile"
-         name="colleagueOfferingListForm"
-         scope="request"
-         validate="false">
-        <forward 
-        	name="showColleagueOfferingList" 
-        	path="colleagueOfferingListTile" />
-        <forward 
-        	name="showColleagueOfferingSearch" 
-        	path="colleagueOfferingSearchTile" />
-      </action>
-
-      <action
-         path="/colleagueOfferingChange"
-         attribute="colleagueOfferingListForm"
-         input="colleagueOfferingListTile"
-         name="colleagueOfferingListForm"
-         parameter="doit"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-        <forward 
-        	name="showColleagueOfferingList" 
-        	path="colleagueOfferingListTile" />
-        <forward 
-        	name="showColleagueOfferingSearch" 
-        	path="colleagueOfferingSearchTile" />
-      </action>
-
-     <action
-         path="/colleagueOfferingList"
-         attribute="colleagueOfferingListForm"
-         input="colleagueOfferingListTile"
-         name="colleagueOfferingListForm"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-         <forward 
-         	name="showColleagueOfferingList" 
-         	path="colleagueOfferingListTile" />
-      </action>
-
       	<action
           path="/colleagueOfferingDetail"
           type="org.springframework.web.struts.DelegatingActionProxy"
@@ -127,7 +57,7 @@
           validate="false">
 	      <forward
 	        name="showColleagueOfferings" 
-	        path="/colleagueOfferingShowSearch.do" />
+	        path="/colleagueOfferingSearch.action" />
 	      <forward
 	        name="showColleagueConfigDetail" 
 	        path="colleagueOfferingDetailTile" />

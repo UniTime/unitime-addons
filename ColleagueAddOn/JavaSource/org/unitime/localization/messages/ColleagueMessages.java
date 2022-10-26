@@ -19,6 +19,8 @@
 */
 package org.unitime.localization.messages;
 
+import com.google.gwt.i18n.client.Messages.DefaultMessage;
+
 public interface ColleagueMessages extends Messages {
 
 	@DefaultMessage("Assign Restrictions")
@@ -32,6 +34,12 @@ public interface ColleagueMessages extends Messages {
 
 	@DefaultMessage("Search")
 	String actionSearchColleagueOfferings();
+	
+	@DefaultMessage("S")
+	String accessSearchColleagueOfferings();
+	
+	@DefaultMessage("Search/Display Colleague Offerings (Alt+{0})")
+	String titleSearchColleagueOfferings(String action);
 
 	@DefaultMessage("Update")
 	String actionUpdateSectionRestrictionAssignment();
@@ -81,4 +89,46 @@ public interface ColleagueMessages extends Messages {
 	
 	@DefaultMessage("Roll Colleague Session Data Forward From Session:")
 	String propRollColleagueSessionDataFrom();
+	
+	@DefaultMessage("Colleague Offerings")
+	String sectColleagueOfferings();
+	
+	@DefaultMessage("Courses Not Offered")
+	String labelCoursesNotOffered();
+	
+	@DefaultMessage("Offered Courses")
+	String labelOfferedCourses();
+	
+	@DefaultMessage("There are no courses currently offered for this subject.")
+	String infoNoCoursesOffered();
+	
+	@DefaultMessage("All courses are currently being offered for this subject.")
+	String infoAllCoursesOffered();
+	
+	@DefaultMessage("Print Indicator.")
+	String titlePrintIndicator();
+	
+	@DefaultMessage("Instr Type")
+	String colInstrType();
+	
+	@DefaultMessage("Sec&nbsp;Id")
+	String colSecId();
+	
+	@DefaultMessage("Colleague Synonym")
+	String colColleagueSynonym();
+	
+	@DefaultMessage("Sched Type")
+	String colSchedType();
+	
+	@DefaultMessage("Num Weeks")
+	String colNumWeeks();
+	
+	@DefaultMessage("Print")
+	String colPrint();
+	
+	@DefaultMessage("Restrictions")
+	String colRestrictions();
+	
+	@DefaultMessage("Class Label")
+	String colClassLabel();
 }

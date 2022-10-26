@@ -17,65 +17,44 @@
  * limitations under the License.
  * 
 --%>
-<%@ page language="java" autoFlush="true" errorPage="../error.jsp" %>
-<%@ page import="org.unitime.timetable.util.Constants" %>
-<%@ page import="org.unitime.colleague.webutil.WebColleagueCourseListTableBuilder" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-<%@ taglib uri="http://www.unitime.org/tags-localization" prefix="loc" %>
-<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
-<script language="JavaScript" type="text/javascript" src="scripts/block.js"></script>
-
-<tiles:importAttribute />
-<html:form action="/colleagueOfferingSearch">
-<loc:bundle name="ColleagueMessages">
-	<html:hidden property="doit" value="Search"/>
-	<TABLE border="0" cellspacing="0" cellpadding="3">
-		<TR>
-			<TH valign="top"><loc:message name="filterSubject"/></TH>
-			<TD valign="top">
-				<html:select name="colleagueOfferingListForm" property="subjectAreaId" styleId="subjectAreaIds">
-					<html:option value="<%=Constants.BLANK_OPTION_VALUE%>"><%=Constants.BLANK_OPTION_LABEL%></html:option>
-					<html:optionsCollection property="subjectAreas"	label="subjectAreaAbbreviation" value="uniqueId" />
-				</html:select>
-			</TD>
-			<TH valign="top"><loc:message name="filterCourseNumber"/></TH>
-			<TD valign="top">
-				<tt:course-number property="courseNbr" configuration="subjectId=\${subjectAreaIds};notOffered=include" size="10"
-					title="Course numbers can be specified using wildcard (*). E.g. 2*"/>
-			</TD>
-			<TD valign="top">
-				&nbsp;&nbsp;&nbsp;
-				<html:submit
-					accesskey="S" styleClass="btn" titleKey="title.search"
-					onclick="doit.value=this.value;displayLoading();">
-					<loc:message name="actionSearchColleagueOfferings"/>
-				</html:submit> 
-		<!--  	
-				<html:submit
-					accesskey="P" styleClass="btn" titleKey="title.exportPDF"
-					onclick="doit.value=this.value;displayLoading();">
-					<bean:message key="button.exportPDF" />
-				</html:submit> 
-		-->	
-			</TD>
-		</TR>
-		<TR>
-			<TD colspan="5" align="center">
-				<html:errors />
-			</TD>
-		</TR>
-	</TABLE>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
+<s:form action="colleagueOfferingSearch">
+<table class="unitime-Table">
+	<TR>
+		<TH valign="middle"><loc:message name="filterSubject"/></TH>
+		<TD>
+		<s:select name="form.subjectAreaId" id="subjectAreaIds"
+			list="form.subjectAreas" listKey="uniqueId" listValue="subjectAreaAbbreviation"
+			headerKey="" headerValue="%{#msg.itemSelect()}"/>
+		</TD>
+		<TH valign="middle"><loc:message name="filterCourseNumber"/></TH>
+		<TD>
+			<tt:course-number name="form.courseNbr" configuration="subjectId=\${subjectAreaIds};notOffered=include" size="10"/>
+		</TD>
+		<TD style="padding-left: 10px;">
+			<s:submit name='doit' value="%{#cmsg.actionSearchColleagueOfferings()}"
+					title="%{#cmsg.titleSearchColleagueOfferings(#cmsg.accessSearchColleagueOfferings())}"
+					accesskey="%{#cmsg.accessSearchColleagueOfferings()}"/>
+		</TD>
+		<s:if test="!fieldErrors.isEmpty()">
+			<TR><TD colspan="5" align="left" class="errorTable">
+				<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror/>
+			</TD></TR>
+		</s:if>
+	</TR>
+</table>
+<s:if test="showTable == true">
+	<s:property value="%{printTable()}" escapeHtml="false"/>
+</s:if>
+<s:if test="#request.hash != null">
+	<SCRIPT type="text/javascript">
+		location.hash = '<%=request.getAttribute("hash")%>';
+	</SCRIPT>
+</s:if>
+</s:form>
 </loc:bundle>
-</html:form>
-
-
-<logic:notEmpty name="body2">
-	<script language="javascript">displayLoading();</script>
-	<tiles:insert attribute="body2" />
-	<script language="javascript">hideLoading();</script>
-</logic:notEmpty>
-
+</loc:bundle>

@@ -40,6 +40,8 @@ import org.unitime.commons.web.htmlgen.TableCell;
 import org.unitime.commons.web.htmlgen.TableHeaderCell;
 import org.unitime.commons.web.htmlgen.TableRow;
 import org.unitime.commons.web.htmlgen.TableStream;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
@@ -61,8 +63,8 @@ import org.unitime.timetable.webutil.WebInstructionalOfferingTableBuilder;
  * @author says
  *
  */
-public class WebColleagueCourseListTableBuilder extends
-		WebInstructionalOfferingTableBuilder {
+public class WebColleagueCourseListTableBuilder extends WebInstructionalOfferingTableBuilder {
+	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
  
 	private Comparator iClassComparator = new ClassComparator(ClassComparator.COMPARE_BY_ITYPE);
 
@@ -74,7 +76,6 @@ public class WebColleagueCourseListTableBuilder extends
 	}
 	
 	
-    @SuppressWarnings("unchecked")
 	public void htmlTableForColleagueOfferings(
 			SessionContext context,
             ClassAssignmentProxy classAssignment, 
@@ -146,8 +147,8 @@ public class WebColleagueCourseListTableBuilder extends
     		if(displayHeader) {
     		    try {
     		    	if (allCoursesAreGiven)
-    		    		outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#notOffered\">Courses Not Offered</A></DIV>");
-    			    outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"offered\"></A>Offered Courses</DIV>");
+    		    		outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#notOffered\">" + CMSG.labelCoursesNotOffered() + "</A></DIV>");
+    			    outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"offered\"></A>" + CMSG.labelOfferedCourses() + "</DIV>");
     			} catch (IOException e) {
     				e.printStackTrace();
     			}
@@ -169,7 +170,7 @@ public class WebColleagueCourseListTableBuilder extends
             } else {
                 if(displayHeader)
     				try {
-    					outputStream.print("<font class=\"error\">There are no courses currently offered for this subject.</font>");
+    					outputStream.print("<font class=\"error\">" + CMSG.infoNoCoursesOffered() + "</font>");
     				} catch (IOException e) {
     					e.printStackTrace();
     				}
@@ -181,8 +182,8 @@ public class WebColleagueCourseListTableBuilder extends
     	        try {
     				outputStream.print("<br>");
     				if (allCoursesAreGiven)
-    					outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#offered\">Offered Courses</A></DIV>");
-    		        outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"notOffered\"></A>Not Offered Courses</DIV>");
+    					outputStream.print("<DIV align=\"right\"><A class=\"l7\" href=\"#offered\">" + CMSG.labelOfferedCourses() + "</A></DIV>");
+    		        outputStream.print("<DIV class=\"WelcomeRowHead\"><A name=\"notOffered\"></A>" + CMSG.labelCoursesNotOffered() + "</DIV>");
     			} catch (IOException e) {
     				e.printStackTrace();
     			}
@@ -203,7 +204,7 @@ public class WebColleagueCourseListTableBuilder extends
             } else {
                 if(displayHeader)
     				try {
-    					outputStream.print("<font class=\"normal\">&nbsp;<br>All courses are currently being offered for this subject.</font>");
+    					outputStream.print("<font class=\"normal\">&nbsp;<br>" + CMSG.infoAllCoursesOffered() + "</font>");
     				} catch (IOException e) {
     					e.printStackTrace();
     				}
@@ -271,7 +272,7 @@ public class WebColleagueCourseListTableBuilder extends
 	        TableCell cell = null;
     	    if (configName==null || configName.trim().length()==0)
     	        configName = ioc.getUniqueId().toString();
-    	    cell = this.initNormalCell("Configuration " + configName, isEditable);
+    	    cell = this.initNormalCell(MSG.labelConfiguration(configName), isEditable);
     	    cell.setStyle("padding-left: " + indent + "px;");
         	cell.setNoWrap(true);
     	    cell.setNoWrap(true);
@@ -366,7 +367,7 @@ public class WebColleagueCourseListTableBuilder extends
     	cell = initNormalCell(cs.findNumWeeks(), isEditable);
     	cell.setAlign("right");
     	row.addContent(cell);
-		cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='Print Indicator.' align='absmiddle' src='images/accept.png'>":""), isEditable);
+		cell = initNormalCell((c.isEnabledForStudentScheduling() != null && c.isEnabledForStudentScheduling().booleanValue()?"<IMG border='0' alt='Yes' title='" + CMSG.titlePrintIndicator() + "' align='absmiddle' src='images/accept.png'>":""), isEditable);
 		cell.setAlign("center");
 		row.addContent(cell);
 		String restrictions = "";
@@ -479,31 +480,31 @@ public class WebColleagueCourseListTableBuilder extends
     	TableHeaderCell cell = null;
     	cell = this.headerCell(LABEL, 2, 1);
     	row.addContent(cell);
-    	cell = this.headerCell("Instr Type", 2, 1);
+    	cell = this.headerCell(CMSG.colInstrType(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Sec&nbsp;Id", 2, 1);
+    	cell = this.headerCell(CMSG.colSecId(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Colleague Synonym", 2, 1);
+    	cell = this.headerCell(CMSG.colColleagueSynonym(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Sched Type", 2, 1);
+    	cell = this.headerCell(CMSG.colSchedType(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Limit", 2, 1);
+    	cell = this.headerCell(MSG.columnLimit(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell("Num Weeks", 2, 1);
+    	cell = this.headerCell(CMSG.colNumWeeks(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Print", 2, 1);
+		cell = this.headerCell(CMSG.colPrint(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Restrictions", 2, 1);
+		cell = this.headerCell(CMSG.colRestrictions(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Consent", 2, 1);
+		cell = this.headerCell(MSG.columnConsent(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Credit", 2, 1);
+		cell = this.headerCell(MSG.columnCredit(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Campus", 2, 1);
+		cell = this.headerCell(MSG.columnCampus(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("Class Label", 2, 1);
+		cell = this.headerCell(CMSG.colClassLabel(), 2, 1);
 		row.addContent(cell);
-		cell = this.headerCell("DatePattern", 2, 1);
+		cell = this.headerCell(MSG.columnDatePattern(), 2, 1);
 		row.addContent(cell);
 
 		cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, 3);
@@ -523,7 +524,7 @@ public class WebColleagueCourseListTableBuilder extends
 		cell.setStyleClass("WebTableHeaderSecondRow");
 		row2.addContent(cell);
 
-		cell = this.headerCell("Instructors", 2, 1);
+		cell = this.headerCell(MSG.columnInstructors(), 2, 1);
 		row.addContent(cell);
 
     	table.addContent(row);
