@@ -19,5 +19,8 @@
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.8.4.jar"/>
 	<classpathentry kind="src" path="/UniTime"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-5.7.5.jar" sourcepath="/UniTime/3rd_party/sources/spring-security-core-5.7.5-sources.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-core-2.5.30.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-tiles-plugin-2.5.30.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-convention-plugin-2.5.30.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>

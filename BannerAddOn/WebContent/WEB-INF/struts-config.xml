@@ -22,7 +22,6 @@
 
    <form-beans>
    		<!-- Custom forms -->
-      <form-bean name="rollForwardBannerSessionForm" type="org.unitime.banner.form.RollForwardBannerSessionForm" />
       <form-bean name="bannerMessageResponsesForm" type="org.unitime.banner.form.BannerMessageResponsesForm" />
 	  <form-bean name="bannerOfferingListForm" type="org.unitime.banner.form.BannerCourseListForm" />
 	  <form-bean name="bannerOfferingDetailForm" type="org.unitime.banner.form.BannerOfferingDetailForm" />
@@ -39,22 +38,6 @@
 
    <action-mappings>
    	<!-- Custom actions -->
-	  <action
-      attribute="rollForwardBannerSessionForm"
-      input="rollForwardBannerSessionTile"
-      name="rollForwardBannerSessionForm"
-      path="/rollForwardBannerSession"
-      scope="request"
-      validate="false"
-      type="org.springframework.web.struts.DelegatingActionProxy" >
-       <forward 
-       		name="displayRollForwardBannerSessionForm" 
-       		path="rollForwardBannerSessionTile" />
-       <forward 
-       		name="submit" 
-       		path="/rollForwardBannerSession.do" />
-      </action>
-
 	  <action
       attribute="bannerMessageResponsesForm"
       input="bannerMessageResponsesTile"

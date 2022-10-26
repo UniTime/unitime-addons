@@ -22,10 +22,6 @@
 	
 	<!-- Custom tiles definitions -->
 
-   	<definition	name="rollForwardBannerSessionTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Roll Forward Banner Session"/>
-		<put name="body" value="/banner/rollForwardBannerSession.jsp" />
-  	</definition>
    	<definition	name="bannerMessageResponsesTile" extends="pageLayoutDef">
 		<put name="title" type="string" value="Banner Message Responses"/>
 		<put name="body" value="/banner/bannerMessageResponses.jsp" />

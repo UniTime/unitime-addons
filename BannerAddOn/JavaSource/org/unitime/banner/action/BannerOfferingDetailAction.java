@@ -46,6 +46,7 @@ import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.interfaces.ExternalLinkLookup;
@@ -66,7 +67,8 @@ import org.unitime.timetable.webutil.BackTracker;
 
 @Service("/bannerOfferingDetail")
 public class BannerOfferingDetailAction extends Action {
-	protected final static BannerMessages MSG = Localization.create(BannerMessages.class);
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
 	@Autowired SessionContext sessionContext;
 
@@ -123,7 +125,7 @@ public class BannerOfferingDetailAction extends Action {
 		    if (bannerCourseOfferingId==null && frm.getInstrOfferingId()!=null)
 		    	bannerCourseOfferingId=frm.getBannerCourseOfferingId().toString();
 			if(bannerCourseOfferingId==null || bannerCourseOfferingId.trim().length()==0)
-			    throw new Exception (MSG.missingBannerCourseOfferingId(bannerCourseOfferingId));
+			    throw new Exception (BMSG.missingBannerCourseOfferingId(bannerCourseOfferingId));
 			else  {
 		    	sessionContext.checkPermission(getInstructionalOfferingIdForBannerCourseIdStr(bannerCourseOfferingId), "InstructionalOffering", Right.InstructionalOfferingDetail);
 

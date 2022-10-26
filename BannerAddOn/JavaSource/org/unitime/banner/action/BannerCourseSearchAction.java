@@ -20,6 +20,8 @@
 package org.unitime.banner.action;
 
 import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,7 +39,6 @@ import org.unitime.banner.form.BannerCourseListForm;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.localization.impl.Localization;
-import org.unitime.localization.impl.LocalizedLookupDispatchAction;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.Messages;
 import org.unitime.timetable.defaults.SessionAttribute;
@@ -46,6 +47,7 @@ import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
+import org.unitime.timetable.spring.struts.SpringAwareLookupDispatchAction;
 import org.unitime.timetable.webutil.BackTracker;
 
 
@@ -55,7 +57,7 @@ import org.unitime.timetable.webutil.BackTracker;
  */
 
 @Service("/bannerOfferingSearch")
-public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
+public class BannerCourseSearchAction extends SpringAwareLookupDispatchAction {
 	protected final static BannerMessages MSG = Localization.create(BannerMessages.class);
 
 	@Autowired SessionContext sessionContext;
@@ -165,6 +167,13 @@ public class BannerCourseSearchAction extends LocalizedLookupDispatchAction {
         return(InstructionalOffering.search(sessionId, Long.valueOf(form.getSubjectAreaId()), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
         
     }
+
+	@Override
+	protected Map<String, String> getKeyMethodMap() {
+		Map<String, String> ret = new HashMap<String, String>();
+		ret.put(MSG.actionSearchBannerOfferings(), "searchBannerCourses"); 
+		return ret;
+	}
 
 	
 }

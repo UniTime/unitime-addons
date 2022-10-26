@@ -27,8 +27,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.hibernate.Transaction;
 import org.unitime.banner.form.RollForwardBannerSessionForm;
 import org.unitime.banner.interfaces.ExternalSessionRollForwardCustomizationInterface;
@@ -39,7 +37,10 @@ import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSessionDAO;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
@@ -57,6 +58,7 @@ import org.unitime.timetable.util.SessionRollForward;
  *
  */
 public class BannerSessionRollForward extends SessionRollForward {
+	protected static final BannerMessages BMSG = Localization.create(BannerMessages.class);
 	private static ExternalSessionRollForwardCustomizationInterface externalSessionRollForwardCustomization;
 
 	/**
@@ -66,7 +68,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 		super(log);
 	}
 	
-	public void rollBannerSessionDataForward(ActionMessages errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
+	public void rollBannerSessionDataForward(RollForwardErrors errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
 		Session toSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollForwardTo());
 		Session fromSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollBannerDataForwardFrom());
 		
@@ -76,8 +78,10 @@ public class BannerSessionRollForward extends SessionRollForward {
 			cleanUpBadLinkIdentifiers(toSession);
 			updateClassSuffixes(toSession);
 		} catch (Exception e) {
-			iLog.error("Failed to roll banner session data forward.", e);
-			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to roll banner session data forward."));
+			String type = BMSG.rollForwardBannerSessionData();
+			String msg = BMSG.errorFailedToRollBannerSessionData(e.getMessage());
+			iLog.error(msg, e);
+			errors.addFieldError("rollForward", MSG.errorRollingForward(type, fromSession.getLabel(), toSession.getLabel(), msg));
 		}
 		try {
 			ExternalSessionRollForwardCustomizationInterface customRollForwardAction = getExternalSessionRollForwardCustomization();
@@ -103,10 +107,11 @@ public class BannerSessionRollForward extends SessionRollForward {
 			}	
 
 		} catch (Exception e) {
-			iLog.error("Failed to perform custom roll banner session data forward action.", e);
-			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Session Data", fromSession.getLabel(), toSession.getLabel(), "Failed to perform custom roll banner session data forward action: " + e.getMessage()));
-		}
-		
+			String type = BMSG.rollForwardBannerSessionData();
+			String msg = BMSG.errorFailedToRollForwardCustomData(e.getMessage());
+			iLog.error(msg, e);
+			errors.addFieldError("rollForward", MSG.errorRollingForward(type, fromSession.getLabel(), toSession.getLabel(), msg));
+		}		
 	}
 		
 	private void cleanUpBadLinkIdentifiers(Session toSession) {
@@ -164,7 +169,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void createMissingBannerSections(ActionMessages errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
+	public void createMissingBannerSections(RollForwardErrors errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
 		Session academicSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollForwardTo());
 		try {
 			TreeSet<SubjectArea> subjectAreas = new TreeSet<SubjectArea>();
@@ -185,8 +190,10 @@ public class BannerSessionRollForward extends SessionRollForward {
 				hibSession.clear();
 			}				
 		} catch (Exception e) {
-			iLog.error("Failed to create missing Banner sections.", e);
-			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Section Data", academicSession.getLabel(), "Failed to create missing Banner sections."));
+			String type = BMSG.rollForwardCreateMissingBannerSectionData();
+			String msg = BMSG.errorFailedToCreateMissingBannerSections(e.getMessage());
+			iLog.error(msg, e);
+			errors.addFieldError("rollForward", MSG.errorRollingForwardTo(type, academicSession.getLabel(), msg));
 		}
 	}
 	

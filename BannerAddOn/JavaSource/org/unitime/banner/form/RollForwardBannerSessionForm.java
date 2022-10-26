@@ -21,12 +21,11 @@ package org.unitime.banner.form;
 
 import java.util.ArrayList;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
 import org.unitime.timetable.form.RollForwardSessionForm;
 import org.unitime.timetable.model.Session;
 
@@ -36,21 +35,16 @@ import org.unitime.timetable.model.Session;
  *
  */
 public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -7189756605666517891L;
+	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected static final BannerMessages BMSG = Localization.create(BannerMessages.class);
 
 	private Long sessionToRollBannerDataForwardFrom;
 	private Boolean rollForwardBannerSession;
 	private Boolean createMissingBannerSections;
 	
-	/**
-	 * 
-	 */
 	public RollForwardBannerSessionForm() {
-		// do nothing
+		super();
 	}
 
 	public Long getSessionToRollBannerDataForwardFrom() {
@@ -70,22 +64,17 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 		this.createMissingBannerSections = createMissingBannerSections;
 	}
 
-	public void validateSessionToRollForwardTo(ActionErrors errors){
+	public void validateSessionToRollForwardTo(RollForwardErrors action){
 
 		Session s = Session.getSessionById(getSessionToRollForwardTo());
 		if (s == null){
-   			errors.add("mustSelectSession", new ActionMessage("errors.rollForward.missingToSession"));
+			action.addFieldError("mustSelectSession", MSG.errorRollForwardMissingToSession());
    			return;
 		}
 		
 		if (getRollForwardBannerSession().booleanValue()){
 			ArrayList<BannerSession> list = new ArrayList<BannerSession>();
-// If banner session exist we will just use it rather that insist it be created.  This is to allow the roll to be restarted if it fails.
-//			BannerSession bs = BannerSession.findBannerSessionForSession(s, null);
-//			if (bs != null){
-//				list.add(bs);
-//			}
-			validateRollForward(errors, s, getSessionToRollBannerDataForwardFrom(), "Banner Session", list);			
+			validateRollForward(action, s, getSessionToRollBannerDataForwardFrom(), BMSG.rollForwardBannerSession(), list);			
  		}
 	
 	}
@@ -98,16 +87,11 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 		this.rollForwardBannerSession = rollForwardBannerSession;
 	}
 	
-	public void init() {
-		super.init();
-
+	public void reset() {
+		super.reset();
 		rollForwardBannerSession = Boolean.valueOf(false);
 		createMissingBannerSections = Boolean.valueOf(false);
 		sessionToRollBannerDataForwardFrom = null;
-	}
-
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
-		init();
 	}
 	
 	public void copyTo(RollForwardBannerSessionForm form) {

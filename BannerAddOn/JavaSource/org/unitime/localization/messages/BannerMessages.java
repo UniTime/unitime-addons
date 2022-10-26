@@ -19,18 +19,36 @@
 */
 package org.unitime.localization.messages;
 
-import org.unitime.banner.action.BannerCourseSearchAction;
-
-public interface BannerMessages extends CourseMessages {
+public interface BannerMessages extends Messages {
 
 	@DefaultMessage("Search")
-	@StrutsAction(
-		value = "searchBannerCourses",
-		apply = BannerCourseSearchAction.class
-	)
 	String actionSearchBannerOfferings();
 
 	@DefaultMessage("Banner Offering data was not correct:  {0}")
 	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
 
+	
+	@DefaultMessage("Banner Session")
+	String rollForwardBannerSession();
+	
+	@DefaultMessage("Banner Session Data")
+	String rollForwardBannerSessionData();
+	
+	@DefaultMessage("Create Missing Banner Section Data")
+	String rollForwardCreateMissingBannerSectionData();
+	
+	@DefaultMessage("Failed to roll banner session data forward: {0}")
+	String errorFailedToRollBannerSessionData(String error);
+	
+	@DefaultMessage("Failed to create missing Banner sections: {0}")
+	String errorFailedToCreateMissingBannerSections(String error);
+	
+	@DefaultMessage("Failed to perform custom roll banner session data forward action: {0}")
+	String errorFailedToRollForwardCustomData(String error);
+	
+	@DefaultMessage("Roll Banner Session Data Forward From Session:")
+	String propRollBannerSessionDataFrom();
+	
+	@DefaultMessage("Create Missing Banner Sections.")
+	String checkCreateMissingBannerSections();
 }

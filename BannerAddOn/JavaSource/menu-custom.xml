@@ -47,7 +47,7 @@
 	</menu>
 	<menu name="Administration">
 		<menu name="Other">
-			<item name="Users" page="userEdit.do">
+			<item name="Users" page="userEdit.action">
 				<!-- Only when LDAP is not configured -->
 				<condition>
 					<propertyEquals name="tmtbl.authenticate.ldap.provider" value="" defaultValue=""/>
@@ -71,7 +71,7 @@
 					<hasPermission name="AcademicSessions"/>
 				</condition>
  			</item>
-			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.do">
+			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.action">
 				<condition>
 					<hasPermission name="SessionRollForward"/>
 				</condition>
