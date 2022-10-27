@@ -23,7 +23,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
-<table class="unitime-Table">
+<table class="unitime-MainTable">
 	<s:form action="bannerOfferingDetail">
 	<s:hidden name="form.bannerCourseOfferingId"/>	
 	<s:hidden name="form.instrOfferingId"/>	

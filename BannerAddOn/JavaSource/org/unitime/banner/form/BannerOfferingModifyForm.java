@@ -26,26 +26,22 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.util.MessageResources;
 import org.hibernate.Session;
+import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
-import org.unitime.timetable.model.Preference;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
-import org.unitime.timetable.util.DynamicList;
-import org.unitime.timetable.util.DynamicListObjectFactory;
+import org.unitime.timetable.util.IdValue;
 
 
 /**
@@ -53,12 +49,10 @@ import org.unitime.timetable.util.DynamicListObjectFactory;
  * @author says
  *
  */
-public class BannerOfferingModifyForm extends ActionForm {
-
-	/**
-	 * 
-	 */
+public class BannerOfferingModifyForm implements UniTimeForm {
 	private static final long serialVersionUID = 5412595518174343486L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 	
     // --------------------------------------------------------- Instance Variables
 	private String op;
@@ -75,52 +69,32 @@ public class BannerOfferingModifyForm extends ActionForm {
 	private Boolean showLimitOverride;
 	private Boolean showLabHours;
 	
-	private List bannerSectionIds;
-	private List itypes;
-	private List bannerSectionSectionIds;
-	private List bannerSectionOriginalSectionIds;
-	private List consents;
-	private List datePatterns;
-	private List times;
-	private List readOnlyClasses;
-	private List bannerSectionLabels;
-	private List bannerSectionLabelIndents;
-	private List rooms;
-	private List instructors;
-	private List readOnlySubparts;
-	private List limitOverrides;
-	private List courseCredits;
-	private List courseCreditOverrides;
-	private List classLimits;
-	private List defaultCampus;
-	private List campusOverrides;
-	private List campuses;
-	private List classHasErrors;
-	private List bannerCampusOverrides;
-	
-	/*
-	private static String BANNER_SECTION_IDS_TOKEN = "bannerSectionIds";
-	private static String BANNER_SECTION_SECTION_IDS_TOKEN = "bannerSectionSectionIds";
-	private static String BANNER_SECTION_ORIGINAL_SECTION_IDS_TOKEN = "bannerSectionOriginalSectionIds";
-	private static String ITYPES_TOKEN = "itypes";
-	private static String CONSENT_TOKEN = "consents";
-	private static String READ_ONLY_CLASSES_TOKEN = "readOnlyClasses";
-	private static String BANNER_SECTION_LABELS_TOKEN = "bannerSectionLabels";
-	private static String BANNER_SECTION_LABEL_INDENTS_TOKEN = "bannerSectionLabelIndents";
-	private static String DATE_PATTERNS_TOKEN = "datePatterns";
-	private static String TIMES_TOKEN = "times";
-	private static String ROOMS_TOKEN = "rooms";
-	private static String INSTRUCTORS_TOKEN = "instructors";
-	*/
-
-    // --------------------------------------------------------- Classes
-
-    /** Factory to create dynamic list element for Course Offerings */
-    protected DynamicListObjectFactory factoryClasses = new DynamicListObjectFactory() {
-        public Object create() {
-            return new String(Preference.BLANK_PREF_VALUE);
-        }
-    };
+	private List<Long> bannerSectionIds;
+	private List<String> itypes;
+	private List<String> bannerSectionSectionIds;
+	private List<String> bannerSectionOriginalSectionIds;
+	private List<Long> consents;
+	private List<String> datePatterns;
+	private List<String> times;
+	private List<Boolean> readOnlyClasses;
+	private List<String> bannerSectionLabels;
+	private List<String> bannerSectionLabelIndents;
+	private List<String> rooms;
+	private List<String> instructors;
+	private List<Boolean> readOnlySubparts;
+	private List<String> limitOverrides;
+	private List<String> courseCredits;
+	private List<String> courseCreditOverrides;
+	private List<Integer> classLimits;
+	private List<String> defaultCampus;
+	private List<Long> campusOverrides;
+	private List<String> campuses;
+	private List<Boolean> classHasErrors;
+	private List<BannerCampusOverride> bannerCampusOverrides;
+    
+    public BannerOfferingModifyForm() {
+    	reset();
+    }
 		
     // --------------------------------------------------------- Methods
     /** 
@@ -129,31 +103,20 @@ public class BannerOfferingModifyForm extends ActionForm {
      * @param request
      * @return ActionErrors
      */
-    public ActionErrors validate(
-        ActionMapping mapping,
-        HttpServletRequest request) {
-
-        ActionErrors errors = new ActionErrors();
-
-        // Get Message Resources
-        MessageResources rsc = 
-            (MessageResources) super.getServlet()
-            	.getServletContext().getAttribute(Globals.MESSAGES_KEY);
-        
-        if (op.equals(rsc.getMessage("button.update"))) {
+    @Override
+    public void validate(UniTimeAction action) {
+        if (BMSG.actionUpdateBannerConfig().equals(action.getOp())) {
 	        // Check Instructional Offering Config
-	        if (this.instrOffrConfigId==null || this.instrOffrConfigId.intValue()<=0) {
-	            errors.add("instrOffrConfigId", new ActionMessage("errors.required", "Instructional Offering Config"));            
+	        if (this.instrOffrConfigId==null || this.instrOffrConfigId < 0) {
+	        	action.addFieldError("form.instrOffrConfigId", MSG.errorRequiredField(BMSG.labelInstructionalOfferingConfig()));
 	        }
 	        // Validate class limits provide space that is >= limit for the instructional offering config
 	        initClassHasErrorsToFalse();
-	        validateBannerSectionData(errors);
+	        validateBannerSectionData(action);
         }
-        
-        return errors;
     }
     
-    private void validateBannerSectionData(ActionErrors errors){
+    private void validateBannerSectionData(UniTimeAction action){
     	HashSet<String> idSet = new HashSet<String>();
     	int prevSize = idSet.size();
     	BannerCourseDAO bcDao = BannerCourseDAO.getInstance();
@@ -163,96 +126,94 @@ public class BannerOfferingModifyForm extends ActionForm {
 		String sectionIdRegex = "^[0-9A-Z]{1,3}$";
     	Pattern pattern = Pattern.compile(sectionIdRegex);
     	for(int index = 0 ; index < this.getBannerSectionSectionIds().size(); index++){
-    		String sectionId = (String)this.getBannerSectionSectionIds().get(index);
-    		if (sectionId == null || sectionId.trim().length() == 0){
-    			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "Section Index cannot be null: " + (String) this.getBannerSectionLabels().get(index)));
-    			this.getClassHasErrors().set(index, Boolean.valueOf(true));    			
+    		String sectionId = getBannerSectionSectionIds(index);
+    		if (sectionId == null || sectionId.trim().isEmpty()){
+    			action.addFieldError("form.uniqueSectionId", BMSG.errorSectionIndexMustBeSet(getBannerSectionLabels(index)));
+    			this.setClassHasErrors(index, true);    			
     		}
     		if (sectionId != null){
 	    		sectionId = sectionId.toUpperCase();
 	    		try { 
 			    	Matcher matcher = pattern.matcher(sectionId);
 			    	if (!matcher.find()) {
-		    			errors.add("invalid section id", new ActionMessage("errors.generic", "Section Index can only consist of numbers or alpha characters: " + (String) this.getBannerSectionLabels().get(index)));
-		    			this.getClassHasErrors().set(index, Boolean.valueOf(true));    			
+		    			action.addFieldError("form.invalid section id", BMSG.errorSectionIndexNumbersAndLetters(getBannerSectionLabels(index)));
+		    			this.setClassHasErrors(index, true);    			
 			    	}
 		    	}
 		    	catch (Exception e) {
-			        errors.add("courseNbr", new ActionMessage("errors.generic", "Section Index cannot be matched to regular expression: " + sectionIdRegex + ". Reason: " + e.getMessage()));
-	    			this.getClassHasErrors().set(index, Boolean.valueOf(true));    			
+			        action.addFieldError("form.courseNbr", BMSG.errorSectionIndexDoesNotMatchExpression(sectionIdRegex, getBannerSectionLabels(index), e.getMessage()));
+	    			this.setClassHasErrors(index, true);    			
 		    	}
     		}
     		idSet.add(sectionId);
     		if (idSet.size() != (prevSize + 1)){
-    			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "Section Index must be unique for: " + (String) this.getBannerSectionLabels().get(index)));
-    			this.getClassHasErrors().set(index, Boolean.valueOf(true)); 
+    			action.addFieldError("form.uniqueSectionId", BMSG.errorSectionIndexNotUnique(getBannerSectionLabels(index)));
+    			this.setClassHasErrors(index, true); 
     		} else {
     			prevSize++;
     		}
     		if (sectionId.equals("999")) {
-    			errors.add("maxSectionId", new ActionMessage("errors.generic", "Section Index must be less than 999: " + (String) this.getBannerSectionLabels().get(index)));
-    			this.getClassHasErrors().set(index, Boolean.valueOf(true));     			
+    			action.addFieldError("form.maxSectionId", BMSG.errorSectionIndex999(getBannerSectionLabels(index)));
+    			this.setClassHasErrors(index, true);     			
     		}
-    		if (!this.getBannerSectionOriginalSectionIds().contains((String)this.getBannerSectionSectionIds().get(index))){
-    			if (!BannerSection.isSectionIndexUniqueForCourse(co.getInstructionalOffering().getSession(), co, hibSession, (String)this.getBannerSectionSectionIds().get(index))){
-        			errors.add("uniqueSectionId", new ActionMessage("errors.generic", "New Section Index must be unique for: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
+    		if (!this.getBannerSectionOriginalSectionIds().contains(getBannerSectionSectionIds(index))){
+    			if (!BannerSection.isSectionIndexUniqueForCourse(co.getInstructionalOffering().getSession(), co, hibSession, getBannerSectionSectionIds(index))){
+        			action.addFieldError("form.uniqueSectionId", BMSG.errorSectionNewIndexNotUnique(getBannerSectionLabels(index)));
+        			this.setClassHasErrors(index, true);   				
     			}
     		}
     		if (this.showLimitOverride.booleanValue()){
-    			String limitStr = (String)this.getLimitOverrides().get(index);
+    			String limitStr = getLimitOverrides(index);
 				Integer limit = null;
 				if (limitStr != null && limitStr.trim().length() > 0){
 					try {
 						limit = Integer.valueOf(limitStr);
 					} catch (Exception e) {
-	        			errors.add("limitOverride", new ActionMessage("errors.generic", "The limit override must be an integer number: " + (String) this.getBannerSectionLabels().get(index)));
-	        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
+	        			action.addFieldError("form.limitOverride", BMSG.errorLimitOverrideNotANumber(getBannerSectionLabels(index)));
+	        			this.setClassHasErrors(index, true);   				
 					}
 					
 				}
-				String classLimitStr = (String)this.getClassLimits().get(index);
-    			Integer classLimit = Integer.valueOf(classLimitStr);
+				Integer classLimit = this.getClassLimits(index);
     			if (limit != null && limit.intValue() > classLimit.intValue()){
-        			errors.add("limitOverride", new ActionMessage("errors.generic", "The limit override cannot get greater than the class limit: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
+        			action.addFieldError("form.limitOverride", BMSG.errorLimitOverrideOverClassLimit(getBannerSectionLabels(index)));
+        			this.setClassHasErrors(index, true);   				
     			}
     			if (limit != null && limit.intValue() < 0){
-    				errors.add("limitOverride", new ActionMessage("errors.generic", "The limit override must be greater than or equal to 0: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   	
+    				action.addFieldError("form.limitOverride", BMSG.errorLimitOverrideBelowZero(getBannerSectionLabels(index)));
+        			this.setClassHasErrors(index, true);   	
     			}
     		}
-    		String creditOverrideStr = (String)this.getCourseCreditOverrides().get(index);
+    		String creditOverrideStr = getCourseCreditOverrides(index);
     		Float creditOverride = null;
     		if (creditOverrideStr != null && creditOverrideStr.trim().length() > 0){
     			try {
 					creditOverride = Float.valueOf(creditOverrideStr);
 				} catch (Exception e) {
-        			errors.add("creditOverride", new ActionMessage("errors.generic", "The course credit override must be a number: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   				
+        			action.addFieldError("form.creditOverride", BMSG.errorCourseCreditOverrideNotNumber(getBannerSectionLabels(index)));
+        			this.setClassHasErrors(index, true);   				
 				}
 				if (creditOverride != null && creditOverride < 0){
-    				errors.add("creditOverride", new ActionMessage("errors.generic", "The course credit override must be greater than or equal to 0: " + (String) this.getBannerSectionLabels().get(index)));
-        			this.getClassHasErrors().set(index, Boolean.valueOf(true));   						
+    				action.addFieldError("form.creditOverride", BMSG.errorCourseCreditOverrideBelowZero(getBannerSectionLabels(index)));
+        			this.setClassHasErrors(index, true);   						
 				}
     		}
     	}
     }
               
     private void initClassHasErrorsToFalse(){
-		this.setClassHasErrors(DynamicList.getInstance(new ArrayList(), factoryClasses));
+		this.setClassHasErrors(new ArrayList<Boolean>());
 		for(Iterator it = this.getBannerSectionIds().iterator(); it.hasNext();){
-			this.getClassHasErrors().add(Boolean.valueOf(false));
+			this.getClassHasErrors().add(false);
 			it.next();
 		}
     }
      
     /** 
      * Method reset
-     * @param mapping
-     * @param request
      */
-    public void reset(ActionMapping mapping, HttpServletRequest request) {
+    @Override
+    public void reset() {
     	bannerCourseOfferingId = null;
     	bannerConfigId = null;
     	instrOfferingId = null;
@@ -268,102 +229,164 @@ public class BannerOfferingModifyForm extends ActionForm {
     }
     
     private void resetLists(){
-    	bannerSectionIds = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	bannerSectionSectionIds = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	bannerSectionOriginalSectionIds = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	itypes = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	consents = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	times = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	readOnlyClasses = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	classHasErrors = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	bannerSectionLabels = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	bannerSectionLabelIndents = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	rooms = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	instructors = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	datePatterns = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	readOnlySubparts = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	limitOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	classLimits = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	courseCredits = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	courseCreditOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	defaultCampus = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	campusOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	campuses = DynamicList.getInstance(new ArrayList(), factoryClasses);
-       	bannerCampusOverrides = DynamicList.getInstance(new ArrayList(), factoryClasses);
+    	bannerSectionIds = new ArrayList<Long>();
+    	bannerSectionSectionIds = new ArrayList<String>();
+    	bannerSectionOriginalSectionIds = new ArrayList<String>();
+    	itypes = new ArrayList<String>();
+    	consents = new ArrayList<Long>();
+    	times = new ArrayList<String>();
+    	readOnlyClasses = new ArrayList<Boolean>();
+       	classHasErrors = new ArrayList<Boolean>();
+       	bannerSectionLabels = new ArrayList<String>();
+       	bannerSectionLabelIndents = new ArrayList<String>();
+       	rooms = new ArrayList<String>();
+       	instructors = new ArrayList<String>();
+    	datePatterns = new ArrayList<String>();
+    	readOnlySubparts = new ArrayList<Boolean>();
+       	limitOverrides = new ArrayList<String>();
+       	classLimits = new ArrayList<Integer>();
+       	courseCredits = new ArrayList<String>();
+       	courseCreditOverrides = new ArrayList<String>();
+       	defaultCampus = new ArrayList<String>();
+       	campusOverrides = new ArrayList<Long>();
+       	campuses = new ArrayList<String>();
+       	bannerCampusOverrides = new ArrayList<BannerCampusOverride>();
     }
      
-	public List getBannerSectionIds() {
+	public List<Long> getBannerSectionIds() {
 		return bannerSectionIds;
 	}
-	public void setBannerSectionIds(List bannerSectionIds) {
+	public void setBannerSectionIds(List<Long> bannerSectionIds) {
 		this.bannerSectionIds = bannerSectionIds;
 	}
-	public List getClassHasErrors() {
+	public Long getBannerSectionIds(int idx) {
+		return bannerSectionIds.get(idx);
+	}
+	public void setBannerSectionIds(int idx, Long bannerSectionId) {
+		this.bannerSectionIds.set(idx, bannerSectionId);
+	}
+	
+	public List<Boolean> getClassHasErrors() {
 		return classHasErrors;
 	}
-	public void setClassHasErrors(List classHasErrors) {
+	public void setClassHasErrors(List<Boolean> classHasErrors) {
 		this.classHasErrors = classHasErrors;
 	}
-	public List getBannerSectionLabels() {
+	public Boolean getClassHasErrors(int idx) {
+		return classHasErrors.get(idx);
+	}
+	public void setClassHasErrors(int idx, Boolean classHasError) {
+		this.classHasErrors.set(idx, classHasError);
+	}
+	
+	public List<String> getBannerSectionLabels() {
 		return bannerSectionLabels;
 	}
 	public void setBannerSectionLabels(List bannerSectionLabels) {
 		this.bannerSectionLabels = bannerSectionLabels;
 	}
-	public List getInstructors() {
+	public String getBannerSectionLabels(int idx) {
+		return bannerSectionLabels.get(idx);
+	}
+	public void setBannerSectionLabels(int idx, String bannerSectionLabel) {
+		this.bannerSectionLabels.set(idx, bannerSectionLabel);
+	}
+
+	public List<String> getInstructors() {
 		return instructors;
 	}
-	public void setInstructors(List instructors) {
+	public void setInstructors(List<String> instructors) {
 		this.instructors = instructors;
 	}
-	public List getDatePatterns() {
+	public String getInstructors(int idx) {
+		return instructors.get(idx);
+	}
+	public void setInstructors(int idx, String instructor) {
+		this.instructors.set(idx, instructor);
+	}
+
+	public List<String> getDatePatterns() {
 		return datePatterns;
 	}
-	public void setDatePatterns(List datePatterns) {
+	public void setDatePatterns(List<String> datePatterns) {
 		this.datePatterns = datePatterns;
 	}
+	public String getDatePatterns(int idx) {
+		return datePatterns.get(idx);
+	}
+	public void setDatePatterns(int idx, String datePattern) {
+		this.datePatterns.set(idx, datePattern);
+	}
+	
 	public Long getInstrOffrConfigId() {
 		return instrOffrConfigId;
 	}
 	public void setInstrOffrConfigId(Long instrOffrConfigId) {
 		this.instrOffrConfigId = instrOffrConfigId;
 	}
+
 	public Integer getItypeId() {
 		return itypeId;
 	}
 	public void setItypeId(Integer itypeId) {
 		this.itypeId = itypeId;
 	}
+
 	public Float getLabHours() {
 		return labHours;
 	}
 	public void setLabHours(Float labHours) {
 		this.labHours = labHours;
 	}
+
 	public String getOp() {
 		return op;
 	}
 	public void setOp(String op) {
 		this.op = op;
 	}
-	public List getTimes() {
+
+	public List<String> getTimes() {
 		return times;
 	}
-	public void setTimes(List times) {
+	public void setTimes(List<String> times) {
 		this.times = times;
 	}
-	public List getBannerSectionSectionIds() {
+	public String getTimes(int idx) {
+		return times.get(idx);
+	}
+	public void setTimes(int idx, String time) {
+		this.times.set(idx, time);
+	}
+	
+	
+	public List<String> getBannerSectionSectionIds() {
 		return bannerSectionSectionIds;
 	}
-	public void setBannerSectionSectionIds(List bannerSectionSectionIds) {
+	public void setBannerSectionSectionIds(List<String> bannerSectionSectionIds) {
 		this.bannerSectionSectionIds = bannerSectionSectionIds;
 	}
-	public List getReadOnlyClasses() {
+	public String getBannerSectionSectionIds(int idx) {
+		return bannerSectionSectionIds.get(idx);
+	}
+	public void setBannerSectionSectionIds(int idx, String bannerSectionSectionId) {
+		this.bannerSectionSectionIds.set(idx, bannerSectionSectionId);
+	}
+	
+	
+	public List<Boolean> getReadOnlyClasses() {
 		return readOnlyClasses;
 	}
-	public void setReadOnlyClasses(List readOnlyClasses) {
+	public void setReadOnlyClasses(List<Boolean> readOnlyClasses) {
 		this.readOnlyClasses = readOnlyClasses;
-	}	
+	}
+	public Boolean getReadOnlyClasses(int idx) {
+		return readOnlyClasses.get(idx);
+	}
+	public void setReadOnlyClasses(int idx, Boolean readOnlyClass) {
+		this.readOnlyClasses.set(idx, readOnlyClass);
+	}
+	
 	public Long getInstrOfferingId() {
 		return instrOfferingId;
 	}
@@ -373,26 +396,25 @@ public class BannerOfferingModifyForm extends ActionForm {
 
 	    
 	public void addToBannerSections(BannerSession bsess, BannerSection bs, Class_ cls, ClassAssignmentProxy classAssignmentProxy, Boolean isReadOnly, String indent, Boolean canShowLimitOverridesIfNeeded){
-		
 		this.showLimitOverride = Boolean.valueOf(canShowLimitOverridesIfNeeded?bs.isCrossListedSection(null):false);
 		this.bannerSectionLabels.add(bs.bannerSectionLabel());
 		this.bannerSectionLabelIndents.add(indent);
-		this.bannerSectionIds.add(bs.getUniqueId().toString());
+		this.bannerSectionIds.add(bs.getUniqueId());
 		this.bannerSectionSectionIds.add(bs.getSectionIndex());
 		this.bannerSectionOriginalSectionIds.add(bs.getSectionIndex());
 		this.itypes.add(cls.getSchedulingSubpart().getItype().getSis_ref());
 		this.consents.add(bs.effectiveConsentType()==null?null:bs.effectiveConsentType().getUniqueId());
-		this.readOnlyClasses.add(isReadOnly.toString());
-		this.classHasErrors.add(Boolean.valueOf(false).toString());	
+		this.readOnlyClasses.add(isReadOnly);
+		this.classHasErrors.add(false);	
 		this.datePatterns.add(bs.buildDatePatternHtml(classAssignmentProxy));
 		this.times.add(bs.buildAssignedTimeHtml(classAssignmentProxy));
 		this.rooms.add(bs.buildAssignedRoomHtml(classAssignmentProxy));
 		this.instructors.add(bs.buildInstructorHtml());
 		if (showLimitOverride.booleanValue()){
-			this.limitOverrides.add(bs.getOverrideLimit()==null?"":bs.getOverrideLimit());
+			this.limitOverrides.add(bs.getOverrideLimit()==null?"":bs.getOverrideLimit().toString());
 			this.classLimits.add(bs.maxEnrollBasedOnClasses(null));
 		}
-		this.courseCreditOverrides.add(bs.getOverrideCourseCredit()==null?"":bs.getOverrideCourseCredit());
+		this.courseCreditOverrides.add(bs.getOverrideCourseCredit()==null?"":bs.getOverrideCourseCredit().toString());
 		this.courseCredits.add(bs.courseCreditStringBasedOnClass(cls));
 		this.defaultCampus.add(bs.getDefaultCampusCode(bsess, cls));
 		this.campusOverrides.add(bs.getBannerCampusOverride()==null?null:bs.getBannerCampusOverride().getUniqueId());
@@ -415,76 +437,102 @@ public class BannerOfferingModifyForm extends ActionForm {
 		this.instrOfferingName = instrOfferingName;
 	}
 
-	public List getBannerSectionLabelIndents() {
+	public List<String> getBannerSectionLabelIndents() {
 		return bannerSectionLabelIndents;
 	}
-
-	public void setBannerSectionLabelIndents(List bannerSectionLabelIndents) {
+	public void setBannerSectionLabelIndents(List<String> bannerSectionLabelIndents) {
 		this.bannerSectionLabelIndents = bannerSectionLabelIndents;
 	}
+	public String getBannerSectionLabelIndents(int idx) {
+		return bannerSectionLabelIndents.get(idx);
+	}
+	public void setBannerSectionLabelIndents(int idx, String bannerSectionLabelIndent) {
+		this.bannerSectionLabelIndents.set(idx, bannerSectionLabelIndent);
+	}
 
-	public List getItypes() {
+	public List<String> getItypes() {
 		return itypes;
 	}
-
-	public void setItypes(List itypes) {
+	public void setItypes(List<String> itypes) {
 		this.itypes = itypes;
 	}
-
-	public List getConsents() {
-		return consents;
+	public String getItypes(int idx) {
+		return itypes.get(idx);
+	}
+	public void setItypes(int idx, String itype) {
+		this.itypes.set(idx, itype);
 	}
 
-	public void setConsents(List consents) {
+	public List<Long> getConsents() {
+		return consents;
+	}
+	public void setConsents(List<Long> consents) {
 		this.consents = consents;
+	}
+	public Long getConsents(int idx) {
+		return consents.get(idx);
+	}
+	public void setConsents(int idx, Long consent) {
+		this.consents.set(idx, consent);
 	}
 
 	public String getOrigSubparts() {
 		return origSubparts;
 	}
-
 	public void setOrigSubparts(String origSubparts) {
 		this.origSubparts = origSubparts;
 	}
 
 
-	public List getReadOnlySubparts() {
+	public List<Boolean> getReadOnlySubparts() {
 		return readOnlySubparts;
 	}
-
-	public void setReadOnlySubparts(List readOnlySubparts) {
+	public void setReadOnlySubparts(List<Boolean> readOnlySubparts) {
 		this.readOnlySubparts = readOnlySubparts;
 	}
-
-	public List getRooms() {
-		return rooms;
+	public Boolean getReadOnlySubparts(int idx) {
+		return readOnlySubparts.get(idx);
+	}
+	public void setReadOnlySubparts(int idx, Boolean readOnlySubpart) {
+		this.readOnlySubparts.set(idx, readOnlySubpart);
 	}
 
-	public void setRooms(List rooms) {
+	public List<String> getRooms() {
+		return rooms;
+	}
+	public void setRooms(List<String> rooms) {
 		this.rooms = rooms;
+	}
+	public String getRooms(int idx) {
+		return rooms.get(idx);
+	}
+	public void setRooms(int idx, String rooms) {
+		this.rooms.set(idx, rooms);
 	}
 
 	public Long getBannerCourseOfferingId() {
 		return bannerCourseOfferingId;
 	}
-
 	public void setBannerCourseOfferingId(Long bannerCourseOfferingId) {
 		this.bannerCourseOfferingId = bannerCourseOfferingId;
 	}
 
-	public List getBannerSectionOriginalSectionIds() {
+	public List<String> getBannerSectionOriginalSectionIds() {
 		return bannerSectionOriginalSectionIds;
 	}
-
-	public void setBannerSectionOriginalSectionIds(
-			List bannerSectionOriginalSectionIds) {
+	public void setBannerSectionOriginalSectionIds(List<String> bannerSectionOriginalSectionIds) {
 		this.bannerSectionOriginalSectionIds = bannerSectionOriginalSectionIds;
+	}
+	public String getBannerSectionOriginalSectionIds(int idx) {
+		return bannerSectionOriginalSectionIds.get(idx);
+	}
+	public void setBannerSectionOriginalSectionIds(int idx, String bannerSectionOriginalSectionId) {
+		this.bannerSectionOriginalSectionIds.set(idx, bannerSectionOriginalSectionId);
 	}
 
 	public Long getBannerConfigId() {
 		return bannerConfigId;
 	}
-
 	public void setBannerConfigId(Long bannerConfigId) {
 		this.bannerConfigId = bannerConfigId;
 	}
@@ -492,7 +540,6 @@ public class BannerOfferingModifyForm extends ActionForm {
 	public Boolean getConfigIsEditable() {
 		return configIsEditable;
 	}
-
 	public void setConfigIsEditable(Boolean configIsEditable) {
 		this.configIsEditable = configIsEditable;
 	}
@@ -500,7 +547,6 @@ public class BannerOfferingModifyForm extends ActionForm {
 	public Boolean getShowLabHours() {
 		return showLabHours;
 	}
-
 	public void setShowLabHours(Boolean showLabHours) {
 		this.showLabHours = showLabHours;
 	}
@@ -508,7 +554,6 @@ public class BannerOfferingModifyForm extends ActionForm {
 	public Boolean getShowLimitOverride() {
 		return showLimitOverride;
 	}
-
 	public void setShowLimitOverride(Boolean showLimitOverride) {
 		if (ApplicationProperties.getProperty("tmtbl.banner.section.limit.overrides_allowed", "true").equalsIgnoreCase("true")) {
 			this.showLimitOverride = showLimitOverride;
@@ -517,68 +562,110 @@ public class BannerOfferingModifyForm extends ActionForm {
 		}
 	}
 
-	public List getLimitOverrides() {
+	public List<String> getLimitOverrides() {
 		return limitOverrides;
 	}
-
-	public void setLimitOverrides(List limitOverrides) {
+	public void setLimitOverrides(List<String> limitOverrides) {
 		this.limitOverrides = limitOverrides;
 	}
+	public String getLimitOverrides(int idx) {
+		return limitOverrides.get(idx);
+	}
+	public void setLimitOverrides(int idx, String limitOverride) {
+		this.limitOverrides.set(idx, limitOverride);
+	}
 
-	public List getCourseCreditOverrides() {
+	public List<String> getCourseCreditOverrides() {
 		return courseCreditOverrides;
 	}
-
-	public void setCourseCreditOverrides(List courseCreditOverrides) {
+	public void setCourseCreditOverrides(List<String> courseCreditOverrides) {
 		this.courseCreditOverrides = courseCreditOverrides;
 	}
+	public String getCourseCreditOverrides(int idx) {
+		return courseCreditOverrides.get(idx);
+	}
+	public void setCourseCreditOverrides(int idx, String courseCreditOverride) {
+		this.courseCreditOverrides.set(idx, courseCreditOverride);
+	}
 
-	public List getClassLimits() {
+	public List<Integer> getClassLimits() {
 		return classLimits;
 	}
-
-	public void setClassLimits(List classLimits) {
+	public void setClassLimits(List<Integer> classLimits) {
 		this.classLimits = classLimits;
 	}
+	public Integer getClassLimits(int idx) {
+		return classLimits.get(idx);
+	}
+	public void setClassLimits(int idx, Integer classLimit) {
+		this.classLimits.set(idx, classLimit);
+	}
 
-	public List getCourseCredits() {
+	public List<String> getCourseCredits() {
 		return courseCredits;
 	}
-
-	public void setCourseCredits(List courseCredits) {
+	public void setCourseCredits(List<String> courseCredits) {
 		this.courseCredits = courseCredits;
 	}
+	public String getCourseCredits(int idx) {
+		return courseCredits.get(idx);
+	}
+	public void setCourseCredits(int idx, String courseCredit) {
+		this.courseCredits.set(idx, courseCredit);
+	}
 
-	public List getDefaultCampus() {
+	public List<String> getDefaultCampus() {
 		return defaultCampus;
 	}
-
-	public void setDefaultCampus(List defaultCampus) {
+	public void setDefaultCampus(List<String> defaultCampus) {
 		this.defaultCampus = defaultCampus;
 	}
+	public String getDefaultCampus(int idx) {
+		return defaultCampus.get(idx);
+	}
+	public void setDefaultCampus(int idx, String defaultCampus) {
+		this.defaultCampus.set(idx, defaultCampus);
+	}
 
-	public List getCampusOverrides() {
+	public List<Long> getCampusOverrides() {
 		return campusOverrides;
 	}
-
-	public void setCampusOverrides(List campusOverrides) {
+	public void setCampusOverrides(List<Long> campusOverrides) {
 		this.campusOverrides = campusOverrides;
 	}
-
-	public List getCampuses() {
-		return campuses;
+	public Long getCampusOverrides(int idx) {
+		return campusOverrides.get(idx);
+	}
+	public void setCampusOverrides(int idx, Long campusOverride) {
+		this.campusOverrides.set(idx, campusOverride);
 	}
 
+	public List<String> getCampuses() {
+		return campuses;
+	}
 	public void setCampuses(List campuses) {
 		this.campuses = campuses;
 	}
+	public String getCampuses(int idx) {
+		return campuses.get(idx);
+	}
+	public void setCampuses(int idx, String campus) {
+		this.campuses.set(idx, campus);
+	}
 
-	public List getBannerCampusOverrides() {
+	public List<BannerCampusOverride> getBannerCampusOverrides() {
 		return bannerCampusOverrides;
 	}
-
-	public void setBannerCampusOverrides(List bannerCampusOverrides) {
+	public void setBannerCampusOverrides(List<BannerCampusOverride> bannerCampusOverrides) {
 		this.bannerCampusOverrides = bannerCampusOverrides;
 	}
-
+	public List<IdValue> getBannerCampusOverrideOptions(int index) {
+		List<IdValue> ret = new ArrayList<IdValue>();
+		ret.add(new IdValue(-1l, BMSG.defaultCampusOverride(getDefaultCampus(index))));
+		for (BannerCampusOverride bco: getBannerCampusOverrides()) {
+			if (bco.isVisible() || bco.getUniqueId().equals(getCampusOverrides(index)))
+				ret.add(new IdValue(bco.getUniqueId(), bco.getBannerCampusCode() + " - " + bco.getBannerCampusName()));
+		}
+		return ret;
+	}
 }

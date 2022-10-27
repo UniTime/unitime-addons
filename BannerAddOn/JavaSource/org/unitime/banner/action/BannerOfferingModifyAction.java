@@ -26,19 +26,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.util.MessageResources;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.form.BannerOfferingModifyForm;
@@ -51,7 +44,11 @@ import org.unitime.banner.model.dao.BannerConfigDAO;
 import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.commons.Debug;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.Department;
@@ -66,114 +63,92 @@ import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 import org.unitime.timetable.model.dao.ItypeDescDAO;
 import org.unitime.timetable.model.dao.OfferingConsentTypeDAO;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.permissions.Permission.PermissionDepartment;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
-import org.unitime.timetable.solver.WebSolver;
+import org.unitime.timetable.spring.SpringApplicationContextHolder;
 import org.unitime.timetable.util.LookupTables;
 
 
 /**
  * @author Stephanie Schluttenhofer
  */
-@Service("/bannerOfferingModify")
-public class BannerOfferingModifyAction extends Action {
+@Action(value = "bannerOfferingModify", results = {
+		@Result(name = "bannerOfferingModify", type = "tiles", location = "bannerOfferingModify.tiles"),
+		@Result(name = "bannerOfferingDetail", type = "redirect", location = "/bannerOfferingDetail.action",
+			params = { "io", "${form.instrOfferingId}", "bc", "${form.bannerCourseOfferingId}", "op", "view"})
+	})
+@TilesDefinition(name = "bannerOfferingModify.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Banner Offering Edit"),
+		@TilesPutAttribute(name = "body", value = "/banner/bannerOfferingModify.jsp"),
+		@TilesPutAttribute(name = "showNavigation", value = "false"),
+		@TilesPutAttribute(name = "showSolverWarnings", value = "assignment")
+	})
+public class BannerOfferingModifyAction extends UniTimeAction<BannerOfferingModifyForm> {
+	private static final long serialVersionUID = 1777414232394219529L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
-	@Autowired SessionContext sessionContext;
+	private Long instrOffrConfigId = null;
+	private Long bannerCourseOfferingId = null;
 	
-	@Autowired PermissionDepartment permissionDepartment;
+	public Long getUid() { return instrOffrConfigId; }
+	public void setUid(Long instrOffrConfigId) { this.instrOffrConfigId = instrOffrConfigId; }
+	public Long getBc() { return bannerCourseOfferingId; }
+	public void setBc(Long bannerCourseOfferingId) { this.bannerCourseOfferingId = bannerCourseOfferingId; }
 
-	/**
-     * Method execute
-     * @param mapping
-     * @param form
-     * @param request
-     * @param response
-     * @return ActionForward
-     */
-    public ActionForward execute(
-        ActionMapping mapping,
-        ActionForm form,
-        HttpServletRequest request,
-        HttpServletResponse response) throws Exception {
-    	
-        MessageResources rsc = getResources(request);
-        BannerOfferingModifyForm frm = (BannerOfferingModifyForm) form;
+	@Override
+    public String execute() throws Exception {
+		if (form == null) form = new BannerOfferingModifyForm();
+
 		LookupTables.setupConsentType(request);
-		frm.setBannerCampusOverrides(BannerCampusOverride.getBannerCampusOverrideList());
+		form.setBannerCampusOverrides(BannerCampusOverride.getBannerCampusOverrideList());
        // Get operation
-        String op = (request.getParameter("op")==null)
-						? (frm.getOp()==null || frm.getOp().length()==0)
-						        ? (request.getAttribute("op")==null)
-						                ? null
-						                : request.getAttribute("op").toString()
-						        : frm.getOp()
-						: request.getParameter("op");
-
-        if(op==null)
-            op = request.getParameter("hdnOp");
+		if (op == null) op = form.getOp();
 
         if(op==null || op.trim().length()==0)
-            throw new Exception ("Operation could not be interpreted: " + op);
-
-        // Instructional Offering Config Id
-        String instrOffrConfigId = "";
-        String bannerCourseOfferingId = "";
+            throw new Exception (MSG.errorOperationNotInterpreted() + op);
 
         // Set up Lists
-        frm.setOp(op);
+        form.setOp(op);
+        
+        if (op.equals(BMSG.actionBackToBannerOfferingDetail())) {
+        	return "bannerOfferingDetail";
+        }
 
         // First access to screen
-        if(op.equalsIgnoreCase(rsc.getMessage("button.edit"))) {
-
-        	instrOffrConfigId = (request.getParameter("uid")==null)
-								? (request.getAttribute("uid")==null)
-								        ? null
-								        : request.getAttribute("uid").toString()
-								: request.getParameter("uid");
-			bannerCourseOfferingId = (request.getParameter("bc")==null)
-										? (request.getAttribute("bc")==null)
-										        ? null
-										        : request.getAttribute("bc").toString()
-										: request.getParameter("bc");
-
-            doLoad(request, frm, instrOffrConfigId, bannerCourseOfferingId);
-            setupItypeChoices(request, frm);
+        if (op.equalsIgnoreCase("edit") || op.equals(BMSG.actionEditBannerConfig())) {
+            doLoad(instrOffrConfigId, bannerCourseOfferingId);
+            setupItypeChoices();
         }
 
 		LookupTables.setupExternalDepts(request, sessionContext.getUser().getCurrentAcademicSessionId());
-		Department contrDept = InstrOfferingConfigDAO.getInstance().get(frm.getInstrOffrConfigId()).getInstructionalOffering().getControllingCourseOffering().getSubjectArea().getDepartment();
+		Department contrDept = InstrOfferingConfigDAO.getInstance().get(form.getInstrOffrConfigId()).getInstructionalOffering().getControllingCourseOffering().getSubjectArea().getDepartment();
 		TreeSet<Department> ts = new TreeSet<Department>();
 		for (@SuppressWarnings("unchecked")
 		Iterator<Department> it = ((TreeSet<Department>) request.getAttribute(Department.EXTERNAL_DEPT_ATTR_NAME)).iterator(); it.hasNext();){
 			Department d = it.next();
 			if (sessionContext.hasPermission(d, Right.MultipleClassSetupDepartment) &&
-				permissionDepartment.check(sessionContext.getUser(), contrDept, DepartmentStatusType.Status.OwnerEdit, d, DepartmentStatusType.Status.ManagerEdit))
+				getPermissionDepartment().check(sessionContext.getUser(), contrDept, DepartmentStatusType.Status.OwnerEdit, d, DepartmentStatusType.Status.ManagerEdit))
 				ts.add(d);
 		}
 		request.setAttribute((Department.EXTERNAL_DEPT_ATTR_NAME + "list"), ts);
  
         // Update the classes
-        if(op.equalsIgnoreCase(rsc.getMessage("button.update"))) {
+        if (op.equalsIgnoreCase(BMSG.actionUpdateBannerConfig())) {
             // Validate data input
-            ActionMessages errors = frm.validate(mapping, request);
-            setupItypeChoices(request, frm);
-            if(errors.size()==0) {
-                doUpdate(request, frm);
-                request.setAttribute("io", frm.getInstrOfferingId());
-                request.setAttribute("bc", frm.getBannerCourseOfferingId());
-                return mapping.findForward("bannerOfferingDetail");
-            }
-            else {
-                saveErrors(request, errors);
+            form.validate(this);
+            setupItypeChoices();
+            if (!hasFieldErrors()) {
+                doUpdate();
+                return "bannerOfferingDetail";
             }
         }
 
-        return mapping.findForward("bannerOfferingModify");
+        return "bannerOfferingModify";
     }
 
-    private void setupItypeChoices(HttpServletRequest request, BannerOfferingModifyForm form) {
+    private void setupItypeChoices() {
     	ItypeDescDAO itDao = ItypeDescDAO.getInstance();
     	String qs = "select distinct it from ItypeDesc it, BannerConfig bc, SchedulingSubpart ss where bc.uniqueId = :configId and ss.instrOfferingConfig.uniqueId = bc.instrOfferingConfigId and it.itype = ss.itype.itype";
 	    request.setAttribute("availableItypes", itDao.getQuery(qs).setLong("configId", form.getBannerConfigId().longValue()).setCacheable(true).list());
@@ -181,53 +156,45 @@ public class BannerOfferingModifyAction extends Action {
 
 	/**
      * Loads the form with the classes that are part of the instructional offering config
-     * @param frm Form object
-     * @param instrCoffrConfigId Instructional Offering Config Id
-     * @param user User object
      */
-    private void doLoad(
-    		HttpServletRequest request,
-    		BannerOfferingModifyForm frm,
-            String instrOffrConfigId,
-            String bannerCourseOfferingId
-            ) throws Exception {
+    private void doLoad(Long instrOffrConfigId, Long bannerCourseOfferingId) throws Exception {
 
 		// Check uniqueid
-        if(instrOffrConfigId==null || instrOffrConfigId.trim().length()==0)
+        if(instrOffrConfigId==null)
             throw new Exception ("Missing Instructional Offering Config.");
 
 		sessionContext.checkPermission(instrOffrConfigId, "InstrOfferingConfig", Right.MultipleClassSetup);
 
 		// Check banner course uniqueid
-        if(bannerCourseOfferingId==null || bannerCourseOfferingId.trim().length()==0)
+        if(bannerCourseOfferingId==null)
             throw new Exception ("Missing Banner Course Offering.");
 
         // Load details
         InstrOfferingConfigDAO iocDao = new InstrOfferingConfigDAO();
-        InstrOfferingConfig ioc = iocDao.get(Long.valueOf(instrOffrConfigId));
+        InstrOfferingConfig ioc = iocDao.get(instrOffrConfigId);
         InstructionalOffering io = ioc.getInstructionalOffering();
         
         BannerCourseDAO bcDao = new BannerCourseDAO();
-        BannerCourse bc = bcDao.get(Long.valueOf(bannerCourseOfferingId));
+        BannerCourse bc = bcDao.get(bannerCourseOfferingId);
         
         BannerConfig bannerConfig = BannerConfig.findBannerConfigForInstrOffrConfigAndCourseOffering(ioc, bc.getCourseOffering(bcDao.getSession()), bcDao.getSession());
         BannerSession bsess = BannerSession.findBannerSessionForSession(io.getSession(), bcDao.getSession());
         
         // Load form properties
-        frm.setInstrOffrConfigId(ioc.getUniqueId());
-        frm.setInstrOfferingId(io.getUniqueId());
-        frm.setBannerCourseOfferingId(bc.getUniqueId());
-        frm.setBannerConfigId(bannerConfig.getUniqueId());
-        frm.setItypeId(bannerConfig.getGradableItype() != null?bannerConfig.getGradableItype().getItype():null);
-        frm.setShowLabHours(BannerSection.displayLabHours());
-        frm.setLabHours(bannerConfig.getLabHours());
-        frm.setConfigIsEditable(sessionContext.hasPermission(ioc, Right.MultipleClassSetup));
+        form.setInstrOffrConfigId(ioc.getUniqueId());
+        form.setInstrOfferingId(io.getUniqueId());
+        form.setBannerCourseOfferingId(bc.getUniqueId());
+        form.setBannerConfigId(bannerConfig.getUniqueId());
+        form.setItypeId(bannerConfig.getGradableItype() != null?bannerConfig.getGradableItype().getItype():null);
+        form.setShowLabHours(BannerSection.displayLabHours());
+        form.setLabHours(bannerConfig.getLabHours());
+        form.setConfigIsEditable(sessionContext.hasPermission(ioc, Right.MultipleClassSetup));
 
         String name = bc.getCourseOffering(bcDao.getSession()).getCourseNameWithTitle();
         if (io.hasMultipleConfigurations()) {
         	name += " [" + ioc.getName() +"]";
         }
-        frm.setInstrOfferingName(name);
+        form.setInstrOfferingName(name);
 
         if (ioc.getSchedulingSubparts() == null || ioc.getSchedulingSubparts().size() == 0)
         	throw new Exception("Instructional Offering Config has not been defined.");
@@ -236,19 +203,19 @@ public class BannerOfferingModifyAction extends Action {
 		ArrayList<SchedulingSubpart> subpartList = new ArrayList(ioc.getSchedulingSubparts());
         
         Collections.sort(subpartList, new SchedulingSubpartComparator());
-        ClassAssignmentProxy cap = WebSolver.getClassAssignmentProxy(request.getSession());
+        ClassAssignmentProxy cap = getClassAssignmentService().getAssignment();
         for(Iterator<SchedulingSubpart> it = subpartList.iterator(); it.hasNext();){
         	SchedulingSubpart ss = (SchedulingSubpart) it.next();
     		if (ss.getClasses() == null || ss.getClasses().size() == 0)
     			throw new Exception("Initial setup of Instructional Offering Config has not been completed.");
     		if (ss.getParentSubpart() == null){
-        		loadClasses(frm, bsess, bc, ss.getClasses(), Boolean.valueOf(true), new String(), null, cap);
+        		loadClasses(bsess, bc, ss.getClasses(), Boolean.valueOf(true), new String(), null, cap);
         	}
         }
       }
 
 
-    private void loadClasses(BannerOfferingModifyForm frm, BannerSession bsess, BannerCourse bc, Set<Class_> classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
+    private void loadClasses(BannerSession bsess, BannerCourse bc, Set<Class_> classes, Boolean isReadOnly, String indent, Integer previousItype, ClassAssignmentProxy classAssignmentProxy){
     	if (classes != null && classes.size() > 0){
     		ArrayList<Class_> classesList = new ArrayList<Class_>(classes);
             Collections.sort(classesList, new ClassComparator(ClassComparator.COMPARE_BY_ITYPE) );
@@ -265,29 +232,27 @@ public class BannerOfferingModifyAction extends Action {
 		    			readOnlyClass = Boolean.valueOf(!sessionContext.hasPermission(cls, Right.MultipleClassSetupClass));
 		    		}
 		    		BannerSection bs = BannerSection.findBannerSectionForBannerCourseAndClass(bc, cls);
-		    		frm.addToBannerSections(bsess, bs, cls, classAssignmentProxy, readOnlyClass, indent, canShowLimitOverridesIfNeeded);
+		    		form.addToBannerSections(bsess, bs, cls, classAssignmentProxy, readOnlyClass, indent, canShowLimitOverridesIfNeeded);
 		    	}
-	    		loadClasses(frm, bsess, bc, cls.getChildClasses(), Boolean.valueOf(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
+	    		loadClasses(bsess, bc, cls.getChildClasses(), Boolean.valueOf(true), indent + ((previousItype == null || !previousItype.equals(cls.getSchedulingSubpart().getItype().getItype()))?"&nbsp;&nbsp;&nbsp;&nbsp;":""), cls.getSchedulingSubpart().getItype().getItype(), classAssignmentProxy);
 	    	}
     	}
     }
 
     /**
      * Update the instructional offering config
-     * @param request
-     * @param frm
      */
     @SuppressWarnings("unchecked")
-	private void doUpdate(HttpServletRequest request, BannerOfferingModifyForm frm)
+	private void doUpdate()
     	throws Exception {
 
         // Get Instructional Offering Config
         InstrOfferingConfigDAO iocdao = new InstrOfferingConfigDAO();
-        InstrOfferingConfig ioc = iocdao.get(frm.getInstrOffrConfigId());
+        InstrOfferingConfig ioc = iocdao.get(form.getInstrOffrConfigId());
         Session hibSession = iocdao.getSession();
 
-        BannerCourse bc = BannerCourseDAO.getInstance().get(frm.getBannerCourseOfferingId());      
-        BannerConfig bannerConfig = BannerConfigDAO.getInstance().get(frm.getBannerConfigId());
+        BannerCourse bc = BannerCourseDAO.getInstance().get(form.getBannerCourseOfferingId());      
+        BannerConfig bannerConfig = BannerConfigDAO.getInstance().get(form.getBannerConfigId());
   
 		Transaction tx = null;
 
@@ -295,28 +260,28 @@ public class BannerOfferingModifyAction extends Action {
 	        tx = hibSession.beginTransaction();
 
 	        // If the banner offering config gradable itype has changed update it.
-	        if ((frm.getItypeId() == null && bannerConfig.getGradableItype() != null)  
-	        		|| (frm.getItypeId() != null && bannerConfig.getGradableItype() == null)
-	        		|| (frm.getItypeId() != null && !frm.getItypeId().equals(bannerConfig.getGradableItype().getItype()))){
+	        if ((form.getItypeId() == null && bannerConfig.getGradableItype() != null)  
+	        		|| (form.getItypeId() != null && bannerConfig.getGradableItype() == null)
+	        		|| (form.getItypeId() != null && !form.getItypeId().equals(bannerConfig.getGradableItype().getItype()))){
 	        	ItypeDesc itype = null;
-	        	if (frm.getItypeId() != null) {
-	        		itype = ItypeDescDAO.getInstance().get(frm.getItypeId());
+	        	if (form.getItypeId() != null) {
+	        		itype = ItypeDescDAO.getInstance().get(form.getItypeId());
 	        	}
 	        	bannerConfig.setGradableItype(itype);
 	        	hibSession.update(bannerConfig);
 	        }
 
 	        // If the banner offering config gradable itype has changed update it.
-	        if ((frm.getLabHours() == null && bannerConfig.getLabHours() != null)  
-	        		|| (frm.getLabHours() != null && bannerConfig.getLabHours() == null)
-	        		|| (frm.getLabHours() != null && !frm.getLabHours().equals(bannerConfig.getLabHours()))){
+	        if ((form.getLabHours() == null && bannerConfig.getLabHours() != null)  
+	        		|| (form.getLabHours() != null && bannerConfig.getLabHours() == null)
+	        		|| (form.getLabHours() != null && !form.getLabHours().equals(bannerConfig.getLabHours()))){
 	        	
-	        	bannerConfig.setLabHours(frm.getLabHours());
+	        	bannerConfig.setLabHours(form.getLabHours());
 	        	hibSession.update(bannerConfig);
 	        }
 
 	        // For all changed classes, update them
-	        modifyClasses(frm, ioc, bc, hibSession);
+	        modifyClasses(ioc, bc, hibSession);
 
             ChangeLog.addChange(
                     hibSession,
@@ -347,20 +312,20 @@ public class BannerOfferingModifyAction extends Action {
     }
 
   
-	private void modifyClasses(BannerOfferingModifyForm frm, InstrOfferingConfig ioc, BannerCourse bc, Session hibSession){
+	private void modifyClasses(InstrOfferingConfig ioc, BannerCourse bc, Session hibSession){
 		BannerSectionDAO bsDao = new BannerSectionDAO();
 	
-		Iterator it1 = frm.getBannerSectionIds().listIterator();
-		Iterator it2 = frm.getBannerSectionSectionIds().listIterator();
-		Iterator it3 = frm.getConsents().listIterator();
-		Iterator it4 = frm.getCourseCreditOverrides().listIterator();
-		Iterator it5 = frm.getLimitOverrides().listIterator();
-		Iterator it6 = frm.getCampusOverrides().listIterator();
+		Iterator<Long> it1 = form.getBannerSectionIds().listIterator();
+		Iterator<String> it2 = form.getBannerSectionSectionIds().listIterator();
+		Iterator<Long> it3 = form.getConsents().listIterator();
+		Iterator<String> it4 = form.getCourseCreditOverrides().listIterator();
+		Iterator<String> it5 = form.getLimitOverrides().listIterator();
+		Iterator<Long> it6 = form.getCampusOverrides().listIterator();
 		
 		for(;it1.hasNext();){
 			boolean changed = false;
-			Long sectionId = Long.valueOf(it1.next().toString());
-			String bannerSectionIndex = (String)it2.next();
+			Long sectionId = it1.next();
+			String bannerSectionIndex = it2.next();
 			if (bannerSectionIndex != null){
 				bannerSectionIndex = bannerSectionIndex.toUpperCase();
 			}
@@ -370,9 +335,8 @@ public class BannerOfferingModifyAction extends Action {
 				bs.updateClassSuffixForClassesIfNecessary(bsDao.getSession());
 				changed = true;
 			}
-			String consentStr = it3.next().toString();
-			Long consentId = Long.valueOf((consentStr.equals("-")?"-1":consentStr.toString()));
-			if (consentId.equals(-1)){
+			Long consentId = it3.next();
+			if (consentId != null && consentId < 0) {
 				consentId = null;
 			}
 			OfferingConsentType oct = bs.effectiveConsentType(); 
@@ -397,8 +361,8 @@ public class BannerOfferingModifyAction extends Action {
 				bs.setOverrideCourseCredit(credit);
 				changed = true;
 			}
-			if (frm.getShowLimitOverride().booleanValue()){
-				String limitStr = it5.next().toString();
+			if (form.getShowLimitOverride()){
+				String limitStr = it5.next();
 				Integer limit = null;
 				if (limitStr != null && limitStr.trim().length() > 0){
 					limit = Integer.valueOf(limitStr);
@@ -413,9 +377,8 @@ public class BannerOfferingModifyAction extends Action {
 					changed = true;
 				}
 			}
-			String campusOverrideIdStr = it6.next().toString();
-			Long campusOverrideId = Long.valueOf((campusOverrideIdStr.equals("-")?"-1":campusOverrideIdStr.toString()));
-			if (campusOverrideId.equals(-1)){
+			Long campusOverrideId = it6.next();
+			if (campusOverrideId != null && campusOverrideId < 0) {
 				campusOverrideId = null;
 			}
 			BannerCampusOverride newCmp = null;
@@ -435,4 +398,7 @@ public class BannerOfferingModifyAction extends Action {
 		}
     }
 
+	protected PermissionDepartment getPermissionDepartment() {
+    	return (PermissionDepartment)SpringApplicationContextHolder.getBean("permissionDepartment");
+    }
 }

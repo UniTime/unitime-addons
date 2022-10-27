@@ -177,7 +177,7 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
 	        
 	        if ((isEditable || isExtManaged) && ioc.hasClasses()) {
 		        btnTable.append("<td>");
-		        btnTable.append("	<form method='post' action='bannerOfferingModify.do' class='FormWithNoPadding'>");
+		        btnTable.append("	<form method='post' action='bannerOfferingModify.action' class='FormWithNoPadding'>");
 		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId().toString() + "'>");
 		        btnTable.append("		<input type='hidden' name='bc' value='" + bannerCourse.getUniqueId().toString() + "'>");
 		        btnTable.append("		<input type='submit' name='op' value='" + BMSG.actionEditBannerConfig() + "' title='" + BMSG.titleEditBannerConfig() + "' class='btn'> ");

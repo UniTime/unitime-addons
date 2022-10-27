@@ -23,7 +23,6 @@
    <form-beans>
    		<!-- Custom forms -->
       <form-bean name="bannerMessageResponsesForm" type="org.unitime.banner.form.BannerMessageResponsesForm" />
-	  <form-bean name="bannerOfferingModifyForm" type="org.unitime.banner.form.BannerOfferingModifyForm" />
 	  <form-bean name="bannerSessionListForm" type="org.unitime.banner.form.BannerSessionListForm" />
 	  <form-bean name="bannerSessionEditForm" type="org.unitime.banner.form.BannerSessionEditForm" />
 	  <form-bean name="bannerTermCrnPropertiesListForm" type="org.unitime.banner.form.BannerTermCrnPropertiesListForm" />
@@ -52,22 +51,6 @@
        		path="/bannerMessageResponses.do" />
       </action>
 
-      <action
-         path="/bannerOfferingModify"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         attribute="bannerOfferingModifyForm"
-         input="bannerOfferingModifyTile"
-         name="bannerOfferingModifyForm"
-         scope="request"
-         validate="false">
-        <forward 
-        	name="bannerOfferingModify" 
-        	path="bannerOfferingModifyTile" />
-        <forward 
-        	name="bannerOfferingDetail" 
-        	path="/bannerOfferingDetail.action"
-        	redirect="true" />
-      </action>
       <action
          path="/bannerSessionList"
          attribute="bannerSessionListForm"

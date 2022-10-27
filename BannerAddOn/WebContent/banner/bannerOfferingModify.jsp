@@ -17,223 +17,192 @@
  * limitations under the License.
  * 
 --%>
-<%@ page language="java" autoFlush="true" errorPage="../error.jsp" %>
-<%@ page import="org.unitime.timetable.util.IdValue" %>
-<%@ page import="org.unitime.timetable.model.DatePattern" %>
-<%@ page import="org.unitime.banner.form.BannerOfferingModifyForm" %>
-<%@page import="org.unitime.timetable.model.OfferingConsentType"%>
-<%@page import="org.unitime.timetable.model.ItypeDesc"%>
-<%@ page import="org.unitime.timetable.defaults.SessionAttribute"%>
-<%@ page import="org.unitime.banner.model.BannerCampusOverride"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-<%@ taglib uri="http://www.unitime.org/tags-localization" prefix="loc" %>
-
-<loc:bundle name="CourseMessages">
-
-<SCRIPT language="javascript">
-	<!--
-
-		function doClick(op, id) {
-			document.forms[0].elements["hdnOp"].value=op;
-			document.forms[0].elements["id"].value=id;
-			document.forms[0].elements["click"].value="y";
-			document.forms[0].submit();
-		}
-		
-	// -->
-</SCRIPT>
-
-<tiles:importAttribute />
-<tt:session-context/>
-<% 
-	String frmName = "bannerOfferingModifyForm";
-	BannerOfferingModifyForm frm = (BannerOfferingModifyForm)request.getAttribute(frmName);
-	String crsNbr = (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
-%>
-
-<script language='JavaScript'>
-      function resetAllDisplayFlags(value, baseName) {
-            for (var i=0;i<<%=frm.getBannerSectionIds().size()%>;i++) {
-                  var chbox = document.getElementsByName(baseName+'['+i+']');
-                  if (chbox!=null && chbox.length>0)
-                        chbox[0].checked = value;
-            }
-      }
-</script>
-
-<script language="javascript">displayLoading();</script>
-
-<html:form action="/bannerOfferingModify">
-	<html:hidden property="bannerCourseOfferingId"/>	
-	<html:hidden property="bannerConfigId"/>	
-	<html:hidden property="instrOfferingId"/>	
-	<html:hidden property="instrOfferingName"/>	
-	<html:hidden property="instrOffrConfigId"/>	
-	<html:hidden property="configIsEditable"/>
-	<html:hidden property="showLimitOverride"/>
-	<INPUT type="hidden" name="hdnOp" value = "">
-	<INPUT type="hidden" name="id" value = "">
-	<INPUT type="hidden" name="click" value = "">
-
-	<TABLE width="93%" border="0" cellspacing="0" cellpadding="3">
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
+<s:form name="bannerOfferingModify">
+	<s:hidden name="form.bannerCourseOfferingId"/>	
+	<s:hidden name="form.bannerConfigId"/>	
+	<s:hidden name="form.instrOfferingId"/>	
+	<s:hidden name="form.instrOfferingName"/>	
+	<s:hidden name="form.instrOffrConfigId"/>	
+	<s:hidden name="form.configIsEditable"/>
+	<s:hidden name="form.showLimitOverride"/>
+	<table class="unitime-MainTable">
 <!-- Buttons -->
-		<TR>
-			<TD valign="middle" colspan="2">
-				 <tt:section-header>
-					<tt:section-title>
-					<bean:write name="<%=frmName%>" property="instrOfferingName" />
-					</tt:section-title>						
-				<html:submit property="op"  disabled="true"
-					styleClass="btn" accesskey="U" titleKey="title.updateInstructionalOfferingConfig" >
-					<bean:message key="button.updateInstructionalOfferingConfig" />
-				</html:submit>
-				<bean:define id="bannerCourseOfferingId">
-					<bean:write name="<%=frmName%>" property="bannerCourseOfferingId" />				
-				</bean:define>
-				 
-				<html:button property="op" 
-					styleClass="btn" accesskey="B" titleKey="title.backToInstrOffrDetail" 
-					onclick="document.location.href='bannerOfferingDetail.action?op=view&bc=${bannerCourseOfferingId}';">
-					<bean:message key="button.backToInstrOffrDetail" />
-				</html:button>		
-				</tt:section-header>					
-												 
-			</TD>			
-		</TR>
+	<TR>
+		<TD valign="middle" colspan="2">
+			 <tt:section-header>
+				<tt:section-title>
+					<s:property value="form.instrOfferingName" />
+				</tt:section-title>
+				<s:submit name='op' value='%{#bmsg.actionUpdateBannerConfig()}'
+					accesskey='%{#bmsg.accessUpdateBannerConfig()}' title='%{#bmsg.titleUpdateBannerConfig(#bmsg.accessUpdateBannerConfig())}'/>
+				<s:submit name='op' value='%{#bmsg.actionBackToBannerOfferingDetail()}'
+					accesskey='%{#bmsg.accessBackToBannerOfferingDetail()}' title='%{#bmsg.titleBackToBannerOfferingDetail(#bmsg.accessBackToBannerOfferingDetail())}'/>
+			</tt:section-header>					
+		</TD>			
+	</TR>
 
-		
+	<s:if test="!fieldErrors.isEmpty()">
+		<TR><TD colspan="2" align="left" class="errorTable">
+			<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror/>
+		</TD></TR>
+	</s:if>	
 
-		<logic:messagesPresent>
-		<TR>
-			<TD colspan="2" align="left" class="errorCell">
-					<B><U>ERRORS</U></B><BR>
-				<BLOCKQUOTE>
-				<UL>
-				    <html:messages id="error">
-				      <LI>
-						${error}
-				      </LI>
-				    </html:messages>
-			    </UL>
-			    </BLOCKQUOTE>
-			</TD>
-		</TR>
-		</logic:messagesPresent>
-		<TR>
+	<TR>
 		<TD align="left" colspan="2">
-			Configuration Gradable Itype:
-					<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="true" >
-						<html:select style="width:200;" property='<%= "itypeId" %>' tabindex="<%=java.lang.Integer.toString(9000)%>">
-							<html:option value="-1">No Itype</html:option>
-							<html:options collection="availableItypes" property="itype" labelProperty="desc" />
-						</html:select>
-					</logic:equal>
-					<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="false" >
-						<logic:iterate scope="request" name="availableItypes" id="ityp">
-							<logic:equal name="<%=frmName%>" property='<%= "itypeId" %>' value="<%=((ItypeDesc)ityp).getItype().toString()%>">
-								<bean:write name="ityp" property="desc" />
-							</logic:equal>
-						</logic:iterate>
-						<html:hidden property='<%= "itypeId" %>'/>
-					</logic:equal>
+			<loc:message name="propConfigGradableItype" id="BMSG"/>
+			<s:if test="form.configIsEditable == true">
+				<s:select name="form.itypeId" style="min-width:200px;"
+					list="#request.availableItypes" listKey="itype" listValue="desc"
+					headerKey="-1" headerValue="%{#bmsg.itemNoItype()}"/>
+			</s:if><s:else>
+				<s:iterator value="#request.availableItypes" var="ityp">
+					<s:if test="form.itypeId == itype.itype"><s:property value="#ityp.desc"/></s:if>
+					<s:hidden name="form.itypeId"/>
+				</s:iterator>
+			</s:else>
 			
-<!-- 	</TD>
-		<TD align="left" colspan="2">
--->	
-					<logic:equal name="<%=frmName%>" property='<%="showLabHours"%>' value="true">
-					&nbsp;&nbsp;&nbsp;&nbsp;Lab Hours:
-						<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="true" >
-							<html:text name="<%=frmName%>" property='<%= "labHours" %>' maxlength="10" size="10"/>
-						</logic:equal>
-						<logic:equal name="<%=frmName%>" property='<%= "configIsEditable" %>' value="false" >
-                     		   <bean:write name="<%=frmName%>" property='<%= "labHours" %>'/>
-                      		   <html:hidden property='<%= "labHours" %>'/>
-						</logic:equal>		
-					</logic:equal>			
+			<s:if test="form.showLabHours == true">
+				&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="propLabHours" id="BMSG"/>
+				<s:if test="form.configIsEditable == true">
+					<s:textfield name="form.labHours" maxlength="10" size="10"/>
+				</s:if><s:else>
+					<s:property value="form.labHours"/>
+					<s:hidden name="form.labHours"/>
+				</s:else>
+			</s:if>			
 		</TD>
-		</TR>
-		<TR>
-			<TD colspan="2" align="left">
-				<TABLE align="left" border="0" cellspacing="0" cellpadding="1">
+	</TR>
+	<TR>
+		<TD colspan="2" align="left">
+			<table class='unitime-Table'>
 					<TR>
-						<TD align="center" valign="bottom" rowSpan="2"><I>&nbsp;</I></TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>&nbsp;</I></TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Itype</I></TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Section&nbsp;Id</I></TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Consent</I></TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Course Credit<br>Override</I></TD>
-						<TD rowspan="2">&nbsp;</TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Credit</I></TD>
-						<logic:equal name="<%=frmName %>" property='showLimitOverride' value="true">
-							<TD rowspan="2">&nbsp;</TD>
-							<TD align="center" valign="bottom" rowSpan="2"><I>Limit<br>Override</I></TD>
-							<TD align="center" valign="bottom" rowSpan="2"><I>Limit</I></TD>
-						</logic:equal>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Campus&nbsp;Override</I></TD>
-						<TD rowspan="2">&nbsp;</TD>
-						<TD align="center" valign="bottom" rowSpan="2"><I>Date Pattern</I></TD>
-						<TD rowspan="2">&nbsp;</TD>
-						<TD align="center" valign="bottom" rowSpan="1" colspan="3"><I>---- Timetable ----</I></TD>
-						<TD rowspan="2">&nbsp;</TD>
-						<TD align="left" valign="bottom" rowSpan="2"><I>Instructors</I></TD>
-						<TD>&nbsp;</TD>
-						<TD>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="fieldIType"/></TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="colSectionId" id="BMSG"/></TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="columnConsent"/></TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="colCourseCreditOverride" id="BMSG"/></TD>
+						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="columnCredit"/></TD>
+						<s:if test="form.showLimitOverride == true">
+							<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+							<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="colLimitOverride" id="BMSG"/></TD>
+							<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="columnLimit"/></TD>
+						</s:if>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="colCampusOverride" id="BMSG"/></TD>
+						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="columnDatePattern"/></TD>
+						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowSpan="1" colspan="3"class='WebTableHeaderFirstRow'>---- <loc:message name="columnTimetable"/> ----</TD>
+						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="left" valign="bottom" rowSpan="2" class='WebTableHeader'><loc:message name="columnInstructors"/></TD>
 					</TR>
 					<TR>
-						<td align="left" valign="bottom"><I>Time</I></td>
-						<TD>&nbsp;</TD>
-						<td align="left" valign="bottom"><I>Room</I></td>						
-					</TR>					
-					<logic:iterate name="<%=frmName%>" property="bannerSectionIds" id="c" indexId="ctr">
+						<td align="left" valign="bottom" class='WebTableHeaderSecondRow'><loc:message name="columnAssignedTime"/></td>
+						<TD class='WebTableHeaderSecondRow'>&nbsp;</TD>
+						<td align="left" valign="bottom" class='WebTableHeaderSecondRow'><loc:message name="columnAssignedRoom"/></td>						
+					</TR>
+					<s:iterator value="form.bannerSectionIds" var="c" status="stat"><s:set var="ctr" value="#stat.index"/>
 					<TR onmouseover="this.style.backgroundColor='rgb(223,231,242)';this.style.cursor='default';" onmouseout="this.style.backgroundColor='transparent';">
-						<TD valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "classHasErrors[" + ctr + "]" %>' value="true" ><IMG src="images/cancel.png"></logic:equal><logic:equal name="<%=frmName%>" property='<%= "classHasErrors[" + ctr + "]" %>' value="false" >&nbsp;</logic:equal></TD>
-						<TD valign="top" nowrap><html:hidden property='<%= "bannerSectionIds[" + ctr + "]" %>'/><html:hidden property='<%= "bannerSectionOriginalSectionIds[" + ctr + "]" %>'/><html:hidden property='<%= "itypes[" + ctr + "]" %>'/><html:hidden property='<%= "readOnlyClasses[" + ctr + "]" %>'/><html:hidden property='<%= "bannerSectionLabels[" + ctr + "]" %>'/><html:hidden property='<%= "bannerSectionLabelIndents[" + ctr + "]" %>'/><html:hidden property='<%= "datePatterns[" + ctr + "]" %>'/><html:hidden property='<%= "times[" + ctr + "]" %>'/><html:hidden property='<%= "rooms[" + ctr + "]" %>'/><html:hidden property='<%= "instructors[" + ctr + "]" %>'/><html:hidden property='<%= "classHasErrors[" + ctr + "]" %>'/><%=frm.getBannerSectionLabelIndents().get(ctr.intValue()).toString()%><bean:write name="<%=frmName%>" property='<%= "bannerSectionLabels[" + ctr + "]" %>'/> &nbsp;</TD>
-						<TD align="left" valign="top" nowrap><bean:write name="<%=frmName%>" property='<%= "itypes[" + ctr + "]" %>'/></TD>
-						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:text name="<%=frmName%>" property='<%= "bannerSectionSectionIds[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(8000 + ctr.intValue())%>" maxlength="5" size="5"/></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><bean:write name="<%=frmName%>" property='<%= "bannerSectionSectionIds[" + ctr + "]" %>'/><html:hidden property='<%= "bannerSectionSectionIds[" + ctr + "]" %>'/></logic:equal></TD>
-						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:select style="width:200;" property='<%= "consents[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(10000 + ctr.intValue())%>"><html:option value="-1">No Consent Required</html:option><html:options collection='<%=OfferingConsentType.CONSENT_TYPE_ATTR_NAME%>' property="uniqueId" labelProperty="label" /></html:select></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><logic:iterate scope="request" name="<%=OfferingConsentType.CONSENT_TYPE_ATTR_NAME%>" id="cnst"><logic:equal name="<%=frmName%>" property='<%= "consents[" + ctr + "]" %>' value="<%=((OfferingConsentType)cnst).getUniqueId().toString()%>"><bean:write name="cnst" property="label" /></logic:equal></logic:iterate><html:hidden property='<%= "consents[" + ctr + "]" %>'/></logic:equal></TD>
-						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:text name="<%=frmName%>" property='<%= "courseCreditOverrides[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(8000 + ctr.intValue())%>" maxlength="10" size="10"/></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><bean:write name="<%=frmName%>" property='<%= "courseCreditOverrides[" + ctr + "]" %>'/><html:hidden property='<%= "courseCreditOverrides[" + ctr + "]" %>'/></logic:equal></TD>
+						<TD valign="top" nowrap>
+							<s:if test="form.classHasErrors[#ctr] == true"><IMG src="images/cancel.png"></s:if><s:else>&nbsp;</s:else>
+						</TD>
+						<TD valign="top" nowrap>
+							<s:hidden name="form.bannerSectionIds[%{#ctr}]"/>
+							<s:hidden name="form.bannerSectionOriginalSectionIds[%{#ctr}]"/>
+							<s:hidden name="form.itypes[%{#ctr}]"/>
+							<s:hidden name="form.readOnlyClasses[%{#ctr}]"/>
+							<s:hidden name="form.bannerSectionLabels[%{#ctr}]"/>
+							<s:hidden name="form.bannerSectionLabelIndents[%{#ctr}]"/>
+							<s:hidden name="form.datePatterns[%{#ctr}]"/>
+							<s:hidden name="form.times[%{#ctr}]"/>
+							<s:hidden name="form.rooms[%{#ctr}]"/>
+							<s:hidden name="form.instructors[%{#ctr}]"/>
+							<s:hidden name="form.classHasErrors[%{#ctr}]"/>
+							<s:property value="form.bannerSectionLabelIndents[#ctr]"/><s:property value="form.bannerSectionLabels[#ctr]"/>
+						</TD>
+						<TD align="left" valign="top" nowrap><s:property value="form.itypes[#ctr]"/></TD>
+						<TD align="left" valign="top" nowrap>
+							<s:if test="form.readOnlyClasses[#ctr] == true">
+								<s:property value="form.bannerSectionSectionIds[#ctr]"/>
+								<s:hidden name="form.bannerSectionSectionIds[%{#ctr}]"/>
+							</s:if><s:else>
+								<s:textfield name="form.bannerSectionSectionIds[%{#ctr}]" maxlength="5" size="5" tabindex="%{#ctr + 1000}"/>
+							</s:else>
+						</TD>
+						<TD align="left" valign="top" nowrap>
+							<s:if test="form.readOnlyClasses[#ctr] == true">
+								<s:iterator value="#request.consentTypeList" var="cnst">
+									<s:if test="#cnst.uniqueId == form.consents[#ctr]">
+										<s:property value="#cnst.label"/>
+									</s:if>
+								</s:iterator>
+								<s:hidden name="form.consents[%{#ctr}]"/>
+							</s:if><s:else>
+								<s:select name="form.consents[%{#ctr}]" tabindex="%{#ctr + 2000}" style="min-width:200px;"
+									list="#request.consentTypeList" listKey="uniqueId" listValue="label"
+									headerKey="-1" headerValue="%{#msg.noConsentRequired()}"/>
+							</s:else>
+						</TD>
+						<TD align="left" valign="top" nowrap>
+							<s:if test="form.readOnlyClasses[#ctr] == true">
+								<s:property value="form.courseCreditOverrides[#ctr]"/>
+								<s:hidden name="form.courseCreditOverrides[%{#ctr}]"/>
+							</s:if><s:else>
+								<s:textfield name="form.courseCreditOverrides[%{#ctr}]" maxlength="10" size="10" tabindex="%{#ctr + 3000}"/>
+							</s:else>
+						</TD>
 						<TD>&nbsp;</TD>
-						<TD align="right" valign="top" nowrap><%=frm.getCourseCredits().get(ctr)%>
-						<html:hidden property='<%= "courseCredits[" + ctr + "]" %>'/></TD>
-<logic:equal name="<%=frmName %>" property='showLimitOverride' value="true">
+						<TD align="right" valign="top" nowrap>
+							<s:property value="form.courseCredits[#ctr]"/>
+							<s:hidden name="form.courseCredits[%{#ctr}]"/>
+						</TD>
+						<s:if test="form.showLimitOverride == true">
 						<TD>&nbsp;</TD>
-						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:text name="<%=frmName%>" property='<%= "limitOverrides[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(8000 + ctr.intValue())%>" maxlength="5" size="5"/></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><bean:write name="<%=frmName%>" property='<%= "limitOverrides[" + ctr + "]" %>'/><html:hidden property='<%= "limitOverrides[" + ctr + "]" %>'/></logic:equal></TD>	
-						<TD align="right" valign="top" nowrap><%=frm.getClassLimits().get(ctr)%>
-						<html:hidden property='<%= "classLimits[" + ctr + "]" %>'/></TD>
- </logic:equal>
- 						<TD align="left" valign="top" nowrap><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="false" ><html:select style="width:200;" property='<%= "campusOverrides[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(11000 + ctr.intValue())%>"><html:option value="-1">Default (<%=frm.getDefaultCampus().get(ctr)%>)</html:option><logic:iterate name="<%=frmName%>" property="bannerCampusOverrides" id="obj" indexId="bcoIdx"><% BannerCampusOverride bco = (BannerCampusOverride) obj; if (bco.isVisible().booleanValue() || bco.getUniqueId().equals(frm.getCampusOverrides().get(ctr))) { %><html:option value="<%=bco.getUniqueId().toString()%>"><%=bco.getBannerCampusCode()%> - <%=bco.getBannerCampusName()%></html:option><% } %></logic:iterate></html:select></logic:equal><logic:equal name="<%=frmName%>" property='<%= "readOnlyClasses[" + ctr + "]" %>' value="true" ><%=frm.getCampuses().get(ctr)%></logic:equal></TD><html:hidden property='<%= "campusOverrides[" + ctr + "]" %>'/><html:hidden property='<%= "defaultCampus[" + ctr + "]" %>'/><html:hidden property='<%= "campuses[" + ctr + "]" %>'/>
+						<TD align="left" valign="top" nowrap>
+							<s:if test="form.readOnlyClasses[#ctr] == true">
+								<s:property value="form.limitOverrides[#ctr]"/>
+								<s:hidden name="form.limitOverrides[%{#ctr}]"/>
+							</s:if><s:else>
+								<s:textfield name="form.limitOverrides[%{#ctr}]" maxlength="5" size="5" tabindex="%{#ctr + 4000}"/>
+							</s:else>
+						</TD>	
+						<TD align="right" valign="top" nowrap>
+							<s:property value="form.classLimits[#ctr]"/>
+							<s:hidden name="form.classLimits[%{#ctr}]"/>
+						</s:if>
+ 						<TD align="left" valign="top" nowrap>
+ 							<s:hidden name="form.defaultCampus[%{#ctr}]"/>
+							<s:hidden name="form.campuses[%{#ctr}]"/>
+ 							<s:if test="form.readOnlyClasses[#ctr] == true">
+								<s:property value="form.campuses[#ctr]"/>
+								<s:hidden name="form.campusOverrides[%{#ctr}]"/>
+							</s:if><s:else>
+								<s:select name="form.campusOverrides[%{#ctr}]" tabindex="%{#ctr + 5000}" style="min-width:200px;"
+									list="form.bannerCampusOverrideOptions[#ctr]" listKey="id" listValue="value"/>
+							</s:else>
+ 						</TD>
 						<TD>&nbsp;</TD>
-						<TD align="left" valign="top" nowrap><%=frm.getDatePatterns().get(ctr)%></TD>
+						<TD align="left" valign="top" nowrap><s:property value="form.datePatterns[#ctr]" escapeHtml="false"/></TD>
 						<TD>&nbsp;</TD>
-						<TD align="left" valign="top" nowrap><%=frm.getTimes().get(ctr)%></TD>
+						<TD align="left" valign="top" nowrap><s:property value="form.times[#ctr]" escapeHtml="false"/></TD>
 						<TD>&nbsp;</TD>
-						<TD align="left" valign="top" nowrap><%=frm.getRooms().get(ctr)%></TD>
+						<TD align="left" valign="top" nowrap><s:property value="form.rooms[#ctr]" escapeHtml="false"/></TD>
 						<TD>&nbsp;</TD>
-						<TD align="left" valign="top" nowrap><%=frm.getInstructors().get(ctr)%></TD>						
+						<TD align="left" valign="top" nowrap><s:property value="form.instructors[#ctr]" escapeHtml="false"/></TD>						
 					</TR>
-					</logic:iterate>
+					</s:iterator>
 				</TABLE>
 			</TD>
 		</TR>
 
 		
-		
-<SCRIPT language="javascript">
-	<!--		
-			document.forms[0].elements["op"][0].disabled="";	
-	// -->
-	</SCRIPT>
-
-<!-- Buttons -->
-<SCRIPT language="javascript">
-	<!--		
-			document.forms[0].elements["op"][0].disabled="";	
-	// -->
-</SCRIPT>
 		<TR>
 			<TD colspan="2" valign="middle">
 				<DIV class="WelcomeRowHeadBlank">&nbsp;</DIV>
@@ -242,22 +211,13 @@
 
 		<TR>
 			<TD colspan="2" align="right">
-				<html:submit property="op" 
-					styleClass="btn" accesskey="U" titleKey="title.updateInstructionalOfferingConfig">
-					<bean:message key="button.updateInstructionalOfferingConfig" />
-				</html:submit>
-						 
-				<html:button property="op" 
-					styleClass="btn" accesskey="B" titleKey="title.backToInstrOffrDetail" 
-					onclick="document.location.href='bannerOfferingDetail.action?op=view&bc=${bannerCourseOfferingId}';">
-					<bean:message key="button.backToInstrOffrDetail" />
-				</html:button>
-					
+				<s:submit name='op' value='%{#bmsg.actionUpdateBannerConfig()}'
+					accesskey='%{#bmsg.accessUpdateBannerConfig()}' title='%{#bmsg.titleUpdateBannerConfig(#bmsg.accessUpdateBannerConfig())}'/>
+				<s:submit name='op' value='%{#bmsg.actionBackToBannerOfferingDetail()}'
+					accesskey='%{#bmsg.accessBackToBannerOfferingDetail()}' title='%{#bmsg.titleBackToBannerOfferingDetail(#bmsg.accessBackToBannerOfferingDetail())}'/>
 			</TD>
 		</TR>
-
-	</TABLE>
-</html:form>
-	<script language="javascript">hideLoading();</script>
-
+</table>
+</s:form>
+</loc:bundle>
 </loc:bundle>

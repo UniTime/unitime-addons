@@ -133,4 +133,82 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Edit Banner Configuration")
 	String titleEditBannerConfig();
+	
+	@DefaultMessage("Update")
+	String actionUpdateBannerConfig();
+	
+	@DefaultMessage("U")
+	String accessUpdateBannerConfig();
+	
+	@DefaultMessage("Update Banner Configuration (Alt + {0})")
+	String titleUpdateBannerConfig(String action);
+	
+	@DefaultMessage("Back")
+	String actionBackToBannerOfferingDetail();
+	
+	@DefaultMessage("B")
+	String accessBackToBannerOfferingDetail();
+	
+	@DefaultMessage("Back to Banner Offering (Alt + {0})")
+	String titleBackToBannerOfferingDetail(String access);
+	
+	@DefaultMessage("Instructional Offering Config")
+	String labelInstructionalOfferingConfig();
+	
+	@DefaultMessage("Section Index must be set: {0}")
+	String errorSectionIndexMustBeSet(String section);
+	
+	@DefaultMessage("Section Index can only consist of numbers or alpha characters: {0}")
+	String errorSectionIndexNumbersAndLetters(String section);
+	
+	@DefaultMessage("Section Index cannot be matched to regular expression {0} for: {1}, reason: {2}")
+	String errorSectionIndexDoesNotMatchExpression(String regexp, String section, String error);
+	
+	@DefaultMessage("Section Index must be unique for: {0}")
+	String errorSectionIndexNotUnique(String section);
+	
+	@DefaultMessage("Section Index must be less than 999: {0}")
+	String errorSectionIndex999(String section);
+	
+	@DefaultMessage("New Section Index must be unique for: {0}")
+	String errorSectionNewIndexNotUnique(String section);
+	
+	@DefaultMessage("The limit override must be an integer number: {0}")
+	String errorLimitOverrideNotANumber(String section);
+	
+	@DefaultMessage("The limit override cannot get greater than the class limit: {0}")
+	String errorLimitOverrideOverClassLimit(String section);
+	
+	@DefaultMessage("The limit override must be greater than or equal to 0: {0}")
+	String errorLimitOverrideBelowZero(String section);
+	
+	@DefaultMessage("The course credit override must be a number: {0}")
+	String errorCourseCreditOverrideNotNumber(String section);
+	
+	@DefaultMessage("The course credit override must be greater than or equal to 0: {0}")
+	String errorCourseCreditOverrideBelowZero(String section);
+	
+	@DefaultMessage("Configuration Gradable Itype:")
+	String propConfigGradableItype();
+	
+	@DefaultMessage("No Itype")
+	String itemNoItype();
+	
+	@DefaultMessage("Lab Hours:")
+	String propLabHours();
+	
+	@DefaultMessage("Section&nbsp;Id")
+	String colSectionId();
+	
+	@DefaultMessage("Course Credit<br>Override")
+	String colCourseCreditOverride();
+	
+	@DefaultMessage("Limit<br>Override")
+	String colLimitOverride();
+	
+	@DefaultMessage("Campus&nbsp;Override")
+	String colCampusOverride();
+	
+	@DefaultMessage("Default ({0})")
+	String defaultCampusOverride(String defaultCampusOverride);
 }
