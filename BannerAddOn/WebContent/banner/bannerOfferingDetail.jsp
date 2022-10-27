@@ -17,187 +17,221 @@
  * limitations under the License.
  * 
 --%>
-<%@ page language="java" autoFlush="true" errorPage="../error.jsp" %>
-
-<%@ page import="org.unitime.timetable.defaults.SessionAttribute"%>
-<%@ page import="org.unitime.timetable.util.Constants" %>
-<%@ page import="org.unitime.timetable.model.DistributionPref" %>
-<%@ page import="org.unitime.timetable.webutil.JavascriptFunctions" %>
-<%@ page import="org.unitime.banner.webutil.WebBannerConfigTableBuilder"%>
-<%@ page import="org.unitime.banner.form.BannerOfferingDetailForm"%>
-<%@ page import="org.unitime.timetable.solver.WebSolver"%>
-<%@ page import="org.unitime.timetable.model.CourseOffering" %>
-<%@ page import="org.unitime.timetable.model.Reservation" %>
-
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-<%@ taglib uri="http://www.unitime.org/tags-localization" prefix="loc" %> 
-<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
-
-<tiles:importAttribute />
-<tt:session-context />
-<% 
-	String frmName = "bannerOfferingDetailForm";
-	BannerOfferingDetailForm frm = (BannerOfferingDetailForm) request.getAttribute(frmName);
-
-	String crsNbr = (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
-%>
-<loc:bundle name="CourseMessages">
-<loc:bundle name="BannerMessages" id="BMSG">
-
-
-	<bean:define name="bannerOfferingDetailForm" property="instrOfferingName" id="instrOfferingName"/>
-	<TABLE width="93%" border="0" cellspacing="0" cellpadding="3">
-		<TR>
-			<TD valign="middle" colspan='2'>
-				<html:form action="/bannerOfferingDetail" styleClass="FormWithNoPadding">
-					<input type='hidden' name='confirm' value='y'/>
-					<html:hidden property="bannerCourseOfferingId"/>	
-					<html:hidden property="instrOfferingId"/>	
-					<html:hidden property="nextId"/>
-					<html:hidden property="previousId"/>
-					<html:hidden property="catalogLinkLabel"/>
-					<html:hidden property="catalogLinkLocation"/>
-					
-				<tt:section-header>
-					<tt:section-title>
-							<A  title="Back to Banner Course Offering List (Alt+I)" 
-								accesskey="I"
-								class="l7" 
-								href="bannerOfferingSearch.action?doit=Search&form.subjectAreaId=<bean:write name="bannerOfferingDetailForm" property="subjectAreaId" />&form.courseNbr=<%=crsNbr%>#A<bean:write name="bannerOfferingDetailForm" property="instrOfferingId" />"
-							><bean:write name="bannerOfferingDetailForm" property="instrOfferingName" /></A> 
-					</tt:section-title>						
-					<bean:define id="instrOfferingId">
-						<bean:write name="bannerOfferingDetailForm" property="instrOfferingId" />				
-					</bean:define>
-					<bean:define id="subjectAreaId">
-						<bean:write name="bannerOfferingDetailForm" property="subjectAreaId" />				
-					</bean:define>
-
-					<sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanLock')">
-						<html:submit property="op" styleClass="btn" 
-								accesskey="<%=MSG.accessLockIO() %>" 
-								title="<%=MSG.titleLockIO(MSG.accessLockIO()) %>"
-								onclick="<%=MSG.jsSubmitLockIO((String)instrOfferingName)%>">
-							<loc:message name="actionLockIO"/>
-						</html:submit>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
+<table class="unitime-Table">
+	<s:form action="bannerOfferingDetail">
+	<s:hidden name="form.bannerCourseOfferingId"/>	
+	<s:hidden name="form.instrOfferingId"/>	
+	<s:hidden name="form.nextId"/>
+	<s:hidden name="form.previousId"/>
+	<TR>
+		<TD valign="middle" colspan='2'>
+			<tt:section-header>
+				<tt:section-title>
+					<A title="${BMSG.titleBackToBannerOfferings(BMSG.accessBackToBannerOfferings())}"
+						accesskey="${BMSG.accessBackToBannerOfferings()}" class="l7"
+						href="bannerOfferingSearch.action?op=Back&doit=Search&form.subjectAreaId=${form.subjectAreaId}&form.courseNbr=${csrNbr}#A${form.instrOfferingId}"
+						><s:property value="form.instrOfferingName"/></A> 
+				</tt:section-title>
+					<sec:authorize access="hasPermission(#form.instrOfferingId, 'InstructionalOffering', 'OfferingCanLock')">
+						<s:submit name='op' value='%{#msg.actionLockIO()}'
+							accesskey='%{#msg.accessLockIO()}' title='%{#msg.titleLockIO(#msg.accessLockIO())}'
+							onclick='%{#msg.jsSubmitLockIO(#form.instrOfferingName)}'/>
 					</sec:authorize>
-					 <sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanUnlock')">
-						<html:submit property="op" styleClass="btn" 
-								accesskey="<%=MSG.accessUnlockIO() %>" 
-								title="<%=MSG.titleUnlockIO(MSG.accessUnlockIO()) %>"
-								onclick="<%=MSG.jsSubmitUnlockIO((String)instrOfferingName)%>">
-							<loc:message name="actionUnlockIO"/>
-						</html:submit>
+					 <sec:authorize access="hasPermission(#form.instrOfferingId, 'InstructionalOffering', 'OfferingCanUnlock')">
+					 	<s:submit name='op' value='%{#msg.actionUnlockIO()}'
+							accesskey='%{#msg.accessUnlockIO()}' title='%{#msg.titleUnlockIO(#msg.accessUnlockIO())}'
+							onclick='%{#msg.jsSubmitUnlockIO(#form.instrOfferingName)}'/>
 					</sec:authorize>
 	
-					<input type='submit' name='op' value="Resend to Banner" title="Resend Data to Banner" class='btn'>
-				
-					<logic:notEmpty name="bannerOfferingDetailForm" property="previousId">
-						<html:submit property="op" 
-								styleClass="btn" accesskey="P" titleKey="title.previousInstructionalOffering">
-							<bean:message key="button.previousInstructionalOffering" />
-						</html:submit> 
-					</logic:notEmpty>
-					<logic:notEmpty name="bannerOfferingDetailForm" property="nextId">
-						<html:submit property="op" 
-							styleClass="btn" accesskey="N" titleKey="title.nextInstructionalOffering">
-							<bean:message key="button.nextInstructionalOffering" />
-						</html:submit> 
-					</logic:notEmpty>
-
-					<tt:back styleClass="btn" name="Back" title="Return to %% (Alt+B)" accesskey="B" type="InstructionalOffering">
-						<bean:write name="bannerOfferingDetailForm" property="bannerCourseOfferingId"/>
+					<s:submit name='op' value='%{#bmsg.actionResendToBanner()}'/>
+					
+					<s:if test="form.previousId != null">
+						<s:submit name='op' value='%{#msg.actionPreviousIO()}'
+							accesskey='%{#msg.accessPreviousIO()}' title='%{#msg.titlePreviousIO(#msg.accessPreviousIO())}'/>
+					</s:if>
+					<s:if test="form.nextId != null">
+						<s:submit name='op' value='%{#msg.actionNextIO()}'
+							accesskey='%{#msg.accessNextIO()}' title='%{#msg.titleNextIO(#msg.accessNextIO())}'/>
+					</s:if>
+					
+					<tt:back styleClass="btn" 
+							name="${BMSG.actionBackToBannerOfferings()}" 
+							title="${BMSG.titleBackToBannerOfferings(BMSG.accessBackToBannerOfferings())}" 
+							accesskey="${BMSG.accessBackToBannerOfferings()}" 
+							type="InstructionalOffering">
+						<s:property value="form.instrOfferingId"/>
 					</tt:back>
-				</tt:section-header>					
-				
-				</html:form>
-			</TD>
-		</TR>		
+			</tt:section-header>
+		</TD>
+	</TR>
+		
+	<s:if test="!fieldErrors.isEmpty()">
+		<TR><TD colspan="2" align="left" class="errorTable">
+			<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror/>
+		</TD></TR>
+	</s:if>	
 
-		<logic:messagesPresent>
-		<TR>
-			<TD colspan="2" align="left" class="errorCell">
-					<B><U>ERRORS</U></B><BR>
-				<BLOCKQUOTE>
-				<UL>
-				    <html:messages id="error">
-				      <LI>
-						${error}
-				      </LI>
-				    </html:messages>
-			    </UL>
-			    </BLOCKQUOTE>
-			</TD>
-		</TR>
-		</logic:messagesPresent>
-
-		<TR>
-			<TD width="20%" valign="top">Course Offerings: </TD>
+	<TR>
+		<TD width="20%" valign="top"><loc:message name="propertyCourseOfferings"/></TD>
 			<TD>
-				<TABLE border="0" width="100%" cellspacing="0" cellpadding="2">
+				<div class='unitime-ScrollTableCell'>
+				<TABLE style="border-spacing:0px; width: 100%;">
 					<TR>
-						<TD align="center" class="WebTableHeader">Control</TD>
-						<TD align="left" class="WebTableHeader">Title</TD>
-						<TD align="left" class="WebTableHeader">&nbsp;</TD>
+						<TD align="center" class="WebTableHeader">&nbsp;</TD>
+						<s:if test="form.hasCourseTypes == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnCourseType"/></TD>
+						</s:if>
+						<TD align="left" class="WebTableHeader"><loc:message name="columnTitle"/></TD>
+						<s:if test="form.hasCourseExternalId == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnExternalId"/></TD>
+						</s:if>
+						<s:if test="form.hasCourseReservation == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnReserved"/></TD>
+						</s:if>
+						<s:if test="form.hasCredit == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnCredit"/></TD>
+						</s:if>
+						<s:if test="form.hasScheduleBookNote == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnScheduleOfClassesNote"/></TD>
+						</s:if>
+						<s:if test="form.hasDemandOfferings == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnDemandsFrom"/></TD>
+						</s:if>
+						<s:if test="form.hasAlternativeCourse == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnAlternativeCourse"/></TD>
+						</s:if>
+						<TD align="left" class="WebTableHeader"><loc:message name="columnConsent"/></TD>
+						<s:if test="form.hasDisabledOverrides == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnDisabledOverrides"/></TD>
+						</s:if>
+						<tt:hasProperty name="unitime.custom.CourseUrlProvider">
+						<TD align="left" class="WebTableHeader"><loc:message name="columnCourseCatalog"/></TD>
+						</tt:hasProperty>
 					</TR>
-				<logic:iterate id="co" name="bannerOfferingDetailForm" property="courseOfferings" >
+				<s:iterator value="form.courseOfferings" var="co">
 					<TR>
-						<TD align="center">&nbsp;<logic:equal name="co" property="isControl" value="true"><IMG src="images/accept.png" alt="Controlling Course" title="Controlling Course" border="0"></logic:equal>&nbsp;</TD>
-						<TD class="BottomBorderGray"><bean:write name="co" property="courseNameWithTitle"/></TD>
-						
-						<TD align="right" class="BottomBorderGray">
-						&nbsp;
+						<TD align="center" class="BottomBorderGray">
+							&nbsp;
+							<s:if test="#co.isControl == true">
+								<IMG src="images/accept.png" alt="${MSG.altControllingCourse()}" title="${MSG.titleControllingCourse()}" border="0">
+							</s:if>
+							&nbsp;
 						</TD>
+						<s:if test="form.hasCourseTypes == true">
+							<TD class="BottomBorderGray">
+								<s:if test="#co.courseType != null">
+									<span title='${co.courseType.label}'><s:property value="#co.courseType.reference"/></span>
+								</s:if>
+							</TD>
+						</s:if>
+						<TD class="BottomBorderGray"><s:property value="#co.courseNameWithTitle"/></TD>
+						<s:if test="form.hasCourseExternalId == true">
+							<TD class="BottomBorderGray">
+								<s:if test="#co.externalUniqueId != null">
+									<s:property value="#co.externalUniqueId"/>
+								</s:if>
+							</TD>
+						</s:if>
+						<s:if test="form.hasCourseReservation == true">
+							<TD class="BottomBorderGray">
+								<s:if test="#co.reservation != null">
+									<s:property value="#co.reservation"/>
+								</s:if>
+							</TD>
+						</s:if>
+						<s:if test="form.hasCredit == true">
+							<TD class="BottomBorderGray">
+								<s:if test="#co.credit != null">
+									<span title='${co.credit.creditText()}'><s:property value="#co.credit.creditAbbv()"/></span>
+								</s:if>
+							</TD>
+						</s:if>
+						<s:if test="form.hasScheduleBookNote == true">
+							<TD class="BottomBorderGray" style="white-space: pre-wrap;"><s:property value="#co.scheduleBookNote" escapeHtml="false"/></TD>
+						</s:if>
+						<s:if test="form.hasDemandOfferings == true">
+							<TD class="BottomBorderGray">&nbsp;
+								<s:if test="#co.demandOffering != null">
+									<s:property value="#co.demandOffering.courseName"/>
+								</s:if>
+							</TD>
+						</s:if>
+						<s:if test="form.hasAlternativeCourse == true">
+							<TD class="BottomBorderGray">&nbsp;
+								<s:if test="#co.alternativeOffering != null">
+									<s:property value="#co.alternativeOffering.courseName"/>
+								</s:if>
+							</TD>
+						</s:if>
+						<TD class="BottomBorderGray">
+							<s:if test="#co.consentType == null">
+								<loc:message name="noConsentRequired"/>
+							</s:if>
+							<s:else>
+								<s:property value="#co.consentType.abbv"/>
+							</s:else>
+						</TD>
+						<s:if test="form.hasDisabledOverrides == true">
+							<TD class="BottomBorderGray">
+								<s:iterator value="#co.disabledOverrides" var="override" status="stat">
+									<span title='${override.label}'><s:property value="#override.reference"/></span><s:if test="!#stat.last">, </s:if>
+								</s:iterator>
+							</TD>
+						</s:if>
+						<tt:hasProperty name="unitime.custom.CourseUrlProvider">
+							<TD class="BottomBorderGray">
+								<span name='UniTimeGWT:CourseLink' style="display: none;"><s:property value="#co.uniqueId"/></span>
+							</TD>
+						</tt:hasProperty>
 					</TR>
-				</logic:iterate>
+				</s:iterator>
 				</TABLE>
+				</div>
 			</TD>
-		</TR>
+	</TR>
 		
-		<logic:notEmpty name="bannerOfferingDetailForm" property="catalogLinkLabel">
+	<s:if test="form.catalogLinkLabel != null">
 		<TR>
-			<TD>Course Catalog: </TD>
+			<TD><loc:message name="propertyCourseCatalog"/> </TD>
 			<TD>
-				<A href="<bean:write name="bannerOfferingDetailForm" property="catalogLinkLocation" />" target="_blank"><bean:write name="bannerOfferingDetailForm" property="catalogLinkLabel" /></A>
+				<A href="${form.catalogLinkLocation}" target="_blank"><s:property value="form.catalogLinkLabel"/></A>
 			</TD>
 		</TR>
-		</logic:notEmpty>
+	</s:if>
+	
 		
-		<TR>
-			<TD colspan="2" >&nbsp;</TD>
-		</TR>
+	<TR>
+		<TD colspan="2" >&nbsp;</TD>
+	</TR>
+	</s:form>
 
 <!-- Configuration -->
-		<TR>
-			<TD colspan="2" valign="middle">
-	<% //output configuration
-	if (frm.getInstrOfferingId() != null){
-		WebBannerConfigTableBuilder bcTableBuilder = new WebBannerConfigTableBuilder();
-		bcTableBuilder.htmlConfigTablesForBannerOffering(
-				    		        WebSolver.getClassAssignmentProxy(session),
-				    		        frm.getInstrOfferingId(),
-				    		        frm.getBannerCourseOfferingId(),
-				    		        sessionContext, out,
-				    		        request.getParameter("backType"),
-				    		        request.getParameter("backId"));
-	}
-	%>
-			</TD>
-		</TR>
+	<TR>
+		<TD colspan="2" valign="middle">
+			<s:property value="%{printTable()}" escapeHtml="false"/>
+		</TD>
+	</TR>
 
-		<TR>
-			<TD valign="middle" colspan='3' align='left'>
-				<tt:displayPrefLevelLegend/>
-			</TD>
-		</TR>
-		
+	<TR>
+		<TD valign="middle" colspan='3' align='left'>
+			<tt:displayPrefLevelLegend/>
+		</TD>
+	</TR>
+	
+	<s:form action="bannerOfferingDetail">
+	<s:hidden name="form.bannerCourseOfferingId"/>	
+	<s:hidden name="form.instrOfferingId"/>	
+	<s:hidden name="form.nextId"/>
+	<s:hidden name="form.previousId"/>
 				
 		<tt:last-change type='InstructionalOffering'>
-			<bean:write name="<%=frmName%>" property="instrOfferingId"/>
+			<s:property value="form.instrOfferingId"/>
 		</tt:last-change>		
 
 
@@ -210,54 +244,38 @@
 
 		<TR>
 			<TD colspan="2" align="right">
-			
-				<html:form action="/bannerOfferingDetail" styleClass="FormWithNoPadding">
-					<input type='hidden' name='confirm' value='y'/>
-					<html:hidden property="bannerCourseOfferingId"/>	
-					<html:hidden property="instrOfferingId"/>	
-					<html:hidden property="nextId"/>
-					<html:hidden property="previousId"/>
+					<sec:authorize access="hasPermission(#form.instrOfferingId, 'InstructionalOffering', 'OfferingCanLock')">
+						<s:submit name='op' value='%{#msg.actionLockIO()}'
+							accesskey='%{#msg.accessLockIO()}' title='%{#msg.titleLockIO(#msg.accessLockIO())}'
+							onclick='%{#msg.jsSubmitLockIO(#form.instrOfferingName)}'/>
+					</sec:authorize>
+					 <sec:authorize access="hasPermission(#form.instrOfferingId, 'InstructionalOffering', 'OfferingCanUnlock')">
+					 	<s:submit name='op' value='%{#msg.actionUnlockIO()}'
+							accesskey='%{#msg.accessUnlockIO()}' title='%{#msg.titleUnlockIO(#msg.accessUnlockIO())}'
+							onclick='%{#msg.jsSubmitUnlockIO(#form.instrOfferingName)}'/>
+					</sec:authorize>
+	
+					<s:submit name='op' value='%{#bmsg.actionResendToBanner()}'/>
 					
-					<sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanLock')">
-						<html:submit property="op" styleClass="btn" 
-								accesskey="<%=MSG.accessLockIO() %>" 
-								title="<%=MSG.titleLockIO(MSG.accessLockIO()) %>"
-								onclick="<%=MSG.jsSubmitLockIO((String)instrOfferingName)%>">
-							<loc:message name="actionLockIO"/>
-						</html:submit>
-					</sec:authorize>
-					 <sec:authorize access="hasPermission(#instrOfferingId, 'InstructionalOffering', 'OfferingCanUnlock')">
-						<html:submit property="op" styleClass="btn" 
-								accesskey="<%=MSG.accessUnlockIO() %>" 
-								title="<%=MSG.titleUnlockIO(MSG.accessUnlockIO()) %>"
-								onclick="<%=MSG.jsSubmitUnlockIO((String)instrOfferingName)%>">
-							<loc:message name="actionUnlockIO"/>
-						</html:submit>
-					</sec:authorize>
-
-				<input type='submit' name='op' value="Resend to Banner" title="Resend Data to Banner" class='btn'>
-
-				<logic:notEmpty name="bannerOfferingDetailForm" property="previousId">
-					<html:submit property="op" 
-							styleClass="btn" accesskey="P" titleKey="title.previousInstructionalOffering">
-						<bean:message key="button.previousInstructionalOffering" />
-					</html:submit> 
-				</logic:notEmpty>
-				<logic:notEmpty name="bannerOfferingDetailForm" property="nextId">
-					<html:submit property="op" 
-						styleClass="btn" accesskey="N" titleKey="title.nextInstructionalOffering">
-						<bean:message key="button.nextInstructionalOffering" />
-					</html:submit> 
-				</logic:notEmpty>
-
-				<tt:back styleClass="btn" name="Back" title="Return to %% (Alt+B)" accesskey="B" type="InstructionalOffering">
-					<bean:write name="bannerOfferingDetailForm" property="bannerCourseOfferingId"/>
-				</tt:back>
-				
-				</html:form>					
+					<s:if test="form.previousId != null">
+						<s:submit name='op' value='%{#msg.actionPreviousIO()}'
+							accesskey='%{#msg.accessPreviousIO()}' title='%{#msg.titlePreviousIO(#msg.accessPreviousIO())}'/>
+					</s:if>
+					<s:if test="form.nextId != null">
+						<s:submit name='op' value='%{#msg.actionNextIO()}'
+							accesskey='%{#msg.accessNextIO()}' title='%{#msg.titleNextIO(#msg.accessNextIO())}'/>
+					</s:if>
+					
+					<tt:back styleClass="btn" 
+							name="${BMSG.actionBackToBannerOfferings()}" 
+							title="${BMSG.titleBackToBannerOfferings(BMSG.accessBackToBannerOfferings())}" 
+							accesskey="${BMSG.accessBackToBannerOfferings()}" 
+							type="InstructionalOffering">
+						<s:property value="form.instrOfferingId"/>
+					</tt:back>		
 			</TD>
 		</TR>
-
-	</TABLE>
-	</loc:bundle>
-	</loc:bundle>
+	</s:form>
+</table>
+</loc:bundle>
+</loc:bundle>

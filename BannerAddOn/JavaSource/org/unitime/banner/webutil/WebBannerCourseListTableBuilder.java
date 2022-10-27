@@ -217,7 +217,7 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
     }
 
     private String subjectOnClickAction(Long bannerCourseId){
-        return("document.location='bannerOfferingDetail.do?op=view&bc=" + bannerCourseId.toString() + "';");
+        return("document.location='bannerOfferingDetail.action?op=view&bc=" + bannerCourseId.toString() + "';");
     }
 
 	private void addBannerCourseRowsToTable(
@@ -495,6 +495,8 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + bc.getUniqueId().toString() + "\"></A>");
+        if ("InstructionalOffering".equals(getBackType()) && io.getUniqueId().toString().equals(getBackId()))
+    		cell.addContent("<A name=\"back\"></A>");
         cell.addContent(co != null? ("<span title='" + co.getCourseNameWithTitle() + "'><b>" + co.getCourseNameWithTitle() + "</b></span>") :"");
         TreeSet ts = new TreeSet(new CourseOfferingComparator());
         ts.addAll(io.getCourseOfferings());

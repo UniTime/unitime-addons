@@ -20,13 +20,11 @@
 package org.unitime.localization.messages;
 
 public interface BannerMessages extends Messages {
-
 	@DefaultMessage("Search")
 	String actionSearchBannerOfferings();
 
 	@DefaultMessage("Banner Offering data was not correct:  {0}")
-	String missingBannerCourseOfferingId(String bannerCourseOfferingId);
-
+	String missingBannerCourseOfferingId(Long bannerCourseOfferingId);
 	
 	@DefaultMessage("Banner Session")
 	String rollForwardBannerSession();
@@ -114,4 +112,25 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Restrictions")
 	String colRestrictions();
+	
+	@DefaultMessage("Resend to Banner")
+	String actionResendToBanner();
+	
+	@DefaultMessage("Banner Offering")
+	String sectBannerOffering();
+	
+	@DefaultMessage("Back")
+	String actionBackToBannerOfferings();
+	
+	@DefaultMessage("I")
+	String accessBackToBannerOfferings();
+
+	@DefaultMessage("Back to Banner Course Offering List (Alt + {0})")
+	String titleBackToBannerOfferings(String access);
+	
+	@DefaultMessage("Edit")
+	String actionEditBannerConfig();
+	
+	@DefaultMessage("Edit Banner Configuration")
+	String titleEditBannerConfig();
 }

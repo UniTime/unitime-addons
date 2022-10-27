@@ -49,8 +49,7 @@ import org.unitime.timetable.webutil.Navigation;
  * @author says
  *
  */
-public class WebBannerConfigTableBuilder extends
-		WebBannerCourseListTableBuilder {
+public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder {
 
 	/**
 	 * 
@@ -169,7 +168,7 @@ public class WebBannerConfigTableBuilder extends
 		btnTable.append("<DIV class='WelcomeRowHeadNoLine'>");
 		String configName = ioc.getName();
 	    if (configName==null || configName.trim().length()==0) configName = ioc.getUniqueId().toString();
-		btnTable.append("Configuration "+configName);
+		btnTable.append(MSG.labelConfiguration(configName));
 		btnTable.append("</DIV>");
 		btnTable.append("</td><td style='padding-bottom: 3px' nowrap>");
 		boolean notOffered = ioc.getInstructionalOffering().isNotOffered().booleanValue();
@@ -181,7 +180,7 @@ public class WebBannerConfigTableBuilder extends
 		        btnTable.append("	<form method='post' action='bannerOfferingModify.do' class='FormWithNoPadding'>");
 		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId().toString() + "'>");
 		        btnTable.append("		<input type='hidden' name='bc' value='" + bannerCourse.getUniqueId().toString() + "'>");
-		        btnTable.append("		<input type='submit' name='op' value='Edit' title='Edit Banner Configuration' class='btn'> ");
+		        btnTable.append("		<input type='submit' name='op' value='" + BMSG.actionEditBannerConfig() + "' title='" + BMSG.titleEditBannerConfig() + "' class='btn'> ");
 		        btnTable.append("	</form>");
 		        btnTable.append("</td>");
 	        }

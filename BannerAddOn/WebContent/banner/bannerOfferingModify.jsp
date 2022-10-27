@@ -97,7 +97,7 @@
 				 
 				<html:button property="op" 
 					styleClass="btn" accesskey="B" titleKey="title.backToInstrOffrDetail" 
-					onclick="document.location.href='bannerOfferingDetail.do?op=view&bc=${bannerCourseOfferingId}';">
+					onclick="document.location.href='bannerOfferingDetail.action?op=view&bc=${bannerCourseOfferingId}';">
 					<bean:message key="button.backToInstrOffrDetail" />
 				</html:button>		
 				</tt:section-header>					
@@ -249,7 +249,7 @@
 						 
 				<html:button property="op" 
 					styleClass="btn" accesskey="B" titleKey="title.backToInstrOffrDetail" 
-					onclick="document.location.href='bannerOfferingDetail.do?op=view&bc=${bannerCourseOfferingId}';">
+					onclick="document.location.href='bannerOfferingDetail.action?op=view&bc=${bannerCourseOfferingId}';">
 					<bean:message key="button.backToInstrOffrDetail" />
 				</html:button>
 					

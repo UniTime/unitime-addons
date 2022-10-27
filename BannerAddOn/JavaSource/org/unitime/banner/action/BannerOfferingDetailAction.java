@@ -26,16 +26,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.util.MessageResources;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.form.BannerOfferingDetailForm;
@@ -43,11 +37,13 @@ import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerCourseDAO;
+import org.unitime.banner.webutil.WebBannerConfigTableBuilder;
 import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.interfaces.ExternalLinkLookup;
 import org.unitime.timetable.model.CourseOffering;
@@ -55,7 +51,6 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
 import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.webutil.BackTracker;
 
@@ -65,78 +60,63 @@ import org.unitime.timetable.webutil.BackTracker;
  * @author Stephanie Schluttenhofer
  */
 
-@Service("/bannerOfferingDetail")
-public class BannerOfferingDetailAction extends Action {
+@Action(value = "bannerOfferingDetail", results = {
+		@Result(name = "showBannerConfigDetail", type = "tiles", location = "bannerOfferingDetail.tiles"),
+		@Result(name = "showPrevNextDetail", type = "redirect", location = "/bannerOfferingDetail.action",
+			params = { "bc", "${bc}", "op", "view"}),
+		@Result(name = "showBannerOfferings", type = "redirect", location = "/bannerOfferingSearch.action",
+			params = { "anchor", "A${bc}"})
+	})
+@TilesDefinition(name = "bannerOfferingDetail.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Banner Offering Detail"),
+		@TilesPutAttribute(name = "body", value = "/banner/bannerOfferingDetail.jsp"),
+		@TilesPutAttribute(name = "showNavigation", value = "true"),
+		@TilesPutAttribute(name = "showSolverWarnings", value = "assignment")
+	})
+public class BannerOfferingDetailAction extends UniTimeAction<BannerOfferingDetailForm> {
+	private static final long serialVersionUID = 1680440094462959564L;
 	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
 	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
-	@Autowired SessionContext sessionContext;
+	private Long bannerCourseOfferingId;
+	
+	public Long getBc() { return bannerCourseOfferingId; }
+	public void setBc(Long bc) { this.bannerCourseOfferingId = bc; }
 
-
-    /** 
-     * Method execute
-     * @param mapping
-     * @param form
-     * @param request
-     * @param response
-     * @return ActionForward
-     */
-    @SuppressWarnings("unchecked")
-	public ActionForward execute(
-        ActionMapping mapping,
-        ActionForm form,
-        HttpServletRequest request,
-        HttpServletResponse response) throws Exception {
-
-        
-        MessageResources rsc = getResources(request);
-        BannerOfferingDetailForm frm = (BannerOfferingDetailForm) form;
-        
+	@Override
+	public String execute() throws Exception {
+		if (form == null) form = new BannerOfferingDetailForm();
+		
         // Read Parameters
-        String op = (request.getParameter("op")==null) 
-						? (frm.getOp()==null || frm.getOp().length()==0)
-						        ? (request.getAttribute("op")==null)
-						                ? null
-						                : request.getAttribute("op").toString()
-						        : frm.getOp()
-						: request.getParameter("op");		        
-		if (op==null)
-		    op = request.getParameter("hdnOp");
+		if (op == null) op = form.getOp();
 		
 		// Check operation
-		if(op==null || op.trim().length()==0)
+		if (op==null || op.trim().isEmpty())
 		    throw new Exception (MSG.exceptionOperationNotInterpreted() + op);
 		
-		if ("n".equals(request.getParameter("confirm")))
-			op = rsc.getMessage("op.view");
+		if (getBc() == null)
+        	setBc(form.getBannerCourseOfferingId());
 
 		Debug.debug ("Op: " + op);
 		
+		if (op.equals(BMSG.actionBackToBannerOfferings())) {
+			return "showBannerOfferings";
+		}
+		
 		// Display detail - default
-		if(op.equals(rsc.getMessage("op.view"))
-		        || op.equals(rsc.getMessage("button.createClasses")) 
-		        || op.equals(rsc.getMessage("button.updateConfig")) 
-				|| op.equals("Resend to Banner")) {
-		    String bannerCourseOfferingId = (request.getParameter("bc")==null)
-		    							? (request.getAttribute("bc")==null)
-		    							        ? null
-		    							        : request.getAttribute("bc").toString()
-		    							: request.getParameter("bc");
-		    if (bannerCourseOfferingId==null && frm.getInstrOfferingId()!=null)
-		    	bannerCourseOfferingId=frm.getBannerCourseOfferingId().toString();
-			if(bannerCourseOfferingId==null || bannerCourseOfferingId.trim().length()==0)
+		if (op.equals("view") || op.equals(BMSG.actionResendToBanner())) {
+			if (bannerCourseOfferingId==null || bannerCourseOfferingId < 0l)
 			    throw new Exception (BMSG.missingBannerCourseOfferingId(bannerCourseOfferingId));
 			else  {
 		    	sessionContext.checkPermission(getInstructionalOfferingIdForBannerCourseIdStr(bannerCourseOfferingId), "InstructionalOffering", Right.InstructionalOfferingDetail);
 
-			    doLoad(request, frm, bannerCourseOfferingId);
+			    doLoad(bannerCourseOfferingId);
 			}
 			
-	        if (op.equals("Resend to Banner")) {
-	        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId()));
+	        if (op.equals(BMSG.actionResendToBanner())) {
 	        	Vector<BannerSection> sections = new Vector<BannerSection>();
 	        	BannerCourseDAO bcDao = BannerCourseDAO.getInstance();
-	        	BannerCourse bc = (BannerCourse) bcDao.get(frm.getBannerCourseOfferingId());
+	        	BannerCourse bc = (BannerCourse) bcDao.get(form.getBannerCourseOfferingId());
 	        	for (Iterator it = bc.getBannerConfigs().iterator(); it.hasNext();){
 	        		BannerConfig bannerConfig = (BannerConfig) it.next();
 	        		for(Iterator bsIt = bannerConfig.getBannerSections().iterator(); bsIt.hasNext();){
@@ -144,77 +124,69 @@ public class BannerOfferingDetailAction extends Action {
 	        		}
 	        	}
 	        	SendBannerMessage.sendBannerMessage(sections, BannerMessageAction.UPDATE, bcDao.getSession());
+	        	return "showPrevNextDetail";
 	        } else {
 				BackTracker.markForBack(
 						request,
-						"bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId(),
-						"Banner Offering ("+frm.getInstrOfferingNameNoTitle()+")",
+						"bannerOfferingDetail.action?bc="+form.getBannerCourseOfferingId(),
+						BMSG.sectBannerOffering() + " ("+form.getInstrOfferingNameNoTitle()+")",
 						true, false);
 	        }
-			return mapping.findForward("showBannerConfigDetail");
-	        
+			return "showBannerConfigDetail";
 		}
 
-    	sessionContext.checkPermission(frm.getInstrOfferingId(), "InstructionalOffering", Right.InstructionalOfferingDetail);	
+    	sessionContext.checkPermission(form.getInstrOfferingId(), "InstructionalOffering", Right.InstructionalOfferingDetail);	
 
-        if (op.equals(rsc.getMessage("button.nextInstructionalOffering"))) {
-        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getNextId()));
-        	return null;
+        if (op.equals(MSG.actionNextIO())) {
+	    	setBc(form.getNextId());
+        	return "showPrevNextDetail";
+
         }
         
-        if (op.equals(rsc.getMessage("button.previousInstructionalOffering"))) {
-        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getPreviousId()));
-        	return null;
+        if (op.equals(MSG.actionPreviousIO())) {
+        	setBc(form.getPreviousId());
+        	return "showPrevNextDetail";
         }
 		
         if (op.equals(MSG.actionLockIO())) {
 		    InstructionalOfferingDAO idao = new InstructionalOfferingDAO();
-	        InstructionalOffering io = idao.get(frm.getInstrOfferingId());
+	        InstructionalOffering io = idao.get(form.getInstrOfferingId());
 
 	    	sessionContext.checkPermission(io, Right.OfferingCanLock);
 
 	    	io.getSession().lockOffering(io.getUniqueId());
-        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId()));
-        	return null;
+        	return "showPrevNextDetail";
         }
 		
         if (op.equals(MSG.actionUnlockIO())) {
 	    	InstructionalOfferingDAO idao = new InstructionalOfferingDAO();
-	        InstructionalOffering io = idao.get(frm.getInstrOfferingId());
+	        InstructionalOffering io = idao.get(form.getInstrOfferingId());
 
 	    	sessionContext.checkPermission(io, Right.OfferingCanUnlock);
 
 	        io.getSession().unlockOffering(io, sessionContext.getUser());
-        	response.sendRedirect(response.encodeURL("bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId()));
-        	return null;
+        	return "showPrevNextDetail";
         }
 
         BackTracker.markForBack(
 				request,
-				"bannerOfferingDetail.do?bc="+frm.getBannerCourseOfferingId(),
-				"Banner Offering ("+frm.getInstrOfferingName()+")",
+				"bannerOfferingDetail.action?bc="+form.getBannerCourseOfferingId(),
+				BMSG.sectBannerOffering() + " ("+form.getInstrOfferingName()+")",
 				true, false);
 		
 		
 		// Go back to banner offerings
-        return mapping.findForward("showBannerOfferings");
+        if (getBc() == null)
+        	setBc(form.getBannerCourseOfferingId());
+        return "showBannerOfferings";
         
     }
 
 	/**
      * Loads the form initially
-     * @param request
-     * @param frm
-     * @param bannerCourseOfferingIdStr
      */
-    private void doLoad(
-            HttpServletRequest request, 
-            BannerOfferingDetailForm frm, 
-            String bannerCourseOfferingIdStr) throws Exception {
-        
-
+    private void doLoad(Long bannerCourseOfferingId) throws Exception {
         // Load Instr Offering
-        Long bannerCourseOfferingId = Long.valueOf(bannerCourseOfferingIdStr);
         BannerCourseDAO bcDao = new BannerCourseDAO();
         BannerCourse bc = bcDao.get(bannerCourseOfferingId);
         CourseOffering co = bc.getCourseOffering(bcDao.getSession());
@@ -224,10 +196,11 @@ public class BannerOfferingDetailAction extends Action {
     	sessionContext.checkPermission(io, Right.InstructionalOfferingDetail);
         
 	    // Set Session Variables
+    	/*
         sessionContext.setAttribute(SessionAttribute.OfferingsSubjectArea, subjectAreaId.toString());
         if (sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber) != null && !sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber).toString().isEmpty())
             sessionContext.setAttribute(SessionAttribute.OfferingsCourseNumber, io.getControllingCourseOffering().getCourseNbr());
-
+    	*/
 	    
         // Sort Offerings
         ArrayList offerings = new ArrayList(io.getCourseOfferings());
@@ -236,35 +209,35 @@ public class BannerOfferingDetailAction extends Action {
                 new CourseOfferingComparator(CourseOfferingComparator.COMPARE_BY_CTRL_CRS));
                 
 	    // Load Form
-        frm.setBannerCourseOfferingId(bannerCourseOfferingId);
-        frm.setInstrOfferingId(io.getUniqueId());
-        frm.setSubjectAreaId(subjectAreaId);
-        frm.setInstrOfferingName(co.getCourseNameWithTitle());
-        frm.setSubjectAreaAbbr(co.getSubjectAreaAbbv());
-        frm.setCourseNbr(co.getCourseNbr());
-        frm.setInstrOfferingNameNoTitle(co.getCourseName());
-        frm.setCtrlCrsOfferingId(io.getControllingCourseOffering().getUniqueId());
-        frm.setDemand(io.getDemand());
-        frm.setEnrollment(io.getEnrollment());
-        frm.setProjectedDemand(io.getProjectedDemand());
-        frm.setLimit(io.getLimit());
-        frm.setUnlimited(Boolean.FALSE);
-        frm.setCreditText((co.getCredit() != null)?co.getCredit().creditText():"");
+        form.setBannerCourseOfferingId(bannerCourseOfferingId);
+        form.setInstrOfferingId(io.getUniqueId());
+        form.setSubjectAreaId(subjectAreaId);
+        form.setInstrOfferingName(co.getCourseNameWithTitle());
+        form.setSubjectAreaAbbr(co.getSubjectAreaAbbv());
+        form.setCourseNbr(co.getCourseNbr());
+        form.setInstrOfferingNameNoTitle(co.getCourseName());
+        form.setCtrlCrsOfferingId(io.getControllingCourseOffering().getUniqueId());
+        form.setDemand(io.getDemand());
+        form.setEnrollment(io.getEnrollment());
+        form.setProjectedDemand(io.getProjectedDemand());
+        form.setLimit(io.getLimit());
+        form.setUnlimited(Boolean.FALSE);
+        form.setCreditText((co.getCredit() != null)?co.getCredit().creditText():"");
         
         if (co.getConsentType()==null)
-            frm.setConsentType("None Required");
+            form.setConsentType(MSG.noConsentRequired());
         else
-            frm.setConsentType(co.getConsentType().getLabel());
+            form.setConsentType(co.getConsentType().getLabel());
         
         for (Iterator i=io.getInstrOfferingConfigs().iterator();i.hasNext();)
         	if (((InstrOfferingConfig)i.next()).isUnlimitedEnrollment().booleanValue()) {
-        		frm.setUnlimited(Boolean.TRUE); break;
+        		form.setUnlimited(Boolean.TRUE); break;
         	}
-        frm.setNotOffered(io.isNotOffered());
-        frm.setCourseOfferings(offerings);
+        form.setNotOffered(io.isNotOffered());
+        form.setCourseOfferings(offerings);
 	    
         // Check limits on courses if cross-listed
-        if (io.getCourseOfferings().size() > 1 && !frm.getUnlimited().booleanValue()) {
+        if (io.getCourseOfferings().size() > 1 && !form.getUnlimited().booleanValue()) {
         	int lim = 0;
         	for (CourseOffering course: io.getCourseOfferings()) {
         		if (course.getReservation() != null)
@@ -283,21 +256,19 @@ public class BannerOfferingDetailAction extends Action {
             if (results==null)
                 throw new Exception (lookup.getErrorMessage());
             
-            frm.setCatalogLinkLabel((String)results.get(ExternalLinkLookup.LINK_LABEL));
-            frm.setCatalogLinkLocation((String)results.get(ExternalLinkLookup.LINK_LOCATION));
+            form.setCatalogLinkLabel((String)results.get(ExternalLinkLookup.LINK_LABEL));
+            form.setCatalogLinkLocation((String)results.get(ExternalLinkLookup.LINK_LOCATION));
         }
         
 	    BannerCourse next = bc.getNextBannerCourse(sessionContext, false, true);
-        frm.setNextId(next==null?null:next.getUniqueId().toString());
+        form.setNextId(next==null?null:next.getUniqueId());
         BannerCourse previous = bc.getPreviousBannerCourse(sessionContext, false, true);
-        frm.setPreviousId(previous==null?null:previous.getUniqueId().toString());
+        form.setPreviousId(previous==null?null:previous.getUniqueId());
 	                
     }
     
-    public Long getInstructionalOfferingIdForBannerCourseIdStr(String bannerCourseId){
-    	
+    public Long getInstructionalOfferingIdForBannerCourseIdStr(Long bannerCourseOfferingId){
         // Load Instr Offering
-        Long bannerCourseOfferingId = Long.valueOf(bannerCourseId);
         BannerCourseDAO bcDao = new BannerCourseDAO();
         BannerCourse bc = bcDao.get(bannerCourseOfferingId);
         CourseOffering co = bc.getCourseOffering(bcDao.getSession());
@@ -307,4 +278,20 @@ public class BannerOfferingDetailAction extends Action {
         return(null);
     }
 
+    
+    public String getCsrNbr() {
+    	return (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
+    }
+    
+    public String printTable() throws Exception {
+    	new WebBannerConfigTableBuilder().htmlConfigTablesForBannerOffering(
+    								getClassAssignmentService().getAssignment(),
+				    		        form.getInstrOfferingId(),
+				    		        form.getBannerCourseOfferingId(),
+				    		        sessionContext,
+				    		        getPageContext().getOut(),
+				    		        request.getParameter("backType"),
+				    		        request.getParameter("backId"));
+		return "";
+    }
  }

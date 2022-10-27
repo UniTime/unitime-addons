@@ -54,7 +54,7 @@ import org.unitime.timetable.webutil.BackTracker;
 @Action(value="bannerOfferingSearch", results = {
 		@Result(name = "showBannerOfferingList", type = "tiles", location = "bannerOfferingSearch.tiles"),
 		@Result(name = "showBannerOfferingSearch", type = "tiles", location = "bannerOfferingSearch.tiles"),
-		@Result(name = "showBannerOfferingDetail", type = "redirect", location = "/bannerOfferingDetail.do",
+		@Result(name = "showBannerOfferingDetail", type = "redirect", location = "/bannerOfferingDetail.action",
 			params = {"op" , "view", "bc", "${bc}"}
 		)
 	})

@@ -26,10 +26,6 @@
 		<put name="title" type="string" value="Banner Message Responses"/>
 		<put name="body" value="/banner/bannerMessageResponses.jsp" />
   	</definition>
-  	<definition	name="bannerOfferingDetailTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Banner Offering Detail"/>
-		<put name="body" value="/banner/bannerOfferingDetail.jsp" />
-  	</definition>
    	<definition	name="bannerOfferingModifyTile" extends="pageLayoutDef">
 		<put name="title" type="string" value="Banner Offering Edit"/>
 		<put name="body" value="/banner/bannerOfferingModify.jsp" />
