@@ -28,8 +28,6 @@ import java.util.Vector;
 import javax.servlet.jsp.JspWriter;
 
 import org.unitime.commons.web.htmlgen.TableStream;
-import org.unitime.localization.impl.Localization;
-import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.defaults.CommonValues;
 import org.unitime.timetable.defaults.UserProperty;
 import org.unitime.timetable.model.CourseOffering;
@@ -51,15 +49,9 @@ import org.unitime.timetable.webutil.Navigation;
  * @author says
  *
  */
-public class WebColleagueConfigTableBuilder extends
-		WebColleagueCourseListTableBuilder {
-	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
+public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableBuilder {
 
-	/**
-	 * 
-	 */
 	public WebColleagueConfigTableBuilder() {
-		// TODO Auto-generated constructor stub
 	}
 
     public void htmlConfigTablesForColleagueOffering(
@@ -183,9 +175,9 @@ public class WebColleagueConfigTableBuilder extends
 	        if ((isEditable || isExtManaged) && ioc.hasClasses()) {
 		        btnTable.append("<td>");
 		        btnTable.append("	<form method='post' action='sectionRestrictionAssignment.do' class='FormWithNoPadding'>");
-		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId().toString() + "'>");
-		        btnTable.append("		<input type='hidden' name='co' value='" + courseOffering.getUniqueId().toString() + "'>");
-		        btnTable.append("		<input type='submit' name='op' value='" + MSG.actionAssignRestrictions()+"' title='" + MSG.titleAssignRestrictions() + "' class='btn'> ");
+		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId() + "'>");
+		        btnTable.append("		<input type='hidden' name='co' value='" + courseOffering.getUniqueId() + "'>");
+		        btnTable.append("		<input type='submit' name='op' value='" + CMSG.actionAssignRestrictions()+"' title='" + CMSG.titleAssignRestrictions() + "' class='btn'> ");
 		        btnTable.append("	</form>");
 		        btnTable.append("</td>");
 	        }

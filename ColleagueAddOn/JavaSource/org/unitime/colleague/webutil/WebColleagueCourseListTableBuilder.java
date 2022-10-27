@@ -215,7 +215,7 @@ public class WebColleagueCourseListTableBuilder extends WebInstructionalOffering
     }
 
     private String subjectOnClickAction(Long courseId){
-        return("document.location='colleagueOfferingDetail.do?op=view&co=" + courseId.toString() + "';");
+        return("document.location='colleagueOfferingDetail.action?op=view&co=" + courseId.toString() + "';");
     }
 
 	private void addColleagueCourseRowsToTable(
@@ -449,6 +449,8 @@ public class WebColleagueCourseListTableBuilder extends WebInstructionalOffering
         TableCell cell = this.initCell(null, 18, true);
         cell.addContent("<A name=\"A" + io.getUniqueId().toString() + "\"></A>");
         cell.addContent("<A name=\"A" + co.getUniqueId().toString() + "\"></A>");
+        if ("InstructionalOffering".equals(getBackType()) && io.getUniqueId().toString().equals(getBackId()))
+    		cell.addContent("<A name=\"back\"></A>");
         cell.addContent(co != null? ("<span title='" + co.getCourseNameWithTitle() + "'><b>" + co.getCourseNameWithTitle() + "</b></span>") :"");
         TreeSet ts = new TreeSet(new CourseOfferingComparator());
         ts.addAll(io.getCourseOfferings());

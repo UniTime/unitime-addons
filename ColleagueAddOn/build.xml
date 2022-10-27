@@ -236,7 +236,7 @@
 		<java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler" dir="${temp.dir}">
 			<classpath refid="build.classpath" />
 			<classpath path="${build_src.dir}"/>
-			<jvmarg value="-Xmx600M"/>
+			<jvmarg value="-Xmx2g"/>
 			<jvmarg value="${macJvmArgs}"/>
 			<jvmarg value="-Dgwt.persistentunitcache=false"/>
 			<arg value="${gwt_env}"/>

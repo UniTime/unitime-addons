@@ -28,5 +28,6 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-core-2.5.30.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-tiles-plugin-2.5.30.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-convention-plugin-2.5.30.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-taglibs-5.7.1.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>

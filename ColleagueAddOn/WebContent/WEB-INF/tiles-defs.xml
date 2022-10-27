@@ -25,10 +25,6 @@
 		<put name="title" type="string" value="Colleague Message Responses"/>
 		<put name="body" value="/colleague/colleagueMessageResponses.jsp" />
   	</definition>
-  	<definition	name="colleagueOfferingDetailTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Colleague Offering Detail"/>
-		<put name="body" value="/colleague/colleagueOfferingDetail.jsp" />
-  	</definition>
    	<definition	name="sectionRestrictionAssignmentTile" extends="pageLayoutDef">
 		<put name="title" type="string" value="Section Restrictions"/>
 		<put name="body" value="/colleague/sectionRestrictionAssignment.jsp" />

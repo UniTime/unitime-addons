@@ -19,8 +19,6 @@
 */
 package org.unitime.localization.messages;
 
-import com.google.gwt.i18n.client.Messages.DefaultMessage;
-
 public interface ColleagueMessages extends Messages {
 
 	@DefaultMessage("Assign Restrictions")
@@ -58,7 +56,7 @@ public interface ColleagueMessages extends Messages {
 	
 
 	@DefaultMessage("Course Offering data was not correct:  {0}")
-	String missingCourseOfferingId(String courseOfferingId);
+	String missingCourseOfferingId(Long courseOfferingId);
 
 	@DefaultMessage("Add Restriction to Section")
 	String titleAddRestrictionToSection();
@@ -131,4 +129,20 @@ public interface ColleagueMessages extends Messages {
 	
 	@DefaultMessage("Class Label")
 	String colClassLabel();
+	
+	@DefaultMessage("Resend to Colleague")
+	String actionResendToColleague();
+	
+	@DefaultMessage("Colleague Offering")
+	String sectColleagueOffering();
+	
+	@DefaultMessage("Back")
+	String actionBackToColleagueOfferings();
+	
+	@DefaultMessage("I")
+	String accessBackToColleagueOfferings();
+	
+	@DefaultMessage("Back to Colleague Course Offering List (Alt + {0})")
+	String titleBackToColleagueOfferings(String access);
+	
 }

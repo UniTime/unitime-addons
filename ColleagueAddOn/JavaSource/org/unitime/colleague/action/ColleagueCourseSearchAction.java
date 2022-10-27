@@ -50,7 +50,7 @@ import org.unitime.timetable.webutil.BackTracker;
 @Action(value="colleagueOfferingSearch", results = {
 		@Result(name = "showColleagueOfferingList", type = "tiles", location = "colleagueOfferingSearch.tiles"),
 		@Result(name = "showColleagueOfferingSearch", type = "tiles", location = "colleagueOfferingSearch.tiles"),
-		@Result(name = "showColleagueOfferingDetail", type = "redirect", location = "/colleagueOfferingDetail.do",
+		@Result(name = "showColleagueOfferingDetail", type = "redirect", location = "/colleagueOfferingDetail.action",
 			params = {"op" , "view", "co", "${co}"}
 		)
 	})

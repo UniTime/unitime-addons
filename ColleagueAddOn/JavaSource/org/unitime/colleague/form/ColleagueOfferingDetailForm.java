@@ -19,35 +19,23 @@
 */
 package org.unitime.colleague.form;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 import org.unitime.timetable.model.CourseOffering;
-import org.unitime.timetable.util.DynamicList;
-import org.unitime.timetable.util.DynamicListObjectFactory;
 
 /**
  * 
  * @author says
  *
  */
-public class ColleagueOfferingDetailForm extends ActionForm {
-
-	protected final static ColleagueMessages MSG = Localization.create(ColleagueMessages.class);
-
-	/**
-	 * 
-	 */
+public class ColleagueOfferingDetailForm implements UniTimeForm {
 	private static final long serialVersionUID = -5161466018324037153L;
-	// --------------------------------------------------------- Instance Variables
+	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
+
 
     private String op;   
     private Long subjectAreaId;
@@ -66,48 +54,31 @@ public class ColleagueOfferingDetailForm extends ActionForm {
     private Boolean isManager;
     private String instrOfferingName;
     private String instrOfferingNameNoTitle;
-    private List courseOfferings;
+    private List<CourseOffering> courseOfferings;
     private String subjectAreaAbbr;
     private String courseNbr;
     private String consentType;
     private String creditText;
-    private String nextId;
-    private String previousId;
+    private Long nextId;
+    private Long previousId;
     private String catalogLinkLabel;
     private String catalogLinkLocation;
 
-    // --------------------------------------------------------- Classes
-
-    /** Factory to create dynamic list element for Course Offerings */
-    protected DynamicListObjectFactory factoryCourseOfferings = new DynamicListObjectFactory() {
-        public Object create() {
-            return new String("");
-        }
-    };
-
-   
-    // --------------------------------------------------------- Methods
-
-    /** 
-     * Method validate
-     * @param mapping
-     * @param request
-     * @return ActionErrors
-     */
-    public ActionErrors validate(
-        ActionMapping mapping,
-        HttpServletRequest request) {
-
-        throw new UnsupportedOperationException(
-            "Generated method 'validate(...)' not implemented.");
+    public ColleagueOfferingDetailForm() {
+        reset();
     }
 
     /** 
-     * Method reset
-     * @param mapping
-     * @param request
+     * Method validate
      */
-    public void reset(ActionMapping mapping, HttpServletRequest request) {
+    @Override
+    public void validate(UniTimeAction action) {}
+    
+    /** 
+     * Method reset
+     */
+    @Override
+    public void reset() {
         op = "view";    
         subjectAreaId = null;
         subjectAreaAbbr = null;
@@ -127,23 +98,17 @@ public class ColleagueOfferingDetailForm extends ActionForm {
         isEditable = null;
         isFullyEditable = null; 
         isManager = null;
-        courseOfferings = DynamicList.getInstance(new ArrayList(), factoryCourseOfferings);
+        courseOfferings = null;
         nextId = previousId = null;
         creditText = "";
         catalogLinkLabel = null;
         catalogLinkLocation = null;
     }
     
-    public List getCourseOfferings() {
+    public List<CourseOffering> getCourseOfferings() {
         return courseOfferings;
     }
-    public String getCourseOfferings(int key) {
-        return courseOfferings.get(key).toString();
-    }
-    public void setCourseOfferings(int key, Object value) {
-        this.courseOfferings.set(key, value);
-    }
-    public void setCourseOfferings(List courseOfferings) {
+    public void setCourseOfferings(List<CourseOffering> courseOfferings) {
         this.courseOfferings = courseOfferings;
     }
     
@@ -303,16 +268,10 @@ public class ColleagueOfferingDetailForm extends ActionForm {
         return Integer.valueOf(this.courseOfferings.size());
     }
     
-    public String getNextId() { return nextId; }
-    public void setNextId(String nextId) { this.nextId = nextId; }
-    public String getPreviousId() { return previousId; }
-    public void setPreviousId(String previousId) { this.previousId = previousId; }
-    public boolean getHasDemandOfferings() {
-    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
-    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
-    		if (((CourseOffering)i.next()).getDemandOffering()!=null) return true;
-    	return false;
-    }
+    public Long getNextId() { return nextId; }
+    public void setNextId(Long nextId) { this.nextId = nextId; }
+    public Long getPreviousId() { return previousId; }
+    public void setPreviousId(Long previousId) { this.previousId = previousId; }
 
 	public String getCreditText() {
 		return creditText;
