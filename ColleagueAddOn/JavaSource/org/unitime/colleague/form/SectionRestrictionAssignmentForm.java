@@ -23,12 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.hibernate.Transaction;
 import org.unitime.colleague.model.ColleagueRestriction;
 import org.unitime.colleague.model.ColleagueSection;
@@ -38,109 +32,95 @@ import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.localization.messages.CourseMessages;
-import org.unitime.timetable.model.Preference;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
-import org.unitime.timetable.util.DynamicList;
-import org.unitime.timetable.util.DynamicListObjectFactory;
 
 
 /**
  * @author Stephanie Schluttenhofer
  */
-public class SectionRestrictionAssignmentForm extends ActionForm {
+public class SectionRestrictionAssignmentForm implements UniTimeForm {
+	private static final long serialVersionUID = -203441190483028649L;
 	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
 	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 	
 	private String op;
-    private Integer subjectAreaId;
+    private Long subjectAreaId;
 	private Long instrOfferingId;
 	private Long courseOfferingId;
     private String instrOfferingName;
 	private Integer instrOffrConfigLimit;
 	private Long instrOffrConfigId;
-	private String deletedRestrRowNum;
-    private String nextId;
-    private String previousId;
+	private Integer deletedRestrRowNum;
+    private Long nextId;
+    private Long previousId;
 	private ClassAssignmentProxy proxy;
-	private String addRestrictionId;
+	private Integer addRestrictionId;
 	private Boolean displayExternalId;
 
-	private List<String> sectionIds;
+	private List<Long> sectionIds;
 	private List<String> sectionLabels;
 	private List<String> sectionLabelIndents;
-	private List<String> restrictionUids;
-	private List times;
+	private List<Long> restrictionUids;
+	private List<String> times;
 	private List<String> rooms;
 	private List<Boolean> allowDeletes;
-	private List<String> readOnlySections;
+	private List<Boolean> readOnlySections;
 	private List<Boolean> sectionHasErrors;
 	private List<Boolean> showDisplay;
 	private List<String> externalIds;
 	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -203441190483028649L;
-	/**
-	 * 
-	 */
-
-    // --------------------------------------------------------- Classes
-
-    /** Factory to create dynamic list element for Course Offerings */
-    protected DynamicListObjectFactory factoryClasses = new DynamicListObjectFactory() {
-        public Object create() {
-            return new String(Preference.BLANK_PREF_VALUE);
-        }
-    };
-		
-	public void reset(ActionMapping arg0, HttpServletRequest arg1) {
+	public SectionRestrictionAssignmentForm() {
+		reset();
+	}
+	
+	@Override
+	public void reset() {
 		op = "";
         nextId = previousId = null;
-        subjectAreaId = Integer.valueOf(0);
-    	instrOfferingId = Long.valueOf(0);
-    	courseOfferingId = Long.valueOf(0);
+        subjectAreaId = 0l;
+    	instrOfferingId = 0l;
+    	courseOfferingId = 0l;
         instrOfferingName = null;
-    	instrOffrConfigLimit = Integer.valueOf(0);
-    	instrOffrConfigId = Long.valueOf(0);
+    	instrOffrConfigLimit = 0;
+    	instrOffrConfigId = 0l;
     	deletedRestrRowNum = null;
-    	displayExternalId = Boolean.valueOf(false);
+    	displayExternalId = false;
     	proxy = null;	
     	resetLists();
 	}
 
 	private void resetLists() {
-    	sectionIds = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	sectionLabels = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	sectionLabelIndents = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	restrictionUids = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	times = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	rooms = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	allowDeletes = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	readOnlySections = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	sectionHasErrors = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	showDisplay = DynamicList.getInstance(new ArrayList(), factoryClasses);
-    	externalIds = DynamicList.getInstance(new ArrayList(), factoryClasses);
+    	sectionIds = new ArrayList<Long>();
+    	sectionLabels = new ArrayList<String>();
+    	sectionLabelIndents = new ArrayList<String>();
+    	restrictionUids = new ArrayList<Long>();
+    	times = new ArrayList<String>();
+    	rooms = new ArrayList<String>();
+    	allowDeletes = new ArrayList<Boolean>();
+    	readOnlySections = new ArrayList<Boolean>();
+    	sectionHasErrors = new ArrayList<Boolean>();
+    	showDisplay = new ArrayList<Boolean>();
+    	externalIds = new ArrayList<String>();
 	}
 
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-		ActionErrors errors = new ActionErrors();
-
-        if(op.equals(CMSG.actionUpdateSectionRestrictionAssignment()) || op.equals(MSG.actionNextIO()) || op.equals(MSG.actionPreviousIO())) {	
+	@Override
+	public void validate(UniTimeAction action) {
+        if (op.equals(CMSG.actionUpdateSectionRestrictionAssignment()) || op.equals(MSG.actionNextIO()) || op.equals(MSG.actionPreviousIO())) {	
             // Check Added Restrictions
 	        for (int i = 0; i < sectionIds.size(); i++) {
-	        	String sectionId = (String) sectionIds.get(i);
-	        	String restrictionUid = (String) restrictionUids.get(i);
+	        	Long sectionId = sectionIds.get(i);
+	        	Long restrictionUid = restrictionUids.get(i);
 	        	for (int j = i + 1; j < sectionIds.size(); j++) {
-	        		if (((String) restrictionUids.get(j)).length() > 0) {
+	        		if (restrictionUids.get(j) != null) {
 		        		if(sectionIds.get(j).equals(sectionId) && restrictionUids.get(j).equals(restrictionUid)) {
-		        			errors.add("duplicateRestriction", new ActionMessage("errors.generic", CMSG.errorDuplicateRestrictionForSection()));
+		        			action.addFieldError("form.duplicateRestriction", CMSG.errorDuplicateRestrictionForSection());
 		        		}
 	        		}
 	        	}
 	        }
         }
-        return errors;
 	}
 
 	public void addToSections(ColleagueSection section, Boolean isReadOnly, String indent){
@@ -155,36 +135,36 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 			// Only display the class name and display flag for the first instructor
 			if(i == 0) {
 				this.sectionLabels.add(section.colleagueSectionLabel());
-				this.showDisplay.add(Boolean.valueOf(true));
+				this.showDisplay.add(true);
 				this.times.add(section.buildAssignedTimeHtml(getProxy()));
 				this.rooms.add(section.buildAssignedRoomHtml(getProxy()));
 				this.externalIds.add(section.getColleagueId() == null?"":section.getColleagueId());
 			}
 			else {
 				this.sectionLabels.add("");
-				this.showDisplay.add(Boolean.valueOf(false));
+				this.showDisplay.add(false);
 				this.times.add("");
 				this.rooms.add("");
 				this.externalIds.add("");
 			}
 			this.sectionLabelIndents.add(indent);
-			this.sectionIds.add(section.getUniqueId().toString());
-			this.readOnlySections.add(isReadOnly.toString());
-			this.sectionHasErrors.add(Boolean.valueOf(false));
+			this.sectionIds.add(section.getUniqueId());
+			this.readOnlySections.add(isReadOnly);
+			this.sectionHasErrors.add(false);
 	
 			if(restrictions.size() > 0) {
-				this.restrictionUids.add(restriction.getUniqueId().toString());
+				this.restrictionUids.add(restriction.getUniqueId());
 			}
 			else {
-				this.restrictionUids.add("");
+				this.restrictionUids.add(-1l);
 			}
 			
-			this.allowDeletes.add(Boolean.valueOf(restrictions.size() > 1));
+			this.allowDeletes.add(restrictions.size() > 1);
 		} while (++i < restrictions.size());
 	}
 
 	public void deleteRestriction() {
-		int index = Integer.parseInt(deletedRestrRowNum);
+		int index = deletedRestrRowNum;
 		int firstIndex = index;
 		while (firstIndex>0 && sectionIds.get(firstIndex-1).equals(sectionIds.get(index)))
 			firstIndex--;
@@ -208,7 +188,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	}
 
 	public void addRestriction() {
-		int pos = Integer.valueOf(this.getAddRestrictonId()).intValue();
+		int pos = getAddRestrictonId();
 		this.sectionLabels.add(pos + 1, "");
 		this.showDisplay.add(pos + 1, Boolean.FALSE);
 		this.times.add(pos + 1, "");
@@ -217,7 +197,7 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 		this.sectionIds.add(pos + 1, this.sectionIds.get(pos));
 		this.readOnlySections.add(pos + 1, this.readOnlySections.get(pos));
 		this.sectionHasErrors.add(pos + 1, Boolean.FALSE);
-		this.restrictionUids.add(pos + 1, "");
+		this.restrictionUids.add(pos + 1, -1l);
 		this.allowDeletes.set(pos, Boolean.TRUE);
 		this.allowDeletes.add(pos + 1, Boolean.TRUE);
 		this.externalIds.add(pos + 1, "");
@@ -226,13 +206,13 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public void updateSections() throws Exception {
 	    ColleagueSectionDAO cdao = new ColleagueSectionDAO();
 	    for (int i = 0; i < sectionIds.size(); ) {
-	    	if ("true".equals(getReadOnlySections().get(i))) {
+	    	if (getReadOnlySections(i)) {
 	    		i++;
 	    		continue;
 	    	}
 	    	
-			String sectionId = (String) sectionIds.get(i);
-		    ColleagueSection c = cdao.get(Long.valueOf(sectionId));
+			Long sectionId = sectionIds.get(i);
+		    ColleagueSection c = cdao.get(sectionId);
 
 		    org.hibernate.Session hibSession = cdao.getSession();
         	Transaction tx = hibSession.beginTransaction();
@@ -243,13 +223,13 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
             
             // Save restriction data to section
             for ( ; i < sectionIds.size(); i++) {
-            	boolean sameSection = ((String) sectionIds.get(i)).equals(sectionId);
+            	boolean sameSection = (sectionIds.get(i)).equals(sectionId);
             	if (!sameSection)	{
             		break;
             	}
-                String restrictionId = (String) getRestrictionUids().get(i);
-                if (restrictionId.length() > 0  && !("-".equals(restrictionId))) {
-	                ColleagueRestriction colleagueRestriction =  new ColleagueRestrictionDAO().get(Long.valueOf(restrictionId));
+                Long restrictionId = getRestrictionUids(i);
+                if (restrictionId != null && restrictionId >= 0) {
+	                ColleagueRestriction colleagueRestriction =  new ColleagueRestrictionDAO().get(restrictionId);
 	                c.addTocolleagueRestrictions(colleagueRestriction);
 	            };
             };
@@ -266,13 +246,13 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public void unassignAllRestrictions() throws Exception {
 	    ColleagueSectionDAO cdao = new ColleagueSectionDAO();
 	    for (int i = 0; i < sectionIds.size(); i++ ) {
-	    	if ("true".equals(getReadOnlySections().get(i))) {
+	    	if (getReadOnlySections(i)) {
 	    		i++;
 	    		continue;
 	    	}
 	    	
-			String sectionId = (String) sectionIds.get(i);
-		    ColleagueSection c = cdao.get(Long.valueOf(sectionId));
+			Long sectionId = sectionIds.get(i);
+		    ColleagueSection c = cdao.get(sectionId);
 
 		    org.hibernate.Session hibSession = cdao.getSession();
         	Transaction tx = hibSession.beginTransaction();
@@ -295,66 +275,101 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 		this.op = op;
 	}
 
-	public List getAllowDeletes() {
+	public List<Boolean> getAllowDeletes() {
 		return allowDeletes;
 	}
-
-	public void setAllowDeletes(List allowDeletes) {
+	public void setAllowDeletes(List<Boolean> allowDeletes) {
 		this.allowDeletes = allowDeletes;
 	}
+	public Boolean getAllowDeletes(int idx) {
+		return allowDeletes.get(idx);
+	}
+	public void setAllowDeletes(int idx, Boolean allowDelete) {
+		this.allowDeletes.set(idx, allowDelete);
+	}
 
-	public List getSectionIds() {
+	public List<Long> getSectionIds() {
 		return sectionIds;
 	}
-
-	public void setSectionIds(List sectionIds) {
+	public void setSectionIds(List<Long> sectionIds) {
 		this.sectionIds = sectionIds;
 	}
+	public Long getSectionIds(int idx) {
+		return sectionIds.get(idx);
+	}
+	public void setSectionIds(int idx, Long sectionId) {
+		this.sectionIds.set(idx, sectionId);
+	}
 
-	public List getSectionLabelIndents() {
+	public List<String> getSectionLabelIndents() {
 		return sectionLabelIndents;
 	}
-
-	public void setSectionLabelIndents(List sectionLabelIndents) {
+	public void setSectionLabelIndents(List<String> sectionLabelIndents) {
 		this.sectionLabelIndents = sectionLabelIndents;
 	}
+	public String getSectionLabelIndents(int idx) {
+		return sectionLabelIndents.get(idx);
+	}
+	public void setSectionLabelIndents(int idx, String sectionLabelIndent) {
+		this.sectionLabelIndents.set(idx, sectionLabelIndent);
+	}
 
-	public List getSectionLabels() {
+	public List<String> getSectionLabels() {
 		return sectionLabels;
 	}
-
-	public void setSectionLabels(List sectionLabels) {
+	public void setSectionLabels(List<String> sectionLabels) {
 		this.sectionLabels = sectionLabels;
 	}
+	public String getSectionLabels(int idx) {
+		return sectionLabels.get(idx);
+	}
+	public void setSectionLabels(int idx, String sectionLabel) {
+		this.sectionLabels.set(idx, sectionLabel);
+	}
 
-	public List getRestrictionUids() {
+	public List<Long> getRestrictionUids() {
 		return restrictionUids;
 	}
-
-	public void setRestrictionUids(List restrictionUids) {
+	public void setRestrictionUids(List<Long> restrictionUids) {
 		this.restrictionUids = restrictionUids;
 	}
+	public Long getRestrictionUids(int idx) {
+		return restrictionUids.get(idx);
+	}
+	public void setRestrictionUids(int idx, Long restrictionUid) {
+		this.restrictionUids.set(idx, restrictionUid);
+	}
 
-	public List getRooms() {
+	public List<String> getRooms() {
 		return rooms;
 	}
-
-	public void setRooms(List rooms) {
+	public void setRooms(List<String> rooms) {
 		this.rooms = rooms;
 	}
+	public String getRooms(int idx) {
+		return rooms.get(idx);
+	}
+	public void setRooms(int idx, String room) {
+		this.rooms.set(idx, room);
+	}
+	
 
-	public List getTimes() {
+	public List<String> getTimes() {
 		return times;
 	}
-
-	public void setTimes(List times) {
+	public void setTimes(List<String> times) {
 		this.times = times;
+	}
+	public String getTimes(int idx) {
+		return times.get(idx);
+	}
+	public void setTimes(int idx, String time) {
+		this.times.set(idx, time);
 	}
 
 	public Long getInstrOfferingId() {
 		return instrOfferingId;
 	}
-
 	public void setInstrOfferingId(Long instrOfferingId) {
 		this.instrOfferingId = instrOfferingId;
 	}
@@ -362,7 +377,6 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public Long getCourseOfferingId() {
 		return courseOfferingId;
 	}
-
 	public void setCourseOfferingId(Long courseOfferingId) {
 		this.courseOfferingId = courseOfferingId;
 	}
@@ -370,7 +384,6 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public String getInstrOfferingName() {
 		return instrOfferingName;
 	}
-
 	public void setInstrOfferingName(String instrOfferingName) {
 		this.instrOfferingName = instrOfferingName;
 	}
@@ -378,7 +391,6 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public Long getInstrOffrConfigId() {
 		return instrOffrConfigId;
 	}
-
 	public void setInstrOffrConfigId(Long instrOffrConfigId) {
 		this.instrOffrConfigId = instrOffrConfigId;
 	}
@@ -386,95 +398,107 @@ public class SectionRestrictionAssignmentForm extends ActionForm {
 	public Integer getInstrOffrConfigLimit() {
 		return instrOffrConfigLimit;
 	}
-
 	public void setInstrOffrConfigLimit(Integer instrOffrConfigLimit) {
 		this.instrOffrConfigLimit = instrOffrConfigLimit;
 	}
 
-	public List getReadOnlySections() {
+	public List<Boolean> getReadOnlySections() {
 		return readOnlySections;
 	}
-
-	public void setReadOnlySections(List readOnlySections) {
+	public void setReadOnlySections(List<Boolean> readOnlySections) {
 		this.readOnlySections = readOnlySections;
 	}
+	public Boolean getReadOnlySections(int idx) {
+		return readOnlySections.get(idx);
+	}
+	public void setReadOnlySections(int idx, Boolean readOnlySection) {
+		this.readOnlySections.set(idx, readOnlySection);
+	}
 
-	public List getSectionHasErrors() {
+	public List<Boolean> getSectionHasErrors() {
 		return sectionHasErrors;
 	}
-
-	public void setSectionHasErrors(List sectionHasErrors) {
+	public void setSectionHasErrors(List<Boolean> sectionHasErrors) {
 		this.sectionHasErrors = sectionHasErrors;
 	}
-
-	public Integer getSubjectAreaId() {
-		return subjectAreaId;
+	public Boolean getSectionHasErrors(int idx) {
+		return sectionHasErrors.get(idx);
+	}
+	public void setSectionHasErrors(int idx, Boolean sectionHasError) {
+		this.sectionHasErrors.set(idx, sectionHasError);
 	}
 
-	public void setSubjectAreaId(Integer subjectAreaId) {
+	public Long getSubjectAreaId() {
+		return subjectAreaId;
+	}
+	public void setSubjectAreaId(Long subjectAreaId) {
 		this.subjectAreaId = subjectAreaId;
 	}
 
 	public ClassAssignmentProxy getProxy() {
 		return proxy;
 	}
-
 	public void setProxy(ClassAssignmentProxy proxy) {
 		this.proxy = proxy;
 	}
 
-	public String getNextId() {
+	public Long getNextId() {
 		return nextId;
 	}
-
-	public void setNextId(String nextId) {
+	public void setNextId(Long nextId) {
 		this.nextId = nextId;
 	}
 
-	public String getPreviousId() {
+	public Long getPreviousId() {
 		return previousId;
 	}
-
-	public void setPreviousId(String previousId) {
+	public void setPreviousId(Long previousId) {
 		this.previousId = previousId;
 	}
 
-	public String getDeletedRestrRowNum() {
+	public Integer getDeletedRestrRowNum() {
 		return deletedRestrRowNum;
 	}
-
-	public void setDeletedRestrRowNum(String deletedRestrRowNum) {
+	public void setDeletedRestrRowNum(Integer deletedRestrRowNum) {
 		this.deletedRestrRowNum = deletedRestrRowNum;
 	}
 
-	public List getShowDisplay() {
+	public List<Boolean> getShowDisplay() {
 		return showDisplay;
 	}
-
-	public void setShowDisplay(List showDisplay) {
+	public void setShowDisplay(List<Boolean> showDisplay) {
 		this.showDisplay = showDisplay;
 	}
-
-	public String getAddRestrictonId() {
-		return addRestrictionId;
+	public Boolean getShowDisplay(int idx) {
+		return showDisplay.get(idx);
+	}
+	public void setShowDisplay(int idx, Boolean showDisplay) {
+		this.showDisplay.set(idx, showDisplay);
 	}
 
-	public void setAddRestrictionId(String addRestrictionId) {
+	public Integer getAddRestrictonId() {
+		return addRestrictionId;
+	}
+	public void setAddRestrictionId(Integer addRestrictionId) {
 		this.addRestrictionId = addRestrictionId;
 	}
 
-	public List getExternalIds() {
+	public List<String> getExternalIds() {
 		return externalIds;
 	}
-
-	public void setExternalIds(List externalIds) {
+	public void setExternalIds(List<String> externalIds) {
 		this.externalIds = externalIds;
+	}
+	public String getExternalIds(int idx) {
+		return externalIds.get(idx);
+	}
+	public void setExternalIds(int idx, String externalId) {
+		this.externalIds.set(idx, externalId);
 	}
 
 	public Boolean getDisplayExternalId() {
 		return displayExternalId;
 	}
-
 	public void setDisplayExternalId(Boolean displayExternalId) {
 		this.displayExternalId = displayExternalId;
 	}

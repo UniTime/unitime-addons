@@ -17,250 +17,169 @@
  * limitations under the License.
  * 
 --%>
-<%@ page language="java" autoFlush="true" errorPage="../error.jsp" %>
-<%@ page import="org.unitime.timetable.defaults.UserProperty"%>
-<%@ page import="org.unitime.timetable.util.Constants" %>
-<%@ page import="org.unitime.colleague.model.ColleagueRestriction" %>
-<%@ page import="org.unitime.colleague.form.SectionRestrictionAssignmentForm" %>
-<%@ page import="org.unitime.timetable.webutil.JavascriptFunctions" %>
-<%@ page import="org.unitime.timetable.defaults.SessionAttribute"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-<%@ taglib uri="http://www.unitime.org/tags-localization" prefix="loc" %>
-<tiles:importAttribute />
-
-<loc:bundle name="ColleagueMessages">
-
-<tt:session-context/>
-<% 
-	String frmName = "sectionRestrictionAssignmentForm";
-	SectionRestrictionAssignmentForm frm = (SectionRestrictionAssignmentForm)request.getAttribute(frmName);
-	String crsNbr = (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
-%>
-
-<html:form action="/sectionRestrictionAssignment">
-<html:hidden name="<%=frmName%>" property="instrOffrConfigId"/>
-<html:hidden property="instrOfferingId"/>	
-<html:hidden property="courseOfferingId"/>	
-<INPUT type="hidden" name="deletedRestrRowNum" value = "">
-<INPUT type="hidden" name="addRestrictionId" value = "">
-<INPUT type="hidden" name="hdnOp" value = "">
-
-<SCRIPT language="javascript">
-	<!--
-		<%= JavascriptFunctions.getJsConfirm(sessionContext) %>
-		
-		function confirmUnassignAll() {
-			if (jsConfirm!=null && !jsConfirm)
-				return true;
-
-			if (!confirm('<%=MSG.confirmUnassignAllRestrictions() %>')) {
-				return false;
-			}
-
-			return true;
-		}
-
-	// -->
-</SCRIPT>
-
-	<TABLE width="100%" border="0" cellspacing="0" cellpadding="3">
-		<TR>
-			<TD colspan="2" valign="middle">
-				 <tt:section-header>
-					<tt:section-title>
-							<A  title="<%=MSG.titleBackToIOList(MSG.accessBackToIOList()) %>" 
-								accesskey="<%=MSG.accessBackToIOList() %>"
-								class="l8" 
-								href="colleagueOfferingSearch.action?doit=Search&form.subjectAreaId=<bean:write name="<%=frmName%>" 
-										property="subjectAreaId" />&courseNbr=<%=crsNbr%>#A<bean:write name="<%=frmName%>" property="instrOfferingId" />"
-							><bean:write name="<%=frmName%>" property="instrOfferingName" /></A>
-							<html:hidden property="instrOfferingId"/>
-							<html:hidden property="instrOfferingName"/>
-					</tt:section-title>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
+<s:form action="sectionRestrictionAssignment">
+<tt:confirm name="confirmUnassignAll"><loc:message name="confirmUnassignAllRestrictions" id="CMSG"/></tt:confirm>
+	<s:hidden name="form.instrOffrConfigId"/>
+	<s:hidden name="form.instrOfferingId"/>
+	<s:hidden name="form.instrOfferingName"/>
+	<s:hidden name="form.courseOfferingId"/>
+	<s:hidden name="form.subjectAreaId"/>
+	<s:hidden name="form.deletedRestrRowNum" value="" id="deletedRestrRowNum"/>
+	<s:hidden name="form.addRestrictionId" value="" id="addRestrictionId"/>
+	<s:hidden name="form.op" value="" id="hdnOp"/>
+	<s:hidden name="form.displayExternalId"/>
+<table class="unitime-Table">
+	<TR>
+		<TD colspan="2" valign="middle">
+			 <tt:section-header>
+				<tt:section-title>
+						<A  title="${MSG.titleBackToIOList(MSG.accessBackToIOList())}" 
+							accesskey="${MSG.accessBackToIOList()}"
+							class="l8" 
+							href="colleagueOfferingSearch.action?doit=Search&form.subjectAreaId=${form.subjectAreaId}&courseNbr=${crsNbr}#A${form.instrOfferingId}"
+						><s:property value="form.instrOfferingName" /></A>
+				</tt:section-title>
 				
 				<!-- dummy submit button to make sure Update button is the first (a.k.a. default) submit button -->
-				<html:submit property="op" style="position: absolute; left: -100%;"><loc:message name="actionUpdateSectionRestrictionAssignment" /></html:submit>						
+				<s:submit name="op" value="%{#cmsg.actionUpdateSectionRestrictionAssignment()}" style="position: absolute; left: -100%;"/>
+				
+				<s:submit name="op" value="%{#cmsg.actionUnassignAllRestrictionsFromConfig()}"
+					title="%{#cmsg.titleUnassignAllRestrictionsFromConfig()}" onclick="return confirmUnassignAll();"/>
 
-				<html:submit property="op"
-					onclick="return confirmUnassignAll();"
-					styleClass="btn" 
-					title="<%=MSG.titleUnassignAllRestrictionsFromConfig() %>">
-					<loc:message name="actionUnassignAllRestrictionsFromConfig" />
-				</html:submit>
-				 
-				&nbsp;
-				<html:submit property="op"
-					styleClass="btn" 
-					accesskey="<%=MSG.accessUpdateSectionRestrictionAssignment() %>" 
-					title="<%=MSG.titleUpdateSectionRestrictionsAssignment(MSG.accessUpdateSectionRestrictionAssignment()) %>">
-					<loc:message name="actionUpdateSectionRestrictionAssignment" />
-				</html:submit>
-			
-				<bean:define id="instrOfferingId">
-					<bean:write name="<%=frmName%>" property="instrOfferingId" />				
-				</bean:define>
-				<bean:define id="courseOfferingId">
-					<bean:write name="<%=frmName%>" property="courseOfferingId" />				
-				</bean:define>
-
-				<logic:notEmpty name="<%=frmName%>" property="previousId">
-					<html:hidden name="<%=frmName%>" property="previousId"/>
-					&nbsp;
-					<html:submit property="op" 
-						styleClass="btn" 
-						accesskey="<%=MSG.accessPreviousIO() %>" 
-						title="<%=MSG.titlePreviousIOWithUpdate(MSG.accessPreviousIO()) %>">
-						<loc:message name="actionPreviousIO" />
-					</html:submit> 
-				</logic:notEmpty>
-				<logic:notEmpty name="<%=frmName%>" property="nextId">
-					<html:hidden name="<%=frmName%>" property="nextId"/>
-					&nbsp;
-					<html:submit property="op" 
-						styleClass="btn" 
-						accesskey="<%=MSG.accessNextIO() %>" 
-						title="<%=MSG.titleNextIOWithUpdate(MSG.accessNextIO()) %>">
-						<loc:message name="actionNextIO" />
-					</html:submit> 
-				</logic:notEmpty>
-				 
-				&nbsp;
-				<html:button property="op" 
-					styleClass="btn" 
-					accesskey="<%=MSG.accessBackToIODetail() %>" 
-					title="<%=MSG.titleBackToIODetail(MSG.accessBackToIODetail()) %>" 
-					onclick="document.location.href='colleagueOfferingDetail.action?op=view&io=${instrOfferingId}&co=${courseOfferingId}';">
-					<loc:message name="actionBackToIODetail" />
-				</html:button>		
-				</tt:section-header>					
-			</TD>
-		</TR>
-
-		<logic:messagesPresent>
-		<TR>
-			<TD colspan="2" align="left" class="errorCell">
-					<B><U><loc:message name="errors"/></U></B><BR>
-				<BLOCKQUOTE>
-				<UL>
-				    <html:messages id="error">
-				      <LI>
-						${error}
-				      </LI>
-				    </html:messages>
-			    </UL>
-			    </BLOCKQUOTE>
-			</TD>
-		</TR>
-		</logic:messagesPresent>
-
-		<TR>
-			<TD colspan="2" align="left">
-				<TABLE align="left" border="0" cellspacing="0" cellpadding="1">
-					<TR>
-						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'> &nbsp;</TD>
-						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'> &nbsp;</TD>
-						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'> &nbsp;</TD>
-						<logic:equal name="<%=frmName%>" property="displayExternalId" value="true" >
-							<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-							<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnColleagueSynonym"/></TD>
-						</logic:equal>
+				<s:submit name="op" value="%{#cmsg.actionUpdateSectionRestrictionAssignment()}"
+					title="%{#cmsg.titleUpdateSectionRestrictionsAssignment(#cmsg.accessUpdateSectionRestrictionAssignment())}"
+					accesskey="%{#cmsg.accessUpdateSectionRestrictionAssignment()}" />
+					
+				<s:if test="form.previousId != null">
+					<s:submit name='op' value='%{#msg.actionPreviousIO()}'
+						accesskey='%{#msg.accessPreviousIO()}' title='%{#msg.titlePreviousIO(#msg.accessPreviousIO())}'/>
+					<s:hidden name="form.previousId"/>
+				</s:if>
+				<s:if test="form.nextId != null">
+					<s:submit name='op' value='%{#msg.actionNextIO()}'
+						accesskey='%{#msg.accessNextIO()}' title='%{#msg.titleNextIO(#msg.accessNextIO())}'/>
+					<s:hidden name="form.nextId"/>
+				</s:if>
+				
+				<s:submit name='op' value='%{#msg.actionBackToIODetail()}'
+						accesskey='%{#msg.accessBackToIODetail()}' title='%{#msg.titleBackToIODetail(#msg.accessBackToIODetail())}'/>
+			</tt:section-header>					
+		</TD>
+	</TR>
+	
+	<s:if test="!fieldErrors.isEmpty()">
+		<TR><TD colspan="2" align="left" class="errorTable">
+			<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror/>
+		</TD></TR>
+	</s:if>	
+	
+	<TR>
+		<TD colspan="2" align="left">
+			<TABLE class="unitime-Table" style="width:100%;">
+				<TR>
+					<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'> &nbsp;</TD>
+					<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'> &nbsp;</TD>
+					<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'> &nbsp;</TD>
+					<s:if test="form.displayExternalId == true">
 						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnInstructorName"/></TD>
-						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnAssignedTime"/></TD>
-						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
-						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnAssignedRoom"/></TD>
-						<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+						<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnColleagueSynonym" id="CMSG"/></TD>
+					</s:if>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+					<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnInstructorName"/></TD>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+					<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnAssignedTime"/></TD>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
+					<TD align="center" valign="bottom" rowspan="2" class='WebTableHeader'><loc:message name="columnAssignedRoom"/></TD>
+					<TD rowspan="2" class='WebTableHeader'>&nbsp;</TD>
 					</TR>
-					<TR></TR>
-					<logic:iterate name="<%=frmName%>" property="sectionIds" id="c" indexId="ctr">
+				<TR></TR>
+					<s:iterator value="form.sectionIds" var="c" status="stat"><s:set var="ctr" value="#stat.index"/>
 						<TR onmouseover="this.style.backgroundColor='rgb(223,231,242)';this.style.cursor='default';" onmouseout="this.style.backgroundColor='transparent';">
 							<TD nowrap valign="top">
-								<html:hidden property='<%= "sectionIds[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "sectionLabels[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "sectionLabelIndents[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "rooms[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "times[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "allowDeletes[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "readOnlySections[" + ctr + "]" %>'/>
-								<html:hidden property='<%= "sectionHasErrors[" + ctr + "]" %>'/>
-								<html:hidden name="<%=frmName%>" property='<%= "showDisplay[" + ctr + "]" %>' />
+								<s:hidden name="form.sectionIds[%{#ctr}]"/>
+								<s:hidden name="form.sectionLabels[%{#ctr}]"/>
+								<s:hidden name="form.sectionLabelIndents[%{#ctr}]"/>
+								<s:hidden name="form.rooms[%{#ctr}]"/>
+								<s:hidden name="form.times[%{#ctr}]"/>
+								<s:hidden name="form.allowDeletes[%{#ctr}]"/>
+								<s:hidden name="form.readOnlySections[%{#ctr}]"/>
+								<s:hidden name="form.sectionHasErrors[%{#ctr}]"/>
+								<s:hidden name="form.showDisplay[%{#ctr}]"/>
 								&nbsp;
 							</TD>
 							<TD nowrap valign="top">
-								<logic:equal name="<%=frmName%>" property='<%= "sectionHasErrors[" + ctr + "]" %>' value="true" >
+								<s:if test="form.sectionHasErrors[#ctr] == true">
 									<IMG src="images/cancel.png">
-								</logic:equal>
-								<logic:equal name="<%=frmName%>" property='<%= "sectionHasErrors[" + ctr + "]" %>' value="false" >
+								</s:if><s:else>
 									&nbsp;
-								</logic:equal>
+								</s:else>
 							</TD>
 							<TD nowrap valign="top">
-								<%=frm.getSectionLabelIndents().get(ctr.intValue()).toString()%>
-								<bean:write name="<%=frmName%>" property='<%= "sectionLabels[" + ctr + "]" %>'/> 
+								<s:property value="form.sectionLabelIndents[#ctr]" escapeHtml="false"/>
+								<s:property value="form.sectionLabels[#ctr]"/> 
 								&nbsp;
 							</TD>
-	
-							<logic:equal name="<%=frmName%>" property="displayExternalId" value="true" >
+							
+							<s:if test="form.displayExternalId == true">
 								<TD>&nbsp;</TD>
-								<TD align="left" valign="top" nowrap><%= frm.getExternalIds().get(ctr)%></TD>
-							</logic:equal>
+								<TD align="left" valign="top" nowrap><s:property value="form.externalIds[#ctr]" escapeHtml="false"/></TD>
+							</s:if>
 							<TD>&nbsp;</TD>
 							<TD align="center" valign="top" nowrap>
-								<logic:equal name="<%=frmName%>" property='<%= "readOnlySections[" + ctr + "]" %>' value="false" >
-									<logic:equal name="<%=frmName%>" property='<%= "allowDeletes[" + ctr + "]" %>' value="true" >
-										<IMG border="0" src="images/action_delete.png" title="<%=MSG.titleDeleteRestrictionFromSection() %>"
-											onmouseover="this.style.cursor='hand';this.style.cursor='pointer';"
-											onclick="document.forms[0].elements['hdnOp'].value='<%=MSG.altDelete()%>';
-													document.forms[0].elements['deletedRestrRowNum'].value='<%= ctr.toString() %>';
-													document.forms[0].submit();">
-										</logic:equal>
-								</logic:equal>
+								<s:if test="form.readOnlySections[#ctr] == false && form.allowDeletes[#ctr] == true">
+									<IMG border="0" src="images/action_delete.png" title="${CMSG.titleDeleteRestrictionFromSection()}"
+										onmouseover="this.style.cursor='hand';this.style.cursor='pointer';"
+										onclick="document.getElementById('hdnOp').value='DR';
+												document.getElementById('deletedRestrRowNum').value='${ctr}';
+												submit();">
+								</s:if>
 							</TD>
 							<TD align="center" valign="top" nowrap> &nbsp;
-								<logic:equal name="<%=frmName%>" property='<%= "readOnlySections[" + ctr + "]" %>' value="false" >
-									<IMG border="0" src="images/action_add.png" title="<%=MSG.titleAddRestrictionToSection() %>"
+								<s:if test="form.readOnlySections[#ctr] == false">
+									<IMG border="0" src="images/action_add.png" title="${CMSG.titleAddRestrictionToSection()}"
 										onmouseover="this.style.cursor='hand';this.style.cursor='pointer';"
-										onclick="document.forms[0].elements['hdnOp'].value='<%=MSG.altAdd()%>';
-												document.forms[0].elements['addRestrictionId'].value='<%= ctr.toString() %>';
-												document.forms[0].submit();">
-								</logic:equal>
+										onclick="document.getElementById('hdnOp').value='AR';
+												document.getElementById('addRestrictionId').value='${ctr}';
+												submit();">
+								</s:if>
 							</TD>
-							<TD>&nbsp;<html:hidden property='<%= "externalIds[" + ctr + "]" %>'/></TD>
+							<TD>&nbsp;<s:hidden name="form.externalIds[%{#ctr}]"/></TD>
 							<TD align="left" valign="top" nowrap>
-								<logic:equal name="<%=frmName%>" property='<%= "readOnlySections[" + ctr + "]" %>' value="false" >
-									<html:select style="width:200px;" property='<%= "restrictionUids[" + ctr + "]" %>' tabindex="<%=java.lang.Integer.toString(10000 + ctr.intValue())%>">
-										<html:option value="<%= Constants.BLANK_OPTION_VALUE%>"><%=Constants.BLANK_OPTION_LABEL%></html:option>
-										<html:options collection="restrictionList" property="uniqueId" labelProperty="optionLabel" />
-									</html:select>
-								</logic:equal>
-								<logic:equal name="<%=frmName%>" property='<%= "readOnlySections[" + ctr + "]" %>' value="true" >
-									<% String nameFormat = UserProperty.NameFormat.get(sessionContext.getUser()); %>
-									<logic:iterate scope="request" name="restrictionList" id="restriction">
-										<logic:equal name="<%=frmName%>" property='<%= "restrictionUids[" + ctr + "]" %>' value="<%=((ColleagueRestriction)restriction).getUniqueId().toString()%>">
-											<%=((ColleagueRestriction)restriction).getOptionLabel()%>
-										</logic:equal>
-									</logic:iterate>
-									<html:hidden property='<%= "restrictionUids[" + ctr + "]" %>'/>
-								</logic:equal>
+								<s:if test="form.readOnlySections[#ctr] == false">
+									<s:select name="form.restrictionUids[%{#ctr}]" style="min-width:200px;" tabindex="%{#ctr+1000}"
+										list="#request.restrictionList" listKey="uniqueId" listValue="optionLabel"
+										headerKey="-1" headerValue="-"
+										/>
+								</s:if><s:else>
+									<s:iterator value="#request.restrictionList" var="restriction">
+										<s:if test="#restriction.uniqueId == form.restrictionUids[#ctr]">
+											<s:property value="#restriction.optionLabel"/>
+										</s:if>
+									</s:iterator>
+									<s:hidden name="form.restrictionUids[%{#ctr}]"/>
+								</s:else>
 							</TD>
 							
 							<TD>&nbsp;&nbsp;</TD>
 							<TD align="left" valign="top" nowrap>
-								<%= frm.getTimes().get(ctr)%>
+								<s:property value="form.times[#ctr]" escapeHtml="false"/>
 							</TD>
 							<TD>&nbsp;</TD>
-							<TD align="left" valign="top" nowrap><%= frm.getRooms().get(ctr)%></TD>
+							<TD align="left" valign="top" nowrap>
+								<s:property value="form.rooms[#ctr]" escapeHtml="false"/>
+							</TD>
 							<TD>&nbsp;</TD>
 						</TR>
-					</logic:iterate>
+					</s:iterator>
 				</TABLE>
 			</TD>
 		</TR>
@@ -274,60 +193,27 @@
 
 		<TR>
 			<TD colspan="2" align="right">
-				<html:submit property="op"
-					onclick="return confirmUnassignAll();"
-					styleClass="btn" 
-					title="<%=MSG.titleUnassignAllRestrictionsFromConfig() %>">
-					<loc:message name="actionUnassignAllRestrictionsFromConfig" />
-				</html:submit>
-			 
-				&nbsp;
-				<html:submit property="op"
-					styleClass="btn" 
-					accesskey="<%=MSG.accessUpdateSectionRestrictionAssignment() %>" 
-					title="<%=MSG.titleUpdateSectionRestrictionsAssignment(MSG.accessUpdateSectionRestrictionAssignment()) %>">
-					<loc:message name="actionUpdateSectionRestrictionAssignment" />
-				</html:submit>
-			
-				<bean:define id="instrOfferingId">
-					<bean:write name="<%=frmName%>" property="instrOfferingId" />				
-				</bean:define>
+				<s:submit name="op" value="%{#cmsg.actionUnassignAllRestrictionsFromConfig()}"
+					title="%{#cmsg.titleUnassignAllRestrictionsFromConfig()}" onclick="return confirmUnassignAll();"/>
 
-				<logic:notEmpty name="<%=frmName%>" property="previousId">
-					<html:hidden name="<%=frmName%>" property="previousId"/>
-					&nbsp;
-					<html:submit property="op" 
-						styleClass="btn" 
-						accesskey="<%=MSG.accessPreviousIO() %>" 
-						title="<%=MSG.titlePreviousIOWithUpdate(MSG.accessPreviousIO()) %>">
-						<loc:message name="actionPreviousIO" />
-					</html:submit> 
-				</logic:notEmpty>
-				<logic:notEmpty name="<%=frmName%>" property="nextId">
-					<html:hidden name="<%=frmName%>" property="nextId"/>
-					&nbsp;
-					<html:submit property="op" 
-						styleClass="btn" 
-						accesskey="<%=MSG.accessNextIO() %>" 
-						title="<%=MSG.titleNextIOWithUpdate(MSG.accessNextIO()) %>">
-						<loc:message name="actionNextIO" />
-					</html:submit> 
-				</logic:notEmpty>
-
-				&nbsp;
-				<html:button property="op" 
-					styleClass="btn" 
-					accesskey="<%=MSG.accessBackToIODetail() %>" 
-					title="<%=MSG.titleBackToIODetail(MSG.accessBackToIODetail()) %>" 
-					onclick="document.location.href='colleagueOfferingDetail.action?op=view&io=${instrOfferingId}&co=${courseOfferingId}';">
-					<loc:message name="actionBackToIODetail" />
-				</html:button>		
+				<s:submit name="op" value="%{#cmsg.actionUpdateSectionRestrictionAssignment()}"
+					title="%{#cmsg.titleUpdateSectionRestrictionsAssignment(#cmsg.accessUpdateSectionRestrictionAssignment())}"
+					accesskey="%{#cmsg.accessUpdateSectionRestrictionAssignment()}" />
 					
+				<s:if test="form.previousId != null">
+					<s:submit name='op' value='%{#msg.actionPreviousIO()}'
+						accesskey='%{#msg.accessPreviousIO()}' title='%{#msg.titlePreviousIO(#msg.accessPreviousIO())}'/>
+				</s:if>
+				<s:if test="form.nextId != null">
+					<s:submit name='op' value='%{#msg.actionNextIO()}'
+						accesskey='%{#msg.accessNextIO()}' title='%{#msg.titleNextIO(#msg.accessNextIO())}'/>
+				</s:if>
+				
+				<s:submit name='op' value='%{#msg.actionBackToIODetail()}'
+						accesskey='%{#msg.accessBackToIODetail()}' title='%{#msg.titleBackToIODetail(#msg.accessBackToIODetail())}'/>
 			</TD>
 		</TR>
-
 	</TABLE>
-
-</html:form>
-
+</s:form>
+</loc:bundle>
 </loc:bundle>

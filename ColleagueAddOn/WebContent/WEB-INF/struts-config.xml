@@ -23,7 +23,6 @@
    <form-beans>
    		<!-- Custom forms -->
       <form-bean name="colleagueMessageResponsesForm" type="org.unitime.colleague.form.ColleagueMessageResponsesForm" />
-      <form-bean name="sectionRestrictionAssignmentForm" type="org.unitime.colleague.form.SectionRestrictionAssignmentForm" />
 
    		<!-- End of custom forms -->
    </form-beans>
@@ -44,23 +43,6 @@
        <forward 
        		name="submit" 
        		path="/colleagueMessageResponses.do" />
-      </action>
-
-      <action
-         path="/sectionRestrictionAssignment"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         attribute="sectionRestrictionAssignmentForm"
-         input="sectionRestrictionAssignmentTile"
-         name="sectionRestrictionAssignmentForm"
-         scope="request"
-         validate="false">
-        <forward 
-        	name="sectionRestrictionAssignment" 
-        	path="sectionRestrictionAssignmentTile" />
-        <forward 
-        	name="colleagueOfferingDetail" 
-        	path="/colleagueOfferingDetail.action"
-        	redirect="true" />
       </action>
 
 	

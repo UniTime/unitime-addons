@@ -21,7 +21,7 @@
 <%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
 <%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
-<loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
+<loc:bundle name="org.unitime.localization.messages.ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
 <s:form action="rollForwardColleagueSession">
 <table class="unitime-MainTable">
 	<s:if test="!fieldErrors.isEmpty()">

@@ -19,22 +19,14 @@
 */
 package org.unitime.colleague.action;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.action.ActionRedirect;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.colleague.form.SectionRestrictionAssignmentForm;
 import org.unitime.colleague.model.ColleagueRestriction;
 import org.unitime.colleague.model.ColleagueSection;
@@ -45,7 +37,9 @@ import org.unitime.colleague.util.ColleagueInstrOffrConfigChangeAction;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.defaults.CommonValues;
+import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.defaults.UserProperty;
 import org.unitime.timetable.model.ChangeLog;
 import org.unitime.timetable.model.CourseOffering;
@@ -57,99 +51,76 @@ import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.permissions.Permission;
 import org.unitime.timetable.security.rights.Right;
-import org.unitime.timetable.solver.WebSolver;
 
 /**
  * @author Stephanie Schluttenhofer
  */
-@Service("/sectionRestrictionAssignment")
-public class SectionRestrictionAssignmentAction extends Action {
+@Action(value = "sectionRestrictionAssignment", results = {
+		@Result(name = "sectionRestrictionAssignment", type = "tiles", location = "sectionRestrictionAssignment.tiles"),
+		@Result(name = "showPrevNextEdit", type = "redirect", location = "/sectionRestrictionAssignment.action",
+			params = { "uid", "${uid}", "co", "${co}", "op", "${op}"}),
+		@Result(name = "colleagueOfferingDetail", type = "redirect", location = "/colleagueOfferingDetail.action",
+			params = { "io", "${form.instrOfferingId}", "co", "${form.courseOfferingId}", "op", "view"})
+	})
+@TilesDefinition(name = "sectionRestrictionAssignment.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Section Restrictions"),
+		@TilesPutAttribute(name = "body", value = "/colleague/sectionRestrictionAssignment.jsp"),
+		@TilesPutAttribute(name = "showNavigation", value = "false"),
+		@TilesPutAttribute(name = "showSolverWarnings", value = "assignment")
+	})
+public class SectionRestrictionAssignmentAction extends UniTimeAction<SectionRestrictionAssignmentForm> {
+	private static final long serialVersionUID = 8234876065656939813L;
 	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
 	protected final static ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 	
-	@Autowired SessionContext sessionContext;
+	private Long instrOffrConfigId = null;
+	private Long courseOfferingId = null;
 	
-	@Autowired Permission<InstructionalOffering> permissionOfferingLockNeeded;
-	/**
-     * Method execute
-     * @param mapping
-     * @param form
-     * @param request
-     * @param response
-     * @return ActionForward
-     */
-    public ActionForward execute(
-        ActionMapping mapping,
-        ActionForm form,
-        HttpServletRequest request,
-        HttpServletResponse response) throws Exception {
+	public Long getUid() { return instrOffrConfigId; }
+	public void setUid(Long instrOffrConfigId) { this.instrOffrConfigId = instrOffrConfigId; }
+	public Long getCo() { return courseOfferingId; }
+	public void setCo(Long courseOfferingId) { this.courseOfferingId = courseOfferingId; }
 
-        SectionRestrictionAssignmentForm frm = (SectionRestrictionAssignmentForm) form;
+	
+	@Override
+    public String execute() throws Exception {
+		if (form == null) form = new SectionRestrictionAssignmentForm();
 
         // Get operation
-        String op = (request.getParameter("op")==null)
-						? (frm.getOp()==null || frm.getOp().length()==0)
-						        ? (request.getAttribute("op")==null)
-						                ? null
-						                : request.getAttribute("op").toString()
-						        : frm.getOp()
-						: request.getParameter("op");
-						        
-        if(op==null)
-            op = request.getParameter("hdnOp");
+		if (op == null) op = form.getOp();
 
         if(op==null || op.trim().length()==0)
             throw new Exception (MSG.exceptionOperationNotInterpreted() + op);
 
-        // Instructional Offering Config Id
-        String instrOffrConfigId = "";
-        
-        // Course Offering Id
-        String courseOfferingId = "";
-
         // Set the operation
-        frm.setOp(op);
+        form.setOp(op);
 
         // Set the proxy so we can get the class time and room
-        frm.setProxy(WebSolver.getClassAssignmentProxy(request.getSession()));
-
-    	instrOffrConfigId = (request.getParameter("uid")==null)
-				? (request.getAttribute("uid")==null)
-				        ? frm.getInstrOffrConfigId()!=null
-				        		? frm.getInstrOffrConfigId().toString()
-				        		: null
-				        : request.getAttribute("uid").toString()
-				: request.getParameter("uid");
+        form.setProxy(getClassAssignmentService().getAssignment());
+        
+        if (instrOffrConfigId == null) instrOffrConfigId = form.getInstrOffrConfigId();
+        if (courseOfferingId == null) courseOfferingId = form.getCourseOfferingId();
 
         InstrOfferingConfigDAO iocDao = new InstrOfferingConfigDAO();
-        InstrOfferingConfig ioc = iocDao.get(Long.valueOf(instrOffrConfigId));
-        frm.setInstrOffrConfigId(Long.valueOf(instrOffrConfigId));
-
-    	courseOfferingId = (request.getParameter("co")==null)
-				? (request.getAttribute("co")==null)
-				        ? frm.getCourseOfferingId()!=null
-				        		? frm.getCourseOfferingId().toString()
-				        		: null
-				        : request.getAttribute("co").toString()
-				: request.getParameter("co");
+        InstrOfferingConfig ioc = iocDao.get(instrOffrConfigId);
+        form.setInstrOffrConfigId(instrOffrConfigId);
 
 		CourseOffering co = null;
-	    if (courseOfferingId == null || courseOfferingId.trim().isEmpty()){
+	    if (courseOfferingId == null){
 	    	co = ioc.getControllingCourseOffering();
 	    } else {
 	    	CourseOfferingDAO coDao = new CourseOfferingDAO();
-	        co = coDao.get(Long.valueOf(courseOfferingId));
-	        if (!co.getInstructionalOffering().getUniqueId().equals(ioc.getInstructionalOffering().getUniqueId())){
+	        co = coDao.get(courseOfferingId);
+	        if (co == null || !co.getInstructionalOffering().getUniqueId().equals(ioc.getInstructionalOffering().getUniqueId())){
 	        	co = ioc.getControllingCourseOffering();
 	        }
 	    }
         if (co == null){
-        	frm.setCourseOfferingId(Long.valueOf(courseOfferingId));
+        	form.setCourseOfferingId(courseOfferingId);
         } else {
-        	frm.setCourseOfferingId(Long.valueOf(co.getUniqueId().longValue()));
+        	form.setCourseOfferingId(co.getUniqueId());
         }
 
         
@@ -162,7 +133,11 @@ public class SectionRestrictionAssignmentAction extends Action {
 
         // First access to screen
         if(op.equalsIgnoreCase(CMSG.actionAssignRestrictions())) {
-            doLoad(request, frm, instrOffrConfigId, ioc, co);
+            doLoad(instrOffrConfigId, ioc, co);
+        }
+        
+        if (op.equals(MSG.actionBackToIODetail())) {
+        	return "colleagueOfferingDetail";
         }
         
 		if(op.equals(CMSG.actionUpdateSectionRestrictionAssignment()) ||
@@ -171,21 +146,21 @@ public class SectionRestrictionAssignmentAction extends Action {
         		op.equals(CMSG.actionUnassignAllRestrictionsFromConfig())) {
 
             if (op.equals(CMSG.actionUnassignAllRestrictionsFromConfig())) {
-            	frm.unassignAllRestrictions();
+            	form.unassignAllRestrictions();
 //            	ColleagueInstrOffrConfigChangeAction ciocca = new ColleagueInstrOffrConfigChangeAction();
 //            	ciocca.performExternalInstrOffrConfigChangeAction(ioc.getInstructionalOffering(), iocDao.getSession());
             }
 
         	// Validate input prefs
-            ActionMessages errors = frm.validate(mapping, request);
+            form.validate(this);
 
             // No errors - Update class
-            if(errors.size()==0) {
+            if (!hasFieldErrors()) {
 
             	try {
-            		frm.updateSections();
+            		form.updateSections();
 
-                    InstrOfferingConfig cfg = new InstrOfferingConfigDAO().get(frm.getInstrOffrConfigId());
+                    InstrOfferingConfig cfg = new InstrOfferingConfigDAO().get(form.getInstrOffrConfigId());
 
                     org.hibernate.Session hibSession = InstructionalOfferingDAO.getInstance().getSession();
                     ChangeLog.addChange(
@@ -197,7 +172,7 @@ public class SectionRestrictionAssignmentAction extends Action {
                             co.getSubjectArea(),
                             null);
                     
-                	if (permissionOfferingLockNeeded.check(sessionContext.getUser(), cfg.getInstructionalOffering())) {
+                	if (getPermissionOfferingLockNeeded().check(sessionContext.getUser(), cfg.getInstructionalOffering())) {
                 		StudentSectioningQueue.offeringChanged(hibSession, sessionContext.getUser(), cfg.getInstructionalOffering().getSessionId(), cfg.getInstructionalOffering().getUniqueId());
                 	}
                 	
@@ -208,73 +183,65 @@ public class SectionRestrictionAssignmentAction extends Action {
                 	
 
     	            if (op.equals(MSG.actionNextIO())) {
-    	            	response.sendRedirect(response.encodeURL("sectionRestrictionAssignment.do?uid="+frm.getNextId()+"&co="+ co.getUniqueId().toString()+"&op="+URLEncoder.encode(CMSG.actionAssignRestrictions(), "UTF-8")));
-    	            	return null;
+    	            	setUid(form.getNextId());
+    	            	setCo(co.getUniqueId());
+    	            	setOp(CMSG.actionAssignRestrictions());
+    	            	return "showPrevNextEdit";
     	            }
 
     	            if (op.equals(MSG.actionPreviousIO())) {
-    	            	response.sendRedirect(response.encodeURL("sectionRestrictionAssignment.do?uid="+frm.getPreviousId()+"&co="+ co.getUniqueId().toString()+"&op="+URLEncoder.encode(CMSG.actionAssignRestrictions(), "UTF-8")));
-    	            	return null;
+    	            	setUid(form.getPreviousId());
+    	            	setCo(co.getUniqueId());
+    	            	setOp(CMSG.actionAssignRestrictions());
+    	            	return "showPrevNextEdit";
     	            }
-
-                    ActionRedirect redirect = new ActionRedirect(mapping.findForward("colleagueOfferingDetail"));
-                    redirect.addParameter("io", frm.getInstrOfferingId());
-                    redirect.addParameter("co", frm.getCourseOfferingId());
-                       redirect.addParameter("op", "view");
-                    return redirect;
+                    return "colleagueOfferingDetail";
             	} catch (Exception e) {
             		throw e;
             	}
             }
-            else {
-                saveErrors(request, errors);
-            }
         }
 
-        if (op.equals(MSG.altDelete())) {
-        	frm.deleteRestriction();
+        if (op.equals("DR")) {
+        	form.deleteRestriction();
         }
 
-        if (op.equals(CMSG.altAdd())) {
-        	frm.addRestriction();
+        if (op.equals("AR")) {
+        	form.addRestriction();
         }
 
-        return mapping.findForward("sectionRestrictionAssignment");
+        return "sectionRestrictionAssignment";
     }
 
 	/**
      * Loads the form with the classes that are part of the instructional offering config
-     * @param frm Form object
+     * @param form Form object
      * @param instrCoffrConfigId Instructional Offering Config Id
      * @param user User object
      */
     @SuppressWarnings("unchecked")
-	private void doLoad(
-    		HttpServletRequest request,
-    		SectionRestrictionAssignmentForm frm,
-            String instrOffrConfigId,
-            InstrOfferingConfig ioc, CourseOffering co) throws Exception {
-
+	private void doLoad(Long instrOffrConfigId, InstrOfferingConfig ioc, CourseOffering co) throws Exception {
         // Check uniqueid
-        if(instrOffrConfigId==null || instrOffrConfigId.trim().length()==0)
+        if(instrOffrConfigId==null)
             throw new Exception (MSG.exceptionMissingIOConfig());
 
         // Load details
         InstructionalOffering io = ioc.getInstructionalOffering();
 
         // Load form properties
-        frm.setInstrOffrConfigId(ioc.getUniqueId());
-        frm.setInstrOffrConfigLimit(ioc.getLimit());
-        frm.setInstrOfferingId(io.getUniqueId());
-        frm.setCourseOfferingId(co.getUniqueId());
+        form.setInstrOffrConfigId(ioc.getUniqueId());
+        form.setInstrOffrConfigLimit(ioc.getLimit());
+        form.setInstrOfferingId(io.getUniqueId());
+        form.setCourseOfferingId(co.getUniqueId());
+        form.setSubjectAreaId(co.getSubjectArea().getUniqueId());
 
-        frm.setDisplayExternalId(true);
+        form.setDisplayExternalId(true);
 
         String name = io.getCourseNameWithTitle();
         if (io.hasMultipleConfigurations()) {
         	name += " [" + ioc.getName() +"]";
         }
-        frm.setInstrOfferingName(name);
+        form.setInstrOfferingName(name);
 
         if (ioc.getSchedulingSubparts() == null || ioc.getSchedulingSubparts().size() == 0)
         	throw new Exception(MSG.exceptionIOConfigUndefined());
@@ -282,23 +249,23 @@ public class SectionRestrictionAssignmentAction extends Action {
         InstrOfferingConfig config = ioc.getNextInstrOfferingConfig(sessionContext);
         if(config != null) {
         	if (!config.getInstructionalOffering().getUniqueId().equals(io.getUniqueId()) && config.getInstructionalOffering().getCourseOfferings().size() > 1) {
-        		frm.setNextId(null);
+        		form.setNextId(null);
         	} else {
-        		frm.setNextId(config.getUniqueId().toString());
+        		form.setNextId(config.getUniqueId());
         	}
         } else {
-        	frm.setNextId(null);
+        	form.setNextId(null);
         }
 
         config = ioc.getPreviousInstrOfferingConfig(sessionContext);
         if(config != null) {
         	if (!config.getInstructionalOffering().getUniqueId().equals(io.getUniqueId()) && config.getInstructionalOffering().getCourseOfferings().size() > 1) {
-        		frm.setPreviousId(null);
+        		form.setPreviousId(null);
         	} else {
-        		frm.setPreviousId(config.getUniqueId().toString());
+        		form.setPreviousId(config.getUniqueId());
         	}
     	} else {
-            frm.setPreviousId(null);
+            form.setPreviousId(null);
         }
 
         ArrayList<SchedulingSubpart> subpartList = new ArrayList<SchedulingSubpart>(ioc.getSchedulingSubparts());
@@ -308,12 +275,12 @@ public class SectionRestrictionAssignmentAction extends Action {
     		if (ss.getClasses() == null || ss.getClasses().size() == 0)
     			throw new Exception(MSG.exceptionInitialIOSetupIncomplete());
     		if (ss.getParentSubpart() == null){
-        		loadSections(frm, ColleagueSection.findNotDeletedColleagueSectionsForSchedulingSubpartAndCourse(ss, co, ColleagueSectionDAO.getInstance().getSession()), new String());
+        		loadSections(form, ColleagueSection.findNotDeletedColleagueSectionsForSchedulingSubpartAndCourse(ss, co, ColleagueSectionDAO.getInstance().getSession()), new String());
         	}
         }
     }
 
-    private void loadSections(SectionRestrictionAssignmentForm frm, Collection<ColleagueSection> sections, String indent){
+    private void loadSections(SectionRestrictionAssignmentForm form, Collection<ColleagueSection> sections, String indent){
     	if (sections != null && sections.size() > 0){
     		ArrayList<ColleagueSection> sectionList = new ArrayList<ColleagueSection>(sections);
 
@@ -326,10 +293,18 @@ public class SectionRestrictionAssignmentAction extends Action {
 
 	    	for(ColleagueSection cs : sectionList){
 	    		if (!cs.isDeleted() && !cs.isCanceled(ColleagueSectionDAO.getInstance().getSession())){
-		    		frm.addToSections(cs, !sessionContext.hasPermission(cs.getFirstClass(), Right.ClassEdit), indent);
-		    		loadSections(frm, cs.getColleagueSectionToChildSections(), indent + "&nbsp;&nbsp;&nbsp;&nbsp;");
+		    		form.addToSections(cs, !sessionContext.hasPermission(cs.getFirstClass(), Right.ClassEdit), indent);
+		    		loadSections(form, cs.getColleagueSectionToChildSections(), indent + "&nbsp;&nbsp;&nbsp;&nbsp;");
 	    		}
 	    	}
     	}
+    }
+    
+    public String getCrsNbr() {
+    	return (String)sessionContext.getAttribute(SessionAttribute.OfferingsCourseNumber);
+    }
+    
+    protected Permission<InstructionalOffering> getPermissionOfferingLockNeeded() {
+    	return getPermission("permissionOfferingLockNeeded");
     }
 }

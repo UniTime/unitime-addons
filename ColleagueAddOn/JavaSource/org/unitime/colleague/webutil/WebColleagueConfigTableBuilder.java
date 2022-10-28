@@ -174,7 +174,7 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
 	        
 	        if ((isEditable || isExtManaged) && ioc.hasClasses()) {
 		        btnTable.append("<td>");
-		        btnTable.append("	<form method='post' action='sectionRestrictionAssignment.do' class='FormWithNoPadding'>");
+		        btnTable.append("	<form method='post' action='sectionRestrictionAssignment.action' class='FormWithNoPadding'>");
 		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId() + "'>");
 		        btnTable.append("		<input type='hidden' name='co' value='" + courseOffering.getUniqueId() + "'>");
 		        btnTable.append("		<input type='submit' name='op' value='" + CMSG.actionAssignRestrictions()+"' title='" + CMSG.titleAssignRestrictions() + "' class='btn'> ");
