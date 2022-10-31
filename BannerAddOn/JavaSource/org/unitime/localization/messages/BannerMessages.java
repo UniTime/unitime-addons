@@ -232,4 +232,34 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Back")
 	String actionBackToCampusOverrides();
+	
+	@DefaultMessage("Banner Term Code")
+	String colBannerTermCode();
+	
+	@DefaultMessage("Banner Sessions")
+	String colBannerSessions();
+	
+	@DefaultMessage("Last CRN")
+	String colLastCRN();
+	
+	@DefaultMessage("Minimum CRN")
+	String colMinimumCRN();
+	
+	@DefaultMessage("Maximum CRN")
+	String colMaximumCRN();
+	
+	@DefaultMessage("Search Flag")
+	String colSearchFlag();
+	
+	@DefaultMessage("Add Session")
+	String actionAddBannerSession();
+	
+	@DefaultMessage("Update")
+	String actionUpdateBannerSession();
+	
+	@DefaultMessage("Save")
+	String actionSaveBannerSession();
+	
+	@DefaultMessage("Back")
+	String actionBackToBannerSessions();
 }

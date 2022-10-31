@@ -22,32 +22,25 @@ package org.unitime.banner.form;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.BannerTermCrnProperties;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 
 /**
  * 
  * @author says
  *
  */
-public class BannerTermCrnPropertiesEditForm extends ActionForm {
-
-	
-	/**
-	 * 
-	 */
+public class BannerTermCrnPropertiesEditForm implements UniTimeForm {
 	private static final long serialVersionUID = 5925150971448455801L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
-	// --------------------------------------------------------- Instance Variables
-	
-	BannerTermCrnProperties bannerTermProperties = new BannerTermCrnProperties();
-	
+	Long bannerTermPropertiesId;
 	ArrayList<BannerSession> availableBannerTermCodes;
 	ArrayList<BannerSession> availableBannerSessions;
 	String bannerTermCode;
@@ -56,6 +49,23 @@ public class BannerTermCrnPropertiesEditForm extends ActionForm {
 	Boolean searchFlag;
 	Integer minCrn;
 	Integer maxCrn;
+	
+	public BannerTermCrnPropertiesEditForm() {
+		reset();
+	}
+	
+	@Override
+	public void reset() {
+		bannerTermPropertiesId = null;
+		availableBannerTermCodes = null;
+		availableBannerSessions = null;
+		bannerTermCode = null;
+		bannerSessionIds = null;
+		lastCrn = null;
+		searchFlag = null;
+		minCrn = null;
+		maxCrn = null;
+	}
 
 	/**
 	 * @return the bannerTermCode
@@ -73,8 +83,6 @@ public class BannerTermCrnPropertiesEditForm extends ActionForm {
 	}
 
 		
-	// --------------------------------------------------------- Methods
-	
 	/**
 	 * @return the lastCrn
 	 */
@@ -167,79 +175,48 @@ public class BannerTermCrnPropertiesEditForm extends ActionForm {
     }
 
 
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-		ActionErrors errors = new ActionErrors();
-		
+    @Override
+	public void validate(UniTimeAction action) {
 		// Check data fields
 		if (bannerSessionIds == null || bannerSessionIds.length == 0) {
-			errors.add("bannerSessions", new ActionMessage("errors.required", "Banner Sessions"));			
+			action.addFieldError("form.bannerSessions", MSG.errorRequiredField(BMSG.colBannerSessions()));			
 		}
 		
 		if (bannerTermCode==null || bannerTermCode.trim().length()==0) {
-			errors.add("bannerTermCode", new ActionMessage("errors.required", "Banner Term Code"));
+			action.addFieldError("form.bannerTermCode", MSG.errorRequiredField(BMSG.colBannerTermCode()));
 		}
 		
 		if (lastCrn==null) 
-			errors.add("lastCrn", new ActionMessage("errors.required", "Last Crn"));
+			action.addFieldError("form.lastCrn", MSG.errorRequiredField(BMSG.colLastCRN()));
 
 		if (minCrn==null) 
-			errors.add("minCrn", new ActionMessage("errors.required", "Minimum Crn"));
+			action.addFieldError("form.minCrn", MSG.errorRequiredField(BMSG.colMinimumCRN()));
 		
 		if (maxCrn==null) 
-			errors.add("maxCrn", new ActionMessage("errors.required", "Maximum Crn"));
-		
-		
+			action.addFieldError("form.maxCrn", MSG.errorRequiredField(BMSG.colMaximumCRN()));
 				
 		// Check for duplicate session and same term code
-		if (errors.size()==0) {
+		if (!action.hasFieldErrors()) {
 			HashSet<BannerTermCrnProperties> crnProps = BannerTermCrnProperties.findAllBannerTermCrnPropertiesForBannerSessions(getBannerSessionIdsConvertedToLongs());
 			if (crnProps.size() > 1)
-				errors.add("bannerTermProperties", new ActionMessage("errors.generic", "Banner Term Properties for the banner term code already exist for one or more selected Banner Sessions"));
+				action.addFieldError("form.bannerTermProperties", "Banner Term Properties for the banner term code already exist for one or more selected Banner Sessions");
             if (crnProps.size() == 1) {
             	    BannerTermCrnProperties termProps = crnProps.iterator().next();
-				if (bannerTermProperties.getUniqueId()==null && termProps!=null)
-					errors.add("bannerTermProperties", new ActionMessage("errors.generic", "Banner Term Properties for the banner term code and banner session combination already exists"));
+				if (bannerTermPropertiesId==null && termProps!=null)
+					action.addFieldError("form.bannerTermProperties", "Banner Term Properties for the banner term code and banner session combination already exists");
 					
-				if (bannerTermProperties.getUniqueId()!=null && termProps!=null) {
-					if (!bannerTermProperties.getUniqueId().equals(termProps.getUniqueId()))
-						errors.add("sessionId", new ActionMessage("errors.generic", "Another Banner Term Properties for the same banner term code and banner session combination already exists"));
+				if (bannerTermPropertiesId!=null && termProps!=null) {
+					if (!bannerTermPropertiesId.equals(termProps.getUniqueId()))
+						action.addFieldError("form.sessionId", "Another Banner Term Properties for the same banner term code and banner session combination already exists");
 				}
             }
             for (String bsIdStr : getBannerSessionIds()) {
             		BannerSession bs = BannerSession.getBannerSessionById(Long.valueOf(bsIdStr));
             	    if (!bs.getBannerTermCode().equals(bannerTermCode)) {
-        				errors.add("bannerTermProperties", new ActionMessage("errors.generic", "Banner Term Code (" + bs.getBannerTermCode() + ") for the BannerSession: " + bs.getLabel() + " does not match the selected Term Code(" + bannerTermCode + ")"));            	    	
+        				action.addFieldError("form.bannerTermProperties", "Banner Term Code (" + bs.getBannerTermCode() + ") for the BannerSession: " + bs.getLabel() + " does not match the selected Term Code(" + bannerTermCode + ")");            	    	
             	    }
             }
 		}
-		
-		return errors;
-	}
-
-
-	public boolean equals(Object arg0) {
-		return bannerTermProperties.equals(arg0);
-	}
-	
-	
-	public int hashCode() {
-		return bannerTermProperties.hashCode();
-	}
-	
-	/**
-	 * @return
-	 */
-	public Long getBannerTermCrnPropertiesId() {
-		return bannerTermProperties.getUniqueId();
-	}
-	/**
-	 * @param bannerTermPropertiesId
-	 */
-	public void setBannerTermCrnPropertiesId(Long bannerTermPropertiesId) {
-		if (bannerTermPropertiesId!=null && bannerTermPropertiesId.longValue()<=0)
-			bannerTermProperties.setUniqueId(null);
-		else
-			bannerTermProperties.setUniqueId(bannerTermPropertiesId);
 	}
 
 	/**
@@ -260,16 +237,16 @@ public class BannerTermCrnPropertiesEditForm extends ActionForm {
 	/**
 	 * @return the bannerTermProperties
 	 */
-	public BannerTermCrnProperties getBannerTermProperties() {
-		return bannerTermProperties;
+	public Long getBannerTermPropertiesId() {
+		return bannerTermPropertiesId;
 	}
 
 
 	/**
 	 * @param bannerTermProperties the bannerTermProperties to set
 	 */
-	public void setBannerTermProperties(BannerTermCrnProperties bannerTermProperties) {
-		this.bannerTermProperties = bannerTermProperties;
+	public void setBannerTermPropertiesId(Long bannerTermPropertiesId) {
+		this.bannerTermPropertiesId = bannerTermPropertiesId;
 	}
 
 

@@ -17,102 +17,33 @@
  * limitations under the License.
  * 
 --%>
-<%@ page import="java.text.DecimalFormat"%>
-<%@ page import="java.text.DateFormat"%>
-<%@ page import="org.unitime.commons.web.*"%>
-<%@ taglib uri="http://struts.apache.org/tags-bean"	prefix="bean"%>
-<%@ taglib uri="http://struts.apache.org/tags-html"	prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic"	prefix="logic"%>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-
-<html:form action="bannerTermCrnPropertiesEdit">
-
-	<table width="98%" border="0" cellspacing="0" cellpadding="3">
-		<tr>
-			<td>
-				<tt:section-header>
-					<tt:section-title>
-						
-					</tt:section-title>
-					<html:submit property="doit" styleClass="btn" accesskey="A" titleKey="title.addSession">
-						<bean:message key="button.addSession" />
-					</html:submit>
-				</tt:section-header>
-			</td>
-		</tr>
-	</table>
-
-	<table width="90%" border="0" cellspacing="0" cellpadding="3">
-		<%
-			WebTable webTable = new WebTable(
-					6, "", "bannerTermCrnPropertiesList.do?order=%%",					
-					new String[] {
-						"Banner<br>Term&nbsp;Code", "Banner<br>Sessions", "Last&nbsp;CRN", "Minimum<br>CRN",
-						"Maximum<br>CRN", "Search<br>Flag" },
-					new String[] { "left", "left", "left", "left", "left",
-						"center" }, 
-					new boolean[] { true, true, true, true, true, false });
-					
-			webTable.enableHR("#EFEFEF");
-	        webTable.setRowStyle("white-space: nowrap");
-					
-		%>
-
-		<logic:iterate name="bannerTermCrnPropertiesListForm" property="sessions" id="sessn">
-			<%
-					org.unitime.banner.model.BannerTermCrnProperties s = (org.unitime.banner.model.BannerTermCrnProperties) sessn;
-					webTable
-					.addLine(
-							"onClick=\"document.location='bannerTermCrnPropertiesEdit.do?doit=editSession&bannerTermCrnPropertiesId=" + s.getUniqueId() + "';\"",
-							new String[] {
-								s.getBannerTermCode() + "&nbsp;",
-								s.getBannerSessionsLabel() + "&nbsp;",
-								s.getLastCrn().toString() + "&nbsp;",
-								s.getMinCrn().toString() + "&nbsp;",
-								s.getMaxCrn().toString() + "&nbsp;",
-								s.isSearchFlag().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; "},
-							new Comparable[] {
-								s.getBannerTermCode(),
-								s.getBannerSessionsLabel(),
-								s.getLastCrn().toString(),
-								s.getMinCrn(),
-								s.getMaxCrn(),
-								s.isSearchFlag().booleanValue() ? "<img src='images/accept.png'>" : "" } );
-			%>
-
-		</logic:iterate>
-		<%-- end interate --%>
-		<%
-		int orderCol = 1;
-		if (request.getParameter("order")!=null) {
-			try {
-				orderCol = Integer.parseInt(request.getParameter("order"));
-			}
-			catch (Exception e){
-				orderCol = 1;
-			}
-		}
-		out.println(webTable.printTable(orderCol));
-		%>
-
-		<%-- print out the add link --%>
-
-	</table>
-	
-	<table width="98%" border="0" cellspacing="0" cellpadding="3">
-		<tr>
-			<td align="center" class="WelcomeRowHead">
-			&nbsp;
-			</td>
-		</tr>
-		<tr>
-			<td align="right">
-				<html:submit property="doit" styleClass="btn" accesskey="A" titleKey="title.addSession">
-					<bean:message key="button.addSession" />
-				</html:submit>
-			</td>
-		</tr>
-	</table>
-
-</html:form>
-	
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
+<s:form action="bannerTermCrnPropertiesList">
+<table class="unitime-MainTable">
+	<tr>
+		<td colspan="6">
+			<tt:section-header>
+				<tt:section-title>
+				</tt:section-title>
+				<s:submit name="op" value="%{#bmsg.actionAddBannerSession()}"/>
+			</tt:section-header>
+		</td>
+	</tr>
+	<s:property value="table" escapeHtml="false"/>
+	<tr>
+		<td align="center" class="WelcomeRowHead" colspan="3">&nbsp;</td>
+	</tr>
+	<tr>
+		<td align="right">
+			<s:submit name="op" value="%{#bmsg.actionAddBannerSession()}"/>
+		</td>
+	</tr>
+</table>
+</s:form>
+</loc:bundle>
+</loc:bundle>

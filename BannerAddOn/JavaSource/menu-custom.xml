@@ -61,7 +61,7 @@
 					<hasPermission name="AcademicSessions"/>
 				</condition>
  			</item>
-			<item name="Banner Term CRN Properties" page="bannerTermCrnPropertiesList.do">
+			<item name="Banner Term CRN Properties" page="bannerTermCrnPropertiesList.action">
 				<condition>
 					<hasPermission name="AcademicSessions"/>
 				</condition>

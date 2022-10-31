@@ -28,7 +28,7 @@
 	<s:hidden name="form.campusOverrideId" />	
 
 	<TR>
-		<TD colspan="3">
+		<TD colspan="2">
 			<tt:section-header>
 				<tt:section-title>
 				</tt:section-title>

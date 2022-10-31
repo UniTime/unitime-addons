@@ -25,8 +25,6 @@
       <form-bean name="bannerMessageResponsesForm" type="org.unitime.banner.form.BannerMessageResponsesForm" />
 	  <form-bean name="bannerSessionListForm" type="org.unitime.banner.form.BannerSessionListForm" />
 	  <form-bean name="bannerSessionEditForm" type="org.unitime.banner.form.BannerSessionEditForm" />
-	  <form-bean name="bannerTermCrnPropertiesListForm" type="org.unitime.banner.form.BannerTermCrnPropertiesListForm" />
-	  <form-bean name="bannerTermCrnPropertiesEditForm" type="org.unitime.banner.form.BannerTermCrnPropertiesEditForm" />
 
    		<!-- End of custom forms -->
    </form-beans>
@@ -72,31 +70,6 @@
          <forward
             name="showBannerSessionList"
             path="/bannerSessionList.do"
-            redirect="true" />
-      </action>
-      <action
-         path="/bannerTermCrnPropertiesList"
-         attribute="bannerTermCrnPropertiesListForm"
-         input="bannerTermCrnPropertiesListTile"
-         name="bannerTermCrnPropertiesListForm"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-         <forward name="showBannerTermCrnPropertiesList" path="bannerTermCrnPropertiesListTile" />
-      </action>
-      <action
-         path="/bannerTermCrnPropertiesEdit"
-         attribute="bannerTermCrnPropertiesEditForm"
-         name="bannerTermCrnPropertiesEditForm"
-         parameter="doit"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-         <forward name="showEdit" path="bannerTermCrnPropertiesEditTile" />
-         <forward name="showAdd" path="bannerTermCrnPropertiesAddTile" />
-         <forward
-            name="showBannerTermCrnPropertiesList"
-            path="/bannerTermCrnPropertiesList.do"
             redirect="true" />
       </action>
     <!-- End of custom actions -->
