@@ -19,30 +19,33 @@
 */
 package org.unitime.banner.form;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.unitime.banner.model.BannerCampusOverride;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 
 /**
  * 
  * @author says
  *
  */
-public class BannerCampusOverrideEditForm extends ActionForm {
-	
-	// --------------------------------------------------------- Instance Variables
-	
-	/**
-	 * 
-	 */
+public class BannerCampusOverrideEditForm implements UniTimeForm {
 	private static final long serialVersionUID = 6616750809381469241L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
+    Long bannerCampusOverrideId;
+	String bannerCampusCode;
+	String bannerCampusName;
+	Boolean visible;
+		
 
-
+	public BannerCampusOverrideEditForm() {
+		reset();
+	}
+	
 	/**
 	 * @return the bannerCampusCode
 	 */
@@ -91,82 +94,49 @@ public class BannerCampusOverrideEditForm extends ActionForm {
 	}
 
 
-	/**
-	 * @return the sendDataToBanner
-	 */
-
-
-    BannerCampusOverride bannerCampusOverride = new BannerCampusOverride();
-	String bannerCampusCode;
-	String bannerCampusName;
-	Boolean visible;
-		
-	// --------------------------------------------------------- Methods
-	
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-		ActionErrors errors = new ActionErrors();
-		
+	@Override
+	public void validate(UniTimeAction action) {
 		// Check data fields
 		if (bannerCampusCode==null || bannerCampusCode.trim().length()==0) 
-			errors.add("bannerCampusCode", new ActionMessage("errors.required", "Banner Campus Code"));
+			action.addFieldError("form.bannerCampusCode", MSG.errorRequiredField(BMSG.colBannerCampusCode())); 
 		
-		if (bannerCampusName==null || bannerCampusName.trim().length()==0) 
-			errors.add("bannerCampusName", new ActionMessage("errors.required", "Banner Campus Name"));
+		if (bannerCampusName==null || bannerCampusName.trim().length()==0)
+			action.addFieldError("form.bannerCampusName", MSG.errorRequiredField(BMSG.colBannerCampusName()));
 				
 		// Check for duplicate campus code
-		if (errors.size()==0) {
+		if (!action.hasFieldErrors()) {
 			BannerCampusOverride code = BannerCampusOverride.getBannerCampusOverrideForCode(bannerCampusCode);
-			if (bannerCampusOverride.getUniqueId()==null && code!=null)
-				errors.add("sessionId", new ActionMessage("errors.generic", "Banner campus code '" + bannerCampusCode + "' already exists."));
+			if (bannerCampusOverrideId==null && code!=null)
+				action.addFieldError("form.bannerCampusCode", MSG.errorAlreadyExists(bannerCampusCode));
 				
-			if (bannerCampusOverride.getUniqueId()!=null && code!=null) {
-				if (!bannerCampusOverride.getUniqueId().equals(code.getUniqueId()))
-					errors.add("sessionId", new ActionMessage("errors.generic", "Banner campus code '" + bannerCampusCode + "' already exists."));
+			if (bannerCampusOverrideId!=null && code!=null) {
+				if (!bannerCampusOverrideId.equals(code.getUniqueId()))
+					action.addFieldError("form.bannerCampusCode", MSG.errorAlreadyExists(bannerCampusCode));
 			}
 		}
-		
-		return errors;
 	}
 
 
-	/**
-	 * @return Returns the bannerCampusOverride.
-	 */
-	public BannerCampusOverride getBannerCampusOverride() {
-		return bannerCampusOverride;
-	}
-	/**
-	 * @param session The bannerCampusOverride to set.
-	 */
-	public void setBannerCampusOverride(BannerCampusOverride bannerCampusOverride) {
-		this.bannerCampusOverride = bannerCampusOverride;
-	}
-	
-	public boolean equals(Object arg0) {
-		return bannerCampusOverride.equals(arg0);
-	}
-	
-	
-	public int hashCode() {
-		return bannerCampusOverride.hashCode();
-	}
-	
 	/**
 	 * @return
 	 */
 	public Long getCampusOverrideId() {
-		return bannerCampusOverride.getUniqueId();
+		return bannerCampusOverrideId;
 	}
 	
 	/**
 	 * @param bannerCampusOverrideId
 	 */
 	public void setCampusOverrideId(Long bannerCampusOverrideId) {
-		if (bannerCampusOverrideId!=null && bannerCampusOverrideId.longValue()<=0)
-			bannerCampusOverride.setUniqueId(null);
-		else
-			bannerCampusOverride.setUniqueId(bannerCampusOverrideId);
+		this.bannerCampusOverrideId = bannerCampusOverrideId;
 	}
-    
+
+	@Override
+	public void reset() {
+		bannerCampusOverrideId = null;
+		bannerCampusCode = null;
+		bannerCampusName = null;
+		visible = true;
+	}
     
 }

@@ -17,118 +17,75 @@
  * limitations under the License.
  * 
 --%>
-<%@ page import="org.unitime.timetable.webutil.JavascriptFunctions" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%> 
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
+<s:form action="bannerCampusOverrideEdit">
+<table class="unitime-MainTable">
+	<s:hidden name="form.campusOverrideId" />	
 
-<html:form method="post" action="bannerCampusOverrideEdit.do">
-	<INPUT type="hidden" name="refresh" value="">
+	<TR>
+		<TD colspan="3">
+			<tt:section-header>
+				<tt:section-title>
+				</tt:section-title>
+				<s:if test="form.campusOverrideId == null">
+					<s:submit name="op" value="%{#bmsg.actionSaveCampusOverride()}"/>
+				</s:if><s:else>
+					<s:submit name="op" value="%{#bmsg.actionUpdateCampusOverride()}"/>
+				</s:else>
+				<s:submit name="op" value="%{#bmsg.actionBackToCampusOverrides()}"/>
+			</tt:section-header>			
+		</TD>
+	</TR>
+
+	<s:if test="!fieldErrors.isEmpty()">
+		<TR><TD colspan="2" align="left" class="errorTable">
+			<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror/>
+		</TD></TR>
+	</s:if>	
+
+	<TR>
+		<TD><loc:message name="colBannerCampusCode" id="BMSG"/>:</TD>
+		<TD>
+			<s:textfield name="form.bannerCampusCode" maxlength="20" size="20"/>
+		</TD>
+	</TR>
+		
+	<TR>
+		<TD><loc:message name="colBannerCampusName" id="BMSG"/>:</TD>
+		<TD>
+			<s:textfield name="form.bannerCampusName"  maxlength="20" size="20"/>
+		</TD>
+	</TR>
+
+	<TR>
+		<TD><loc:message name="colBannerCampusVisible" id="BMSG"/>:</TD>
+		<TD align="left">
+			<s:checkbox name="form.visible"/>
+		</TD>
+	</TR>
 	
-	<TABLE width="95%" border="0" cellspacing="0" cellpadding="3">
-
-		<TR>
-			<TD colspan="3">
-				<tt:section-header>
-					<tt:section-title>
-						
-					</tt:section-title>
-					<logic:equal name="bannerCampusOverrideEditForm" property="campusOverrideId"	value="">
-						<html:submit styleClass="btn" property="doit" accesskey="S" titleKey="button.save">
-							<bean:message key="button.save" />
-						</html:submit>
-					</logic:equal>
-	
-					<logic:notEqual name="bannerCampusOverrideEditForm" property="campusOverrideId"	value="">
-						<html:submit styleClass="btn" property="doit" accesskey="U" titleKey="button.update">
-							<bean:message key="button.update" />
-						</html:submit>
-					</logic:notEqual>
-				
-					<html:submit styleClass="btn" property="doit" accesskey="B" titleKey="button.cancel" >
-						<bean:message key="button.cancel" />
-					</html:submit>
-				</tt:section-header>			
-			</TD>
-		</TR>
+	<TR>
+		<TD colspan="2">
+		<DIV class="WelcomeRowHeadBlank">&nbsp;</DIV>
+		</TD>
+	</TR>
 		
-		<logic:messagesPresent>
-		<TR>
-			<TD colspan="3" align="left" class="errorCell">
-					<B><U>ERRORS</U></B><BR>
-				<BLOCKQUOTE>
-				<UL>
-				    <html:messages id="error">
-				      <LI>
-						${error}
-				      </LI>
-				    </html:messages>
-			    </UL>
-			    </BLOCKQUOTE>
-			</TD>
-		</TR>
-		</logic:messagesPresent>
-
-		<TR>
-			<TD>Banner Campus Code:</TD>
-			<TD colspan='2'>
-				<html:text property="bannerCampusCode" maxlength="20" size="20"/>
-			</TD>
-		</TR>
-		
-		<TR>
-			<TD>Banner Campus Name:</TD>
-			<TD colspan='2'>
-				<html:text property="bannerCampusName"  maxlength="20" size="20"/>
-			</TD>
-		</TR>
-
-		<TR>
-			<TD>Visible:</TD>
-			<TD colspan='2' align="left">
-				<html:checkbox property="visible"/>
-			</TD>
-		</TR>
-		<TR>
-			<TD colspan="3">
-			<DIV class="WelcomeRowHeadBlank">&nbsp;</DIV>
-			</TD>
-		</TR>
-		
-		<TR>
-			<TD colspan="3" align="right">
-
-			<TABLE>
-				<TR>
-					<TD align="right">
-						<logic:equal name="bannerCampusOverrideEditForm" property="campusOverrideId" value="">
-							<html:submit styleClass="btn" property="doit" styleId="save" accesskey="S" titleKey="button.save">
-								<bean:message key="button.save" />
-							</html:submit>
-						</logic:equal>
-		
-						<logic:notEqual name="bannerCampusOverrideEditForm" property="campusOverrideId"	value="">
-							<html:submit styleClass="btn" property="doit" styleId="save" accesskey="U" titleKey="button.update">
-								<bean:message key="button.update" />
-							</html:submit>
-						</logic:notEqual>
-					
-					<html:submit styleClass="btn" property="doit" accesskey="B" titleKey="button.cancel" >
-						<bean:message key="button.cancel" />
-					</html:submit>
-					</TD>
-				</TR>
-				
-			</TABLE>
-			
-			</TD>
-		</TR>
-
-
-	</TABLE>
-	
-	<html:hidden property="campusOverrideId" />
-</html:form>
-
-</script>
+	<TR>
+		<TD colspan="2" align="right">
+			<s:if test="form.campusOverrideId == null">
+				<s:submit name="op" value="%{#bmsg.actionSaveCampusOverride()}"/>
+			</s:if><s:else>
+				<s:submit name="op" value="%{#bmsg.actionUpdateCampusOverride()}"/>
+			</s:else>
+			<s:submit name="op" value="%{#bmsg.actionBackToCampusOverrides()}"/>
+		</TD>
+	</TR>
+</table>
+</s:form>
+</loc:bundle>
+</loc:bundle>

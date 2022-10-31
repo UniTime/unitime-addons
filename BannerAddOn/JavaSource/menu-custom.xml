@@ -66,7 +66,7 @@
 					<hasPermission name="AcademicSessions"/>
 				</condition>
 			</item>
-			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.do">
+			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.action">
 				<condition>
 					<hasPermission name="AcademicSessions"/>
 				</condition>

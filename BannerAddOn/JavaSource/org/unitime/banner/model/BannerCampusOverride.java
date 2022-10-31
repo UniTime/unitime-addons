@@ -71,7 +71,7 @@ public class BannerCampusOverride extends BaseBannerCampusOverride {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static Collection getAllBannerCampusOverrides() {
+	public static Collection<BannerCampusOverride> getAllBannerCampusOverrides() {
 		return(BannerCampusOverrideDAO.getInstance().getQuery("from BannerCampusOverride").list());
 	}
 			

@@ -52,19 +52,6 @@
 		<put name="title" type="string" value="Add Banner Term CRN Properties"/>
 		<put name="body" value="/banner/bannerTermCrnPropertiesEdit.jsp" />
   	</definition>
-	<definition	name="bannerCampusOverrideListTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Banner Campus Overrides"/>
-		<put name="body" value="/banner/bannerCampusOverrideList.jsp" />
-  	</definition>
-  	<definition	name="bannerCampusOverrideEditTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Edit Banner Campus Override"/>
-		<put name="body" value="/banner/bannerCampusOverrideEdit.jsp" />
-  	</definition>
-
-	<definition	name="bannerCampusOverrideAddTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Add Campus Override Session"/>
-		<put name="body" value="/banner/bannerCampusOverrideEdit.jsp" />
-  	</definition>
   	
 
 	<!-- End of custom tiles definitions -->

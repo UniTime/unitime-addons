@@ -211,4 +211,25 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Default ({0})")
 	String defaultCampusOverride(String defaultCampusOverride);
+	
+	@DefaultMessage("Banner Campus Code")
+	String colBannerCampusCode();
+	
+	@DefaultMessage("Banner Campus Name")
+	String colBannerCampusName();
+	
+	@DefaultMessage("Visible")
+	String colBannerCampusVisible();
+	
+	@DefaultMessage("Add Campus Override")
+	String actionAddCampusOverride();
+	
+	@DefaultMessage("Save")
+	String actionSaveCampusOverride();
+	
+	@DefaultMessage("Update")
+	String actionUpdateCampusOverride();
+	
+	@DefaultMessage("Back")
+	String actionBackToCampusOverrides();
 }

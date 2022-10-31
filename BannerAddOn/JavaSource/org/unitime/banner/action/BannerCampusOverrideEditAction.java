@@ -19,98 +19,89 @@
 */
 package org.unitime.banner.action;
 
-import java.util.HashMap;
-import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessages;
-import org.hibernate.HibernateException;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesDefinitions;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.hibernate.Transaction;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerCampusOverrideEditForm;
 import org.unitime.banner.model.BannerCampusOverride;
 import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.model.ChangeLog;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
-import org.unitime.timetable.spring.struts.SpringAwareLookupDispatchAction;
 
 /**
  * 
  * @author says
  *
  */
-@Service("/bannerCampusOverrideEdit")
-public class BannerCampusOverrideEditAction extends SpringAwareLookupDispatchAction {
-	// --------------------------------------------------------- Instance Variables
+@Action(value = "bannerCampusOverrideEdit", results = {
+		@Result(name = "showEdit", type = "tiles", location = "bannerCampusOverrideEdit.tiles"),
+		@Result(name = "showAdd", type = "tiles", location = "bannerCampusOverrideAdd.tiles"),
+		@Result(name = "showBannerCampusOverrideList", type = "redirect", location = "/bannerCampusOverrideList.action",
+			params = { "anchor", "${form.campusOverrideId}" })
+	})
+@TilesDefinitions({
+@TilesDefinition(name = "bannerCampusOverrideEdit.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Edit Banner Campus Override"),
+		@TilesPutAttribute(name = "body", value = "/banner/bannerCampusOverrideEdit.jsp")
+	}),
+@TilesDefinition(name = "bannerCampusOverrideAdd.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Add Banner Campus Override"),
+		@TilesPutAttribute(name = "body", value = "/banner/bannerCampusOverrideEdit.jsp")
+	})
+})
+public class BannerCampusOverrideEditAction extends UniTimeAction<BannerCampusOverrideEditForm> {
+	private static final long serialVersionUID = 6185143244808321892L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 	
+	private Long campusOverrideId;
+	public Long getCampusOverrideId() { return campusOverrideId; }
+	public void setCampusOverrideId(Long campusOverrideId) { this.campusOverrideId = campusOverrideId; }
 
-	// --------------------------------------------------------- Methods
-	@Autowired SessionContext sessionContext;
-	/** 
-	 * Method execute
-	 * @param mapping
-	 * @param form
-	 * @param request
-	 * @param response
-	 * @return ActionForward
-	 * @throws HibernateException
-	 */
-	
-	@SuppressWarnings("unchecked")
-	protected Map getKeyMethodMap() {
-	      Map map = new HashMap();
-	      map.put("editSession", "editCampusOverride");
-	      map.put("button.addNew", "addCampusOverride");
-	      map.put("button.save", "saveCampusOverride");
-	      map.put("button.update", "saveCampusOverride");
-	      map.put("button.cancel", "cancelCampusOverrideEdit");
-	      return map;
+	@Override
+	public String execute() throws Exception {
+		if (form == null) form = new BannerCampusOverrideEditForm();
+		
+		if (BMSG.actionAddCampusOverride().equals(op))
+			return addCampusOverride();
+		if (BMSG.actionSaveCampusOverride().equals(op) || BMSG.actionUpdateCampusOverride().equals(op))
+			return saveCampusOverride();
+		if ("Edit".equals(op))
+			return editCampusOverride();
+		if (BMSG.actionBackToBannerOfferings().equals(op))
+			return cancelCampusOverrideEdit();
+		return form.getCampusOverrideId() == null ? "showAdd" : "showEdit";
 	  }
 
 	
-	public ActionForward editCampusOverride(
-		ActionMapping mapping,
-		ActionForm form,
-		HttpServletRequest request,
-		HttpServletResponse response) throws Exception {
-		
+	public String editCampusOverride() throws Exception {
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
 		
-        BannerCampusOverrideEditForm bannerCampusOverrideForm = (BannerCampusOverrideEditForm) form;		
-		Long id =  Long.valueOf(Long.parseLong(request.getParameter("campusOverrideId")));
-		BannerCampusOverride bannerCampusOverride = BannerCampusOverride.getBannerCampusOverrideById(id);
-		bannerCampusOverrideForm.setBannerCampusOverride(bannerCampusOverride);
-		bannerCampusOverrideForm.setBannerCampusCode(bannerCampusOverride.getBannerCampusCode());
-		bannerCampusOverrideForm.setBannerCampusName(bannerCampusOverride.getBannerCampusName());
-		bannerCampusOverrideForm.setVisible(bannerCampusOverride.isVisible());
-		return mapping.findForward("showEdit");
+		BannerCampusOverride bannerCampusOverride = BannerCampusOverride.getBannerCampusOverrideById(campusOverrideId);
+		form.setCampusOverrideId(bannerCampusOverride.getUniqueId());
+		form.setBannerCampusCode(bannerCampusOverride.getBannerCampusCode());
+		form.setBannerCampusName(bannerCampusOverride.getBannerCampusName());
+		form.setVisible(bannerCampusOverride.isVisible());
+		return "showEdit";
 	}
 	
-	public ActionForward addCampusOverride(
-			ActionMapping mapping,
-			ActionForm form,
-			HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
-		
+	public String addCampusOverride() throws Exception {
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionAdd);
 
-		return mapping.findForward("showAdd");
+		return "showAdd";
 	}
 	
-	public ActionForward saveCampusOverride(
-			ActionMapping mapping,
-			ActionForm form,
-			HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
+	public String saveCampusOverride() throws Exception {
 				
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionEdit);
@@ -120,31 +111,27 @@ public class BannerCampusOverrideEditAction extends SpringAwareLookupDispatchAct
         
         try {
             tx = hibSession.beginTransaction();
-
-            BannerCampusOverrideEditForm bannerCampusOverrideEditForm = (BannerCampusOverrideEditForm) form;
-            BannerCampusOverride campusOverride = bannerCampusOverrideEditForm.getBannerCampusOverride();
             
-            if (bannerCampusOverrideEditForm.getCampusOverrideId()!=null && campusOverride.getUniqueId().longValue()!=0) 
-                campusOverride = (new BannerCampusOverrideDAO()).get(bannerCampusOverrideEditForm.getCampusOverrideId(),hibSession);
-            else 
-                campusOverride.setUniqueId(null);
-                                    
-            ActionMessages errors = bannerCampusOverrideEditForm.validate(mapping, request);
-            if (errors.size()>0) {
-                saveErrors(request, errors);
-                if (campusOverride.getUniqueId()!=null) {
-                    return mapping.findForward("showEdit");
-                }
-                else {
-                    return mapping.findForward("showAdd");
+            form.validate(this);
+            if (hasFieldErrors()) {
+                if (form.getCampusOverrideId() != null) {
+                    return "showEdit";
+                } else {
+                    return "showAdd";
                 }
             }
            
-            campusOverride.setBannerCampusName(bannerCampusOverrideEditForm.getBannerCampusName());
-            campusOverride.setBannerCampusCode(bannerCampusOverrideEditForm.getBannerCampusCode());
-            campusOverride.setVisible(bannerCampusOverrideEditForm.getVisible() == null?Boolean.valueOf(false):bannerCampusOverrideEditForm.getVisible());
+            BannerCampusOverride campusOverride = null;
+            if (form.getCampusOverrideId() != null) 
+                campusOverride = (new BannerCampusOverrideDAO()).get(form.getCampusOverrideId(),hibSession);
+            else 
+                campusOverride = new BannerCampusOverride();
+            campusOverride.setBannerCampusName(form.getBannerCampusName());
+            campusOverride.setBannerCampusCode(form.getBannerCampusCode());
+            campusOverride.setVisible(form.getVisible());
 
             hibSession.saveOrUpdate(campusOverride);
+            form.setCampusOverrideId(campusOverride.getUniqueId());
 
             ChangeLog.addChange(
                     hibSession, 
@@ -161,15 +148,11 @@ public class BannerCampusOverrideEditAction extends SpringAwareLookupDispatchAct
             throw e;
         }
         
-		return mapping.findForward("showBannerCampusOverrideList");
+		return "showBannerCampusOverrideList";
 	}
-
-	public ActionForward cancelCampusOverrideEdit(
-			ActionMapping mapping,
-			ActionForm form,
-			HttpServletRequest request,
-			HttpServletResponse response) {
-		return mapping.findForward("showBannerCampusOverrideList");
+	
+	public String cancelCampusOverrideEdit() {
+		return "showBannerCampusOverrideList";
 	}
 	
 }
