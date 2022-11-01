@@ -22,31 +22,24 @@
 
 package org.unitime.banner.action;
 
-import java.io.File;
-import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.cpsolver.ifs.util.CSVFile;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.commons.web.WebTable;
-import org.unitime.timetable.ApplicationProperties;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.model.Department;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.TimetableManager;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
-import org.unitime.timetable.util.Constants;
 import org.unitime.timetable.util.ExportUtils;
 import org.unitime.timetable.webutil.PdfWebTable;
 
@@ -59,30 +52,38 @@ import org.unitime.banner.model.dao.BannerResponseDAO;
 /** 
  * based on code contributed by Dagmar Murray
  */
-@Service("/bannerMessageResponses")
-public class BannerMessageResponsesAction extends Action {
+@Action(value = "bannerMessageResponses", results = {
+		@Result(name = "displayBannerMessageResponsesForm", type = "tiles", location = "bannerMessageResponses.tiles")
+	})
+@TilesDefinition(name = "bannerMessageResponses.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Banner Message Responses"),
+		@TilesPutAttribute(name = "body", value = "/banner/bannerMessageResponses.jsp")
+	})
+public class BannerMessageResponsesAction extends UniTimeAction<BannerMessageResponsesForm> {
+	private static final long serialVersionUID = 629602594484511388L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
-	@Autowired SessionContext sessionContext;
-
-	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		BannerMessageResponsesForm myForm = (BannerMessageResponsesForm) form;
+	@Override
+	public String execute() throws Exception {
+		if (form == null) form = new BannerMessageResponsesForm();
 		
         sessionContext.checkPermission(Right.InstructionalOfferings);
         
         // Read operation to be performed
-        String op = (myForm.getOp()!=null?myForm.getOp():request.getParameter("op"));
+        if (op == null) op = form.getOp();
         
 		// allow a max of 1000 messages
-		if (myForm.getN()>1000){
-			myForm.setN(1000);
-		} else if (myForm.getN()<1){
-			myForm.setN(100);
+		if (form.getN()>1000){
+			form.setN(1000);
+		} else if (form.getN()<1){
+			form.setN(100);
 		}
 		
-        if ("Apply".equals(op) || "Refresh".equals(op)||"Export CSV".equals(op)|| "Export PDF".equals(op)) {
-        	myForm.save(request);
+        if (MSG.actionFilterApply().equals(op) || MSG.actionRefreshLog().equals(op) || MSG.actionExportCsv().equals(op)|| MSG.actionExportPdf().equals(op)) {
+        	form.save(request);
         } else {
-            myForm.load(request);
+            form.load(request);
         }
          
         request.setAttribute("subjAreas",new TreeSet(SubjectArea.getUserSubjectAreas(sessionContext.getUser())));
@@ -100,68 +101,82 @@ public class BannerMessageResponsesAction extends Action {
 	        subjects = SubjectArea.getUserSubjectAreas(sessionContext.getUser());
 		}
         
-        WebTable.setOrder(sessionContext,"lastChanges.ord2",request.getParameter("ord"),1);
+        WebTable.setOrder(sessionContext,"bannerMessageResponses.ord",request.getParameter("ord"),1);
         
-        WebTable webTable = new WebTable( 9, "Banner Responses",
-                "bannerMessageResponses.do?ord=%%",
-                new String[] {"Date", "Subject", "Course", "Sec ID", "CRN", "XLst", "Action", "Type","Message"},
+        WebTable webTable = new WebTable( 9, BMSG.sectBannerResponses(),
+                "bannerMessageResponses.action?ord=%%",
+                new String[] {
+                		MSG.columnDate(),
+                		MSG.columnSubject(),
+                		MSG.columnCourse(),
+                		BMSG.colSecId(),
+                		BMSG.colCRN(),
+                		BMSG.colXlst(),
+                		BMSG.colAction(),
+                		BMSG.colType(),
+                		BMSG.colMessage()},
                 new String[] {"left", "left", "left", "left", "left", "left", "left", "left", "left"},
                 new boolean[] { false, true, true, true, true, true, true, true, true} );
      
         List responses = BannerResponseDAO.getInstance().find(
         		sessionContext.getUser().getCurrentAcademicSessionId(),
-        		(myForm.getStartDate() == null ? null : myForm.getStartDate()),
-        		(myForm.getStopDate() == null ? null : myForm.getStopDate()),
-                (myForm.getSubjAreaId() == null || myForm.getSubjAreaId().longValue() < 0 ? null : myForm.getSubjAreaId()),
+        		(form.getStartDate() == null ? null : form.getStartDate()),
+        		(form.getStopDate() == null ? null : form.getStopDate()),
+                (form.getSubjAreaId() == null || form.getSubjAreaId().longValue() < 0 ? null : form.getSubjAreaId()),
                 subjects,
-               (myForm.getManagerId()==null || myForm.getManagerId().longValue()<0?null:myForm.getManagerId()), 
-                (myForm.getDepartmentId()==null || myForm.getDepartmentId().longValue()<0?null:myForm.getDepartmentId()),
-                (myForm.getCourseNumber() == null ? null : myForm.getCourseNumber()),
-                (myForm.getCrn() == null ? null : myForm.getCrn()),
-                (myForm.getXlst() == null ? null : myForm.getXlst()),
-                (myForm.getMessage() == null ? null : myForm.getMessage()),
-                myForm.getN(),
-                myForm.getShowHistory() == null ? false : myForm.getShowHistory().booleanValue(),
-                myForm.getActionAudit() == null ? false : myForm.getActionAudit().booleanValue(),
-                myForm.getActionUpdate() == null ? false : myForm.getActionUpdate().booleanValue(),
-                myForm.getActionDelete() == null ? false : myForm.getActionDelete().booleanValue(),
-                myForm.getTypeSuccess() == null ? false : myForm.getTypeSuccess().booleanValue(),
-                myForm.getTypeError() == null ? false : myForm.getTypeError().booleanValue(),
-                myForm.getTypeWarning() == null ? false : myForm.getTypeWarning().booleanValue());
+               (form.getManagerId()==null || form.getManagerId().longValue()<0?null:form.getManagerId()), 
+                (form.getDepartmentId()==null || form.getDepartmentId().longValue()<0?null:form.getDepartmentId()),
+                (form.getCourseNumber() == null ? null : form.getCourseNumber()),
+                (form.getCrn() == null ? null : form.getCrn()),
+                (form.getXlst() == null ? null : form.getXlst()),
+                (form.getMessage() == null ? null : form.getMessage()),
+                form.getN(),
+                form.getShowHistory() == null ? false : form.getShowHistory().booleanValue(),
+                form.getActionAudit() == null ? false : form.getActionAudit().booleanValue(),
+                form.getActionUpdate() == null ? false : form.getActionUpdate().booleanValue(),
+                form.getActionDelete() == null ? false : form.getActionDelete().booleanValue(),
+                form.getTypeSuccess() == null ? false : form.getTypeSuccess().booleanValue(),
+                form.getTypeError() == null ? false : form.getTypeError().booleanValue(),
+                form.getTypeWarning() == null ? false : form.getTypeWarning().booleanValue());
 		
         if (responses!=null) {
             for (Iterator i=responses.iterator();i.hasNext();)
-                printLastResponseTableRow(request, webTable, (BannerResponse)i.next(), true);
+                printLastResponseTableRow(webTable, (BannerResponse)i.next(), true);
         }
         
-        request.setAttribute("table", webTable.printTable(WebTable.getOrder(sessionContext,"lastChanges.ord2")));
+        request.setAttribute("table", webTable.printTable(WebTable.getOrder(sessionContext,"bannerMessageResponses.ord")));
         
-        if ("Export PDF".equals(op) && responses!=null) {
-            PdfWebTable pdfTable = new PdfWebTable( 9, "Banner Responses",
-                    "lastChanges.do?ord=%%",
-                    new String[] {"Date", "Subject", "Course", "Sec ID", "CRN", "XLst", "Action", "Type","Message"},
+        if (MSG.actionExportPdf().equals(op) && responses!=null) {
+            PdfWebTable pdfTable = new PdfWebTable( 9, BMSG.sectBannerResponses(),
+            		"bannerMessageResponses.action?ord=%%",
+                    new String[] {
+                    		MSG.columnDate(),
+                    		MSG.columnSubject(),
+                    		MSG.columnCourse(),
+                    		BMSG.colSecId(),
+                    		BMSG.colCRN(),
+                    		BMSG.colXlst(),
+                    		BMSG.colAction(),
+                    		BMSG.colType(),
+                    		BMSG.colMessage()
+                    },
                     new String[] {"left", "left", "left", "left", "left", "left", "left", "left", "left"},
                     new boolean[] { false, true, true, true, true, true, true, true, true} );
             for (Iterator i=responses.iterator();i.hasNext();)
-                printLastResponseTableRow(request, pdfTable, (BannerResponse)i.next(), false);
-            File file = ApplicationProperties.getTempFile("bannerResponses", "pdf");
-            OutputStream out = ExportUtils.getPdfOutputStream(response, "bannerResponses");
-            pdfTable.exportPdf(out, WebTable.getOrder(sessionContext,"lastChanges.ord2"));
-            if (file!=null) request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+file.getName());
+                printLastResponseTableRow(pdfTable, (BannerResponse)i.next(), false);
+            ExportUtils.exportPDF(pdfTable, WebTable.getOrder(sessionContext,"bannerMessageResponses.ord"), response, "bannerResponses");
+            return null;
         }
         
-        if ("Export CSV".equals(op) && responses!=null) {
-        	CSVFile csvFile = webTable.toCSVFile(0);
-
-        	File file = ApplicationProperties.getTempFile("bannerResponses", "csv");
-        	csvFile.save(file);
-        	request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+file.getName());
+        if (MSG.actionExportCsv().equals(op) && responses!=null) {
+        	ExportUtils.exportCSV(webTable, WebTable.getOrder(sessionContext,"bannerMessageResponses.ord"), response, "bannerResponses");
+        	return null;
         }
         
-  		return mapping.findForward("displayBannerMessageResponsesForm");
+  		return "displayBannerMessageResponsesForm";
 	}
     
-    private int printLastResponseTableRow(HttpServletRequest request, WebTable webTable, BannerResponse lastResponse, boolean html) {
+    private int printLastResponseTableRow(WebTable webTable, BannerResponse lastResponse, boolean html) {
         if (lastResponse==null) return 0;
         webTable.addLine(null,
                 new String[] {

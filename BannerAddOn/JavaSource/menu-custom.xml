@@ -22,7 +22,7 @@
 <unitime-menu>
 	<menu name="Courses">
 		<menu name="Banner">
-			<item name="Message Responses" page="bannerMessageResponses.do">
+			<item name="Message Responses" page="bannerMessageResponses.action">
 				<condition>
 					<and>
 						<propertyEquals name="banner.menu.display_orig_message_responses" value="true" defaultValue="false"/>

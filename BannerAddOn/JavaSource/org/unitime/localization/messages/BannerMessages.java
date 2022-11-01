@@ -80,7 +80,7 @@ public interface BannerMessages extends Messages {
 	@DefaultMessage("Instr Type")
 	String colInstrType();
 	
-	@DefaultMessage("Sec&nbsp;Id")
+	@DefaultMessage("Sec Id")
 	String colSecId();
 	
 	@DefaultMessage("Grade")
@@ -95,7 +95,7 @@ public interface BannerMessages extends Messages {
 	@DefaultMessage("Xlst")
 	String colXlst();
 	
-	@DefaultMessage("Link&nbsp;Id")
+	@DefaultMessage("Link Id")
 	String colLinkId();
 	
 	@DefaultMessage("Link Conn")
@@ -334,5 +334,53 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Send Request (when student changed, automatically request future term student update)")
 	String descUpdateModeRequest();
+	
+	@DefaultMessage("Banner Responses")
+	String sectBannerResponses();
+	
+	@DefaultMessage("CRN")
+	String colCRN();
+	
+	@DefaultMessage("Action")
+	String colAction();
+	
+	@DefaultMessage("Type")
+	String colType();
+	
+	@DefaultMessage("Message")
+	String colMessage();
+	
+	@DefaultMessage("Audit")
+	String actionAudit();
+	
+	@DefaultMessage("Update")
+	String actionUpdate();
+	
+	@DefaultMessage("Delete")
+	String actionDelete();
+	
+	@DefaultMessage("Success")
+	String typeSuccess();
+	
+	@DefaultMessage("Error")
+	String typeError();
+	
+	@DefaultMessage("Warning")
+	String typeWarning();
+	
+	@DefaultMessage("Cross-List ID")
+	String colCrossListId();
+	
+	@DefaultMessage("Start Date")
+	String colStartDate();
+	
+	@DefaultMessage("Stop Date")
+	String colStopDate();
+	
+	@DefaultMessage("Show History:")
+	String filterShowHistory();
+	
+	@DefaultMessage("Number of Messages:")
+	String filterNumberOfMessages();
 }
 

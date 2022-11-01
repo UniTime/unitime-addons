@@ -21,19 +21,18 @@ package org.unitime.banner.form;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
 
 /**
  * based on code contributed by Dagmar Murray
  */
-public class BannerMessageResponsesForm extends ActionForm {
+public class BannerMessageResponsesForm implements UniTimeForm {
+	private static final long serialVersionUID = 4347509521815310418L;
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 4347509521815310418L;
 	private int iN;
     private Long iDepartmentId, iSubjAreaId, iManagerId;
 	private String iCourseNumber;
@@ -51,6 +50,10 @@ public class BannerMessageResponsesForm extends ActionForm {
 	private Boolean iTypeSuccess;
 	private Boolean iTypeError;
 	private Boolean iTypeWarning;
+	
+	public BannerMessageResponsesForm() {
+		reset();
+	}
 
 	public String getMessage() {
 		return iMessage;
@@ -172,14 +175,12 @@ public class BannerMessageResponsesForm extends ActionForm {
 		iTypeWarning = typeWarning;
 	}
 
-	public ActionErrors validate(ActionMapping mapping,
-			HttpServletRequest request) {
-		ActionErrors errors = new ActionErrors();
-
-		return errors;
+	@Override
+	public void validate(UniTimeAction action) {
 	}
 
-	public void reset(ActionMapping mapping, HttpServletRequest request) {
+	@Override
+	public void reset() {
 		iN = 100;
 		iDepartmentId = Long.valueOf(-1);
         iSubjAreaId = Long.valueOf(-1);
