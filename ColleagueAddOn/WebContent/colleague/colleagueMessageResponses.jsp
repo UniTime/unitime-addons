@@ -20,191 +20,151 @@
  <%--
  * based on code submitted by Dagmar Murray
  --%>
-<%@ page language="java" autoFlush="true"%>
-<%@ page import="org.unitime.colleague.form.ColleagueMessageResponsesForm"%>
-<%@ page import="org.unitime.timetable.model.Roles" %>
-
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
-
-<%
-	// Get Form 
-	String frmName = "colleagueMessageResponsesForm";
-	ColleagueMessageResponsesForm frm = (ColleagueMessageResponsesForm) request
-			.getAttribute(frmName);
-
-//	frm.initialize(request);	
-%>
-
-<script language="JavaScript" type="text/javascript" src="scripts/block.js"></script>
-<tiles:importAttribute />
-<html:form action="/colleagueMessageResponses">
-	<script language="JavaScript">blToggleHeader('Filter','dispFilter');blStart('dispFilter');</script>
-	<TABLE width="90%" border="0" cellspacing="0" cellpadding="3">
+ <%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
+<s:form action="colleagueMessageResponses">
+<script type="text/javascript" src="scripts/block.js"></script>
+	<script type="text/javascript">blToggleHeader('<loc:message name="filter"/>','dispFilter');blStart('dispFilter');</script>
+	<table class="unitime-MainTable">
 	<TR>
-		<TD>Subject Area:</TD>
+		<TD><loc:message name="filterSubjectArea"/></TD>
 		<TD>
-			<html:select property="subjAreaId">
-				<html:option value="">All Subjects</html:option>
-				<html:options collection="subjAreas" labelProperty="subjectAreaAbbreviation" property="uniqueId" />
-			</html:select>
+			<s:select name="form.subjAreaId" id="subjectAreaId"
+				list="#request.subjAreas" listKey="uniqueId" listValue="subjectAreaAbbreviation"
+				headerKey="" headerValue="%{#msg.itemAllSubjects()}"/>
 		</TD>
 	</TR>
 	<TR>
-		<TD>Course Number:</TD>
+		<TD><loc:message name="filterCourseNumber"/></TD>
 		<TD>
-			<html:text property="courseNumber" maxlength="10" size="10" />
+			<tt:course-number name="filter.courseNumber" configuration="subjectId=\${subjectAreaId};notOffered=include" size="10"/>
 		</TD>
 	</TR>
 	<TR>
-		<TD>Colleague Synonym:</TD>
+		<TD><loc:message name="columnColleagueSynonym" id="CMSG"/>:</TD>
 		<TD>
-			<html:text property="colleagueId" maxlength="5" size="8" />
+			<s:textfield name="form.colleagueId" maxlength="5" size="8" />
 		</TD>
 	</TR>
 	<TR>
-		<TD>Action:</TD>
+		<TD><loc:message name="colAction" id="CMSG"/>:</TD>
 		<TD rowspan="2">
 			<TABLE>
 				<TR>
 					<TD>
-					<html:checkbox property="actionAudit"/>
+					<s:checkbox name="form.actionAudit"/>
 					</TD>
-					<TD>Audit</TD>
+					<TD><loc:message name="actionAudit" id="CMSG"/></TD>
 					<TD>
-					<html:checkbox property="actionUpdate"/>
+					<s:checkbox name="form.actionUpdate"/>
 					</TD>
-					<TD>Update</TD>
+					<TD><loc:message name="actionUpdate" id="CMSG"/></TD>
 					<TD>
-					<html:checkbox property="actionDelete"/>
+					<s:checkbox name="form.actionDelete"/>
 					</TD>
-					<TD>Delete</TD>
+					<TD><loc:message name="actionDelete" id="CMSG"/></TD>
 				</TR>
 				<TR>
 					<TD>
-					<html:checkbox property="typeSuccess"/>
+					<s:checkbox name="form.typeSuccess"/>
 					</TD>
-					<TD>Success</TD>
+					<TD><loc:message name="typeSuccess" id="CMSG"/></TD>
 					<TD>
-					<html:checkbox property="typeError"/>
+					<s:checkbox name="form.typeError"/>
 					</TD>
-					<TD>Error</TD>
+					<TD><loc:message name="typeError" id="CMSG"/></TD>
 					<TD>
-					<html:checkbox property="typeWarning"/>
+					<s:checkbox name="form.typeWarning"/>
 					</TD>
-					<TD>Warning</TD>
+					<TD><loc:message name="typeWarning" id="CMSG"/></TD>
 				</TR>
 				
 			</TABLE>
 		</TD>			
 	</TR>
 	<TR>
-		<TD>Type:</TD>
+		<TD><loc:message name="colType" id="CMSG"/>:</TD>
 	</TR>
 	<TR>
-		<TD>Message:</TD>
+		<TD><loc:message name="colMessage" id="CMSG"/>:</TD>
 		<TD>
-			<html:text property="message" maxlength="50" size="20" />
+			<s:textfield name="form.message" maxlength="50" size="20" />
 		</TD>
 	</TR>
 	<TR>
-		<TD>Start Date:</TD>
+		<TD><loc:message name="colStartDate" id="CMSG"/>:</TD>
 		<TD>
-			<html:text property="startDate" maxlength="10" size="8" />
-		mm/dd/yyyy
+			<tt:calendar name="form.startDate" format="MM/dd/yyyy"/>
 		</TD>
 	</TR>
 	<TR>
-		<TD>Stop Date:</TD>
+		<TD><loc:message name="colStopDate" id="CMSG"/>:</TD>
 		<TD>
-			<html:text property="stopDate" maxlength="10" size="8" />
-		mm/dd/yyyy
+			<tt:calendar name="form.stopDate" format="MM/dd/yyyy"/>
 		</TD>
 	</TR>
 	<sec:authorize access="hasPermission(null, null, 'IsAdmin')">
 	<TR>
-		<TD>Manager:</TD>
+		<TD><loc:message name="columnTimetableManager"/>:</TD>
 		<TD>
-			<html:select property="managerId">
-				<html:option value="-1">All Managers</html:option>
-				<html:options collection="managers" labelProperty="name" property="uniqueId" />
-			</html:select>
+			<s:select name="form.managerId"
+				list="#request.managers" listKey="uniqueId" listValue="name"
+				headerKey="-1" headerValue="%{#msg.itemAllManagers()}"/>
 		</TD>
 	</TR>
 	<TR>
-		<TD>Department:</TD>
+		<TD><loc:message name="filterDepartment"/></TD>
 		<TD>
-			<html:select property="departmentId">
-				<html:option value="-1">All Departments</html:option>
-				<html:options collection="departments" labelProperty="label" property="uniqueId" />
-			</html:select>
+			<s:select name="form.departmentId"
+				list="#request.departments" listKey="uniqueId" listValue="label"
+				headerKey="-1" headerValue="%{#msg.itemAllDepartments()}"/>
 		</TD>
 	</TR>
 	</sec:authorize>
 	<TR>
 		<TD>
-		Show History:
+		<loc:message name="filterShowHistory" id="CMSG"/>
 		</TD>
 		<TD>
-		<html:checkbox property="showHistory"/>
+		<s:checkbox name="form.showHistory"/>
 		</TD>
 	</TR>
 	<TR>
-		<TD>Number of Messages:</TD>
+		<TD><loc:message name="filterNumberOfMessages" id="CMSG"/></TD>
 		<TD>
-			<html:text property="n" maxlength="5" size="8" />
+			<s:textfield name="form.n" type="number" min="0" max="99999"/>
 		</TD>
 	</TR>
 	<TR>
 		<TD colspan='2' align='right'>
-			<html:submit onclick="displayLoading();" property="op" value="Apply"/>
-			<html:submit onclick="displayLoading();" property="op" value="Export PDF"/>
-			<html:submit onclick="displayLoading();" property="op" value="Export CSV"/>
-			<html:submit onclick="displayLoading();" accesskey="R" property="op" value="Refresh"/>
+			<s:submit name="op" value="%{#msg.actionFilterApply()}"/>
+			<s:submit name="op" value="%{#msg.actionExportPdf()}"/>
+			<s:submit name="op" value="%{#msg.actionExportCsv()}"/>
+			<s:submit name="op" value="%{#msg.actionRefreshLog()}"/>
 		</TD>
 	</TR>
 	</TABLE>
-	<script language="JavaScript">blEnd('dispFilter');blStartCollapsed('dispFilter');</script>
-		<TABLE width="90%" border="0" cellspacing="0" cellpadding="3">
+	<script type="text/javascript">blEnd('dispFilter');blStartCollapsed('dispFilter');</script>
+		<table class="unitime-MainTable">
 			<TR>
 				<TD colspan='2' align='right'>
-					<html:submit onclick="displayLoading();" property="op" value="Export PDF"/>
-					<html:submit onclick="displayLoading();" property="op" value="Export CSV"/>
-					<html:submit onclick="displayLoading();" accesskey="R" property="op" value="Refresh"/>
+					<s:submit name="op" value="%{#msg.actionExportPdf()}"/>
+					<s:submit name="op" value="%{#msg.actionExportCsv()}"/>
+					<s:submit name="op" value="%{#msg.actionRefreshLog()}"/>
 				</TD>
 			</TR>
 		</TABLE>
-	<script language="JavaScript">blEndCollapsed('dispFilter');</script>
+	<script type="text/javascript">blEndCollapsed('dispFilter');</script>
 
 	<BR><BR>
 
-	<TABLE width="90%" border="0" cellspacing="0" cellpadding="3">
-		<%=request.getAttribute("table")%>
-	</TABLE>
-</html:form>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	<table class="unitime-MainTable">
+		<s:property value="#request.table" escapeHtml="false"/>
+	</table>
+</s:form>
+</loc:bundle>
+</loc:bundle>

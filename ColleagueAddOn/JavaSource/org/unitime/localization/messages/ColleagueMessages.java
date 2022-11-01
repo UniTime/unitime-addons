@@ -19,6 +19,8 @@
 */
 package org.unitime.localization.messages;
 
+import com.google.gwt.i18n.client.Messages.DefaultMessage;
+
 public interface ColleagueMessages extends Messages {
 
 	@DefaultMessage("Assign Restrictions")
@@ -109,7 +111,7 @@ public interface ColleagueMessages extends Messages {
 	@DefaultMessage("Instr Type")
 	String colInstrType();
 	
-	@DefaultMessage("Sec&nbsp;Id")
+	@DefaultMessage("Sec Id")
 	String colSecId();
 	
 	@DefaultMessage("Colleague Synonym")
@@ -144,5 +146,46 @@ public interface ColleagueMessages extends Messages {
 	
 	@DefaultMessage("Back to Colleague Course Offering List (Alt + {0})")
 	String titleBackToColleagueOfferings(String access);
+
+	@DefaultMessage("Colleague Responses")
+	String sectColleagueResponses();
 	
+	@DefaultMessage("Action")
+	String colAction();
+	
+	@DefaultMessage("Type")
+	String colType();
+	
+	@DefaultMessage("Message")
+	String colMessage();
+	
+	@DefaultMessage("Audit")
+	String actionAudit();
+	
+	@DefaultMessage("Update")
+	String actionUpdate();
+	
+	@DefaultMessage("Delete")
+	String actionDelete();
+	
+	@DefaultMessage("Success")
+	String typeSuccess();
+	
+	@DefaultMessage("Error")
+	String typeError();
+	
+	@DefaultMessage("Warning")
+	String typeWarning();
+	
+	@DefaultMessage("Start Date")
+	String colStartDate();
+	
+	@DefaultMessage("Stop Date")
+	String colStopDate();
+	
+	@DefaultMessage("Show History:")
+	String filterShowHistory();
+	
+	@DefaultMessage("Number of Messages:")
+	String filterNumberOfMessages();
 }

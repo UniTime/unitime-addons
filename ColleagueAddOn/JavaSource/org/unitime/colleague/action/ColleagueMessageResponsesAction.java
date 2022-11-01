@@ -22,34 +22,29 @@
 
 package org.unitime.colleague.action;
 
-import java.io.File;
-import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.cpsolver.ifs.util.CSVFile;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.colleague.form.ColleagueMessageResponsesForm;
 import org.unitime.colleague.model.ColleagueResponse;
 import org.unitime.colleague.model.dao.ColleagueResponseDAO;
 import org.unitime.commons.web.WebTable;
-import org.unitime.timetable.ApplicationProperties;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.ColleagueMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.model.Department;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.TimetableManager;
-import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
-import org.unitime.timetable.util.Constants;
 import org.unitime.timetable.util.ExportUtils;
 import org.unitime.timetable.webutil.PdfWebTable;
 
@@ -58,30 +53,38 @@ import org.unitime.timetable.webutil.PdfWebTable;
 /** 
  * based on code contributed by Dagmar Murray
  */
-@Service("/colleagueMessageResponses")
-public class ColleagueMessageResponsesAction extends Action {
+@Action(value = "colleagueMessageResponses", results = {
+		@Result(name = "displayColleagueMessageResponsesForm", type = "tiles", location = "colleagueMessageResponses.tiles")
+	})
+@TilesDefinition(name = "colleagueMessageResponses.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Colleague Message Responses"),
+		@TilesPutAttribute(name = "body", value = "/colleague/colleagueMessageResponses.jsp")
+	})
+public class ColleagueMessageResponsesAction extends UniTimeAction<ColleagueMessageResponsesForm> {
+	private static final long serialVersionUID = 8485935876876594636L;
+	protected static final CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected static final ColleagueMessages CMSG = Localization.create(ColleagueMessages.class);
 
-	@Autowired SessionContext sessionContext;
-
-	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		ColleagueMessageResponsesForm myForm = (ColleagueMessageResponsesForm) form;
+	@Override
+	public String execute() throws Exception {
+		if (form == null) form = new ColleagueMessageResponsesForm();
 		
         sessionContext.checkPermission(Right.InstructionalOfferings);
         
         // Read operation to be performed
-        String op = (myForm.getOp()!=null?myForm.getOp():request.getParameter("op"));
+        if (op == null) op = form.getOp();
         
 		// allow a max of 1000 messages
-		if (myForm.getN()>1000){
-			myForm.setN(1000);
-		} else if (myForm.getN()<1){
-			myForm.setN(100);
+		if (form.getN()>1000){
+			form.setN(1000);
+		} else if (form.getN()<1){
+			form.setN(100);
 		}
 		
-        if ("Apply".equals(op) || "Refresh".equals(op)||"Export CSV".equals(op)|| "Export PDF".equals(op)) {
-        	myForm.save(request);
+		if (MSG.actionFilterApply().equals(op) || MSG.actionRefreshLog().equals(op) || MSG.actionExportCsv().equals(op)|| MSG.actionExportPdf().equals(op)) {
+        	form.save(request);
         } else {
-            myForm.load(request);
+            form.load(request);
         }
          
         request.setAttribute("subjAreas",new TreeSet(SubjectArea.getUserSubjectAreas(sessionContext.getUser())));
@@ -99,64 +102,77 @@ public class ColleagueMessageResponsesAction extends Action {
 	        subjects = SubjectArea.getUserSubjectAreas(sessionContext.getUser());
 		}
         
-        WebTable.setOrder(sessionContext,"lastChanges.ord2",request.getParameter("ord"),1);
+        WebTable.setOrder(sessionContext,"colleagueMessageResponses.ord",request.getParameter("ord"),1);
         
-        WebTable webTable = new WebTable( 8, "Colleague Responses",
+        WebTable webTable = new WebTable( 8, CMSG.sectColleagueResponses(),
                 "colleagueMessageResponses.do?ord=%%",
-                new String[] {"Date", "Subject", "Course", "Sec ID", "Colleague Synonym",  "Action", "Type","Message"},
+                new String[] {
+                		MSG.columnDate(),
+                		MSG.columnSubject(),
+                		MSG.columnCourse(),
+                		CMSG.colSecId(),
+                		CMSG.colColleagueSynonym(),
+                		CMSG.colAction(),
+                		CMSG.colType(),
+                		CMSG.colMessage()
+                		},
                 new String[] {"left", "left", "left", "left", "left", "left", "left",  "left"},
                 new boolean[] { false, true, true, true, true, true, true, true, true} );
      
         List responses = ColleagueResponseDAO.getInstance().find(
         		sessionContext.getUser().getCurrentAcademicSessionId(),
-        		(myForm.getStartDate() == null ? null : myForm.getStartDate()),
-        		(myForm.getStopDate() == null ? null : myForm.getStopDate()),
-                (myForm.getSubjAreaId() == null || myForm.getSubjAreaId().longValue() < 0 ? null : myForm.getSubjAreaId()),
+        		(form.getStartDate() == null ? null : form.getStartDate()),
+        		(form.getStopDate() == null ? null : form.getStopDate()),
+                (form.getSubjAreaId() == null || form.getSubjAreaId().longValue() < 0 ? null : form.getSubjAreaId()),
                 subjects,
-               (myForm.getManagerId()==null || myForm.getManagerId().longValue()<0?null:myForm.getManagerId()), 
-                (myForm.getDepartmentId()==null || myForm.getDepartmentId().longValue()<0?null:myForm.getDepartmentId()),
-                (myForm.getCourseNumber() == null ? null : myForm.getCourseNumber()),
-                (myForm.getColleagueId() == null ? null : myForm.getColleagueId()),
-                (myForm.getMessage() == null ? null : myForm.getMessage()),
-                myForm.getN(),
-                myForm.getShowHistory() == null ? false : myForm.getShowHistory().booleanValue(),
-                myForm.getActionAudit() == null ? false : myForm.getActionAudit().booleanValue(),
-                myForm.getActionUpdate() == null ? false : myForm.getActionUpdate().booleanValue(),
-                myForm.getActionDelete() == null ? false : myForm.getActionDelete().booleanValue(),
-                myForm.getTypeSuccess() == null ? false : myForm.getTypeSuccess().booleanValue(),
-                myForm.getTypeError() == null ? false : myForm.getTypeError().booleanValue(),
-                myForm.getTypeWarning() == null ? false : myForm.getTypeWarning().booleanValue());
+               (form.getManagerId()==null || form.getManagerId().longValue()<0?null:form.getManagerId()), 
+                (form.getDepartmentId()==null || form.getDepartmentId().longValue()<0?null:form.getDepartmentId()),
+                (form.getCourseNumber() == null ? null : form.getCourseNumber()),
+                (form.getColleagueId() == null ? null : form.getColleagueId()),
+                (form.getMessage() == null ? null : form.getMessage()),
+                form.getN(),
+                form.getShowHistory() == null ? false : form.getShowHistory().booleanValue(),
+                form.getActionAudit() == null ? false : form.getActionAudit().booleanValue(),
+                form.getActionUpdate() == null ? false : form.getActionUpdate().booleanValue(),
+                form.getActionDelete() == null ? false : form.getActionDelete().booleanValue(),
+                form.getTypeSuccess() == null ? false : form.getTypeSuccess().booleanValue(),
+                form.getTypeError() == null ? false : form.getTypeError().booleanValue(),
+                form.getTypeWarning() == null ? false : form.getTypeWarning().booleanValue());
 		
         if (responses!=null) {
             for (Iterator i=responses.iterator();i.hasNext();)
                 printLastResponseTableRow(request, webTable, (ColleagueResponse)i.next(), true);
         }
         
-        request.setAttribute("table", webTable.printTable(WebTable.getOrder(sessionContext,"lastChanges.ord2")));
+        request.setAttribute("table", webTable.printTable(WebTable.getOrder(sessionContext,"colleagueMessageResponses.ord")));
         
-        if ("Export PDF".equals(op) && responses!=null) {
-            PdfWebTable pdfTable = new PdfWebTable( 8, "Colleague Responses",
+        if (MSG.actionExportPdf().equals(op) && responses!=null) {
+            PdfWebTable pdfTable = new PdfWebTable( 8, CMSG.sectColleagueResponses(),
                     "lastChanges.do?ord=%%",
-                    new String[] {"Date", "Subject", "Course", "Sec ID", "Colleague Synonym", "Action", "Type","Message"},
+                    new String[] {
+                    		MSG.columnDate(),
+                    		MSG.columnSubject(),
+                    		MSG.columnCourse(),
+                    		CMSG.colSecId(),
+                    		CMSG.colColleagueSynonym(),
+                    		CMSG.colAction(),
+                    		CMSG.colType(),
+                    		CMSG.colMessage()
+                    		},
                     new String[] {"left", "left", "left", "left", "left", "left", "left", "left"},
                     new boolean[] { false, true, true, true, true, true, true, true, true} );
             for (Iterator i=responses.iterator();i.hasNext();)
                 printLastResponseTableRow(request, pdfTable, (ColleagueResponse)i.next(), false);
-            File file = ApplicationProperties.getTempFile("colleagueResponses", "pdf");
-            OutputStream out = ExportUtils.getPdfOutputStream(response, "colleagueResponses");
-            pdfTable.exportPdf(out, WebTable.getOrder(sessionContext,"lastChanges.ord2"));
-            if (file!=null) request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+file.getName());
+            ExportUtils.exportPDF(pdfTable, WebTable.getOrder(sessionContext,"colleagueMessageResponses.ord"), response, "colleagueResponses");
+            return null;
         }
         
-        if ("Export CSV".equals(op) && responses!=null) {
-        	CSVFile csvFile = webTable.toCSVFile(0);
-
-        	File file = ApplicationProperties.getTempFile("colleagueResponses", "csv");
-        	csvFile.save(file);
-        	request.setAttribute(Constants.REQUEST_OPEN_URL, "temp/"+file.getName());
+        if (MSG.actionExportCsv().equals(op) && responses!=null) {
+        	ExportUtils.exportCSV(webTable, WebTable.getOrder(sessionContext,"colleagueMessageResponses.ord"), response, "colleagueResponses");
+        	return null;
         }
         
-  		return mapping.findForward("displayColleagueMessageResponsesForm");
+  		return "displayColleagueMessageResponsesForm";
 	}
     
     private int printLastResponseTableRow(HttpServletRequest request, WebTable webTable, ColleagueResponse lastResponse, boolean html) {
