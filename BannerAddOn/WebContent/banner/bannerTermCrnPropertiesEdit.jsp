@@ -31,7 +31,7 @@
 			<tt:section-header>
 				<tt:section-title>
 				</tt:section-title>
-				<s:if test="form.campusOverrideId == null">
+				<s:if test="form.bannerTermPropertiesId == null">
 					<s:submit name="op" value="%{#bmsg.actionSaveBannerSession()}"/>
 				</s:if><s:else>
 					<s:submit name="op" value="%{#bmsg.actionUpdateBannerSession()}"/>
@@ -50,7 +50,7 @@
 	<TR>
 		<TD><loc:message name="colBannerTermCode" id="BMSG"/>:</TD>
 		<TD>
-			<s:if test="form.campusOverrideId == null">
+			<s:if test="form.bannerTermPropertiesId == null">
 				<s:select name="form.bannerTermCode" style="min-width:200px;"
 					list="form.availableBannerTermCodes" listKey="bannerTermCode" listValue="bannerTermCode"/>
 			</s:if><s:else>
@@ -102,7 +102,7 @@
 		
 	<TR>
 		<TD colspan="2" align="right">
-			<s:if test="form.campusOverrideId == null">
+			<s:if test="form.bannerTermPropertiesId == null">
 				<s:submit name="op" value="%{#bmsg.actionSaveBannerSession()}"/>
 			</s:if><s:else>
 				<s:submit name="op" value="%{#bmsg.actionUpdateBannerSession()}"/>

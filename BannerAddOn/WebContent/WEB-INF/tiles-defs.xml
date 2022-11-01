@@ -26,20 +26,6 @@
 		<put name="title" type="string" value="Banner Message Responses"/>
 		<put name="body" value="/banner/bannerMessageResponses.jsp" />
   	</definition>
-	<definition	name="bannerSessionListTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Banner Academic Sessions"/>
-		<put name="body" value="/banner/bannerSessionList.jsp" />
-  	</definition>
-  	<definition	name="bannerSessionEditTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Edit Banner Session"/>
-		<put name="body" value="/banner/bannerSessionEdit.jsp" />
-  	</definition>
-
-	<definition	name="bannerSessionAddTile" extends="pageLayoutDef">
-		<put name="title" type="string" value="Add Banner Session"/>
-		<put name="body" value="/banner/bannerSessionEdit.jsp" />
-  	</definition>
-
 	<!-- End of custom tiles definitions -->
 
 </tiles-definitions>

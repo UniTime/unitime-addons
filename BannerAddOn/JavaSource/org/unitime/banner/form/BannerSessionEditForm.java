@@ -20,49 +20,79 @@
 package org.unitime.banner.form;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.banner.model.BannerSession.FutureSessionUpdateMode;
 import org.unitime.banner.model.dao.BannerSessionDAO;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.UniTimeForm;
+import org.unitime.timetable.model.Session;
+import org.unitime.timetable.util.IdValue;
 
 /**
  * 
  * @author says
  *
  */
-public class BannerSessionEditForm extends ActionForm {
-	
-	// --------------------------------------------------------- Instance Variables
-	
-	/**
-	 * 
-	 */
+public class BannerSessionEditForm implements UniTimeForm {
 	private static final long serialVersionUID = 6616750809381469241L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
-	BannerSession session = new BannerSession();
-	
+	Long sessionId;
 	Long acadSessionId;
 	String acadSessionLabel;
-	ArrayList availableAcadSessions;
-	ArrayList availableBannerSessions;
+	ArrayList<Session> availableAcadSessions;
+	ArrayList<BannerSession> availableBannerSessions;
 	String studentCampus;
+	String bannerTermCode;
+	String bannerCampus;
+	Boolean storeDataForBanner;
+	Boolean sendDataToBanner;
+	Boolean loadingOfferingsFile;
+	Long futureSessionId;
+	Integer futureUpdateMode;
+	Boolean useSubjectAreaPrefixAsCampus;
+	String subjectAreaPrefixDelimiter;
+	
+	public BannerSessionEditForm() {
+		reset();
+	}
+	
+	@Override
+	public void reset() {
+		sessionId = null;
+		acadSessionId = null;
+		acadSessionLabel = null;
+		availableAcadSessions = null;
+		availableBannerSessions = null;
+		studentCampus = null;
+		bannerTermCode = null;
+		bannerCampus = null;
+		storeDataForBanner = null;
+		sendDataToBanner = null;
+		loadingOfferingsFile = null;
+		futureSessionId = null;
+		futureUpdateMode = null;
+		useSubjectAreaPrefixAsCampus = null;
+		subjectAreaPrefixDelimiter = null;
+	}
+	
 	/**
 	 * @return the availableAcadSessions
 	 */
-	public ArrayList getAvailableAcadSessions() {
+	public ArrayList<Session> getAvailableAcadSessions() {
 		return availableAcadSessions;
 	}
-
 
 	/**
 	 * @param availableAcadSessions the availableAcadSessions to set
 	 */
-	public void setAvailableAcadSessions(ArrayList availableAcadSessions) {
+	public void setAvailableAcadSessions(ArrayList<Session> availableAcadSessions) {
 		this.availableAcadSessions = availableAcadSessions;
 	}
 
@@ -74,8 +104,8 @@ public class BannerSessionEditForm extends ActionForm {
 		return acadSessionLabel;
 	}
 	
-	public void setAvailableBannerSessions(ArrayList availableBannerSessions) { this.availableBannerSessions = availableBannerSessions; }
-	public ArrayList getAvailableBannerSessions() { return availableBannerSessions; }
+	public void setAvailableBannerSessions(ArrayList<BannerSession> availableBannerSessions) { this.availableBannerSessions = availableBannerSessions; }
+	public ArrayList<BannerSession> getAvailableBannerSessions() { return availableBannerSessions; }
 
 	/**
 	 * @param acadSessionLabel the acadSessionLabel to set
@@ -180,63 +210,33 @@ public class BannerSessionEditForm extends ActionForm {
 		this.loadingOfferingsFile = loadingOfferingsFile;
 	}
 
-
-
-	String bannerTermCode;
-	String bannerCampus;
-	Boolean storeDataForBanner;
-	Boolean sendDataToBanner;
-	Boolean loadingOfferingsFile;
-	Long futureSessionId;
-	Integer futureUpdateMode;
-	Boolean useSubjectAreaPrefixAsCampus;
-	String subjectAreaPrefixDelimiter;
-		
-	// --------------------------------------------------------- Methods
-	
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-		ActionErrors errors = new ActionErrors();
-		
+	@Override
+	public void validate(UniTimeAction action) {
 		// Check data fields
 		if (bannerTermCode==null || bannerTermCode.trim().length()==0) 
-			errors.add("bannerTermCode", new ActionMessage("errors.required", "Banner Term Code"));
+			action.addFieldError("form.bannerTermCode", MSG.errorRequiredField(BMSG.colBannerTermCode()));
 		
 		if (bannerCampus==null || bannerCampus.trim().length()==0) 
-			errors.add("bannerCampus", new ActionMessage("errors.required", "Banner Campus"));
+			action.addFieldError("form.bannerCampus", MSG.errorRequiredField(BMSG.colBannerCampus()));
 
 		if (acadSessionId==null) 
-			errors.add("acadSessionId", new ActionMessage("errors.required", "Academic Session"));
+			action.addFieldError("form.acadSessionId", MSG.errorRequiredField(MSG.columnAcademicSession()));
 		
 				
 		// Check for duplicate session
-		if (errors.size()==0) {
+		if (!action.hasFieldErrors()) {
 			BannerSession sessn = BannerSession.findBannerSessionForSession(acadSessionId, BannerSessionDAO.getInstance().getSession());
-			if (session.getUniqueId()==null && sessn!=null)
-				errors.add("sessionId", new ActionMessage("errors.generic", "A banner session for the academic session already exists"));
+			if (sessionId==null && sessn!=null)
+				action.addFieldError("form.sessionId", BMSG.errorBannerSessionAlreadyExists());
 				
-			if (session.getUniqueId()!=null && sessn!=null) {
-				if (!session.getUniqueId().equals(sessn.getUniqueId()))
-					errors.add("sessionId", new ActionMessage("errors.generic", "Another banner session for the same academic session already exists"));
+			if (sessionId!=null && sessn!=null) {
+				if (!sessionId.equals(sessn.getUniqueId()))
+					action.addFieldError("form.sessionId", BMSG.errorAnoterBannerSessionAlreadyExists());
 			}
 		}
-		
-		return errors;
 	}
 
 
-	/**
-	 * @return Returns the session.
-	 */
-	public BannerSession getSession() {
-		return session;
-	}
-	/**
-	 * @param session The session to set.
-	 */
-	public void setSession(BannerSession session) {
-		this.session = session;
-	}
-	
 	public Boolean getUseSubjectAreaPrefixAsCampus() {
 		return useSubjectAreaPrefixAsCampus;
 	}
@@ -257,29 +257,12 @@ public class BannerSessionEditForm extends ActionForm {
 	}
 
 
-	public boolean equals(Object arg0) {
-		return session.equals(arg0);
-	}
-	
-	
-	public int hashCode() {
-		return session.hashCode();
-	}
-	
-	/**
-	 * @return
-	 */
 	public Long getSessionId() {
-		return session.getUniqueId();
+		return sessionId;
 	}
-	/**
-	 * @param sessionId
-	 */
+
 	public void setSessionId(Long sessionId) {
-		if (sessionId!=null && sessionId.longValue()<=0)
-			session.setUniqueId(null);
-		else
-			session.setUniqueId(sessionId);
+		this.sessionId = sessionId;
 	}
 	
 	public Long getFutureSessionId() { return futureSessionId; }
@@ -288,4 +271,15 @@ public class BannerSessionEditForm extends ActionForm {
 	public void setFutureUpdateMode(Integer futureUpdateMode) { this.futureUpdateMode = futureUpdateMode; }
 	public String getStudentCampus() { return studentCampus; }
 	public void setStudentCampus(String studentCampus) { this.studentCampus = studentCampus; }
+	public List<IdValue> getFutureUpdateModes() {
+		List<IdValue> ret = new ArrayList<IdValue>();
+		for (FutureSessionUpdateMode m: FutureSessionUpdateMode.values()) {
+			switch (m) {
+			case NO_UPDATE: ret.add(new IdValue((long)m.ordinal(), BMSG.descUpdateModeDisabled())); break;
+			case DIRECT_UPDATE: ret.add(new IdValue((long)m.ordinal(), BMSG.descUpdateModeDirect())); break;
+			case SEND_REQUEST: ret.add(new IdValue((long)m.ordinal(), BMSG.descUpdateModeRequest())); break;
+			}
+		}
+		return ret;
+	}
 }

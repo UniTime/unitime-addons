@@ -199,21 +199,21 @@ public class BannerTermCrnPropertiesEditForm implements UniTimeForm {
 		if (!action.hasFieldErrors()) {
 			HashSet<BannerTermCrnProperties> crnProps = BannerTermCrnProperties.findAllBannerTermCrnPropertiesForBannerSessions(getBannerSessionIdsConvertedToLongs());
 			if (crnProps.size() > 1)
-				action.addFieldError("form.bannerTermProperties", "Banner Term Properties for the banner term code already exist for one or more selected Banner Sessions");
+				action.addFieldError("form.bannerTermProperties", BMSG.errorBannerTermPropertiesAlreadyExistsForSelectedSession());
             if (crnProps.size() == 1) {
             	    BannerTermCrnProperties termProps = crnProps.iterator().next();
 				if (bannerTermPropertiesId==null && termProps!=null)
-					action.addFieldError("form.bannerTermProperties", "Banner Term Properties for the banner term code and banner session combination already exists");
+					action.addFieldError("form.bannerTermProperties", BMSG.errorBannerTermPropertiesAlreadyForTermAndSessionCombo());
 					
 				if (bannerTermPropertiesId!=null && termProps!=null) {
 					if (!bannerTermPropertiesId.equals(termProps.getUniqueId()))
-						action.addFieldError("form.sessionId", "Another Banner Term Properties for the same banner term code and banner session combination already exists");
+						action.addFieldError("form.sessionId", BMSG.errorAnoterBannerTermPropertiesAlreadyExists());
 				}
             }
             for (String bsIdStr : getBannerSessionIds()) {
             		BannerSession bs = BannerSession.getBannerSessionById(Long.valueOf(bsIdStr));
             	    if (!bs.getBannerTermCode().equals(bannerTermCode)) {
-        				action.addFieldError("form.bannerTermProperties", "Banner Term Code (" + bs.getBannerTermCode() + ") for the BannerSession: " + bs.getLabel() + " does not match the selected Term Code(" + bannerTermCode + ")");            	    	
+        				action.addFieldError("form.bannerTermProperties", BMSG.errorBannerTermCodeDoesNotMatch(bs.getBannerTermCode(), bs.getLabel(), bannerTermCode));            	    	
             	    }
             }
 		}

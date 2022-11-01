@@ -56,7 +56,7 @@
 			</item>
 		</menu>
 		<menu name="Banner">
-			<item name="Manage Banner Sessions" page="bannerSessionList.do">
+			<item name="Manage Banner Sessions" page="bannerSessionList.action">
 				<condition>
 					<hasPermission name="AcademicSessions"/>
 				</condition>

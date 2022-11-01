@@ -23,8 +23,6 @@
    <form-beans>
    		<!-- Custom forms -->
       <form-bean name="bannerMessageResponsesForm" type="org.unitime.banner.form.BannerMessageResponsesForm" />
-	  <form-bean name="bannerSessionListForm" type="org.unitime.banner.form.BannerSessionListForm" />
-	  <form-bean name="bannerSessionEditForm" type="org.unitime.banner.form.BannerSessionEditForm" />
 
    		<!-- End of custom forms -->
    </form-beans>
@@ -45,32 +43,6 @@
        <forward 
        		name="submit" 
        		path="/bannerMessageResponses.do" />
-      </action>
-
-      <action
-         path="/bannerSessionList"
-         attribute="bannerSessionListForm"
-         input="bannerSessionListTile"
-         name="bannerSessionListForm"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-         <forward name="showBannerSessionList" path="bannerSessionListTile" />
-      </action>
-      <action
-         path="/bannerSessionEdit"
-         attribute="bannerSessionEditForm"
-         name="bannerSessionEditForm"
-         parameter="doit"
-         scope="request"
-         type="org.springframework.web.struts.DelegatingActionProxy"
-         validate="false">
-         <forward name="showEdit" path="bannerSessionEditTile" />
-         <forward name="showAdd" path="bannerSessionAddTile" />
-         <forward
-            name="showBannerSessionList"
-            path="/bannerSessionList.do"
-            redirect="true" />
       </action>
     <!-- End of custom actions -->
    </action-mappings>

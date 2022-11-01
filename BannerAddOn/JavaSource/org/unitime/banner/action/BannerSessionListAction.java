@@ -19,20 +19,18 @@
 */
 package org.unitime.banner.action;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.hibernate.HibernateException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.unitime.banner.form.BannerSessionListForm;
+import org.apache.struts2.convention.annotation.Action;
+import org.apache.struts2.convention.annotation.Result;
+import org.apache.struts2.tiles.annotation.TilesDefinition;
+import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.commons.web.WebTable;
-import org.unitime.timetable.security.SessionContext;
+import org.unitime.commons.web.WebTable.WebTableLine;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
+import org.unitime.localization.messages.CourseMessages;
+import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.form.BlankForm;
 import org.unitime.timetable.security.rights.Right;
 
 /**
@@ -40,39 +38,97 @@ import org.unitime.timetable.security.rights.Right;
  * @author says
  *
  */
-@Service("/bannerSessionList")
-public class BannerSessionListAction extends Action {
-
-	// --------------------------------------------------------- Instance Variables
-
-	// --------------------------------------------------------- Methods
-	@Autowired SessionContext sessionContext;
-	/** 
-	 * Method execute
-	 * @param mapping
-	 * @param form
-	 * @param request
-	 * @param response
-	 * @return ActionForward
-	 * @throws HibernateException
-	 */
-	public ActionForward execute(
-		ActionMapping mapping,
-		ActionForm form,
-		HttpServletRequest request,
-		HttpServletResponse response) throws Exception {
+@Action(value = "bannerSessionList", results = {
+		@Result(name = "list", type = "tiles", location = "bannerSessionList.tiles"),
+		@Result(name = "add", type = "redirect", location = "/bannerSessionEdit.action", params = { "op", "${op}" })
+	})
+@TilesDefinition(name = "bannerSessionList.tiles", extend = "baseLayout", putAttributes =  {
+		@TilesPutAttribute(name = "title", value = "Banner Academic Sessions"),
+		@TilesPutAttribute(name = "body", value = "/banner/bannerSessionList.jsp")
+	})
+public class BannerSessionListAction extends UniTimeAction<BlankForm> {
+	private static final long serialVersionUID = 1534495218377965647L;
+	protected final static CourseMessages MSG = Localization.create(CourseMessages.class);
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
+	
+	private Integer order;
+	
+	public Integer getOrder() { return order; }
+	public void setOrder(Integer order) { this.order = order; }
+	
+	@Override
+	public String execute() throws Exception {
 
 	    // Check Access
 		sessionContext.checkPermission(Right.AcademicSessionAdd);
 		
-		BannerSessionListForm sessionListForm = (BannerSessionListForm) form;
-		sessionListForm.setSessions(BannerSession.getAllSessions());
 		
-		WebTable.setOrder(sessionContext, "BannerSessionList.ord", request.getParameter("order"), 3);
-		sessionListForm.setOrder(WebTable.getOrder(sessionContext, "BannerSessionList.ord"));
+		if (order != null)
+			WebTable.setOrder(sessionContext, "BannerSessionList.ord", order.toString(), 3);
 
-		return mapping.findForward("showBannerSessionList");
+		if (BMSG.actionAddBannerSession().equals(op))
+			return "add";
 		
+		return "list";	
+	}
+	
+	public String getTable() {
+		WebTable webTable = new WebTable(
+				12, "", "bannerSessionList.action?order=%%",					
+				new String[] {
+					MSG.columnAcademicSession(),
+					MSG.columnAcademicInitiative(),
+					BMSG.colBannerTermCode(),
+					BMSG.colBannerCampus(), 
+					BMSG.colStoreDataForBanner(),
+					BMSG.colSendDataToBanner(),
+					BMSG.colLoadingOfferings(),
+					BMSG.colFutureTerm(),
+					BMSG.colUpdateMode(),
+					BMSG.colStudentCampus(),
+					BMSG.colUseStudentAreaPrefix(),
+					BMSG.colSubjectAreaPrefixDelim()},
+				new String[] { "left", "left", "left", "left",
+					"center", "center", "center", "left", "left", "left", "center", "left"}, 
+				new boolean[] { true, true, false, false, false, true, true, true, true, true, true });
+				
+		webTable.enableHR("#EFEFEF");
+        webTable.setRowStyle("white-space: nowrap");
+		
+        for (BannerSession s: BannerSession.getAllSessions()) {
+        	WebTableLine line = webTable.addLine(
+					"onClick=\"document.location='bannerSessionEdit.action?op=Edit&sessionId=" + s.getUniqueId() + "';\"",
+					new String[] {
+						s.getSession().getLabel(),
+						s.getSession().academicInitiativeDisplayString(),
+						s.getBannerTermCode(),
+						s.getBannerCampus(),
+						s.isStoreDataForBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
+						s.isSendDataToBanner().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ", 
+						s.isLoadingOfferingsFile().booleanValue() ? "<img src='images/accept.png'> " : "&nbsp; ",
+						s.getFutureSession() == null ? "" : s.getFutureSession().getLabel(),
+						s.getFutureSessionUpdateModeLabel(),
+						s.getStudentCampus(),
+						(s.isUseSubjectAreaPrefixAsCampus() != null && s.isUseSubjectAreaPrefixAsCampus().booleanValue()) ? "<img src='images/accept.png'> " : "&nbsp; ",
+						s.getSubjectAreaPrefixDelimiter() == null ? "" : s.getSubjectAreaPrefixDelimiter()
+						},
+					new Comparable[] {
+						s.getSession().getLabel(),
+						s.getSession().academicInitiativeDisplayString(),
+						s.getBannerTermCode(),
+						s.getBannerCampus(),
+						s.isStoreDataForBanner(),
+						s.isSendDataToBanner(),
+						s.isLoadingOfferingsFile(),
+						s.getFutureSession() == null ? "" : s.getFutureSession().getLabel(),
+						s.getFutureSessionUpdateModeLabel(),
+						s.getStudentCampus() == null ? "" : s.getStudentCampus(),
+						s.isUseSubjectAreaPrefixAsCampus(),
+						s.getSubjectAreaPrefixDelimiter() == null ? "" : s.getSubjectAreaPrefixDelimiter()} );
+        	line.setUniqueId(s.getUniqueId().toString());
+        }
+        
+        return webTable.printTable(WebTable.getOrder(sessionContext, "BannerSessionList.ord"));
 	}
 
 }

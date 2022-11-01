@@ -211,7 +211,7 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Default ({0})")
 	String defaultCampusOverride(String defaultCampusOverride);
-	
+		
 	@DefaultMessage("Banner Campus Code")
 	String colBannerCampusCode();
 	
@@ -262,4 +262,77 @@ public interface BannerMessages extends Messages {
 	
 	@DefaultMessage("Back")
 	String actionBackToBannerSessions();
+	
+	@DefaultMessage("Banner Campus")
+	String colBannerCampus();
+	
+	@DefaultMessage("Store Data For Banner")
+	String colStoreDataForBanner();
+	
+	@DefaultMessage("Send Data To Banner")
+	String colSendDataToBanner();
+	
+	@DefaultMessage("Loading Offerings File")
+	String colLoadingOfferings();
+	
+	@DefaultMessage("Future Term")
+	String colFutureTerm();
+	
+	@DefaultMessage("Update Mode")
+	String colUpdateMode();
+	
+	@DefaultMessage("Student Campus")
+	String colStudentCampus();
+	
+	@DefaultMessage("Use Subject Area Prefix As Campus")
+	String colUseStudentAreaPrefix();
+	
+	@DefaultMessage("Subject Area Prefix Delimiter")
+	String colSubjectAreaPrefixDelim();
+	
+	@DefaultMessage("A banner session for the academic session already exists")
+	String errorBannerSessionAlreadyExists();
+	
+	@DefaultMessage("Another banner session for the same academic session already exists")
+	String errorAnoterBannerSessionAlreadyExists();
+	
+	@DefaultMessage("Banner Term Properties for the banner term code already exist for one or more selected Banner Sessions")
+	String errorBannerTermPropertiesAlreadyExistsForSelectedSession();
+	
+	@DefaultMessage("Banner Term Properties for the banner term code and banner session combination already exists")
+	String errorBannerTermPropertiesAlreadyForTermAndSessionCombo();
+	
+	@DefaultMessage("Another Banner Term Properties for the same banner term code and banner session combination already exists")
+	String errorAnoterBannerTermPropertiesAlreadyExists();
+	
+	@DefaultMessage("Banner Term Code ({0}) for the BannerSession: {1} does not match the selected Term Code({2})")
+	String errorBannerTermCodeDoesNotMatch(String code, String session, String selected);
+	
+	@DefaultMessage("<b>Note:</b> Do not make changes to this field unless recovering from a failed banner offerings XML load.")
+	String noteLoadingOfferings();
+	
+	@DefaultMessage("<b>Note:</b> May contain a regular expression that the student campus code must match.")
+	String noteStudentCampus();
+	
+	@DefaultMessage("<b>Default:</b> \" - \"")
+	String noteSubjectAreaPrefixDelim();
+	
+	@DefaultMessage("Disabled")
+	String nameUpdateModeDisabled();
+	
+	@DefaultMessage("Direct Update")
+	String nameUpdateModeDirect();
+	
+	@DefaultMessage("Send Request")
+	String nameUpdateModeRequest();
+	
+	@DefaultMessage("Disabled (no automatic future term updates)")
+	String descUpdateModeDisabled();
+	
+	@DefaultMessage("Direct Update (student changes automatically propagated into the future term)")
+	String descUpdateModeDirect();
+	
+	@DefaultMessage("Send Request (when student changed, automatically request future term student update)")
+	String descUpdateModeRequest();
 }
+

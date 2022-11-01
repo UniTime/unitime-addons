@@ -30,7 +30,6 @@ import org.apache.struts2.tiles.annotation.TilesDefinition;
 import org.apache.struts2.tiles.annotation.TilesDefinitions;
 import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.hibernate.Transaction;
-import org.springframework.stereotype.Service;
 import org.unitime.banner.form.BannerTermCrnPropertiesEditForm;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.BannerTermCrnProperties;
@@ -49,7 +48,6 @@ import org.unitime.timetable.security.rights.Right;
  * @author says
  *
  */
-@Service("/bannerTermCrnPropertiesEdit")
 @Action(value = "bannerTermCrnPropertiesEdit", results = {
 		@Result(name = "showEdit", type = "tiles", location = "bannerTermCrnPropertiesEdit.tiles"),
 		@Result(name = "showAdd", type = "tiles", location = "bannerTermCrnPropertiesAdd.tiles"),

@@ -26,6 +26,8 @@ import java.util.Vector;
 import org.hibernate.FlushMode;
 import org.unitime.banner.model.base.BaseBannerSession;
 import org.unitime.banner.model.dao.BannerSessionDAO;
+import org.unitime.localization.impl.Localization;
+import org.unitime.localization.messages.BannerMessages;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.dao.Class_DAO;
 
@@ -38,6 +40,7 @@ import org.unitime.timetable.model.dao.Class_DAO;
  */
 public class BannerSession extends BaseBannerSession {
 	private static final long serialVersionUID = 1L;
+	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
 
 /*[CONSTRUCTOR MARKER BEGIN]*/
 	public BannerSession () {
@@ -123,7 +126,7 @@ public class BannerSession extends BaseBannerSession {
 		return(bs.isStoreDataForBanner() && bs.isSendDataToBanner() && !bs.isLoadingOfferingsFile());
 	}
 
-	public static List getAllSessions() {
+	public static List<BannerSession> getAllSessions() {
 		BannerSessionDAO bsDao = new BannerSessionDAO();
 		List l = bsDao.getSession().createQuery("from BannerSession").list();
 		if (l == null){
@@ -154,9 +157,9 @@ public class BannerSession extends BaseBannerSession {
 	public String getFutureSessionUpdateModeLabel() {
 		if (getFutureSession() == null) return "";
 		switch (getFutureSessionUpdateMode()) {
-		case NO_UPDATE: return "Disabled";
-		case DIRECT_UPDATE: return "Direct Update";
-		case SEND_REQUEST: return "Send Request";
+		case NO_UPDATE: return BMSG.nameUpdateModeDisabled();
+		case DIRECT_UPDATE: return BMSG.nameUpdateModeDirect();
+		case SEND_REQUEST: return BMSG.nameUpdateModeRequest();
 		default: return "";
 		}
 	}

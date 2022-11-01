@@ -17,189 +17,144 @@
  * limitations under the License.
  * 
 --%>
-<%@ page import="org.unitime.timetable.webutil.JavascriptFunctions" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%> 
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@ taglib uri="http://www.unitime.org/tags-custom" prefix="tt" %>
-
-<html:form method="post" action="bannerSessionEdit.do">
-	<INPUT type="hidden" name="refresh" value="">
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<%@ taglib prefix="tt" uri="http://www.unitime.org/tags-custom" %>
+<%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
+<loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
+<s:form action="bannerSessionEdit">
+<table class="unitime-MainTable">
+	<s:hidden name="form.sessionId" />
+	<TR>
+		<TD colspan="2">
+			<tt:section-header>
+				<tt:section-title>
+				</tt:section-title>
+				<s:if test="form.sessionId == null">
+					<s:submit name="op" value="%{#bmsg.actionSaveBannerSession()}"/>
+				</s:if><s:else>
+					<s:submit name="op" value="%{#bmsg.actionUpdateBannerSession()}"/>
+				</s:else>
+				<s:submit name="op" value="%{#bmsg.actionBackToBannerSessions()}"/>
+			</tt:section-header>			
+		</TD>
+	</TR>
+		
+	<s:if test="!fieldErrors.isEmpty()">
+		<TR><TD colspan="2" align="left" class="errorTable">
+			<div class='errorHeader'><loc:message name="formValidationErrors"/></div><s:fielderror/>
+		</TD></TR>
+	</s:if>		
 	
-	<TABLE width="95%" border="0" cellspacing="0" cellpadding="3">
-
 		<TR>
-			<TD colspan="3">
-				<tt:section-header>
-					<tt:section-title>
-						
-					</tt:section-title>
-					<logic:equal name="bannerSessionEditForm" property="sessionId"	value="">
-						<html:submit styleClass="btn" property="doit" accesskey="S" titleKey="title.saveSession">
-							<bean:message key="button.saveSession" />
-						</html:submit>
-					</logic:equal>
-	
-					<logic:notEqual name="bannerSessionEditForm" property="sessionId"	value="">
-						<html:submit styleClass="btn" property="doit" accesskey="U" titleKey="title.updateSession">
-							<bean:message key="button.updateSession" />
-						</html:submit>
-					</logic:notEqual>
-				
-					<html:submit styleClass="btn" property="doit" accesskey="B" titleKey="title.cancelSessionEdit" >
-						<bean:message key="button.cancelSessionEdit" />
-					</html:submit>
-				</tt:section-header>			
-			</TD>
-		</TR>
-		
-		<logic:messagesPresent>
-		<TR>
-			<TD colspan="3" align="left" class="errorCell">
-					<B><U>ERRORS</U></B><BR>
-				<BLOCKQUOTE>
-				<UL>
-				    <html:messages id="error">
-				      <LI>
-						${error}
-				      </LI>
-				    </html:messages>
-			    </UL>
-			    </BLOCKQUOTE>
-			</TD>
-		</TR>
-		</logic:messagesPresent>
-
-		<TR>
-			<TD>Academic Session:</TD>
-			<TD colspan='2'>
-				<logic:equal name="bannerSessionEditForm" property="sessionId" value="">
-					<html:select style="width:200;" property="acadSessionId">
-					<html:optionsCollection property="availableAcadSessions" value="uniqueId" label="label" /></html:select>
-				</logic:equal>
-				<logic:notEqual name="bannerSessionEditForm" property="sessionId" value="">
-					<html:hidden property="acadSessionLabel"/>	
-					<html:hidden property="acadSessionId"/>
-					<bean:write name="bannerSessionEditForm" property="acadSessionLabel" />	
-				</logic:notEqual>
+			<TD><loc:message name="columnAcademicSession"/>:</TD>
+			<TD>
+				<s:if test="form.sessionId == null">
+					<s:select name="form.acadSessionId" style="min-width: 200px;"
+						list="form.availableAcadSessions" listKey="uniqueId" listValue="label"/>
+				</s:if><s:else>
+					<s:hidden name="form.acadSessionLabel"/>
+					<s:hidden name="form.acadSessionId"/>
+					<s:property value="form.acadSessionLabel"/>
+				</s:else>
 			</TD>
 		</TR>
 
 		<TR>
-			<TD>Banner Term Code:</TD>
-			<TD colspan='2'>
-				<html:text property="bannerTermCode" maxlength="20" size="20"/>
+			<TD><loc:message name="colBannerTermCode" id="BMSG"/>:</TD>
+			<TD>
+				<s:textfield name="form.bannerTermCode" maxlength="20" size="20"/>
 			</TD>
 		</TR>
 		
 		<TR>
-			<TD>Banner Campus:</TD>
-			<TD colspan='2'>
-				<html:text property="bannerCampus"  maxlength="20" size="20"/>
+			<TD><loc:message name="colBannerCampus" id="BMSG"/>:</TD>
+			<TD>
+				<s:textfield name="form.bannerCampus"  maxlength="20" size="20"/>
 			</TD>
 		</TR>
 
 		<TR>
-			<TD>Store Data for Banner:</TD>
-			<TD colspan='2' align="left">
-				<html:checkbox property="storeDataForBanner"/>
+			<TD><loc:message name="colStoreDataForBanner" id="BMSG"/>:</TD>
+			<TD align="left">
+				<s:checkbox name="form.storeDataForBanner"/>
 			</TD>
 		</TR>
 		<TR>
-			<TD>Send Data to Banner:</TD>
-			<TD colspan='2' align="left">
-				<html:checkbox property="sendDataToBanner"/>
+			<TD><loc:message name="colSendDataToBanner" id="BMSG"/>:</TD>
+			<TD align="left">
+				<s:checkbox name="form.sendDataToBanner"/>
 			</TD>
 		</TR>
-		<logic:equal name="bannerSessionEditForm" property="loadingOfferingsFile" value="true">
+		<s:if test="form.loadingOfferingsFile == true || form.sessionId == null">
 		<TR>
-			<TD valign="top">Loading Offerings File:</TD>
-			<TD colspan='2' align="left">
-				<html:checkbox property="loadingOfferingsFile"/><font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<b>Note -</b> Do not make changes to this field unless recovering from a failed banner offerings XML load.</font>
+			<TD valign="top"><loc:message name="colLoadingOfferings" id="BMSG"/>:</TD>
+			<TD align="left">
+				<s:checkbox name="form.loadingOfferingsFile"/><font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteLoadingOfferings" id="BMSG"/></font>
 			</TD>
 		</TR>
-		</logic:equal>
+		</s:if><s:else>
+			<s:hidden name="form.loadingOfferingsFile"/>
+		</s:else>
 		<TR>
-			<TD>Future Session:</TD>
-			<TD colspan='2' align="left">
-				<html:select style="width:200;" property="futureSessionId">
-					<html:option value=""></html:option>
-					<html:optionsCollection property="availableBannerSessions" value="uniqueId" label="label"/>
-				</html:select>
-			</TD>
-		</TR>
-		
-		<TR>
-			<TD>Update Mode:</TD>
-			<TD colspan='2' align="left">
-				<html:select style="width:200;" property="futureUpdateMode">
-					<html:option value="0">Disabled (no automatic future term updates)</html:option>
-					<html:option value="1">Direct Update (student changes automatically propagated into the future term)</html:option>
-					<html:option value="2">Send Request (when student changed, automatically request future term student update)</html:option>
-				</html:select>
+			<TD><loc:message name="colFutureTerm" id="BMSG"/>:</TD>
+			<TD align="left">
+				<s:select name="form.futureSessionId" style="min-width: 200px;" 
+					list="form.availableBannerSessions" listKey="uniqueId" listValue="label"
+					headerKey="" headerValue="-"/>
 			</TD>
 		</TR>
 		
 		<TR>
-			<TD valign="top">Student Campus:</TD>
-			<TD colspan='2'>
-				<html:text property="studentCampus"  maxlength="500" size="50"/><br>
-				<font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<b>Note:</b> May contain a regular expression that the student campus code must match.</font>
+			<TD><loc:message name="colUpdateMode" id="BMSG"/>:</TD>
+			<TD align="left">
+				<s:select name="form.futureUpdateMode" style="min-width: 200px;"
+					list="form.futureUpdateModes" listKey="id" listValue="value"/>
+			</TD>
+		</TR>
+		
+		<TR>
+			<TD valign="top"><loc:message name="colStudentCampus" id="BMSG"/>:</TD>
+			<TD>
+				<s:textfield name="form.studentCampus"  maxlength="500" size="50"/><br>
+				<font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteStudentCampus" id="BMSG"/></font>
 			</TD>
 		</TR>
 		<TR>
-			<TD>Use Subject Area Prefix As Campus:</TD>
-			<TD colspan='2' align="left">
-				<html:checkbox property="useSubjectAreaPrefixAsCampus"/>
+			<TD><loc:message name="colUseStudentAreaPrefix" id="BMSG"/>:</TD>
+			<TD align="left">
+				<s:checkbox name="form.useSubjectAreaPrefixAsCampus"/>
 			</TD>
 		</TR>
 						
 		<TR>
-			<TD>Subject Area Prefix Delimiter (default = " - "):</TD>
-			<TD colspan='2'>
-				<html:text property="subjectAreaPrefixDelimiter" maxlength="5" size="5"/>
+			<TD><loc:message name="colSubjectAreaPrefixDelim" id="BMSG"/>:</TD>
+			<TD>
+				<s:textfield name="form.subjectAreaPrefixDelimiter" maxlength="5" size="5"/>
+				<font color="black">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteSubjectAreaPrefixDelim" id="BMSG"/></font>
 			</TD>
 		</TR>
 		
 		<TR>
-			<TD colspan="3">
+			<TD colspan="2">
 			<DIV class="WelcomeRowHeadBlank">&nbsp;</DIV>
 			</TD>
 		</TR>
 		
 		<TR>
-			<TD colspan="3" align="right">
+			<TD colspan="2" align="right">
 
-			<TABLE>
-				<TR>
-					<TD align="right">
-						<logic:equal name="bannerSessionEditForm" property="sessionId" value="">
-							<html:submit styleClass="btn" property="doit" styleId="save" accesskey="S" titleKey="title.saveSession">
-								<bean:message key="button.saveSession" />
-							</html:submit>
-						</logic:equal>
-		
-						<logic:notEqual name="bannerSessionEditForm" property="sessionId"	value="">
-							<html:submit styleClass="btn" property="doit" styleId="save" accesskey="U" titleKey="title.updateSession">
-								<bean:message key="button.updateSession" />
-							</html:submit>
-						</logic:notEqual>
-					
-					<html:submit styleClass="btn" property="doit" accesskey="B" titleKey="title.cancelSessionEdit" >
-						<bean:message key="button.cancelSessionEdit" />
-					</html:submit>
-					</TD>
-				</TR>
-				
-			</TABLE>
+				<s:if test="form.sessionId == null">
+					<s:submit name="op" value="%{#bmsg.actionSaveBannerSession()}"/>
+				</s:if><s:else>
+					<s:submit name="op" value="%{#bmsg.actionUpdateBannerSession()}"/>
+				</s:else>
+				<s:submit name="op" value="%{#bmsg.actionBackToBannerSessions()}"/>
 			
 			</TD>
 		</TR>
-
-
-	</TABLE>
-	
-	<html:hidden property="sessionId" />
-</html:form>
-
-</script>
+</table>
+</s:form>
+</loc:bundle>
+</loc:bundle>
