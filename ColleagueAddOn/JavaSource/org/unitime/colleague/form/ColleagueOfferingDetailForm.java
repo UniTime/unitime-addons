@@ -19,13 +19,16 @@
 */
 package org.unitime.colleague.form;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.action.UniTimeAction;
+import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.form.UniTimeForm;
 import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.dao.OverrideTypeDAO;
 
 /**
  * 
@@ -296,4 +299,76 @@ public class ColleagueOfferingDetailForm implements UniTimeForm {
 	public void setCourseOfferingId(Long courseOfferingId) {
 		this.courseOfferingId = courseOfferingId;
 	}
+	
+	public boolean getHasCourseTypes() {
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
+    		if (((CourseOffering)i.next()).getCourseType()!=null) return true;
+    	return false;
+    }
+    
+    public boolean getHasConsent() {
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
+    		if (((CourseOffering)i.next()).getConsentType()!=null) return true;
+    	return false;
+    }
+    
+    public boolean getHasCredit() {
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
+    		if (((CourseOffering)i.next()).getCredit() != null) return true;
+    	return false;
+    }
+    
+    public boolean getHasScheduleBookNote() {
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();) {
+    		CourseOffering course = (CourseOffering)i.next();
+    		if (course.getScheduleBookNote() != null && !course.getScheduleBookNote().isEmpty()) return true;
+    	}
+    	return false;
+    }
+
+    public boolean getHasCourseReservation() {
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
+    		if (((CourseOffering)i.next()).getReservation() != null) return true;
+    	return false;
+    }
+    
+    public boolean getHasCourseExternalId() {
+    	if (!ApplicationProperty.CourseOfferingShowExternalIds.isTrue()) return false;
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();) {
+    		CourseOffering co = (CourseOffering)i.next();
+    		if (co.getExternalUniqueId() != null && !co.getExternalUniqueId().isEmpty()) return true;
+    	}
+    	return false;
+    }
+    
+    public boolean getHasDisabledOverrides() {
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();) {
+    		CourseOffering co = (CourseOffering)i.next();
+    		if (!co.getDisabledOverrides().isEmpty()) return true;
+    	}
+    	return false; 
+    }
+    
+    public boolean getHasOverrides() {
+    	return !OverrideTypeDAO.getInstance().findAll().isEmpty();
+    }
+    
+    public boolean getHasDemandOfferings() {
+    	if (courseOfferings==null || courseOfferings.isEmpty()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
+    		if (((CourseOffering)i.next()).getDemandOffering()!=null) return true;
+    	return false;
+    }
+    public boolean getHasAlternativeCourse() {
+    	if (courseOfferings==null || courseOfferings.isEmpty() || ApplicationProperty.StudentSchedulingAlternativeCourse.isFalse()) return false;
+    	for (Iterator i=courseOfferings.iterator();i.hasNext();)
+    		if (((CourseOffering)i.next()).getAlternativeOffering()!=null) return true;
+    	return false;
+    }
 }
