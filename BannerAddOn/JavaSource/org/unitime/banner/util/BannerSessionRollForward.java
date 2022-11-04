@@ -20,6 +20,7 @@
 
 package org.unitime.banner.util;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -46,6 +47,7 @@ import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.SubjectArea;
 import org.unitime.timetable.model.comparators.InstructionalOfferingComparator;
+import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.util.SessionRollForward;
 
@@ -87,7 +89,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 				if (customRollForwardAction != null){
 				customRollForwardAction.doCustomRollFowardAction(fromSession, toSession);
 				}
-				if (trns != null) {
+				if (trns != null && trns.isActive()) {
 					trns.commit();
 				}
 			} catch (Exception e){
@@ -187,13 +189,31 @@ public class BannerSessionRollForward extends SessionRollForward {
 			errors.add("rollForward", new ActionMessage("errors.rollForward", "Banner Section Data", academicSession.getLabel(), "Failed to create missing Banner sections."));
 		}
 	}
+	
+    @SuppressWarnings("unchecked")
+	private HashMap<Long, CourseOffering> findByIdRolledForwardFrom(Long sessionId, Long uniqueIdRolledForwardFrom) {
+    	HashMap<Long, CourseOffering> cfgIdToCourseMap = new HashMap<Long, CourseOffering>();
+    	
+        for (CourseOffering co : (List<CourseOffering>) new CourseOfferingDAO().
+            getSession().
+            createQuery("select c from CourseOffering c where c.subjectArea.session.uniqueId=:sessionId and c.uniqueIdRolledForwardFrom=:uniqueIdRolledForwardFrom").
+            setLong("sessionId", sessionId.longValue()).
+            setLong("uniqueIdRolledForwardFrom", uniqueIdRolledForwardFrom.longValue()).
+            setCacheable(true).
+            list()) {
+        	for (InstrOfferingConfig ioc : co.getInstructionalOffering().getInstrOfferingConfigs()) {     		
+        		cfgIdToCourseMap.put(ioc.getUniqueId(), co);
+        	}
+        }
+        return cfgIdToCourseMap;
+    }
 
 	private void rollForwardBannerCourseData(Session toSession) throws Exception {
 		Long toSessionId = toSession.getUniqueId();
 		BannerSession bs = BannerSession.findBannerSessionForSession(toSessionId, null);
 		if (bs.isStoreDataForBanner().booleanValue()){
 			TreeSet<SubjectArea> subjectAreas =  new TreeSet<SubjectArea>();
-			for(Iterator saIt = toSession.getSubjectAreas().iterator(); saIt.hasNext();){
+			for(Iterator<SubjectArea> saIt = toSession.getSubjectAreas().iterator(); saIt.hasNext();){
 				subjectAreas.add((SubjectArea) saIt.next());
 			}
 			StringBuilder sb = new StringBuilder();
@@ -206,36 +226,48 @@ public class BannerSessionRollForward extends SessionRollForward {
 			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
 				iLog.info("Rolling Banner Data for Subject Area:  " + sa.getSubjectAreaAbbreviation());
-				Iterator fromBannerCourseIt = hibSession.createQuery(queryString)
+				Iterator<BannerCourse> fromBannerCourseIt = hibSession.createQuery(queryString)
 									.setLong("sessionId", toSessionId.longValue())
 									.setLong("subjectId", sa.getUniqueId().longValue())
 									.list()
 									.iterator();
 				while (fromBannerCourseIt.hasNext()){
 					BannerCourse fromBc = (BannerCourse) fromBannerCourseIt.next();
+					HashMap<Long, BannerCourse> toCoToBannerCourseMap = new HashMap<Long, BannerCourse>();
 					Transaction trns = null;
 					try {
 						if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
 							trns = hibSession.beginTransaction();
-						BannerCourse toBc = new BannerCourse();
-						toBc.setUniqueIdRolledForwardFrom(fromBc.getUniqueId());
-						CourseOffering toCo = CourseOffering.findByIdRolledForwardFrom(toSessionId, fromBc.getCourseOfferingId());
-						toBc.setCourseOfferingId(toCo.getUniqueId());
-						for(Iterator fromBannerConfigsIt = fromBc.getBannerConfigs().iterator(); fromBannerConfigsIt.hasNext();){
+						HashMap<Long, CourseOffering> cfgIdToCourseMap = findByIdRolledForwardFrom(toSessionId, fromBc.getCourseOfferingId());
+						for(Iterator<BannerConfig> fromBannerConfigsIt = fromBc.getBannerConfigs().iterator(); fromBannerConfigsIt.hasNext();){
 							BannerConfig fromBcfg = (BannerConfig) fromBannerConfigsIt.next();
-							BannerConfig toBcfg = new BannerConfig();
 							InstrOfferingConfig toIoc = InstrOfferingConfig.findByIdRolledForwardFrom(toSessionId, fromBcfg.getInstrOfferingConfigId());
 							if (toIoc == null){
 								iLog.info("Not rolling foward Banner Configuration with unique id: " + fromBcfg.getUniqueId().toString() + ", this configuration was orphaned.");		
 								continue;
 							}
+							BannerCourse toBc = null;
+							if (cfgIdToCourseMap.containsKey(toIoc.getUniqueId())) {
+								CourseOffering toCo = cfgIdToCourseMap.get(toIoc.getUniqueId());
+								if (toCoToBannerCourseMap.containsKey(toCo.getUniqueId())) {
+									toBc = toCoToBannerCourseMap.get(toCo.getUniqueId());
+								} else {
+									toBc = new BannerCourse();
+									toBc.setUniqueIdRolledForwardFrom(fromBc.getUniqueId());
+									toBc.setCourseOfferingId(toCo.getUniqueId());
+									toCoToBannerCourseMap.put(toCo.getUniqueId(), toBc);
+								}								
+							} else {
+								continue;
+							}
+							BannerConfig toBcfg = new BannerConfig();
 							toBcfg.setUniqueIdRolledForwardFrom(fromBcfg.getUniqueId());
 							toBcfg.setInstrOfferingConfigId(toIoc.getUniqueId());
 							toBcfg.setBannerCourse(toBc);
 							toBcfg.setGradableItype(fromBcfg.getGradableItype());
 							toBcfg.setLabHours(fromBcfg.getLabHours());
 							toBc.addTobannerConfigs(toBcfg);
-							for(Iterator fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
+							for(Iterator<BannerSection> fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
 								BannerSection fromBs = (BannerSection) fromBannerSectionsIt.next();
 								BannerSection toBs = new BannerSection();
 								toBs.setCrossListIdentifier(fromBs.getCrossListIdentifier());
@@ -249,7 +281,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 								toBs.setBannerCampusOverride(fromBs.getBannerCampusOverride());
 							
 								
-								for (Iterator fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();){
+								for (Iterator<BannerSectionToClass> fromBannerSectionToClassIt = fromBs.getBannerSectionToClasses().iterator(); fromBannerSectionToClassIt.hasNext();){
 									BannerSectionToClass fromBsc = (BannerSectionToClass) fromBannerSectionToClassIt.next();
 									Class_ toClass = Class_.findByIdRolledForwardFrom(toSessionId, fromBsc.getClassId());
 									if (toClass != null) {
@@ -267,12 +299,20 @@ public class BannerSessionRollForward extends SessionRollForward {
 								}
 							}
 						}
-						hibSession.save(toBc);
+						for (BannerCourse toBc : toCoToBannerCourseMap.values()) {
+							if (toBc.getUniqueId() == null) {
+								toBc.setUniqueId((Long)hibSession.save(toBc));
+							} else {
+								hibSession.update(toBc);
+							}
+						}
 						if (trns != null && trns.isActive()) {
 							trns.commit();
 						}
 						hibSession.flush();
-						hibSession.evict(toBc);
+						for (BannerCourse toBc : toCoToBannerCourseMap.values()) {
+							hibSession.evict(toBc);
+						}
 						hibSession.evict(fromBc);
 					} catch (Exception e){
 						iLog.error("Failed to roll banner course data: " + fromBc.getCourseOffering(hibSession), e);
@@ -376,10 +416,10 @@ public class BannerSessionRollForward extends SessionRollForward {
 				toBs.setStudentCampus(fromBs.getStudentCampus());
 				toBs.setSubjectAreaPrefixDelimiter(fromBs.getSubjectAreaPrefixDelimiter());
 				toBs.setUseSubjectAreaPrefixAsCampus(fromBs.getUseSubjectAreaPrefixAsCampus());
-				BannerSessionDAO.getInstance().save(toBs);
-				if (trns != null && trns.isActive()) {
-					trns.commit();
-				}
+				toBs.setUniqueId(BannerSessionDAO.getInstance().save(toBs));
+			}
+			if (trns != null && trns.isActive()) {
+				trns.commit();
 			}
 		} catch (Exception e){
 			iLog.error("Failed to roll banner session data: " + toSession.getLabel(), e);
