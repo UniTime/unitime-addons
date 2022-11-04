@@ -52,6 +52,7 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ClientResource;
 import org.restlet.resource.ResourceException;
 import org.unitime.commons.Debug;
+import org.unitime.timetable.ApplicationProperties;
 
 /**
  * @author Tomas Muller, Stephanie Schluttenhofer
@@ -189,6 +190,7 @@ public class HttpsConnector {
 		        Context clientContext = new Context();
 		        clientContext.getAttributes().put("sslContextFactory", sslContextFactory);
 		        clientContext.getAttributes().put("hostnameVerifier", new PrivatelySignedCertificateHostNameVerifier());
+		        clientContext.getParameters().add("readTimeout", ApplicationProperties.getProperty("colleague.listener.readTimeout", "300000"));
 		        resource = new ClientResource(clientContext, site);
 		        Debug.info("Using custom context factory.");
 			} else {
