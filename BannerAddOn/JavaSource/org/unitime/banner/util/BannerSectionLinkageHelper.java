@@ -256,7 +256,9 @@ public class BannerSectionLinkageHelper {
 						// has parent and no children
 						if (schedulingSubpartHasSiblings.get(ss).booleanValue()){
 							// has parent, no children, and siblings
-							if (schedulingSubpartHasSiblings.get(bannerSectionToSubpartMap.get(parentSection)).booleanValue()){
+							if (bannerSectionToSubpartMap.get(parentSection) != null 
+									&& schedulingSubpartHasSiblings.get(bannerSectionToSubpartMap.get(parentSection)) != null 
+									&& schedulingSubpartHasSiblings.get(bannerSectionToSubpartMap.get(parentSection)).booleanValue()){
 								// has parent with siblings, no children, and siblings
 								if (schedulingSubpartIsLastSibling.get(ss).booleanValue()){
 									// has parent with siblings, no children, and siblings and is last sibling so
@@ -277,7 +279,9 @@ public class BannerSectionLinkageHelper {
 							}
 						} else {
 							// has parent and has no children and no siblings
-							if (schedulingSubpartHasSiblings.get(bannerSectionToSubpartMap.get(parentSection)).booleanValue()){
+							if (bannerSectionToSubpartMap.get(parentSection) != null 
+									&& schedulingSubpartHasSiblings.get(bannerSectionToSubpartMap.get(parentSection)) != null 
+									&& schedulingSubpartHasSiblings.get(bannerSectionToSubpartMap.get(parentSection)).booleanValue()){
 								// has parent with siblings and has no children and no siblings so link id should be same across iytpe
 								if (schedulingSubpartIsLastSibling.get(bannerSectionToSubpartMap.get(parentSection)).booleanValue()){
 									if (parentSection.getParentBannerSection() == null){
