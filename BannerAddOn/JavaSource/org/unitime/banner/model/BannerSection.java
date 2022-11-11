@@ -779,7 +779,9 @@ public class BannerSection extends BaseBannerSection {
 		if (io != null && io.getOfferingCoordinators() != null){
 			for (OfferingCoordinator oc : io.getOfferingCoordinators()){
 				if (oc.getResponsibility() == null || !oc.getResponsibility().hasOption(TeachingResponsibility.Option.noexport)) {
+					if (oc.getInstructor().getExternalUniqueId() != null) {
 						instructorPercents.put(oc.getInstructor(), 0);
+					}
 				}
 			}
 		}
