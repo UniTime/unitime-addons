@@ -23,7 +23,7 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/protobuf-java-3.19.2.jar" sourcepath="/UniTime/3rd_party/sources/protobuf-java-3.19.2-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-5.3.20.jar" sourcepath="/UniTime/3rd_party/sources/spring-beans-5.3.20-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-5.3.20.jar" sourcepath="/UniTime/3rd_party/sources/spring-context-5.3.20-sources.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-5.7.1.jar" sourcepath="/UniTime/3rd_party/sources/spring-security-core-5.7.1-sources.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-5.7.5.jar" sourcepath="/UniTime/3rd_party/sources/spring-security-core-5.7.5-sources.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/validation-api-1.0.0.GA.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>
