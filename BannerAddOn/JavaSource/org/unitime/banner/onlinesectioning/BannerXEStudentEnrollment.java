@@ -349,16 +349,17 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 	
 	@Override
 	protected boolean eligibilityIgnoreBannerRegistration(OnlineSectioningServer server, OnlineSectioningHelper helper, XStudent student, XEInterface.Registration reg) {
-		// ignore sections that do not exist in UniTime (and of matching campus)
+		// ignore sections that do not exist in UniTime
 		// this is to fix synchronization issues when a class is cancelled
 		// (it does not exist in UniTime, but still contains enrolled students in Banner)
 		Number count = (Number)helper.getHibSession().createQuery(
-				"select count(bs) from BannerSession s, BannerSection bs where " +
-				"bs.session = s.session and s.bannerTermCode = :term and bs.crn = :crn")
-				.setString("term", reg.term)
+				"select count(bs) from BannerSection bs where " +
+				"bs.session = :sessionId and bs.crn = :crn "
+				)
+				.setLong("sessionId", server.getAcademicSession().getUniqueId())
 				.setString("crn", reg.courseReferenceNumber)
 				.uniqueResult();
-		return count.intValue() == 0 && getBannerCampus(server.getAcademicSession()).equals(reg.campus);
+		return count.intValue() == 0;
 	}
 
 }
