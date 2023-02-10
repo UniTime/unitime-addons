@@ -2031,15 +2031,19 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
             } else {
                 env.put(Context.SECURITY_AUTHENTICATION, "none");
             }
+            String referral = ApplicationProperty.PeopleLookupLdapReferral.value();
+			if (referral != null)
+				env.put(Context.REFERRAL, referral);
+            
             ctx = new InitialDirContext(env);
             SearchControls ctls = new SearchControls();
             ctls.setCountLimit(100);
-            String filter = "(uid=" + uid + ")";
+            String filter = "(" + ApplicationProperty.PeopleLookupLdapUidAttribute.value() + "=" + uid + ")";
             for (NamingEnumeration<SearchResult> e = ctx.search(ApplicationProperty.PeopleLookupLdapBase.value(), filter, ctls); e.hasMore(); ) {
             	Attributes a = e.next().getAttributes();
-            	advisor.setFirstName(Constants.toInitialCase(getAttribute(a,"givenName")));
-            	advisor.setMiddleName(Constants.toInitialCase(getAttribute(a,"cn")));
-            	advisor.setLastName(Constants.toInitialCase(getAttribute(a,"sn")));
+            	advisor.setFirstName(Constants.toInitialCase(getAttribute(a, ApplicationProperty.PeopleLookupLdapGivenNameAttribute.value())));
+            	advisor.setMiddleName(Constants.toInitialCase(getAttribute(a, ApplicationProperty.PeopleLookupLdapCnAttribute.value())));
+            	advisor.setLastName(Constants.toInitialCase(getAttribute(a, ApplicationProperty.PeopleLookupLdapSnAttribute.value())));
                 if (advisor.getMiddleName()!=null && advisor.getFirstName()!=null && advisor.getMiddleName().indexOf(advisor.getFirstName())>=0)
                 	advisor.setMiddleName(advisor.getMiddleName().replaceAll(advisor.getFirstName()+" ?", ""));
                 if (advisor.getMiddleName()!=null && advisor.getLastName()!=null && advisor.getMiddleName().indexOf(advisor.getLastName())>=0)
