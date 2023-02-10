@@ -2037,7 +2037,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
             
             ctx = new InitialDirContext(env);
             SearchControls ctls = new SearchControls();
-            ctls.setCountLimit(100);
+            ctls.setCountLimit(ApplicationProperty.PeopleLookupLdapLimit.intValue());
+			if (ApplicationProperty.PeopleLookupLdapSearchSubtree.isTrue())
+				ctls.setSearchScope(SearchControls.SUBTREE_SCOPE);
             String filter = "(" + ApplicationProperty.PeopleLookupLdapUidAttribute.value() + "=" + uid + ")";
             for (NamingEnumeration<SearchResult> e = ctx.search(ApplicationProperty.PeopleLookupLdapBase.value(), filter, ctls); e.hasMore(); ) {
             	Attributes a = e.next().getAttributes();
