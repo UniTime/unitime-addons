@@ -125,7 +125,7 @@
 							<s:hidden name="form.rooms[%{#ctr}]"/>
 							<s:hidden name="form.instructors[%{#ctr}]"/>
 							<s:hidden name="form.classHasErrors[%{#ctr}]"/>
-							<s:property value="form.bannerSectionLabelIndents[#ctr]"/><s:property value="form.bannerSectionLabels[#ctr]"/>
+							<s:property value="form.bannerSectionLabelIndents[#ctr]" escapeHtml="false"/><s:property value="form.bannerSectionLabels[#ctr]"/>
 						</TD>
 						<TD align="left" valign="top" nowrap><s:property value="form.itypes[#ctr]"/></TD>
 						<TD align="left" valign="top" nowrap>
