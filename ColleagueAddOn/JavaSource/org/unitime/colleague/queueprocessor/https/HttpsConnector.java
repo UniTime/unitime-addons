@@ -204,8 +204,8 @@ public class HttpsConnector {
 			try {
 				Debug.info("\tBefore post call to Colleague...");		
 				resource.setResponseEntityBuffering(true);
-				Representation result = resource.post(new StringRepresentation(xmlToString(xml), MediaType.APPLICATION_XML));
-				Debug.info("\tAfter post call to Colleague...");	
+				Representation result = resource.post(new StringRepresentation((xml == null? null : xmlToString(xml)), MediaType.APPLICATION_XML));
+				Debug.info("\tAfter post call to Colleague...");
 				response = readResponse(result);
 			} catch (ResourceException exception) {
 				exception.printStackTrace();
