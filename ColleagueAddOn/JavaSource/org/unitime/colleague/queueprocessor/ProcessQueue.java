@@ -32,6 +32,7 @@ import org.unitime.colleague.queueprocessor.exception.LoggableException;
 import org.unitime.commons.Debug;
 import org.unitime.commons.hibernate.util.HibernateUtil;
 import org.unitime.timetable.ApplicationProperties;
+import org.unitime.timetable.solver.jgroups.SolverServerImplementation;
 
 /*
  * based on code contributed by Aaron Tyler and Dagmar Murray
@@ -44,12 +45,13 @@ public class ProcessQueue {
 	private static long sleep_interval = 10; // in seconds
 	private static long loop_times = -1;
 	private static long error_sleep_interval = 300; // in seconds
-	private static String logfilename = "queueprocessor.log";
 
 	public static void main(String[] args) {
 
 		ProcessQueue processQueue = new ProcessQueue();
 		PollStudentUpdates pollStudentUpdates = new PollStudentUpdates();
+		boolean updateColleagueSections = "true".equalsIgnoreCase(ApplicationProperties.getProperty("colleague.updateColleagueSections.enabled", "true"));
+
 
 		Date lastRunTime = new Date();
 
@@ -65,21 +67,11 @@ public class ProcessQueue {
 			loop_times = Integer.parseInt(ApplicationProperties.getProperty("queueprocessor.looptimes"));
 		}
 		
-		if (ApplicationProperties.getProperty("queueprocessor.logfilename") != null) {
-			logfilename = ApplicationProperties.getProperty("queueprocessor.logfilename");
-		}
-
-		// Use a daily rolling log file
-		Properties logProps = new Properties();
-        logProps.setProperty("log4j.rootLogger", "info, LogFile");
-    	logProps.setProperty("log4j.appender.LogFile","org.apache.log4j.DailyRollingFileAppender");
-    	logProps.setProperty("log4j.appender.LogFile.DatePattern","'.'yyyy-MM-dd");
-        logProps.setProperty("log4j.appender.LogFile.File",logfilename);
-        logProps.setProperty("log4j.appender.LogFile.layout","org.apache.log4j.PatternLayout");
-        logProps.setProperty("log4j.appender.LogFile.layout.ConversionPattern","%d{dd-MMM-yy HH:mm:ss.SSS} [%t] %-5p %c{2}> %m%n");
-        logProps.setProperty("log4j.logger.org.unitime.commons.hibernate.connection.DBCPConnectionProvider","INFO");
-        ToolBox.configureLogging("logs",logProps);
-        System.out.println("Queue Processor Log File:"+logfilename);
+		String logfilename = ApplicationProperties.getProperty("queueprocessor.logfilename", "queueprocessor.log"); 
+		SolverServerImplementation.configureLogging(
+				logfilename,
+				ApplicationProperties.getProperties()
+				);
         
 		try {
 			HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
@@ -106,7 +98,9 @@ public class ProcessQueue {
 			if (count == 1
 					|| (new Date()).getTime() - lastRunTime.getTime() >= sleep_interval) {
 				lastRunTime = new Date();
-				processQueue.process();
+				if (updateColleagueSections) {
+					processQueue.process();
+				}
 				pollStudentUpdates.poll();
 			} else {
 				try {
