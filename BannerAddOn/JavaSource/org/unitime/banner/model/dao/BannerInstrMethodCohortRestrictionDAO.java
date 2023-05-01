@@ -19,10 +19,39 @@
 */
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerInstrMethodCohortRestrictionDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.banner.model.BannerInstrMethodCohortRestriction;
 
-public class BannerInstrMethodCohortRestrictionDAO extends BaseBannerInstrMethodCohortRestrictionDAO {
+public class BannerInstrMethodCohortRestrictionDAO extends _RootDAO<BannerInstrMethodCohortRestriction,Long> {
+	private static BannerInstrMethodCohortRestrictionDAO sInstance;
 
 	public BannerInstrMethodCohortRestrictionDAO() {}
 
+	public static BannerInstrMethodCohortRestrictionDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerInstrMethodCohortRestrictionDAO();
+		return sInstance;
+	}
+
+	public Class<BannerInstrMethodCohortRestriction> getReferenceClass() {
+		return BannerInstrMethodCohortRestriction.class;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerInstrMethodCohortRestriction> findBySession(org.hibernate.Session hibSession, Long sessionId) {
+		return hibSession.createQuery("from BannerInstrMethodCohortRestriction x where x.session.uniqueId = :sessionId", BannerInstrMethodCohortRestriction.class).setParameter("sessionId", sessionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerInstrMethodCohortRestriction> findByInstructionalMethod(org.hibernate.Session hibSession, Long instructionalMethodId) {
+		return hibSession.createQuery("from BannerInstrMethodCohortRestriction x where x.instructionalMethod.uniqueId = :instructionalMethodId", BannerInstrMethodCohortRestriction.class).setParameter("instructionalMethodId", instructionalMethodId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerInstrMethodCohortRestriction> findByCohort(org.hibernate.Session hibSession, Long cohortId) {
+		return hibSession.createQuery("from BannerInstrMethodCohortRestriction x where x.cohort.uniqueId = :cohortId", BannerInstrMethodCohortRestriction.class).setParameter("cohortId", cohortId).list();
+	}
 }

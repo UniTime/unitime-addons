@@ -19,15 +19,29 @@
 */
 package org.unitime.banner.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
+@MappedSuperclass
 public abstract class BaseBannerSectionToClass implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -36,40 +50,47 @@ public abstract class BaseBannerSectionToClass implements Serializable {
 
 	private BannerSection iBannerSection;
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_CLASS_ID = "classId";
-
 	public BaseBannerSectionToClass() {
-		initialize();
 	}
 
 	public BaseBannerSectionToClass(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "banner_section_join_class_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "pref_group_seq")
+	})
+	@GeneratedValue(generator = "banner_section_join_class_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "class_id", nullable = false, length = 20)
 	public Long getClassId() { return iClassId; }
 	public void setClassId(Long classId) { iClassId = classId; }
 
+	@ManyToOne(optional = false, fetch = FetchType.EAGER)
+	@JoinColumn(name = "banner_section_id", nullable = false)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public BannerSection getBannerSection() { return iBannerSection; }
 	public void setBannerSection(BannerSection bannerSection) { iBannerSection = bannerSection; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerSectionToClass)) return false;
 		if (getUniqueId() == null || ((BannerSectionToClass)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((BannerSectionToClass)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "BannerSectionToClass["+getUniqueId()+"]";
 	}

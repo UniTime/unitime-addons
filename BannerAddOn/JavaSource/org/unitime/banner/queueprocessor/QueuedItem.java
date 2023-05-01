@@ -59,7 +59,8 @@ public class QueuedItem extends BannerCaller {
 			item.setPickupDate(new Date());
 			item.setStatus(QueueOut.STATUS_POSTED);
 
-			qod.update(item);
+			qod.getSession().merge(item);
+			qod.getSession().flush();
 
 			Document result = callOracleProcess(item.getXml());
 
@@ -73,7 +74,8 @@ public class QueuedItem extends BannerCaller {
 				qi.setStatus(QueueIn.STATUS_POSTED);
 				qi.setXml(result);
 
-				qid.save(qi);
+				qid.getSession().persist(qi);
+				qid.getSession().flush();
 				
 				// Process in UniTime
 				ReceiveBannerResponseMessage.receiveResponseDocument(qi);
@@ -87,8 +89,8 @@ public class QueuedItem extends BannerCaller {
 			item.setProcessDate(new Date());
 			item.setStatus(QueueOut.STATUS_PROCESSED);
 
-			qod.update(item);
-
+			qod.getSession().merge(item);
+			qod.getSession().flush();
 		} catch(SQLException sqlEx) {
 			throw sqlEx;				
 		} catch (LoggableException le) {

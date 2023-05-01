@@ -19,7 +19,7 @@
 */
 package org.unitime.banner.action;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.struts2.convention.annotation.Action;
 import org.apache.struts2.convention.annotation.Result;
@@ -35,6 +35,7 @@ import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.model.ChangeLog;
+import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.security.rights.Right;
 
@@ -107,17 +108,23 @@ public class BannerSessionEditAction extends UniTimeAction<BannerSessionEditForm
 		return "showEdit";
 	}
 	protected void setAvailableSessionsInForm(){
-		ArrayList sessionList = new ArrayList();
-		sessionList.addAll(SessionDAO.getInstance().getQuery("from Session s where s.uniqueId not in (select bs.session.uniqueId from BannerSession bs)").list());
+		List<Session> sessionList = SessionDAO.getInstance().getSession().createQuery(
+				"from Session s where s.uniqueId not in (select bs.session.uniqueId from BannerSession bs)",
+				Session.class).list();
 		form.setAvailableAcadSessions(sessionList);
 	}
 	
 	protected void setBannerSessionsInForm(){
-		ArrayList bannerSessionList = new ArrayList();
+		List<BannerSession> bannerSessionList = null;
 		if (form.getSessionId() != null)
-			bannerSessionList.addAll(SessionDAO.getInstance().getQuery("from BannerSession s where s.uniqueId != :id order by s.bannerTermCode desc, s.bannerCampus").setLong("id", form.getSessionId()).list());
+			bannerSessionList = SessionDAO.getInstance().getSession().createQuery(
+							"from BannerSession s where s.uniqueId != :id order by s.bannerTermCode desc, s.bannerCampus",
+							BannerSession.class)
+					.setParameter("id", form.getSessionId()).list();
 		else
-			bannerSessionList.addAll(SessionDAO.getInstance().getQuery("from BannerSession s order by s.bannerTermCode desc, s.bannerCampus").list());
+			bannerSessionList = SessionDAO.getInstance().getSession().createQuery(
+					"from BannerSession s order by s.bannerTermCode desc, s.bannerCampus",
+					BannerSession.class).list();
 		form.setAvailableBannerSessions(bannerSessionList);
 	}
 	
@@ -169,7 +176,10 @@ public class BannerSessionEditAction extends UniTimeAction<BannerSessionEditForm
             sessn.setUseSubjectAreaPrefixAsCampus(form.getUseSubjectAreaPrefixAsCampus());
             sessn.setSubjectAreaPrefixDelimiter(form.getSubjectAreaPrefixDelimiter());
 
-            hibSession.saveOrUpdate(sessn);
+            if (sessn.getUniqueId() == null)
+            	hibSession.persist(sessn);
+            else
+            	hibSession.merge(sessn);
 
             ChangeLog.addChange(
                     hibSession, 

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.server.DayCode;
 import org.unitime.timetable.gwt.shared.ClassAssignmentInterface;
@@ -61,24 +61,24 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 			Pattern pattern = Pattern.compile(ApplicationProperties.getProperty("banner.list-courses.pattern", "(([A-Za-z]{2,4}) ([0-9]{3,5}[A-Za-z]{0,5}) )?(\\d{3,5})(\\-\\w{0,3})?"));
 			Matcher matcher = pattern.matcher(iQuery);
 			if (matcher.matches()) {
-				Query query = null;
+				Query<Object[]> query = null;
 				if (matcher.group(1) == null) {
 					query = helper.getHibSession().createQuery(
 							"select bc.courseOfferingId, bsc.classId " +
 							"from BannerSection bs inner join bs.bannerSectionToClasses bsc inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
 							"where bs.crn like :crn || '%' and co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
-							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn"
-						).setInteger("crn", Integer.parseInt(matcher.group(4)));					
+							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn", Object[].class
+						).setParameter("crn", Integer.parseInt(matcher.group(4)));					
 				} else {
 					query = helper.getHibSession().createQuery(
 							"select bc.courseOfferingId, bsc.classId " +
 							"from BannerSection bs inner join bs.bannerSectionToClasses bsc inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
 							"where bs.crn like :crn || '%' and lower(co.subjectArea.subjectAreaAbbreviation) = :subject and lower(co.courseNbr) like :course || '%' and " +
 							"co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
-							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn"
-						).setInteger("crn", Integer.parseInt(matcher.group(4))).setString("subject", matcher.group(2).toLowerCase()).setString("course", matcher.group(3).toLowerCase());
+							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn", Object[].class
+						).setParameter("crn", Integer.parseInt(matcher.group(4))).setParameter("subject", matcher.group(2).toLowerCase()).setParameter("course", matcher.group(3).toLowerCase());
 				}
-				for (Object[] courseClassId: (List<Object[]>)query.setLong("sessionId", server.getAcademicSession().getUniqueId()).setCacheable(true).list()) {
+				for (Object[] courseClassId: query.setParameter("sessionId", server.getAcademicSession().getUniqueId()).setCacheable(true).list()) {
 					Long courseId = (Long)courseClassId[0];
 					Long sectionId = (Long)courseClassId[1];
 					XCourse course = server.getCourse(courseId);

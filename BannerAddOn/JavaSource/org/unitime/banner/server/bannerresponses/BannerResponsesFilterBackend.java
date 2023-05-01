@@ -194,7 +194,6 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 
 	}
 	
-	@SuppressWarnings("unchecked")
 	private static ArrayList<HashSet<String>> subjectsForDept(String dept, Long sessionId) {
 		HashSet<String> subjects = new HashSet<String>();
 		HashSet<String> bannerSubjects = new HashSet<String>();
@@ -214,7 +213,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		  .append(dept)
 		  .append("%')")
 		  ;
-		for ( SubjectArea sa : (List<SubjectArea>)DepartmentDAO.getInstance().getSession().createQuery(sb.toString()).setCacheable(true).list()) {
+		for ( SubjectArea sa : DepartmentDAO.getInstance().getSession().createQuery(sb.toString(), SubjectArea.class).setCacheable(true).list()) {
 			String bannerAbbv = BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(sa, null);
 			subjects.add(sa.getSubjectAreaAbbreviation());
 			if (bannerAbbv != sa.getSubjectAreaAbbreviation()) {
@@ -224,7 +223,6 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		return(allSubjects);
 	}
 
-	@SuppressWarnings("unchecked")
 	private static ArrayList<HashSet<String>> subjectsForManager(String managerId, Long sessionId) {
 		HashSet<String> subjects = new HashSet<String>();
 		HashSet<String> bannerSubjects = new HashSet<String>();
@@ -242,7 +240,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		  .append(" and sa.department = d")
 		  .append(" order by sa.subjectAreaAbbreviation")
 		  ;
-		for ( SubjectArea sa : (List<SubjectArea>)TimetableManagerDAO.getInstance().getSession().createQuery(sb.toString()).setCacheable(true).list()) {
+		for ( SubjectArea sa : TimetableManagerDAO.getInstance().getSession().createQuery(sb.toString(), SubjectArea.class).setCacheable(true).list()) {
 			String bannerAbbv = BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(sa, null);
 			subjects.add(sa.getSubjectAreaAbbreviation());
 			if (bannerAbbv != sa.getSubjectAreaAbbreviation()) {
@@ -334,12 +332,11 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 					searchSubjs.add(s);
 					bannerSearchSubjs.add(s.substring(s.indexOf(delimiter) + delimiter.length()));				
 				} else {
-					@SuppressWarnings("unchecked")
 					List<SubjectArea> matchSubjs = SubjectAreaDAO.getInstance()
 							.getSession()
-							.createQuery("from SubjectArea sa where sa.session.uniqueId = :sessId and sa.subjectAreaAbbreviation like ':" + delimiter+ "subj'")
-							.setLong("sessId", sessionId)
-							.setString("subj", s)
+							.createQuery("from SubjectArea sa where sa.session.uniqueId = :sessId and sa.subjectAreaAbbreviation like ':" + delimiter+ "subj'", SubjectArea.class)
+							.setParameter("sessId", sessionId)
+							.setParameter("subj", s)
 							.list();
 					for (SubjectArea sa : matchSubjs) {
 						searchSubjs.add(sa.getSubjectAreaAbbreviation());
@@ -595,7 +592,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		}
 
 		
-		org.hibernate.Query hibQuery = hibSession.createQuery(getBannerResponseHqlQuery(sessionId, options, ignoreCommand, userIsDeptIndependent, userDepartments));
+		org.hibernate.query.Query<BannerResponse> hibQuery = hibSession.createQuery(getBannerResponseHqlQuery(sessionId, options, ignoreCommand, userIsDeptIndependent, userDepartments), BannerResponse.class);
 		if (from != null && from.size() >= 1) {
 			Date date = null;
 			String fromOption = from.iterator().next();
@@ -608,7 +605,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				} catch (ParseException p) {}
 			}
 			if (date != null) {
-				hibQuery.setDate("fromDate", date);
+				hibQuery.setParameter("fromDate", date);
 			}
 		}
 		if (to != null && to.size() >= 1) {
@@ -627,12 +624,11 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				Calendar cal = Calendar.getInstance();
 				cal.setTime(last);
 				cal.add(Calendar.DAY_OF_MONTH, 1);
-				hibQuery.setDate("toDate", cal.getTime());
+				hibQuery.setParameter("toDate", cal.getTime());
 			}
 		}
 
 
-		@SuppressWarnings("unchecked")
 		List<BannerResponse> bannerResponses = hibQuery.setMaxResults(limit).setCacheable(false).list();
 		
 		for (BannerResponse br: bannerResponses) {

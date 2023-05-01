@@ -19,16 +19,25 @@
 */
 package org.unitime.banner.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 import java.util.Date;
 
 import org.dom4j.Document;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.Queue;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
+@MappedSuperclass
 public abstract class BaseQueue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -39,49 +48,53 @@ public abstract class BaseQueue implements Serializable {
 	private Date iProcessDate;
 
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_XML = "xml";
-	public static String PROP_STATUS = "status";
-	public static String PROP_POSTDATE = "postDate";
-	public static String PROP_PROCESSDATE = "processDate";
-
 	public BaseQueue() {
-		initialize();
 	}
 
 	public BaseQueue(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "null_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "queue_seq")
+	})
+	@GeneratedValue(generator = "null_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "xml", nullable = false)
 	public Document getXml() { return iXml; }
 	public void setXml(Document xml) { iXml = xml; }
 
+	@Column(name = "status", nullable = true, length = 10)
 	public String getStatus() { return iStatus; }
 	public void setStatus(String status) { iStatus = status; }
 
+	@Column(name = "postdate", nullable = true)
 	public Date getPostDate() { return iPostDate; }
 	public void setPostDate(Date postDate) { iPostDate = postDate; }
 
+	@Column(name = "processdate", nullable = true)
 	public Date getProcessDate() { return iProcessDate; }
 	public void setProcessDate(Date processDate) { iProcessDate = processDate; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof Queue)) return false;
 		if (getUniqueId() == null || ((Queue)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((Queue)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "Queue["+getUniqueId()+"]";
 	}

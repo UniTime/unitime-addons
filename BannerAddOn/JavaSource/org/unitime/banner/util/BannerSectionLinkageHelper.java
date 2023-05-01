@@ -392,14 +392,13 @@ public class BannerSectionLinkageHelper {
 		} else if (!trans.isActive()) {
 			trans.begin();
 		}
-		hibSession.update(bs);
+		hibSession.merge(bs);
 		trans.commit();
 		hibSession.flush();
 	}
 	
 	
 	
-	@SuppressWarnings("unchecked")
 	private TreeSet<SchedulingSubpart> getTrueChildSubparts(SchedulingSubpart ss){
 		if (parentToTrueChildSubparts.containsKey(ss)){
 			return(parentToTrueChildSubparts.get(ss));
@@ -452,7 +451,7 @@ public class BannerSectionLinkageHelper {
 				if (bs.getLinkConnector() != null || bs.getLinkIdentifier() != null){
 					bs.setLinkConnector(null);
 					bs.setLinkIdentifier(null);
-					hibSession.update(bs);
+					hibSession.merge(bs);
 				}
 			}
 		}

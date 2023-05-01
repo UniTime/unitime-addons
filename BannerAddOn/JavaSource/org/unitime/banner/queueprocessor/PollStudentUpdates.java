@@ -54,15 +54,14 @@ public class PollStudentUpdates extends BannerCaller {
 	public void poll() {
 		if (!pollForStudentUpdates) return;
 		try {
-			
-			QueueOutDAO qod = QueueOutDAO.getInstance();
 			QueueOut qo = null;
 			if (studentUpdateRequests) {
-				qo = qod.findFirstByStatus(QueueOut.STATUS_READY);
+				qo = QueueOut.findFirstByStatus(QueueOut.STATUS_READY);
 				if (qo != null) {
 					qo.setPickupDate(new Date());
 					qo.setStatus(QueueOut.STATUS_PICKED_UP);
-					qod.update(qo);
+					QueueOutDAO.getInstance().getSession().merge(qo);
+					QueueOutDAO.getInstance().getSession().flush();
 				}
 			}
 
@@ -71,7 +70,8 @@ public class PollStudentUpdates extends BannerCaller {
 			if (qo != null) {
 				qo.setProcessDate(new Date());
 				qo.setStatus(QueueOut.STATUS_PROCESSED);
-				qod.update(qo);
+				QueueOutDAO.getInstance().getSession().merge(qo);
+				QueueOutDAO.getInstance().getSession().flush();
 			}
 			
 			// Skip null and empty messages
@@ -81,13 +81,12 @@ public class PollStudentUpdates extends BannerCaller {
 			try {
 				qi.setPostDate(new Date());
 
-				QueueInDAO qid = new QueueInDAO();
-
 				qi.setMatchId(null);
 				qi.setStatus(QueueIn.STATUS_READY);
 				qi.setXml(result);
 
-				qid.save(qi);
+				QueueInDAO.getInstance().getSession().persist(qi);
+				QueueInDAO.getInstance().getSession().flush();
 			} catch (Exception ex) {
 				LoggableException le = new LoggableException(ex, qi);
 				le.logError();

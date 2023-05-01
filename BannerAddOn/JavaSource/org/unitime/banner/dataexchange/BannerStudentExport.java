@@ -37,10 +37,9 @@ public class BannerStudentExport extends StudentExport {
 	protected void exportStudent(Element studentEl, Student student) {
 		super.exportStudent(studentEl, student);
 
-		@SuppressWarnings("unchecked")
-		List<OverrideReservation> overrides = (List<OverrideReservation>)getHibSession().createQuery(
-				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
-			.setLong("studentId", student.getUniqueId()).list();
+		List<OverrideReservation> overrides = getHibSession().createQuery(
+				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId", OverrideReservation.class)
+			.setParameter("studentId", student.getUniqueId()).list();
 		
 		for (OverrideReservation reservation: overrides) {
 			CourseOffering course = reservation.getInstructionalOffering().getControllingCourseOffering();

@@ -19,17 +19,31 @@
 */
 package org.unitime.banner.model.base;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.OneToMany;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
+@MappedSuperclass
 public abstract class BaseBannerCourse implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -39,30 +53,33 @@ public abstract class BaseBannerCourse implements Serializable {
 
 	private Set<BannerConfig> iBannerConfigs;
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_COURSE_OFFERING_ID = "courseOfferingId";
-	public static String PROP_UID_ROLLED_FWD_FROM = "uniqueIdRolledForwardFrom";
-
 	public BaseBannerCourse() {
-		initialize();
 	}
 
 	public BaseBannerCourse(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "banner_course_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "pref_group_seq")
+	})
+	@GeneratedValue(generator = "banner_course_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "course_offering_id", nullable = false, length = 20)
 	public Long getCourseOfferingId() { return iCourseOfferingId; }
 	public void setCourseOfferingId(Long courseOfferingId) { iCourseOfferingId = courseOfferingId; }
 
+	@Column(name = "uid_rolled_fwd_from", nullable = true, length = 20)
 	public Long getUniqueIdRolledForwardFrom() { return iUniqueIdRolledForwardFrom; }
 	public void setUniqueIdRolledForwardFrom(Long uniqueIdRolledForwardFrom) { iUniqueIdRolledForwardFrom = uniqueIdRolledForwardFrom; }
 
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "bannerCourse", cascade = {CascadeType.ALL}, orphanRemoval = true)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerConfig> getBannerConfigs() { return iBannerConfigs; }
 	public void setBannerConfigs(Set<BannerConfig> bannerConfigs) { iBannerConfigs = bannerConfigs; }
 	public void addTobannerConfigs(BannerConfig bannerConfig) {
@@ -70,17 +87,20 @@ public abstract class BaseBannerCourse implements Serializable {
 		iBannerConfigs.add(bannerConfig);
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerCourse)) return false;
 		if (getUniqueId() == null || ((BannerCourse)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((BannerCourse)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "BannerCourse["+getUniqueId()+"]";
 	}

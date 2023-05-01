@@ -19,11 +19,24 @@
 */
 package org.unitime.banner.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 import java.util.Date;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.BannerResponse;
 import org.unitime.banner.model.BannerSection;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.SubjectArea;
 
@@ -31,6 +44,7 @@ import org.unitime.timetable.model.SubjectArea;
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
+@MappedSuperclass
 public abstract class BaseBannerResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -55,102 +69,115 @@ public abstract class BaseBannerResponse implements Serializable {
 	private BannerSection iBannerSection;
 	private SubjectArea iSubjectArea;
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_SEQNO = "sequenceNumber";
-	public static String PROP_ACTIVITY_DATE = "activityDate";
-	public static String PROP_TERM_CODE = "termCode";
-	public static String PROP_CRN = "crn";
-	public static String PROP_SUBJ_CODE = "subjectCode";
-	public static String PROP_CRSE_NUMB = "courseNumber";
-	public static String PROP_SEQ_NUMB = "sectionNumber";
-	public static String PROP_XLST_GROUP = "xlstGroup";
-	public static String PROP_EXTERNAL_ID = "externalId";
-	public static String PROP_ACTION = "action";
-	public static String PROP_TYPE = "type";
-	public static String PROP_MESSAGE = "message";
-	public static String PROP_PACKET_ID = "packetId";
-	public static String PROP_QUEUE_ID = "queueId";
-	public static String PROP_CAMPUS = "campus";
-
 	public BaseBannerResponse() {
-		initialize();
 	}
 
 	public BaseBannerResponse(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "banner_response_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "banner_response_seq")
+	})
+	@GeneratedValue(generator = "banner_response_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "seqno", nullable = false, length = 20)
 	public Integer getSequenceNumber() { return iSequenceNumber; }
 	public void setSequenceNumber(Integer sequenceNumber) { iSequenceNumber = sequenceNumber; }
 
+	@Column(name = "activity_date", nullable = false, length = 20)
 	public Date getActivityDate() { return iActivityDate; }
 	public void setActivityDate(Date activityDate) { iActivityDate = activityDate; }
 
+	@Column(name = "term_code", nullable = true, length = 6)
 	public String getTermCode() { return iTermCode; }
 	public void setTermCode(String termCode) { iTermCode = termCode; }
 
+	@Column(name = "crn", nullable = true, length = 5)
 	public String getCrn() { return iCrn; }
 	public void setCrn(String crn) { iCrn = crn; }
 
+	@Column(name = "subj_code", nullable = true, length = 4)
 	public String getSubjectCode() { return iSubjectCode; }
 	public void setSubjectCode(String subjectCode) { iSubjectCode = subjectCode; }
 
+	@Column(name = "crse_numb", nullable = true, length = 5)
 	public String getCourseNumber() { return iCourseNumber; }
 	public void setCourseNumber(String courseNumber) { iCourseNumber = courseNumber; }
 
+	@Column(name = "seq_numb", nullable = true, length = 10)
 	public String getSectionNumber() { return iSectionNumber; }
 	public void setSectionNumber(String sectionNumber) { iSectionNumber = sectionNumber; }
 
+	@Column(name = "xlst_group", nullable = true, length = 2)
 	public String getXlstGroup() { return iXlstGroup; }
 	public void setXlstGroup(String xlstGroup) { iXlstGroup = xlstGroup; }
 
+	@Column(name = "external_id", nullable = true, length = 50)
 	public String getExternalId() { return iExternalId; }
 	public void setExternalId(String externalId) { iExternalId = externalId; }
 
+	@Column(name = "action", nullable = true, length = 50)
 	public String getAction() { return iAction; }
 	public void setAction(String action) { iAction = action; }
 
+	@Column(name = "type", nullable = true, length = 50)
 	public String getType() { return iType; }
 	public void setType(String type) { iType = type; }
 
+	@Column(name = "message", nullable = false, length = 4000)
 	public String getMessage() { return iMessage; }
 	public void setMessage(String message) { iMessage = message; }
 
+	@Column(name = "packet_id", nullable = false, length = 500)
 	public String getPacketId() { return iPacketId; }
 	public void setPacketId(String packetId) { iPacketId = packetId; }
 
+	@Column(name = "queue_id", nullable = false, length = 20)
 	public Long getQueueId() { return iQueueId; }
 	public void setQueueId(Long queueId) { iQueueId = queueId; }
 
+	@Column(name = "campus", nullable = true, length = 5)
 	public String getCampus() { return iCampus; }
 	public void setCampus(String campus) { iCampus = campus; }
 
+	@ManyToOne(optional = true, fetch = FetchType.EAGER)
+	@JoinColumn(name = "session_id", nullable = true)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
 
+	@ManyToOne(optional = true, fetch = FetchType.EAGER)
+	@JoinColumn(name = "banner_section_id", nullable = true)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public BannerSection getBannerSection() { return iBannerSection; }
 	public void setBannerSection(BannerSection bannerSection) { iBannerSection = bannerSection; }
 
+	@ManyToOne(optional = true, fetch = FetchType.EAGER)
+	@JoinColumn(name = "subject_area_id", nullable = true)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public SubjectArea getSubjectArea() { return iSubjectArea; }
 	public void setSubjectArea(SubjectArea subjectArea) { iSubjectArea = subjectArea; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerResponse)) return false;
 		if (getUniqueId() == null || ((BannerResponse)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((BannerResponse)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "BannerResponse["+getUniqueId()+"]";
 	}

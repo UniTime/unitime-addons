@@ -20,9 +20,15 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import org.hibernate.Session;
 import org.unitime.banner.model.base.BaseBannerTermCrnProperties;
@@ -34,6 +40,9 @@ import org.unitime.banner.model.dao.BannerTermCrnPropertiesDAO;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_crn_provider")
 public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 	private static final long serialVersionUID = 1L;
 
@@ -53,7 +62,9 @@ public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 	public static BannerTermCrnProperties findBannerTermCrnPropertiesForTermCode(
 			String bannerTermCode, Session session) {
 
-		return((BannerTermCrnProperties)BannerTermCrnPropertiesDAO.getInstance().getQuery("from BannerTermCrnProperties btcp where btcp.bannerTermCode = :bannerTermCode", session).setString("bannerTermCode", bannerTermCode).uniqueResult());
+		return session.createQuery(
+				"from BannerTermCrnProperties btcp where btcp.bannerTermCode = :bannerTermCode", BannerTermCrnProperties.class)
+				.setParameter("bannerTermCode", bannerTermCode).uniqueResult();
 	}
 	
 	public static HashSet<BannerTermCrnProperties> findAllBannerTermCrnPropertiesForBannerSessions(ArrayList<Long> bannerSessionIds){
@@ -71,11 +82,12 @@ public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 		return(BannerTermCrnPropertiesDAO.getInstance().get(id));
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Collection<BannerTermCrnProperties> getAllBannerTermCrnProperties() {
-		return(BannerTermCrnPropertiesDAO.getInstance().getQuery("from BannerTermCrnProperties").list());
+	@Transient
+	public static List<BannerTermCrnProperties> getAllBannerTermCrnProperties() {
+		return BannerTermCrnPropertiesDAO.getInstance().getSession().createQuery("from BannerTermCrnProperties", BannerTermCrnProperties.class).list();
 	}
 	
+	@Transient
 	public String getBannerSessionsLabel() {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;

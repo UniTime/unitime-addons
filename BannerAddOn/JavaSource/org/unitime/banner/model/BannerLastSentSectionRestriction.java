@@ -19,12 +19,26 @@
 */
 package org.unitime.banner.model;
 
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import org.hibernate.Session;
 import org.unitime.banner.model.base.BaseBannerLastSentSectionRestriction;
 import org.unitime.banner.model.dao.BannerLastSentSectionRestrictionDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.timetable.gwt.resources.BannerGwtMessages;
 
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_last_sent_sect_restr")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="restriction_type", discriminatorType = DiscriminatorType.INTEGER)
 public abstract class BannerLastSentSectionRestriction extends BaseBannerLastSentSectionRestriction {
 	/**
 	 * 
@@ -56,12 +70,12 @@ public abstract class BannerLastSentSectionRestriction extends BaseBannerLastSen
 	public static boolean areRestrictionsDefinedForTerm(Long sessionId) {
 		Session hibSession = BannerLastSentSectionRestrictionDAO.getInstance().getSession();
 		String query1 = "select count(blssr) from BannerLastSentSectionRestriction blssr where blssr.bannerSection.session.uniqueId = :sessId";
-		int count1 = ((Long) hibSession.createQuery(query1).setLong("sessId", sessionId).uniqueResult()).intValue();
+		int count1 = hibSession.createQuery(query1, Number.class).setParameter("sessId", sessionId).uniqueResult().intValue();
 		if (count1 > 0) {
 			return(true);
 		}
 		String query2 = "select count(bimcr) from BannerInstrMethodCohortRestriction bimcr where bimcr.session.uniqueId = :sessId";
-		int count2 = ((Long) hibSession.createQuery(query2).setLong("sessId", sessionId).uniqueResult()).intValue();
+		int count2 = hibSession.createQuery(query2, Number.class).setParameter("sessId", sessionId).uniqueResult().intValue();
 		if (count2 > 0) {
 			return(true);
 		}

@@ -20,6 +20,11 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.List;
 
 import org.hibernate.FlushMode;
@@ -35,6 +40,9 @@ import org.unitime.timetable.model.InstrOfferingConfig;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_config")
 public class BannerConfig extends BaseBannerConfig {
 	private static final long serialVersionUID = 1L;
 
@@ -53,26 +61,26 @@ public class BannerConfig extends BaseBannerConfig {
 
 	public static BannerConfig findBannerConfigForInstrOffrConfigAndCourseOffering(
 			InstrOfferingConfig instrOfferingConfig, CourseOffering courseOffering, Session hibSession) {
-		return((BannerConfig)hibSession
+		return hibSession
 				.createQuery("select bc from BannerConfig bc where bc.bannerCourse.courseOfferingId = :courseOfferingId " +
-						" and bc.instrOfferingConfigId = :configId")
-				.setLong("configId", instrOfferingConfig.getUniqueId().longValue())
-				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
-				.setFlushMode(FlushMode.MANUAL)
+						" and bc.instrOfferingConfigId = :configId", BannerConfig.class)
+				.setParameter("configId", instrOfferingConfig.getUniqueId().longValue())
+				.setParameter("courseOfferingId", courseOffering.getUniqueId().longValue())
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(false)
-				.uniqueResult());
+				.uniqueResult();
 	}
 
 	@SuppressWarnings("unchecked")
 	public static List<BannerConfig> findBannerConfigsForInstrOfferingConfig(
 			InstrOfferingConfig instrOfferingConfig, Session hibSession) {
 
-		return((List<BannerConfig>)hibSession
-				.createQuery("select bc from BannerConfig bc where bc.instrOfferingConfigId = :configId")
-				.setLong("configId", instrOfferingConfig.getUniqueId().longValue())
-				.setFlushMode(FlushMode.MANUAL)
+		return hibSession
+				.createQuery("select bc from BannerConfig bc where bc.instrOfferingConfigId = :configId", BannerConfig.class)
+				.setParameter("configId", instrOfferingConfig.getUniqueId().longValue())
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(false)
-				.list());
+				.list();
 	}
 
 

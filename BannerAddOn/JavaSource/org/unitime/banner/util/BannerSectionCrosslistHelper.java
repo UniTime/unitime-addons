@@ -105,7 +105,7 @@ public class BannerSectionCrosslistHelper {
 		if (!trans.isActive()) {
 			trans.begin();
 		}
-		hibSession.update(bs);
+		hibSession.merge(bs);
 		trans.commit();
 		hibSession.flush();
 	}
@@ -140,7 +140,7 @@ public class BannerSectionCrosslistHelper {
 					}
 					for(BannerSection bs : parentBannerSections){
 						bs.addClass(c, hibSession);
-						hibSession.update(bs);
+						hibSession.merge(bs);
 					}
 					trans.commit();
 				} else {					
@@ -181,10 +181,10 @@ public class BannerSectionCrosslistHelper {
 								SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
 								bc.getBannerSections().remove(bs);
 								bs.setBannerConfig(null);
-								hibSession.update(bc);
-								hibSession.delete(bs);
+								hibSession.merge(bc);
+								hibSession.remove(bs);
 							} else {
-								hibSession.update(bs);
+								hibSession.merge(bs);
 							}
 							trans.commit();
 							hibSession.refresh(bc);
@@ -197,7 +197,7 @@ public class BannerSectionCrosslistHelper {
 								trans = hibSession.beginTransaction();
 							BannerConfig bc = bs.getBannerConfig();
 							bs.addClass(c, hibSession);
-							hibSession.update(bc);
+							hibSession.merge(bc);
 							hibSession.flush();
 							trans.commit();
 							hibSession.refresh(bc);
@@ -227,7 +227,7 @@ public class BannerSectionCrosslistHelper {
 							SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
 							BannerConfig bc = bs.getBannerConfig();
 							bc.getBannerSections().remove(bs);
-							hibSession.update(bc);
+							hibSession.merge(bc);
 							trans.commit();
 							hibSession.refresh(bc);
 						}
@@ -252,8 +252,8 @@ public class BannerSectionCrosslistHelper {
 					BannerSection parentSection = bs.getParentBannerSection();
 					bs.setParentBannerSection(null);
 					parentSection.getBannerSectionToChildSections().remove(bs);
-					hibSession.update(bs);
-					hibSession.update(parentSection);
+					hibSession.merge(bs);
+					hibSession.merge(parentSection);
 				}
 			} else {
 				BannerSection parentSection = BannerSection.findBannerSectionForBannerCourseAndClass(bs.getBannerConfig().getBannerCourse(), c.getParentClass());
@@ -270,11 +270,11 @@ public class BannerSectionCrosslistHelper {
 				if (parentSection != null && (bs.getParentBannerSection() == null || !bs.getParentBannerSection().getUniqueId().equals(parentSection.getUniqueId()))){
 					bs.setParentBannerSection(parentSection);
 					parentSection.addTobannerSectionToChildSections(bs);
-					hibSession.update(parentSection);
-					hibSession.update(bs);
+					hibSession.merge(parentSection);
+					hibSession.merge(bs);
 				} else if (parentSection == null && bs.getParentBannerSection() != null){
 					bs.setParentBannerSection(null);
-					hibSession.update(bs);
+					hibSession.merge(bs);
 				}
 			}
 		}
@@ -294,12 +294,12 @@ public class BannerSectionCrosslistHelper {
 			if (bannerCourse == null){
 				bannerCourse = new  BannerCourse();
 				bannerCourse.setCourseOfferingId(courseOffering.getUniqueId());
-				bannerCourse.setUniqueId((Long)hibSession.save(bannerCourse));
+				hibSession.persist(bannerCourse);
 			}
 			bc.setBannerCourse(bannerCourse);
 			bc.setInstrOfferingConfigId(cls.getSchedulingSubpart().getInstrOfferingConfig().getUniqueId());
 			bannerCourse.addTobannerConfigs(bc);
-			bc.setUniqueId((Long)hibSession.save(bc));
+			hibSession.persist(bc);
 		}
 		BannerSection bs = new BannerSection();
 		bs.setBannerConfig(bc);
@@ -307,7 +307,7 @@ public class BannerSectionCrosslistHelper {
 		bs.addClass(cls, hibSession);
 		
 		bc.addTobannerSections(bs);
-		hibSession.update(bc);
+		hibSession.merge(bc);
 		trans.commit();
 		hibSession.flush();
 	}

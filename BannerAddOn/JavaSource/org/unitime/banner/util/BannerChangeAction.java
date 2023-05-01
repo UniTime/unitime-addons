@@ -142,7 +142,7 @@ public class BannerChangeAction implements ExternalClassEditAction,
 					BannerCourse bc = new BannerCourse();
 					bc.setCourseOffering(co);
 					bc.setCourseOfferingId(co.getUniqueId());
-					bc.setUniqueId((Long)hibSession.save(bc));
+					hibSession.persist(bc);
 				}
 			}
 			if (trans != null)
@@ -159,7 +159,7 @@ public class BannerChangeAction implements ExternalClassEditAction,
 			for(CourseOffering co : instructionalOffering.getCourseOfferings()){
 				BannerCourse bc = BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), hibSession);		
 				if (bc != null){
-					hibSession.delete(bc);
+					hibSession.remove(bc);
 				}
 			}
 		}
@@ -212,7 +212,7 @@ public class BannerChangeAction implements ExternalClassEditAction,
 						SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
 					}
 				}
-				hibSession.delete(bc);
+				hibSession.remove(bc);
 			}
 		}
 	}
@@ -225,7 +225,7 @@ public class BannerChangeAction implements ExternalClassEditAction,
 					BannerCourse bc = new BannerCourse();
 					bc.setCourseOffering(co);
 					bc.setCourseOfferingId(co.getUniqueId());
-					bc.setUniqueId((Long)hibSession.save(bc));
+					hibSession.persist(bc);
 				}
 			}
 		}

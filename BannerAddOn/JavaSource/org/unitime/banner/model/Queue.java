@@ -20,6 +20,13 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import org.unitime.banner.model.base.BaseQueue;
 
 
@@ -29,6 +36,9 @@ import org.unitime.banner.model.base.BaseQueue;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class Queue extends BaseQueue {
 	private static final long serialVersionUID = 1L;
 
@@ -56,6 +66,7 @@ public abstract class Queue extends BaseQueue {
 	}
 /*[CONSTRUCTOR MARKER END]*/
 
+	@Transient
 	public abstract String getQueueType();
 
 }

@@ -45,7 +45,6 @@ import org.unitime.timetable.webutil.PdfWebTable;
 
 import org.unitime.banner.form.BannerMessageResponsesForm;
 import org.unitime.banner.model.BannerResponse;
-import org.unitime.banner.model.dao.BannerResponseDAO;
 
 
 
@@ -118,7 +117,7 @@ public class BannerMessageResponsesAction extends UniTimeAction<BannerMessageRes
                 new String[] {"left", "left", "left", "left", "left", "left", "left", "left", "left"},
                 new boolean[] { false, true, true, true, true, true, true, true, true} );
      
-        List responses = BannerResponseDAO.getInstance().find(
+        List responses = BannerResponse.find(
         		sessionContext.getUser().getCurrentAcademicSessionId(),
         		(form.getStartDate() == null ? null : form.getStartDate()),
         		(form.getStopDate() == null ? null : form.getStopDate()),

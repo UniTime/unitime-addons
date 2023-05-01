@@ -20,10 +20,14 @@
 
 package org.unitime.banner.model;
 
-import java.util.Collection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.List;
 
-import org.hibernate.criterion.Order;
 import org.unitime.banner.model.base.BaseBannerCampusOverride;
 import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
 
@@ -34,6 +38,9 @@ import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_campus_override")
 public class BannerCampusOverride extends BaseBannerCampusOverride {
 
 	/**
@@ -47,8 +54,11 @@ public class BannerCampusOverride extends BaseBannerCampusOverride {
 	 * ordered by column bannerCampusCode
 	 * @return List of BannerCampusOverride objects
 	 */
+	@Transient
     public static List<BannerCampusOverride> getBannerCampusOverrideList() {
-    	return BannerCampusOverrideDAO.getInstance().findAll(Order.asc("bannerCampusCode"));
+		return BannerCampusOverrideDAO.getInstance().getSession().createQuery(
+				"from BannerCampusOverride order by bannerCampusCode", BannerCampusOverride.class)
+				.list();
     }
 
 
@@ -70,12 +80,16 @@ public class BannerCampusOverride extends BaseBannerCampusOverride {
 		return(BannerCampusOverrideDAO.getInstance().get(id));
 	}
 
-	@SuppressWarnings("rawtypes")
-	public static Collection<BannerCampusOverride> getAllBannerCampusOverrides() {
-		return(BannerCampusOverrideDAO.getInstance().getQuery("from BannerCampusOverride").list());
+	@Transient
+	public static List<BannerCampusOverride> getAllBannerCampusOverrides() {
+		return BannerCampusOverrideDAO.getInstance().getSession().createQuery(
+				"from BannerCampusOverride order by bannerCampusCode", BannerCampusOverride.class)
+				.list();
 	}
 			
 	public static BannerCampusOverride getBannerCampusOverrideForCode(String bannerCampusCode) {
-		return((BannerCampusOverride)BannerCampusOverrideDAO.getInstance().getQuery("from BannerCampusOverride where bannerCampusCode = :code").setString("code", bannerCampusCode).uniqueResult());
+		return BannerCampusOverrideDAO.getInstance().getSession().createQuery(
+				"from BannerCampusOverride where bannerCampusCode = :code", BannerCampusOverride.class)
+				.setParameter("code", bannerCampusCode).uniqueResult();
 	}
 }

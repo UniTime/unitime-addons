@@ -72,10 +72,11 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 			Session newSession = Class_DAO.getInstance().createNewSession();
 			Transaction trans = newSession.beginTransaction();
 			try {
-				newSession.save(bc);
+				newSession.persist(bc);
 				trans.commit();
 			} catch (Exception e) {
 				e.printStackTrace();
+				trans.rollback();
 			} finally {
 				newSession.close();
 			}
@@ -140,7 +141,10 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 				}
 			}
 			if (changed){
-				workingSession.saveOrUpdate(bc);
+				if (bc.getUniqueId() == null)
+					workingSession.persist(bc);
+				else
+					workingSession.merge(bc);
 				if (usedNewSessionAsWorkingSession){
 					workingSession.flush();
 					workingSession.close();
@@ -172,7 +176,9 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 	}
 
 	private ItypeDesc findItypeFromBannerReference(String bannerReference){
-		return((ItypeDesc) getHibSession().createQuery("from ItypeDesc i where i.sis_ref = :bannerRef").setString("bannerRef", bannerReference).setCacheable(true).setFlushMode(FlushMode.MANUAL).uniqueResult());
+		return getHibSession().createQuery("from ItypeDesc i where i.sis_ref = :bannerRef", ItypeDesc.class)
+				.setParameter("bannerRef", bannerReference).setCacheable(true)
+				.setHibernateFlushMode(FlushMode.MANUAL).uniqueResult();
 	}
 
 	private boolean ensureBannerConfigsExistForInstrOfferingConfig(InstrOfferingConfig instrOfferingConfig){
@@ -189,7 +195,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 					bcfg.setBannerCourse(bc);
 					bc.addTobannerConfigs(bcfg);
 					bcfg.setInstrOfferingConfigId(instrOfferingConfig.getUniqueId());
-					newSession.update(bc);
+					newSession.merge(bc);
 					trans.commit();
 					
 				} catch (Exception e) {
@@ -225,11 +231,11 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 						bs.setBannerConfig(bc);
 						bc.addTobannerSections(bs);
 						bs.setSession(session);
-						newSession.save(bs);
+						newSession.persist(bs);
 						addNote("added class to existing banner section");
 					} else {
 						bs.addClass(clazz, getHibSession());
-						newSession.update(bs);
+						newSession.merge(bs);
 						addNote("banner section added");
 					}
 					trans.commit();	
@@ -305,7 +311,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 				if (elementSectionConsent(sectionElement, bs)){
 					changed = true;
 				}
-				workingSession.update(bs);
+				workingSession.merge(bs);
 				if (usedNewSessionAsWorkingSession){
 					workingSession.flush();
 					workingSession.close();
@@ -334,7 +340,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 		beginTransaction();
 		BannerSession bs = BannerSession.findBannerSessionForSession(session, getHibSession());
 		bs.setLoadingOfferingsFile(Boolean.valueOf(false));
-		getHibSession().update(bs);
+		getHibSession().merge(bs);
 		flush(true);
 	}
 
@@ -343,7 +349,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 		beginTransaction();
 		BannerSession bs = BannerSession.findBannerSessionForSession(session, getHibSession());
 		bs.setLoadingOfferingsFile(Boolean.valueOf(true));
-		getHibSession().update(bs);
+		getHibSession().merge(bs);
 		flush(true);
 	}
 	

@@ -20,7 +20,7 @@
 
 package org.unitime.banner.queueprocessor.util;
 
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.unitime.banner.queueprocessor.BannerCaller;
 import org.unitime.banner.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Email;
@@ -49,10 +49,10 @@ public class QueueProcessorCheck {
 			" where qo.postDate < sysdate - :mins /(24*60)" +
 			" and (qo.pickupDate is null or qo.processDate is null)";
 		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
-		Query query = hibSession.createQuery(qs);
+		Query<Number> query = hibSession.createQuery(qs, Number.class);
         int minutes = Integer.parseInt(ApplicationProperties.getProperty("tmtbl.queue.processor.check.minutes","60"));
-		query.setInteger("mins", minutes);
-		Long ct= (Long) query.uniqueResult();
+		query.setParameter("mins", minutes);
+		Long ct= query.uniqueResult().longValue();
 		if (ct > 0) {
 			// See if Banner is up
 		

@@ -22,11 +22,9 @@ package org.unitime.banner.util;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.hibernate.Session;
-import org.hibernate.type.LongType;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerSectionDAO;
 import org.unitime.timetable.interfaces.ExternalClassNameHelperInterface;
@@ -133,10 +131,10 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		// child of a subpart with the same itype -> false
 		if (subpart.getParentSubpart() != null && subpart.getItype().equals(subpart.getParentSubpart().getItype())) return false;
 		// get gradable itype
-		Integer itype = (Integer)hibSession.createQuery(
-				"select bc.gradableItype.itype from BannerConfig bc where bc.bannerCourse.courseOfferingId = :courseOfferingId and bc.instrOfferingConfigId = :configId"
-				).setLong("configId", subpart.getInstrOfferingConfig().getUniqueId())
-				.setLong("courseOfferingId", courseOffering.getUniqueId())
+		Integer itype = hibSession.createQuery(
+				"select bc.gradableItype.itype from BannerConfig bc where bc.bannerCourse.courseOfferingId = :courseOfferingId and bc.instrOfferingConfigId = :configId", Integer.class
+				).setParameter("configId", subpart.getInstrOfferingConfig().getUniqueId())
+				.setParameter("courseOfferingId", courseOffering.getUniqueId())
 				.setCacheable(true)
 				.setMaxResults(1)
 				.uniqueResult();
@@ -170,10 +168,10 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		Map<Long, Map<Long, Integer>> iCache = new HashMap<Long, Map<Long,Integer>>();
 		
 		public GradableSubpartsCache(Long sessionId, Session hibSession) {
-			for (Object[] o: (List<Object[]>)hibSession.createQuery(
+			for (Object[] o: hibSession.createQuery(
 					"select bc.bannerCourse.courseOfferingId, bc.instrOfferingConfigId, bc.gradableItype.itype " +
-					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.session = :sessionId"
-					).setLong("sessionId", sessionId).list()) {
+					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.session = :sessionId", Object[].class
+					).setParameter("sessionId", sessionId).list()) {
 				Long courseId = (Long)o[0];
 				Long configId = (Long)o[1];
 				Integer itype = (Integer)o[2];
@@ -187,10 +185,10 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		}
 		
 		public GradableSubpartsCache(Collection<Long> offeringIds, Session hibSession) {
-			for (Object[] o: (List<Object[]>)hibSession.createQuery(
+			for (Object[] o: hibSession.createQuery(
 					"select bc.bannerCourse.courseOfferingId, bc.instrOfferingConfigId, bc.gradableItype.itype " +
-					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.uniqueId in (:offeringIds)"
-					).setParameterList("offeringIds", offeringIds, LongType.INSTANCE).list()) {
+					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.uniqueId in (:offeringIds)", Object[].class
+					).setParameterList("offeringIds", offeringIds, Long.class).list()) {
 				Long courseId = (Long)o[0];
 				Long configId = (Long)o[1];
 				Integer itype = (Integer)o[2];

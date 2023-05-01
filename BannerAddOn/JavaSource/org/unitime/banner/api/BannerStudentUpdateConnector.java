@@ -22,7 +22,6 @@ package org.unitime.banner.api;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -36,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.unitime.banner.model.QueueIn;
 import org.unitime.banner.model.dao.QueueInDAO;
 import org.unitime.banner.onlinesectioning.BannerStudentUpdates;
+import org.unitime.commons.hibernate.util.HibernateUtil;
 import org.unitime.timetable.api.ApiConnector;
 import org.unitime.timetable.api.ApiHelper;
 import org.unitime.timetable.api.XmlApiHelper;
@@ -50,7 +50,6 @@ import org.unitime.timetable.model.StudentAreaClassificationMinor;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.dao.StudentDAO;
-import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.security.rights.Right;
 
 /**
@@ -78,9 +77,9 @@ public class BannerStudentUpdateConnector extends ApiConnector {
 		Element studentGroupsEl = null;
 		
 		Set<String> crns = new TreeSet<String>();
-		for (Student student: (List<Student>)StudentDAO.getInstance().getSession().createQuery(
-				"select s from Student s, BannerSession bs where bs.bannerTermCode = :term and bs.session = s.session and s.externalUniqueId = :puid")
-				.setString("term", term).setString("puid", puid).list()) {
+		for (Student student: StudentDAO.getInstance().getSession().createQuery(
+				"select s from Student s, BannerSession bs where bs.bannerTermCode = :term and bs.session = s.session and s.externalUniqueId = :puid", Student.class)
+				.setParameter("term", term).setParameter("puid", puid).list()) {
 			if (studentEl == null) {
 				studentEl = root.addElement("student");
 				studentEl.addAttribute("externalId", getStudentId(student));
@@ -137,9 +136,9 @@ public class BannerStudentUpdateConnector extends ApiConnector {
 			studentEl.addElement("crn").setText(crn);
 
 		Set<OverridePair> overrides = new TreeSet<OverridePair>();
-		for (OverrideReservation reservation: (List<OverrideReservation>)StudentDAO.getInstance().getSession().createQuery(
-				"select r from OverrideReservation r inner join r.students s, BannerSession bs where bs.bannerTermCode = :term and bs.session = s.session and s.externalUniqueId = :puid")
-				.setString("term", term).setString("puid", puid).list()) {
+		for (OverrideReservation reservation: StudentDAO.getInstance().getSession().createQuery(
+				"select r from OverrideReservation r inner join r.students s, BannerSession bs where bs.bannerTermCode = :term and bs.session = s.session and s.externalUniqueId = :puid",
+				OverrideReservation.class).setParameter("term", term).setParameter("puid", puid).list()) {
 			if (reservation.getClasses().isEmpty()) {
 				CourseOffering course = reservation.getInstructionalOffering().getControllingCourseOffering();
 				switch (reservation.getOverrideType()) {
@@ -205,14 +204,15 @@ public class BannerStudentUpdateConnector extends ApiConnector {
 			qi.setPostDate(new Date());
 			qi.setStatus(QueueIn.STATUS_READY);
 			qi.setXml(document);
-			QueueInDAO.getInstance().save(qi);
+			QueueInDAO.getInstance().getSession().persist(qi);
+			QueueInDAO.getInstance().getSession().flush();
 		} else {
 			try {
 				new BannerStudentUpdates().processMessage(document.getRootElement());
 			} catch (Exception e) {
 				throw new IOException("Failed to process message: " + e.getMessage(), e);
 			} finally {
-				_RootDAO.closeCurrentThreadSessions();
+				HibernateUtil.closeCurrentThreadSessions();
 			}
 		}
 	}

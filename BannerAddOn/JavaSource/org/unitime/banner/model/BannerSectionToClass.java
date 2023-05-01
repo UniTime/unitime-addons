@@ -20,6 +20,11 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import org.unitime.banner.model.base.BaseBannerSectionToClass;
 
 
@@ -28,6 +33,9 @@ import org.unitime.banner.model.base.BaseBannerSectionToClass;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_section_join_class")
 public class BannerSectionToClass extends BaseBannerSectionToClass {
 	private static final long serialVersionUID = 1L;
 

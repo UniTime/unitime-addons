@@ -19,12 +19,20 @@
 */
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.ArrayList;
 
 import org.unitime.banner.model.base.BaseBannerInstrMethodCohortRestriction;
 import org.unitime.timetable.model.InstructionalMethod;
 import org.unitime.timetable.model.Session;
 
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_inst_method_cohort_rstrct")
 public class BannerInstrMethodCohortRestriction extends BaseBannerInstrMethodCohortRestriction {
 
 	/**
@@ -43,11 +51,10 @@ public class BannerInstrMethodCohortRestriction extends BaseBannerInstrMethodCoh
 		return(findAllWithTermAndMethod(acadSession.getUniqueId(), instructionalMethod.getUniqueId(), hibSession));
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static ArrayList<BannerInstrMethodCohortRestriction> findAllWithTermAndMethod(Long acadSessionId, Long instructionalMethodId, org.hibernate.Session hibSession) {
 	    String query = "from BannerInstrMethodCohortRestriction bimcr where bimcr.session.uniqueId = :sessId and bimcr.instructionalMethod.uniqueId = :imId";
 	    ArrayList<BannerInstrMethodCohortRestriction> restrictions = new ArrayList<BannerInstrMethodCohortRestriction>();
-	    restrictions.addAll(hibSession.createQuery(query).setLong("sessId", acadSessionId).setLong("imId", instructionalMethodId).list());
+	    restrictions.addAll(hibSession.createQuery(query, BannerInstrMethodCohortRestriction.class).setParameter("sessId", acadSessionId).setParameter("imId", instructionalMethodId).list());
 	    return(restrictions);
 	}
 }

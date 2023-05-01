@@ -26,7 +26,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -118,7 +117,9 @@ public class BannerMessage {
 		manageDefaultDatePatternMapCache();
 		if (!sessionDefaultDatePatternMap.containsKey(acadSession.getUniqueId())){
 			Session hibSession = DatePatternDAO.getInstance().createNewSession();
-			DatePattern defaultDatePattern = (DatePattern)hibSession.createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
+			DatePattern defaultDatePattern = hibSession.createQuery(
+					"from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId", DatePattern.class)
+					.setParameter("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
 			sessionDefaultDatePatternMap.put(acadSession.getUniqueId(), defaultDatePattern.getUniqueId());
 			updateDatesForDatePattern(defaultDatePattern);
 			hibSession.close();
@@ -468,7 +469,6 @@ public class BannerMessage {
 		return(sectionElement);
 	}
 	
-	@SuppressWarnings("unchecked")
 	private TreeSet<Integer> getCrossListedCrns(BannerSection bannerSection, Session hibSession){
 		TreeSet<Integer> ts = new TreeSet<Integer>();
 		Session querySession = hibSession;
@@ -477,7 +477,9 @@ public class BannerMessage {
 		}
 		if (bannerSection.isCrossListedSection(querySession)){
 			for (BannerSectionToClass bsc : bannerSection.getBannerSectionToClasses()){
-				for(Integer crn : (List<Integer>) querySession.createQuery("select distinct bsc.bannerSection.crn from BannerSectionToClass bsc where bsc.classId = :classId").setLong("classId", bsc.getClassId().longValue()).list()) {
+				for(Integer crn : querySession.createQuery(
+						"select distinct bsc.bannerSection.crn from BannerSectionToClass bsc where bsc.classId = :classId", Integer.class)
+						.setParameter("classId", bsc.getClassId()).list()) {
 					if (crn != null) {
 						ts.add(crn);
 					}

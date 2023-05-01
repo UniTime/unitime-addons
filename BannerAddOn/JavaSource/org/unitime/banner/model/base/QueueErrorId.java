@@ -20,9 +20,11 @@
 package org.unitime.banner.model.base;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.IdClass;
+import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
+import java.io.Serializable;
+import java.util.Date;
 import org.unitime.banner.model.QueueError;
 
 /**
@@ -30,17 +32,36 @@ import org.unitime.banner.model.QueueError;
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
 @MappedSuperclass
-@IdClass(QueueErrorId.class)
-public abstract class BaseQueueError extends QueueErrorId {
+public class QueueErrorId implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	private String iErrorText;
+	private Long iQueueId;
+	private String iErrorType;
+	private Date iErrorDate;
 
+	public QueueErrorId() {}
 
+	public QueueErrorId(Long queueId, String errorType, Date errorDate) {
+		iQueueId = queueId;
+		iErrorType = errorType;
+		iErrorDate = errorDate;
+	}
 
-	@Column(name = "errortext", nullable = true)
-	public String getErrorText() { return iErrorText; }
-	public void setErrorText(String errorText) { iErrorText = errorText; }
+	@Id
+	@Column(name="null")
+	public Long getQueueId() { return iQueueId; }
+	public void setQueueId(Long queueId) { iQueueId = queueId; }
+
+	@Id
+	@Column(name="null")
+	public String getErrorType() { return iErrorType; }
+	public void setErrorType(String errorType) { iErrorType = errorType; }
+
+	@Id
+	@Column(name="null")
+	public Date getErrorDate() { return iErrorDate; }
+	public void setErrorDate(Date errorDate) { iErrorDate = errorDate; }
+
 
 	@Override
 	public boolean equals(Object o) {
@@ -58,16 +79,4 @@ public abstract class BaseQueueError extends QueueErrorId {
 		return getQueueId().hashCode() ^ getErrorType().hashCode() ^ getErrorDate().hashCode();
 	}
 
-	public String toString() {
-		return "QueueError[" + getQueueId() + ", " + getErrorType() + ", " + getErrorDate() + "]";
-	}
-
-	public String toDebugString() {
-		return "QueueError[" +
-			"\n	ErrorDate: " + getErrorDate() +
-			"\n	ErrorText: " + getErrorText() +
-			"\n	ErrorType: " + getErrorType() +
-			"\n	QueueId: " + getQueueId() +
-			"]";
-	}
 }

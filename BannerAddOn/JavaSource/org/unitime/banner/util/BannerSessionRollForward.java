@@ -36,7 +36,6 @@ import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSectionToClass;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.dao.BannerCourseDAO;
-import org.unitime.banner.model.dao.BannerSessionDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.timetable.ApplicationProperties;
@@ -146,8 +145,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			  .append(" and bs1.linkIdentifier = bs2.linkIdentifier")
 			  .append(" order by co1.subjectArea.subjectAreaAbbreviation, co1.courseNbr, co2.subjectArea.subjectAreaAbbreviation ")
 			  ;
-			@SuppressWarnings("unchecked")
-			List<BannerSection> sectionsToFix = (List<BannerSection>) hibSession.createQuery(sb.toString()).setLong("sessionId", toSession.getUniqueId()).list();
+			List<BannerSection> sectionsToFix = hibSession.createQuery(sb.toString(), BannerSection.class).setParameter("sessionId", toSession.getUniqueId()).list();
 			for (BannerSection bannerSectionToFix : sectionsToFix) {
 				bannerSectionToFix.setLinkIdentifier(null);
 				bannerSectionToFix.setLinkConnector(null);
@@ -197,15 +195,14 @@ public class BannerSessionRollForward extends SessionRollForward {
 		}
 	}
 	
-    @SuppressWarnings("unchecked")
 	private HashMap<Long, CourseOffering> findByIdRolledForwardFrom(Long sessionId, Long uniqueIdRolledForwardFrom) {
     	HashMap<Long, CourseOffering> cfgIdToCourseMap = new HashMap<Long, CourseOffering>();
     	
-        for (CourseOffering co : (List<CourseOffering>) new CourseOfferingDAO().
+        for (CourseOffering co : new CourseOfferingDAO().
             getSession().
-            createQuery("select c from CourseOffering c where c.subjectArea.session.uniqueId=:sessionId and c.uniqueIdRolledForwardFrom=:uniqueIdRolledForwardFrom").
-            setLong("sessionId", sessionId.longValue()).
-            setLong("uniqueIdRolledForwardFrom", uniqueIdRolledForwardFrom.longValue()).
+            createQuery("select c from CourseOffering c where c.subjectArea.session.uniqueId=:sessionId and c.uniqueIdRolledForwardFrom=:uniqueIdRolledForwardFrom", CourseOffering.class).
+            setParameter("sessionId", sessionId.longValue()).
+            setParameter("uniqueIdRolledForwardFrom", uniqueIdRolledForwardFrom.longValue()).
             setCacheable(true).
             list()) {
         	for (InstrOfferingConfig ioc : co.getInstructionalOffering().getInstrOfferingConfigs()) {     		
@@ -233,9 +230,9 @@ public class BannerSessionRollForward extends SessionRollForward {
 			org.hibernate.Session hibSession = BannerCourseDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
 				iLog.info("Rolling Banner Data for Subject Area:  " + sa.getSubjectAreaAbbreviation());
-				Iterator<BannerCourse> fromBannerCourseIt = hibSession.createQuery(queryString)
-									.setLong("sessionId", toSessionId.longValue())
-									.setLong("subjectId", sa.getUniqueId().longValue())
+				Iterator<BannerCourse> fromBannerCourseIt = hibSession.createQuery(queryString, BannerCourse.class)
+									.setParameter("sessionId", toSessionId.longValue())
+									.setParameter("subjectId", sa.getUniqueId().longValue())
 									.list()
 									.iterator();
 				while (fromBannerCourseIt.hasNext()){
@@ -308,9 +305,9 @@ public class BannerSessionRollForward extends SessionRollForward {
 						}
 						for (BannerCourse toBc : toCoToBannerCourseMap.values()) {
 							if (toBc.getUniqueId() == null) {
-								toBc.setUniqueId((Long)hibSession.save(toBc));
+								hibSession.persist(toBc);
 							} else {
-								hibSession.update(toBc);
+								hibSession.merge(toBc);
 							}
 						}
 						if (trns != null && trns.isActive()) {
@@ -360,15 +357,13 @@ public class BannerSessionRollForward extends SessionRollForward {
 					if (hibSession.getTransaction()==null || !hibSession.getTransaction().isActive())
 						trns = hibSession.beginTransaction();
 					iLog.info("Updating Class External Ids for Subject Area:  " + sa.getSubjectAreaAbbreviation());
-					@SuppressWarnings("unchecked")
-					List<BannerCourse> bannerCourses = hibSession.createQuery(queryString)
-										.setLong("sessionId", toSessionId.longValue())
-										.setLong("subjectId", sa.getUniqueId().longValue())
+					List<BannerCourse> bannerCourses = hibSession.createQuery(queryString, BannerCourse.class)
+										.setParameter("sessionId", toSessionId.longValue())
+										.setParameter("subjectId", sa.getUniqueId().longValue())
 										.list();
-					@SuppressWarnings("unchecked")
-					List<Class_> classes = hibSession.createQuery(queryString2)
-										.setLong("sessionId", toSessionId.longValue())
-										.setLong("subjectId", sa.getUniqueId().longValue())
+					List<Class_> classes = hibSession.createQuery(queryString2, Class_.class)
+										.setParameter("sessionId", toSessionId.longValue())
+										.setParameter("subjectId", sa.getUniqueId().longValue())
 										.setCacheable(true)
 										.list();
 					for (BannerCourse bc : bannerCourses){
@@ -423,10 +418,12 @@ public class BannerSessionRollForward extends SessionRollForward {
 				toBs.setStudentCampus(fromBs.getStudentCampus());
 				toBs.setSubjectAreaPrefixDelimiter(fromBs.getSubjectAreaPrefixDelimiter());
 				toBs.setUseSubjectAreaPrefixAsCampus(fromBs.getUseSubjectAreaPrefixAsCampus());
-				toBs.setUniqueId(BannerSessionDAO.getInstance().save(toBs));
+				hibSession.persist(toBs);
 			}
 			if (trns != null && trns.isActive()) {
 				trns.commit();
+			} else {
+				hibSession.flush();
 			}
 		} catch (Exception e){
 			iLog.error("Failed to roll banner session data: " + toSession.getLabel(), e);

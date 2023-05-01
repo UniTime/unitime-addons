@@ -20,6 +20,11 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -47,6 +52,9 @@ import org.unitime.timetable.webutil.Navigation;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_course")
 public class BannerCourse extends BaseBannerCourse {
 	private static final long serialVersionUID = 1L;
 
@@ -66,22 +74,21 @@ public class BannerCourse extends BaseBannerCourse {
 	private CourseOffering courseOffering;
 
 	public static BannerCourse findBannerCourseForCourseOffering(Long courseOfferingId, Session hibSession){
-		return((BannerCourse) hibSession
-			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId)")
-			.setLong("courseOfferingId", courseOfferingId.longValue())
-			.setFlushMode(FlushMode.MANUAL)
+		return hibSession
+			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId)", BannerCourse.class)
+			.setParameter("courseOfferingId", courseOfferingId.longValue())
+			.setHibernateFlushMode(FlushMode.MANUAL)
 			.setCacheable(false)
-			.uniqueResult()); 
+			.uniqueResult(); 
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<BannerCourse> findBannerCoursesForCourseOffering(Long courseOfferingId, Session hibSession){
-		return((List<BannerCourse>) hibSession
-			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId)")
-			.setLong("courseOfferingId", courseOfferingId.longValue())
-			.setFlushMode(FlushMode.MANUAL)
+		return hibSession
+			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId)", BannerCourse.class)
+			.setParameter("courseOfferingId", courseOfferingId.longValue())
+			.setHibernateFlushMode(FlushMode.MANUAL)
 			.setCacheable(false)
-			.list()); 
+			.list();
 	}
 	
 	public CourseOffering getCourseOffering(Session hibSession) {
@@ -232,13 +239,12 @@ public class BannerCourse extends BaseBannerCourse {
     	return(previous);
     }
 
-	@SuppressWarnings("unchecked")
 	public static List<BannerCourse> findBannerCoursesForInstrOffrConfig(
 			InstrOfferingConfig ioc, Session hibSession) {
 		String qs = "select distinct bc.bannerCourse from BannerConfig bc where bc.instrOfferingConfigId = :configId";
-		return((List<BannerCourse>)hibSession.createQuery(qs)
-				      .setLong("configId", ioc.getUniqueId().longValue())
-				      .list());
+		return hibSession.createQuery(qs, BannerCourse.class)
+				      .setParameter("configId", ioc.getUniqueId().longValue())
+				      .list();
 	}
 	
 }

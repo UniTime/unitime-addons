@@ -19,16 +19,31 @@
 */
 package org.unitime.banner.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
+
 import java.io.Serializable;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.BannerTermCrnProperties;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 import org.unitime.timetable.model.Session;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
+@MappedSuperclass
 public abstract class BaseBannerSession implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -47,82 +62,97 @@ public abstract class BaseBannerSession implements Serializable {
 	private BannerSession iFutureSession;
 	private BannerTermCrnProperties iBannerTermCrnProperties;
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_BANNER_CAMPUS = "bannerCampus";
-	public static String PROP_BANNER_TERM_CODE = "bannerTermCode";
-	public static String PROP_STORE_DATA_FOR_BANNER = "storeDataForBanner";
-	public static String PROP_SEND_DATA_TO_BANNER = "sendDataToBanner";
-	public static String PROP_LOADING_OFFERINGS_FILE = "loadingOfferingsFile";
-	public static String PROP_FUTURE_MODE = "futureSessionUpdateModeInt";
-	public static String PROP_STUDENT_CAMPUS = "studentCampus";
-	public static String PROP_USE_SUBJ_AREA_PRFX_AS_CAMPUS = "useSubjectAreaPrefixAsCampus";
-	public static String PROP_SUBJ_AREA_PRFX_DELIM = "subjectAreaPrefixDelimiter";
-
 	public BaseBannerSession() {
-		initialize();
 	}
 
 	public BaseBannerSession(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "banner_session_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "pref_group_seq")
+	})
+	@GeneratedValue(generator = "banner_session_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "banner_campus", nullable = false, length = 20)
 	public String getBannerCampus() { return iBannerCampus; }
 	public void setBannerCampus(String bannerCampus) { iBannerCampus = bannerCampus; }
 
+	@Column(name = "banner_term_code", nullable = false, length = 20)
 	public String getBannerTermCode() { return iBannerTermCode; }
 	public void setBannerTermCode(String bannerTermCode) { iBannerTermCode = bannerTermCode; }
 
+	@Column(name = "store_data_for_banner", nullable = false)
 	public Boolean isStoreDataForBanner() { return iStoreDataForBanner; }
+	@Transient
 	public Boolean getStoreDataForBanner() { return iStoreDataForBanner; }
 	public void setStoreDataForBanner(Boolean storeDataForBanner) { iStoreDataForBanner = storeDataForBanner; }
 
+	@Column(name = "send_data_to_banner", nullable = false)
 	public Boolean isSendDataToBanner() { return iSendDataToBanner; }
+	@Transient
 	public Boolean getSendDataToBanner() { return iSendDataToBanner; }
 	public void setSendDataToBanner(Boolean sendDataToBanner) { iSendDataToBanner = sendDataToBanner; }
 
+	@Column(name = "loading_offerings_file", nullable = false)
 	public Boolean isLoadingOfferingsFile() { return iLoadingOfferingsFile; }
+	@Transient
 	public Boolean getLoadingOfferingsFile() { return iLoadingOfferingsFile; }
 	public void setLoadingOfferingsFile(Boolean loadingOfferingsFile) { iLoadingOfferingsFile = loadingOfferingsFile; }
 
+	@Column(name = "future_mode", nullable = true)
 	public Integer getFutureSessionUpdateModeInt() { return iFutureSessionUpdateModeInt; }
 	public void setFutureSessionUpdateModeInt(Integer futureSessionUpdateModeInt) { iFutureSessionUpdateModeInt = futureSessionUpdateModeInt; }
 
+	@Column(name = "student_campus", nullable = true, length = 500)
 	public String getStudentCampus() { return iStudentCampus; }
 	public void setStudentCampus(String studentCampus) { iStudentCampus = studentCampus; }
 
+	@Column(name = "use_subj_area_prfx_as_campus", nullable = true)
 	public Boolean isUseSubjectAreaPrefixAsCampus() { return iUseSubjectAreaPrefixAsCampus; }
+	@Transient
 	public Boolean getUseSubjectAreaPrefixAsCampus() { return iUseSubjectAreaPrefixAsCampus; }
 	public void setUseSubjectAreaPrefixAsCampus(Boolean useSubjectAreaPrefixAsCampus) { iUseSubjectAreaPrefixAsCampus = useSubjectAreaPrefixAsCampus; }
 
+	@Column(name = "subj_area_prfx_delim", nullable = true, length = 5)
 	public String getSubjectAreaPrefixDelimiter() { return iSubjectAreaPrefixDelimiter; }
 	public void setSubjectAreaPrefixDelimiter(String subjectAreaPrefixDelimiter) { iSubjectAreaPrefixDelimiter = subjectAreaPrefixDelimiter; }
 
+	@ManyToOne(optional = false, fetch = FetchType.EAGER)
+	@JoinColumn(name = "session_id", nullable = false)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
 
+	@ManyToOne(optional = true)
+	@JoinColumn(name = "future_id", nullable = true)
 	public BannerSession getFutureSession() { return iFutureSession; }
 	public void setFutureSession(BannerSession futureSession) { iFutureSession = futureSession; }
 
+	@ManyToOne(optional = true)
+	@JoinColumn(name = "banner_term_crn_prop_id", nullable = true)
 	public BannerTermCrnProperties getBannerTermCrnProperties() { return iBannerTermCrnProperties; }
 	public void setBannerTermCrnProperties(BannerTermCrnProperties bannerTermCrnProperties) { iBannerTermCrnProperties = bannerTermCrnProperties; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerSession)) return false;
 		if (getUniqueId() == null || ((BannerSession)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((BannerSession)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "BannerSession["+getUniqueId()+"]";
 	}

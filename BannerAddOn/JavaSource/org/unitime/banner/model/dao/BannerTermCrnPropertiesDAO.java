@@ -17,18 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerTermCrnPropertiesDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.banner.model.BannerTermCrnProperties;
 
+public class BannerTermCrnPropertiesDAO extends _RootDAO<BannerTermCrnProperties,Long> {
+	private static BannerTermCrnPropertiesDAO sInstance;
 
-public class BannerTermCrnPropertiesDAO extends BaseBannerTermCrnPropertiesDAO {
+	public BannerTermCrnPropertiesDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public BannerTermCrnPropertiesDAO () {}
+	public static BannerTermCrnPropertiesDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerTermCrnPropertiesDAO();
+		return sInstance;
+	}
 
-
+	public Class<BannerTermCrnProperties> getReferenceClass() {
+		return BannerTermCrnProperties.class;
+	}
 }

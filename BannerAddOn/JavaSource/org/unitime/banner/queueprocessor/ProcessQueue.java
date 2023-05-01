@@ -125,16 +125,14 @@ public class ProcessQueue {
 	public void process() {
 
 		try {
-			qod = new QueueOutDAO();
-
 			boolean error = false;
 			
-			List outList = null;
+			List<QueueOut> outList = null;
 			
 			do {
 			
 				try {
-					outList = qod.findByStatus(QueueOut.STATUS_POSTED);
+					outList = QueueOut.findByStatus(QueueOut.STATUS_POSTED);
 					error = false;
 				} catch(Exception ex) {
 					//Sleep for the error_sleep_interval and try again
@@ -154,10 +152,9 @@ public class ProcessQueue {
 
 			for (int i = 0; i < outList.size(); i++) {
 				try {
-				Debug.info("Processing ID:"
-						+ ((QueueOut) outList.get(i)).getUniqueId().toString());
+				Debug.info("Processing ID:" + outList.get(i).getUniqueId().toString());
 
-				(new QueuedItem((QueueOut) outList.get(i))).processItem();
+				(new QueuedItem(outList.get(i))).processItem();
 				
 				
 				} catch(Exception ex) {

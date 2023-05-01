@@ -21,7 +21,6 @@ package org.unitime.banner.action;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.TreeMap;
 
 import org.apache.struts2.convention.annotation.Action;
@@ -118,7 +117,7 @@ public class BannerTermCrnPropertiesEditAction extends UniTimeAction<BannerTermC
 		ArrayList<BannerSession> bannerTermCodes = new ArrayList<BannerSession>();
 		ArrayList<BannerSession> bannerSessionList = new ArrayList<BannerSession>();
 		TreeMap<String, BannerSession> bannerSessions = new TreeMap<String, BannerSession>();
-		for (BannerSession bs : (List<BannerSession>)SessionDAO.getInstance().getSession().createQuery("select bs from BannerSession bs").list()){
+		for (BannerSession bs : SessionDAO.getInstance().getSession().createQuery("select bs from BannerSession bs", BannerSession.class).list()){
 			if (bs.getBannerTermCrnProperties() == null) {
 				bannerSessions.put(bs.getBannerTermCode(), bs);
 				bannerSessionList.add(bs);
@@ -187,11 +186,14 @@ public class BannerTermCrnPropertiesEditAction extends UniTimeAction<BannerTermC
             		bs.setBannerTermCrnProperties(bannerTermCrnProperties);
             		origSessions.remove(bs);
             }
-            hibSession.saveOrUpdate(bannerTermCrnProperties);
+            if (bannerTermCrnProperties.getUniqueId() == null)
+            	hibSession.persist(bannerTermCrnProperties);
+            else
+            	hibSession.merge(bannerTermCrnProperties);
             for (BannerSession bs : origSessions) {
             	    BannerSession bs2 = BannerSession.getBannerSessionById(bs.getUniqueId());
             	    bs2.setBannerTermCrnProperties(null);
-            	    hibSession.update(bs2);
+            	    hibSession.merge(bs2);
             }
             
             form.setBannerTermPropertiesId(bannerTermCrnProperties.getUniqueId());

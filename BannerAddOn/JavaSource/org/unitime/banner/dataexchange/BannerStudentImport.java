@@ -55,12 +55,12 @@ import org.unitime.timetable.model.StudentGroup;
 public class BannerStudentImport extends StudentImport {
 	
 	@Override
-	protected Student importStudent(Element element, String externalId, Hashtable<String, Student> students, Session session, Set<Long> updatedStudents,
+	protected Student importStudent(Element element, String externalId, Hashtable<String, Student> students, Session session, Set<Long> updatedStudents, List<Student> createdStudents,
 			Map<String, AcademicArea> abbv2area, Map<String, AcademicClassification> code2clasf, Map<String, PosMajor> code2major, Map<String, PosMinor> code2minor,
 			Map<String, StudentGroup> code2group, Map<String, StudentAccomodation> code2accomodation, Map<String, PosMajorConcentration> code2conc,
 			Map<String, Degree> code2degree, Map<String, Program> code2program, Map<String, Campus> code2campus) {
 	
-		Student student = super.importStudent(element, externalId, students, session, updatedStudents,
+		Student student = super.importStudent(element, externalId, students, session, updatedStudents, createdStudents,
 				abbv2area, code2clasf, code2major, code2minor, code2group, code2accomodation, code2conc, code2degree, code2program, code2campus);
 		
 		if (updateStudentOverrides(element, session, student))
@@ -70,29 +70,26 @@ public class BannerStudentImport extends StudentImport {
 	}
 	
 	protected CourseOffering findCourse(Integer crn, Long sessionId) {
-    	return (CourseOffering)
-    			getHibSession().createQuery(
+    	return getHibSession().createQuery(
     					"select distinct co from BannerSection bs, CourseOffering co where " +
-    					"bs.session.uniqueId = :sessionId and bs.crn = :crn and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId"
-    			).setLong("sessionId", sessionId).setInteger("crn", crn).uniqueResult();
+    					"bs.session.uniqueId = :sessionId and bs.crn = :crn and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId",
+    					CourseOffering.class
+    			).setParameter("sessionId", sessionId).setParameter("crn", crn).uniqueResult();
     }
 	
-	@SuppressWarnings("unchecked")
 	protected List<CourseOffering> findCourses(String subject, String courseNbr, Long sessionId) {
-		return (List<CourseOffering>)getHibSession().createQuery(
+		return getHibSession().createQuery(
 				"from CourseOffering co where " +
 				"co.instructionalOffering.session.uniqueId = :sessionId and " +
-				"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course")
-				.setString("subject", subject).setString("course", courseNbr + "%").setLong("sessionId", sessionId).list();
+				"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course", CourseOffering.class)
+				.setParameter("subject", subject).setParameter("course", courseNbr + "%").setParameter("sessionId", sessionId).list();
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected List<Class_> findClasses(Integer crn, Long sessionId) {
-		return (List<Class_>)
-				getHibSession().createQuery(
+		return getHibSession().createQuery(
 						"select distinct c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where " +
-						"bs.session.uniqueId = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId"
-				).setLong("sessionId", sessionId).setInteger("crn", crn).list();
+						"bs.session.uniqueId = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId", Class_.class
+				).setParameter("sessionId", sessionId).setParameter("crn", crn).list();
     }
 	
 	protected Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> parseOverrides(Element element, Session session) {
@@ -181,10 +178,9 @@ public class BannerStudentImport extends StudentImport {
 	protected boolean updateStudentOverrides(Element element, Session session, Student student) {
 		Map<InstructionalOffering, Map<OverrideType, Set<Class_>>> restrictions = parseOverrides(element, session);
 		
-		@SuppressWarnings("unchecked")
-		List<OverrideReservation> overrides = (List<OverrideReservation>)getHibSession().createQuery(
-				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
-			.setLong("studentId", student.getUniqueId()).list();
+		List<OverrideReservation> overrides = getHibSession().createQuery(
+				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId", OverrideReservation.class)
+			.setParameter("studentId", student.getUniqueId()).list();
 		
 		boolean changed = false;
 		for (Map.Entry<InstructionalOffering, Map<OverrideType, Set<Class_>>> e: restrictions.entrySet()) {
@@ -246,9 +242,9 @@ public class BannerStudentImport extends StudentImport {
 				info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
 
 				if (override.getUniqueId() == null)
-					override.setUniqueId((Long)getHibSession().save(override));
+					getHibSession().persist(override);
 				else
-					getHibSession().update(override);
+					getHibSession().merge(override);
 				changed = true;
 			}
 		}
@@ -257,10 +253,10 @@ public class BannerStudentImport extends StudentImport {
 			info("Removed " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName());
 			if (override.getStudents().size() > 1) {
 				override.getStudents().remove(student);
-				getHibSession().update(override);
+				getHibSession().merge(override);
 			} else {
 				override.getInstructionalOffering().getReservations().remove(override);
-				getHibSession().delete(override);
+				getHibSession().remove(override);
 			}
 			changed = true;
 		}

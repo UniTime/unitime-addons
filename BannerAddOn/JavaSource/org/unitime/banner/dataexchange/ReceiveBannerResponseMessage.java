@@ -82,7 +82,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 				rbrm.loadXml(rootElement);
 				queueIn.setProcessDate(new Date());
 				queueIn.setStatus(Queue.STATUS_PROCESSED);
-				QueueInDAO.getInstance().getSession().update(queueIn);
+				QueueInDAO.getInstance().getSession().merge(queueIn);
 			} catch (Exception e) {
 				LoggableException le = new LoggableException(e, queueIn);
 				le.logError();
@@ -149,7 +149,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 					Element bannerResponseElement = (Element) eIt.next();
 					BannerSectionInfoHelper bsi = getBannerSectionInfoHelperForResponseElement(bannerResponseElement, bannerSections, bannerCrosslists);
 					BannerResponse resp = createBannerResponseForResponseElement(bannerResponseElement, bsi, bannerSections, bannerCrosslists); 
-					getHibSession().save(resp);
+					getHibSession().persist(resp);
 				}
 				commitTransaction();
 			}
@@ -192,7 +192,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 					if (action == null) {
 						createMessagesForAllSentElements = false;
 						BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
-						getHibSession().save(resp);
+						getHibSession().persist(resp);
 						break;
 					} else {
 						BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
@@ -225,7 +225,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 								endTimestamp,
 								packetId);
 						lastMatchedSent = currentMatchedSent;
-						getHibSession().save(resp);
+						getHibSession().persist(resp);
 						
 					}				
 				}
@@ -267,7 +267,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 			for (int i = lastMatchedSent + 1 ; i < currentMatchedSent; i++) {
 				BannerResponse noChangeResponse = createNoChangeResponse(sentMessages.get(i), endTimestamp, packetId, i);
 				if (noChangeResponse != null) {
-					getHibSession().save(noChangeResponse);
+					getHibSession().persist(noChangeResponse);
 				}
 			}
 		}

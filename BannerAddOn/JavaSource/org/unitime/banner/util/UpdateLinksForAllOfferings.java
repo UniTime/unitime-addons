@@ -20,13 +20,12 @@
 
 package org.unitime.banner.util;
 
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.unitime.banner.dataexchange.BannerMessage;
 import org.unitime.banner.dataexchange.SendBannerMessage;
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
@@ -51,7 +50,6 @@ public class UpdateLinksForAllOfferings {
 	 * @param args
 	 * @throws Exception 
 	 */
-	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
 		HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
@@ -66,13 +64,13 @@ public class UpdateLinksForAllOfferings {
 			TreeSet<SubjectArea> subjectAreas = new TreeSet<SubjectArea>();
 			subjectAreas.addAll((Set<SubjectArea>)session.getSubjectAreas());
 			String qs = "select distinct co.instructionalOffering from CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId and co.subjectArea.uniqueId = :subjectId and co.isControl = true";
-			Query query = hibSession.createQuery(qs);
+			Query<InstructionalOffering> query = hibSession.createQuery(qs, InstructionalOffering.class);
 			BannerInstrOffrConfigChangeAction biocca = null;
 			for(SubjectArea sa : subjectAreas){
-				query.setLong("sessionId", session.getUniqueId().longValue())
-					 .setLong("subjectId", sa.getUniqueId().longValue());
+				query.setParameter("sessionId", session.getUniqueId())
+					 .setParameter("subjectId", sa.getUniqueId());
 				TreeSet<InstructionalOffering> instructionalOfferings = new TreeSet<InstructionalOffering>(new InstructionalOfferingComparator(sa.getUniqueId()));
-				instructionalOfferings.addAll((List<InstructionalOffering>)query.list());		
+				instructionalOfferings.addAll(query.list());
 				for (InstructionalOffering io : instructionalOfferings){
 					biocca = new BannerInstrOffrConfigChangeAction();
 					biocca.updateInstructionalOffering(io, hibSession);

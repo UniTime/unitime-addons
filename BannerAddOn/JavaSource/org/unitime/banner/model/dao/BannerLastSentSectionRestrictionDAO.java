@@ -19,10 +19,29 @@
 */
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerLastSentSectionRestrictionDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.banner.model.BannerLastSentSectionRestriction;
 
-public class BannerLastSentSectionRestrictionDAO extends BaseBannerLastSentSectionRestrictionDAO {
+public class BannerLastSentSectionRestrictionDAO extends _RootDAO<BannerLastSentSectionRestriction,Long> {
+	private static BannerLastSentSectionRestrictionDAO sInstance;
 
 	public BannerLastSentSectionRestrictionDAO() {}
 
+	public static BannerLastSentSectionRestrictionDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerLastSentSectionRestrictionDAO();
+		return sInstance;
+	}
+
+	public Class<BannerLastSentSectionRestriction> getReferenceClass() {
+		return BannerLastSentSectionRestriction.class;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerLastSentSectionRestriction> findByBannerSection(org.hibernate.Session hibSession, Long bannerSectionId) {
+		return hibSession.createQuery("from BannerLastSentSectionRestriction x where x.bannerSection.uniqueId = :bannerSectionId", BannerLastSentSectionRestriction.class).setParameter("bannerSectionId", bannerSectionId).list();
+	}
 }

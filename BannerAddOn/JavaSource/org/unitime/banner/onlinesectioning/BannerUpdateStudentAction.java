@@ -255,7 +255,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			
 			Lock lock = (result.getStudentId() == null ? null : server.lockStudent(result.getStudentId(), null, name()));
 			try {
-				helper.getHibSession().setFlushMode(FlushMode.COMMIT);
+				helper.getHibSession().setHibernateFlushMode(FlushMode.COMMIT);
 				helper.getHibSession().setCacheMode(CacheMode.REFRESH);
 				helper.beginTransaction();
 
@@ -340,7 +340,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				
 				if (result.hasChanges())
-					helper.getHibSession().update(student);
+					helper.getHibSession().merge(student);
 				
 				action.getStudentBuilder().setUniqueId(result.getStudentId());
 				
@@ -488,7 +488,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	public UpdateResult execute(Long sessionId, OnlineSectioningHelper helper) {
-		helper.getHibSession().setFlushMode(FlushMode.COMMIT);
+		helper.getHibSession().setHibernateFlushMode(FlushMode.COMMIT);
 		helper.getHibSession().setCacheMode(CacheMode.REFRESH);
 		helper.beginTransaction();
 		UpdateResult result = new UpdateResult();
@@ -512,7 +512,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				result.add(Change.ADVISORS);
 
 			if (result.hasChanges())
-				helper.getHibSession().update(student);
+				helper.getHibSession().merge(student);
 
 			if (iUpdateClasses && updateStudentOverrides(student, null, helper, result))
 				result.add(Change.OVERRIDES);
@@ -536,9 +536,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	protected Long getStudentId(Long sessionId) {
 		org.hibernate.Session hibSession = SessionDAO.getInstance().createNewSession();
 		try {
-			return (Long)hibSession.createQuery("select s.uniqueId from Student s where " +
-					"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId")
-					.setLong("sessionId", sessionId).setString("externalId",iExternalId)
+			return hibSession.createQuery("select s.uniqueId from Student s where " +
+					"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId", Long.class)
+					.setParameter("sessionId", sessionId).setParameter("externalId",iExternalId)
 				.setCacheable(true).uniqueResult();
 		} finally {
 			hibSession.close();
@@ -580,13 +580,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aa.setTitle(area);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					aa.setUniqueId((Long)hibSession.save(aa));
+					hibSession.persist(aa);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
 				helper.info("Added Academic Area:  " + area);
-				helper.getHibSession().update(aa);
+				helper.getHibSession().merge(aa);
 				return aa;
 			}
 		} else {
@@ -600,7 +600,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aa.setSession(iSession);
 				aa.setExternalUniqueId(area);
 				aa.setTitle(area);
-				aa.setUniqueId((Long)helper.getHibSession().save(aa));
+				helper.getHibSession().persist(aa);
 				helper.info("Added Academic Area:  " + area);
 			}
 			return aa;
@@ -621,13 +621,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				ac.setSession(iSession);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					ac.setUniqueId((Long)hibSession.save(ac));
+					hibSession.persist(ac);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
 				helper.info("Added Academic Classification:  " + clasf);
-				helper.getHibSession().update(ac);
+				helper.getHibSession().merge(ac);
 				return ac;
 			}
 		} else {
@@ -640,7 +640,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				ac.setExternalUniqueId(clasf);
 				ac.setName(clasf);
 				ac.setSession(iSession);
-				ac.setUniqueId((Long) helper.getHibSession().save(ac));
+				helper.getHibSession().persist(ac);
 				helper.info("Added Academic Classification:  " + clasf);
 			}
 			return ac;
@@ -663,12 +663,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				try {
 					posMajor.addToacademicAreas(aa);
 					aa.addToposMajors(posMajor);
-					posMajor.setUniqueId((Long)hibSession.save(posMajor));
+					hibSession.persist(posMajor);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
-				helper.getHibSession().update(posMajor);
+				helper.getHibSession().merge(posMajor);
 				helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 				return posMajor;
 			}
@@ -684,7 +684,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				posMajor.setSession(iSession);
 				posMajor.addToacademicAreas(aa);
 				aa.addToposMajors(posMajor);
-				posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
+				helper.getHibSession().persist(posMajor);
 				helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 			}
 			return posMajor;
@@ -692,51 +692,51 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	protected static PosMinor findPosMinor(org.hibernate.Session hibSession, Long sessionId, String minor) {
-		PosMinor conc = (PosMinor)hibSession.createQuery(
+		PosMinor conc = hibSession.createQuery(
                 "select m from PosMinor m where "+
                 "m.session.uniqueId = :sessionId and "+
-                "m.externalUniqueId = :minor").
-         setLong("sessionId", sessionId).
-         setString("minor", minor).
+                "m.externalUniqueId = :minor", PosMinor.class).
+         setParameter("sessionId", sessionId).
+         setParameter("minor", minor).
          setCacheable(true).
          setMaxResults(1).
          uniqueResult(); 
 		if (conc != null) return conc;
-		return (PosMinor)hibSession.createQuery(
+		return hibSession.createQuery(
 				"select m from PosMinor m where "+
                 "m.session.uniqueId = :sessionId and "+
-                "m.code = :minor").
-         setLong("sessionId", sessionId).
-         setString("minor", minor).
+                "m.code = :minor", PosMinor.class).
+         setParameter("sessionId", sessionId).
+         setParameter("minor", minor).
          setCacheable(true).
          setMaxResults(1).
          uniqueResult();
     }
 	
 	protected static PosMajorConcentration findPosMajorConcentration(org.hibernate.Session hibSession, Long sessionId, String area, String major, String concentration) {
-		PosMajorConcentration conc = (PosMajorConcentration)hibSession.createQuery(
+		PosMajorConcentration conc = hibSession.createQuery(
                 "select c from PosMajorConcentration c inner join c.major m inner join m.academicAreas a where "+
                 "m.session.uniqueId = :sessionId and "+
                 "c.externalUniqueId = :concentration and " +
                 "m.externalUniqueId = :major and " +
-                "a.externalUniqueId = :area").
-         setLong("sessionId", sessionId).
-         setString("area", area).
-         setString("major", major).
-         setString("concentration", concentration).
+                "a.externalUniqueId = :area", PosMajorConcentration.class).
+         setParameter("sessionId", sessionId).
+         setParameter("area", area).
+         setParameter("major", major).
+         setParameter("concentration", concentration).
          setCacheable(true).
          uniqueResult(); 
 		if (conc != null) return conc;
-		return (PosMajorConcentration)hibSession.createQuery(
+		return hibSession.createQuery(
                 "select c from PosMajorConcentration c inner join c.major m inner join m.academicAreas a where "+
                 "m.session.uniqueId = :sessionId and "+
                 "c.code = :concentration and " +
                 "m.code = :major and " +
-                "a.academicAreaAbbreviation = :area").
-         setLong("sessionId", sessionId).
-         setString("area", area).
-         setString("major", major).
-         setString("concentration", concentration).
+                "a.academicAreaAbbreviation = :area", PosMajorConcentration.class).
+         setParameter("sessionId", sessionId).
+         setParameter("area", area).
+         setParameter("major", major).
+         setParameter("concentration", concentration).
          setCacheable(true).
          uniqueResult();
     }
@@ -754,12 +754,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
 					posMajor.addToconcentrations(conc);
-					conc.setUniqueId((Long)hibSession.save(conc));
+					hibSession.persist(conc);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
-				helper.getHibSession().update(conc);
+				helper.getHibSession().merge(conc);
 				helper.info("Added Concentration:  " + concentration + " to Major:  " + area + "/" + major);
 				return conc;
 			}
@@ -772,7 +772,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				conc.setName(concentration);
 				conc.setMajor(posMajor);
 				posMajor.addToconcentrations(conc);
-				conc.setUniqueId((Long)helper.getHibSession().save(conc));
+				helper.getHibSession().persist(conc);
 				helper.info("Added Concentration:  " + concentration + " to Major:  " + area + "/" + major);
 			}
 			return conc;
@@ -780,21 +780,21 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	protected static Degree findDegree(org.hibernate.Session hibSession, Long sessionId, String degree) {
-		Degree deg = (Degree)hibSession.createQuery(
+		Degree deg = hibSession.createQuery(
                 "select d from Degree d where "+
                 "d.session.uniqueId = :sessionId and "+
-                "d.externalUniqueId = :degree").
-         setLong("sessionId", sessionId).
-         setString("degree", degree).
+                "d.externalUniqueId = :degree", Degree.class).
+         setParameter("sessionId", sessionId).
+         setParameter("degree", degree).
          setCacheable(true).
          uniqueResult(); 
 		if (deg != null) return deg;
-		return (Degree)hibSession.createQuery(
+		return hibSession.createQuery(
                 "select d from Degree d where "+
                 "d.session.uniqueId = :sessionId and "+
-                "d.reference = :degree").
-         setLong("sessionId", sessionId).
-         setString("degree", degree).
+                "d.reference = :degree", Degree.class).
+         setParameter("sessionId", sessionId).
+         setParameter("degree", degree).
          setCacheable(true).
          uniqueResult();
     }
@@ -811,12 +811,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				deg.setSession(iSession);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					deg.setUniqueId((Long)hibSession.save(deg));
+					hibSession.persist(deg);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
-				helper.getHibSession().update(deg);
+				helper.getHibSession().merge(deg);
 				helper.info("Added Degree:  " + degree);
 				return deg;
 			}
@@ -828,7 +828,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				deg.setReference(degree);
 				deg.setLabel(degree);
 				deg.setSession(iSession);
-				deg.setUniqueId((Long)helper.getHibSession().save(deg));
+				helper.getHibSession().persist(deg);
 				helper.info("Added Degree:  " + degree);
 			}
 			return deg;
@@ -836,21 +836,21 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	protected static Program findProgram(org.hibernate.Session hibSession, Long sessionId, String program) {
-		Program prog = (Program)hibSession.createQuery(
+		Program prog = hibSession.createQuery(
                 "select d from Program d where "+
                 "d.session.uniqueId = :sessionId and "+
-                "d.externalUniqueId = :program").
-         setLong("sessionId", sessionId).
-         setString("program", program).
+                "d.externalUniqueId = :program", Program.class).
+         setParameter("sessionId", sessionId).
+         setParameter("program", program).
          setCacheable(true).
          uniqueResult(); 
 		if (prog != null) return prog;
-		return (Program)hibSession.createQuery(
+		return hibSession.createQuery(
                 "select d from Program d where "+
                 "d.session.uniqueId = :sessionId and "+
-                "d.reference = :program").
-         setLong("sessionId", sessionId).
-         setString("program", program).
+                "d.reference = :program", Program.class).
+         setParameter("sessionId", sessionId).
+         setParameter("program", program).
          setCacheable(true).
          uniqueResult();
     }
@@ -867,12 +867,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				prog.setSession(iSession);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					prog.setUniqueId((Long)hibSession.save(prog));
+					hibSession.persist(prog);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
-				helper.getHibSession().update(prog);
+				helper.getHibSession().merge(prog);
 				helper.info("Added Program:  " + program);
 				return prog;
 			}
@@ -884,7 +884,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				prog.setReference(program);
 				prog.setLabel(program);
 				prog.setSession(iSession);
-				prog.setUniqueId((Long)helper.getHibSession().save(prog));
+				helper.getHibSession().persist(prog);
 				helper.info("Added Program:  " + program);
 			}
 			return prog;
@@ -892,21 +892,21 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	protected static Campus findCampus(org.hibernate.Session hibSession, Long sessionId, String campus) {
-		Campus camp = (Campus)hibSession.createQuery(
+		Campus camp = hibSession.createQuery(
                 "select d from Campus d where "+
                 "d.session.uniqueId = :sessionId and "+
-                "d.externalUniqueId = :campus").
-         setLong("sessionId", sessionId).
-         setString("campus", campus).
+                "d.externalUniqueId = :campus", Campus.class).
+         setParameter("sessionId", sessionId).
+         setParameter("campus", campus).
          setCacheable(true).
          uniqueResult(); 
 		if (camp != null) return camp;
-		return (Campus)hibSession.createQuery(
+		return hibSession.createQuery(
                 "select d from Campus d where "+
                 "d.session.uniqueId = :sessionId and "+
-                "d.reference = :campus").
-         setLong("sessionId", sessionId).
-         setString("campus", campus).
+                "d.reference = :campus", Campus.class).
+         setParameter("sessionId", sessionId).
+         setParameter("campus", campus).
          setCacheable(true).
          uniqueResult();
     }
@@ -923,12 +923,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				camp.setSession(iSession);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					camp.setUniqueId((Long)hibSession.save(camp));
+					hibSession.persist(camp);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
-				helper.getHibSession().update(camp);
+				helper.getHibSession().merge(camp);
 				helper.info("Added Campus:  " + campus);
 				return camp;
 			}
@@ -940,7 +940,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				camp.setReference(campus);
 				camp.setLabel(campus);
 				camp.setSession(iSession);
-				camp.setUniqueId((Long)helper.getHibSession().save(camp));
+				helper.getHibSession().persist(camp);
 				helper.info("Added Campus:  " + campus);
 			}
 			return camp;
@@ -967,7 +967,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 		
 		if (result.getStudentId() == null)
-			result.setStudentId((Long)helper.getHibSession().save(student));
+			helper.getHibSession().persist(student);
 		
 		if (iUpdateAcadAreaClasfMj) {
 			if (!iAcadAreaClasfMj.isEmpty()) {
@@ -1013,7 +1013,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 							needUpdate = true;
 						}
 						if (needUpdate) {
-							helper.getHibSession().update(aac);
+							helper.getHibSession().merge(aac);
 							changed = true;
 						}
 						i.remove(); continue aac;
@@ -1048,7 +1048,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			
 			for (StudentAreaClassificationMajor aac: remaining) {
 				student.getAreaClasfMajors().remove(aac);
-				helper.getHibSession().delete(aac);
+				helper.getHibSession().remove(aac);
 				changed = true;
 			}
 		}
@@ -1098,7 +1098,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			
 			for (StudentAreaClassificationMinor aac: remaining) {
 				student.getAreaClasfMinors().remove(aac);
-				helper.getHibSession().delete(aac);
+				helper.getHibSession().remove(aac);
 				changed = true;
 			}
 		}
@@ -1130,12 +1130,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				if (type != null) {
 					org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 					try {
-						type.setUniqueId((Long)hibSession.save(type));
+						hibSession.persist(type);
 						hibSession.flush();
 					} finally {
 						hibSession.close();
 					}
-					helper.getHibSession().update(type);
+					helper.getHibSession().merge(type);
 				}
 				return type;
 			}
@@ -1148,7 +1148,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				type.setKeepTogether(false);
 				type.setReference("SPORT");
 				type.setLabel("Student Athletes");
-				helper.getHibSession().save(type);
+				helper.getHibSession().persist(type);
 			}
 			if (type == null && "COHORT".equals(name)) {
 				type = new StudentGroupType();
@@ -1157,7 +1157,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				type.setKeepTogether(false);
 				type.setReference("COHORT");
 				type.setLabel("Student Cohorts");
-				helper.getHibSession().save(type);
+				helper.getHibSession().persist(type);
 			}
 			return type;
 		}
@@ -1176,13 +1176,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 					try {
 						sg.setType(g[4] == null ? null : StudentGroupType.findByReference(g[4], hibSession));
-						sg.setUniqueId((Long)hibSession.save(sg));
+						hibSession.persist(sg);
 						hibSession.flush();
 					} finally {
 						hibSession.close();
 					}
 					helper.info("Added "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
-					helper.getHibSession().update(sg);
+					helper.getHibSession().merge(sg);
 				} else {
 					boolean changed = false;
 					if (g[2] != null &&  !g[2].equals(sg.getGroupAbbreviation())){
@@ -1201,7 +1201,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						changed = true;
 					}
 					if (changed) {
-						helper.getHibSession().update(sg);
+						helper.getHibSession().merge(sg);
 					}
 				}
 				return sg;
@@ -1215,7 +1215,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				sg.setGroupAbbreviation(g[2] == null ? g[0] : g[2]);
 				sg.setGroupName(g[3] == null ? g[0] : g[3]);
 				sg.setType(type);
-				sg.setUniqueId((Long)helper.getHibSession().save(sg));
+				helper.getHibSession().persist(sg);
 				helper.info("Added "+(type == null ? "Student" : type.getLabel()) + " Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
 			} else {
 				boolean changed = false;
@@ -1235,7 +1235,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					changed = true;
 				}
 				if (changed) {
-					helper.getHibSession().update(sg);
+					helper.getHibSession().merge(sg);
 				}
 			}
 			return sg;
@@ -1326,13 +1326,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			}
 			
 			if (crn == null) {
-				@SuppressWarnings("unchecked")
-				List<CourseOffering> courses = (List<CourseOffering>)helper.getHibSession().createQuery(
+				List<CourseOffering> courses = helper.getHibSession().createQuery(
 						"from CourseOffering co where " +
 						"co.instructionalOffering.session.uniqueId = :sessionId and " +
 						"co.instructionalOffering.notOffered = false and " + 
-						"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course")
-						.setString("subject", subject).setString("course", course + "%").setLong("sessionId", iSession.getUniqueId()).list();
+						"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course", CourseOffering.class)
+						.setParameter("subject", subject).setParameter("course", course + "%").setParameter("sessionId", iSession.getUniqueId()).list();
 				if (course.isEmpty()) {
 					helper.error("No course offering found for subject " + subject + ", course number " + course + " and banner session " + iTermCode);
 					result.setStatus(Status.PROBLEM);
@@ -1429,8 +1428,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = getOverrides(helper, result);
 		
 		Set<OverrideReservation> overrides = new HashSet<OverrideReservation>(helper.getHibSession().createQuery(
-				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
-			.setLong("studentId", student.getUniqueId()).list());
+				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId", OverrideReservation.class)
+			.setParameter("studentId", student.getUniqueId()).list());
 		
 		overrides: for (Map.Entry<InstructionalOffering, Map<String, Set<Class_>>> e: restrictions.entrySet()) {
 			InstructionalOffering io = e.getKey();
@@ -1466,7 +1465,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						override = (OverrideReservation)r;
 						override.addTostudents(student);
 						helper.info("Updated " + type.getReference() + " override for " + io.getCourseName() + " [" + student.getExternalUniqueId()  + " added]");
-						helper.getHibSession().update(override);
+						helper.getHibSession().merge(override);
 						break;
 					}
 				}
@@ -1487,7 +1486,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						override.addToclasses(c);
 
 				helper.info("Created " + type.getReference() + " override for " + io.getCourseName() + " [" + student.getExternalUniqueId()  + " added]");
-				override.setUniqueId((Long)helper.getHibSession().save(override));
+				helper.getHibSession().persist(override);
 			}
 
 			if (server != null) {
@@ -1517,11 +1516,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			if (override.getStudents().size() > 1) {
 				helper.info("Updated " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName() + " [" + student.getExternalUniqueId()  + " removed]");
 				override.getStudents().remove(student);
-				helper.getHibSession().update(override);
+				helper.getHibSession().merge(override);
 			} else {
 				helper.info("Removed " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName() + " [" + student.getExternalUniqueId()  + " removed]");
 				override.getInstructionalOffering().getReservations().remove(override);
-				helper.getHibSession().delete(override);
+				helper.getHibSession().remove(override);
 			}
 			if (server != null) {
 				Lock w = server.writeLock();
@@ -1567,7 +1566,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
         	// remove duplicate enrollments
         	for (StudentClassEnrollment enrollment: duplicates) {
     			student.getClassEnrollments().remove(enrollment);
-    			helper.getHibSession().delete(enrollment);
+    			helper.getHibSession().remove(enrollment);
     			changed = true;
         	}
     	}
@@ -1630,7 +1629,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     			}
     			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
 					StudentEnrollmentMessage message = i.next();
-					helper.getHibSession().delete(message);
+					helper.getHibSession().remove(message);
 					i.remove();
 				}
     		}
@@ -1656,7 +1655,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     		if (iResetWaitList && cr.getCourseDemand().isWaitlist() && !co.equals(cr.getCourseDemand().getWaitListSwapWithCourseOffering())) {
     			cr.getCourseDemand().setWaitlist(false);
     			changed = true;
-    			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    			helper.getHibSession().merge(cr.getCourseDemand());
     			if (student.getWaitListMode() == WaitListMode.WaitList)
     				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession()); 
     		}
@@ -1672,13 +1671,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     					exDropDeletes.add(cr.getCourseDemand());
     				else if (iResetWaitList && cr.getCourseDemand().isWaitlist()) {
     					cr.getCourseDemand().setWaitlist(false);
-    					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    	    			helper.getHibSession().merge(cr.getCourseDemand());
     					if (student.getWaitListMode() == WaitListMode.WaitList)
     	    				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession());
     				}
     			}
     			student.getClassEnrollments().remove(enrollment);
-    			helper.getHibSession().delete(enrollment);
+    			helper.getHibSession().remove(enrollment);
     		}
     		changed = true;
     	}
@@ -1688,18 +1687,21 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     		if (!exDropDeletes.isEmpty()) {
     			for (CourseDemand cd: exDropDeletes) {
         			if (cd.getFreeTime() != null)
-        				helper.getHibSession().delete(cd.getFreeTime());
+        				helper.getHibSession().remove(cd.getFreeTime());
         			for (CourseRequest cr: cd.getCourseRequests())
-        				helper.getHibSession().delete(cr);
+        				helper.getHibSession().remove(cr);
         			student.getCourseDemands().remove(cd);
-        			helper.getHibSession().delete(cd);
+        			helper.getHibSession().remove(cd);
         		}
     		}
     		// fix priorities
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
     			cd.setPriority(priority++);
-    			helper.getHibSession().saveOrUpdate(cd);
+    			if (cd.getUniqueId() == null)
+        			helper.getHibSession().persist(cd);
+    			else
+    				helper.getHibSession().merge(cd);
     		}
     	}
     	
@@ -1750,9 +1752,9 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		}
 		if (iLocking) {
 			synchronized (("Advisor:" + externalId).intern()) {
-				Advisor advisor = (Advisor)helper.getHibSession().createQuery(
-						"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId")
-						.setString("externalId", externalId).setLong("roleId", role.getRoleId()).setLong("sessionId", iSession.getUniqueId())
+				Advisor advisor = helper.getHibSession().createQuery(
+						"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId", Advisor.class)
+						.setParameter("externalId", externalId).setParameter("roleId", role.getRoleId()).setParameter("sessionId", iSession.getUniqueId())
 						.setCacheable(true).setMaxResults(1).uniqueResult();
 				if (advisor != null) return advisor;
 				advisor = new Advisor();
@@ -1767,19 +1769,19 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					advisor.setUniqueId((Long)hibSession.save(advisor));
+					hibSession.persist(advisor);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
 				helper.info("Added Advisor:  " + advisor.getExternalUniqueId() + " - " + advisor.getRole().getReference() + " to session " + iSession.academicInitiativeDisplayString());
-				helper.getHibSession().update(advisor);
+				helper.getHibSession().merge(advisor);
 				return advisor;
 			}
 		} else {
-			Advisor advisor = (Advisor)helper.getHibSession().createQuery(
-					"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId")
-					.setString("externalId", externalId).setLong("roleId", role.getRoleId()).setLong("sessionId", iSession.getUniqueId())
+			Advisor advisor = helper.getHibSession().createQuery(
+					"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId", Advisor.class)
+					.setParameter("externalId", externalId).setParameter("roleId", role.getRoleId()).setParameter("sessionId", iSession.getUniqueId())
 					.setCacheable(true).setMaxResults(1).uniqueResult();
 			if (advisor == null) {
 				advisor = new Advisor();
@@ -1787,7 +1789,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				advisor.setRole(role);
 				advisor.setSession(iSession);
 				advisor.setStudents(new HashSet<Student>());
-				advisor.setUniqueId((Long)helper.getHibSession().save(advisor));
+				helper.getHibSession().persist(advisor);
 				try {
 					updateDetailsFromLdap(advisor);
 				} catch (Throwable t) {

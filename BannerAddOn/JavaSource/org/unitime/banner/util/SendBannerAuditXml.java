@@ -91,7 +91,7 @@ public class SendBannerAuditXml {
 		BannerSession bs = BannerSession.findBannerSessionForSession(session.getUniqueId(), hibSession);
 		String termCode = bs.getBannerTermCode();
 		String hqlDelete = "delete BannerResponse br where br.termCode = :termCode and br.action = 'AUDIT'";
-		int deletedCount = hibSession.createQuery(hqlDelete).setString("termCode",termCode).executeUpdate();
+		int deletedCount = hibSession.createMutationQuery(hqlDelete).setParameter("termCode",termCode).executeUpdate();
 		Debug.info(deletedCount + " previous AUDIT messages deleted for " + termCode);
 		tx.commit();
 		hibSession.close();

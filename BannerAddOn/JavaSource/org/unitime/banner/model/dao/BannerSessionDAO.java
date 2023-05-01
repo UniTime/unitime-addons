@@ -17,18 +17,41 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerSessionDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.banner.model.BannerSession;
 
+public class BannerSessionDAO extends _RootDAO<BannerSession,Long> {
+	private static BannerSessionDAO sInstance;
 
-public class BannerSessionDAO extends BaseBannerSessionDAO {
+	public BannerSessionDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public BannerSessionDAO () {}
+	public static BannerSessionDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerSessionDAO();
+		return sInstance;
+	}
 
+	public Class<BannerSession> getReferenceClass() {
+		return BannerSession.class;
+	}
 
+	@SuppressWarnings("unchecked")
+	public List<BannerSession> findBySession(org.hibernate.Session hibSession, Long sessionId) {
+		return hibSession.createQuery("from BannerSession x where x.session.uniqueId = :sessionId", BannerSession.class).setParameter("sessionId", sessionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerSession> findByFutureSession(org.hibernate.Session hibSession, Long futureSessionId) {
+		return hibSession.createQuery("from BannerSession x where x.futureSession.uniqueId = :futureSessionId", BannerSession.class).setParameter("futureSessionId", futureSessionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerSession> findByBannerTermCrnProperties(org.hibernate.Session hibSession, Long bannerTermCrnPropertiesId) {
+		return hibSession.createQuery("from BannerSession x where x.bannerTermCrnProperties.uniqueId = :bannerTermCrnPropertiesId", BannerSession.class).setParameter("bannerTermCrnPropertiesId", bannerTermCrnPropertiesId).list();
+	}
 }

@@ -17,18 +17,36 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerConfigDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.banner.model.BannerConfig;
 
+public class BannerConfigDAO extends _RootDAO<BannerConfig,Long> {
+	private static BannerConfigDAO sInstance;
 
-public class BannerConfigDAO extends BaseBannerConfigDAO {
+	public BannerConfigDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public BannerConfigDAO () {}
+	public static BannerConfigDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerConfigDAO();
+		return sInstance;
+	}
 
+	public Class<BannerConfig> getReferenceClass() {
+		return BannerConfig.class;
+	}
 
+	@SuppressWarnings("unchecked")
+	public List<BannerConfig> findByGradableItype(org.hibernate.Session hibSession, Long gradableItypeId) {
+		return hibSession.createQuery("from BannerConfig x where x.gradableItype.uniqueId = :gradableItypeId", BannerConfig.class).setParameter("gradableItypeId", gradableItypeId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<BannerConfig> findByBannerCourse(org.hibernate.Session hibSession, Long bannerCourseId) {
+		return hibSession.createQuery("from BannerConfig x where x.bannerCourse.uniqueId = :bannerCourseId", BannerConfig.class).setParameter("bannerCourseId", bannerCourseId).list();
+	}
 }

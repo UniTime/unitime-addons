@@ -73,15 +73,15 @@ public class BannerSectionAuditExport extends BaseExport {
 	     "and co.subjectArea.subjectAreaAbbreviation = :subjectAbbv " +
 	     "order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, co.title";
 
-		Iterator subjectIt = getHibSession().createQuery(subjectQuery).setString("termCode", s.getBannerTermCode()).iterate();
+		Iterator<String> subjectIt = getHibSession().createQuery(subjectQuery, String.class).setParameter("termCode", s.getBannerTermCode()).list().iterator();
 		while (subjectIt.hasNext()){
-			String subjectAbbv = (String) subjectIt.next();
-			Iterator it = getHibSession().createQuery(qs)
-			.setString("termCode", s.getBannerTermCode())
-			.setString("subjectAbbv", subjectAbbv)
-			.iterate();
+			String subjectAbbv = subjectIt.next();
+			Iterator<BannerSection> it = getHibSession().createQuery(qs, BannerSection.class)
+			.setParameter("termCode", s.getBannerTermCode())
+			.setParameter("subjectAbbv", subjectAbbv)
+			.list().iterator();
 			while(it.hasNext()){
-				BannerSection bs = (BannerSection) it.next();
+				BannerSection bs = it.next();
 				bannerMessage.addBannerSectionToMessage(bs, action, getHibSession());
 				getHibSession().evict(bs);
 			}
@@ -97,12 +97,12 @@ public class BannerSectionAuditExport extends BaseExport {
 				"and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId " +
 				"and bs.crossListIdentifier is not null " +
 				"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, co.title";
-		Iterator it = getHibSession().createQuery(qs)
-		.setString("termCode", s.getBannerTermCode())
-		.iterate();
+		Iterator<BannerSection> it = getHibSession().createQuery(qs, BannerSection.class)
+		.setParameter("termCode", s.getBannerTermCode())
+		.list().iterator();
 		HashSet<String> hs = new HashSet<String>();
 		while(it.hasNext()){
-			BannerSection bs = (BannerSection) it.next();
+			BannerSection bs = it.next();
 			if (!hs.contains(bs.getCrossListIdentifier())){
 				hs.add(bs.getCrossListIdentifier());
 				bannerMessage.addBannerCrossListToMessage(bs, action, getHibSession());

@@ -17,82 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import java.util.List;
-
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
-import org.hibernate.Transaction;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 import org.unitime.banner.model.QueueIn;
-import org.unitime.banner.model.base.BaseQueueInDAO;
-import org.unitime.banner.queueprocessor.exception.LoggableException;
 
+public class QueueInDAO extends _RootDAO<QueueIn,Long> {
+	private static QueueInDAO sInstance;
 
+	public QueueInDAO() {}
 
-public class QueueInDAO extends BaseQueueInDAO {
-
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public QueueInDAO () {}
-
-	public QueueIn findById(Long queueId) throws LoggableException {
-
-        List list = null;
-        Transaction tx = null;
-        try {
-            
-            tx = getSession().beginTransaction();
-            
-            String hql = "from QueueIn "
-            			+ "where uniqueId = :queueId ";
-            
-            Query query = getSession().createQuery(hql);
-            query.setLong("queueId", queueId);
-            
-            list = query.list();
-            tx.commit();
-            
-        } catch (HibernateException e) {
-        	tx.rollback();
-        	throw new LoggableException(e);
-        } finally {
-        	getSession().close();
-        }
-		
-		if(list.size() > 0) return (QueueIn) list.get(0);
-		return null;
+	public static QueueInDAO getInstance() {
+		if (sInstance == null) sInstance = new QueueInDAO();
+		return sInstance;
 	}
 
-	public QueueIn findByMatchId(Long matchId) throws LoggableException {
-
-        List list = null;
-        Transaction tx = null;
-        try {
-            
-            tx = getSession().beginTransaction();
-            
-            String hql = "from QueueIn "
-            			+ "where matchId = :matchId ";
-            
-            Query query = getSession().createQuery(hql);
-            query.setLong("matchId", matchId);
-            
-            list = query.list();
-            tx.commit();
-            
-        } catch (HibernateException e) {
-        	tx.rollback();
-        	throw new LoggableException(e);
-        } finally {
-        	getSession().close();
-        }
-		
-		if(list.size() > 0) return (QueueIn) list.get(0);
-		
-		return null;
+	public Class<QueueIn> getReferenceClass() {
+		return QueueIn.class;
 	}
-
 }

@@ -17,18 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerCampusOverrideDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.banner.model.BannerCampusOverride;
 
+public class BannerCampusOverrideDAO extends _RootDAO<BannerCampusOverride,Long> {
+	private static BannerCampusOverrideDAO sInstance;
 
-public class BannerCampusOverrideDAO extends BaseBannerCampusOverrideDAO {
+	public BannerCampusOverrideDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public BannerCampusOverrideDAO () {}
+	public static BannerCampusOverrideDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerCampusOverrideDAO();
+		return sInstance;
+	}
 
-
+	public Class<BannerCampusOverride> getReferenceClass() {
+		return BannerCampusOverride.class;
+	}
 }

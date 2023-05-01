@@ -47,13 +47,13 @@ import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.Change;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.OfferingCheck;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.Status;
 import org.unitime.banner.onlinesectioning.BannerUpdateStudentAction.UpdateResult;
+import org.unitime.commons.hibernate.util.HibernateUtil;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.dataexchange.BaseImport;
 import org.unitime.timetable.dataexchange.DataExchangeHelper;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
-import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper.Message;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper.MessageHandler;
@@ -84,8 +84,8 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
 		Transaction tx = hibSession.beginTransaction();
 		try {
-			QueueIn qi = (QueueIn)hibSession.createQuery("from QueueIn where status = :status order by uniqueId")
-					.setString("status", QueueIn.STATUS_READY)
+			QueueIn qi = hibSession.createQuery("from QueueIn where status = :status order by uniqueId", QueueIn.class)
+					.setParameter("status", QueueIn.STATUS_READY)
 					.setMaxResults(1)
 					.uniqueResult();
 			
@@ -93,7 +93,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 			
 			if (qi != null) {
 				qi.setStatus(Queue.STATUS_PROCESSING);
-				hibSession.update(qi);
+				hibSession.merge(qi);
 				ret = new XmlMessage(qi.getUniqueId(), qi.getPostDate(), qi.getXml());
 			}
 
@@ -117,7 +117,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 			if (qi != null) {
 				qi.setStatus(status);
 				qi.setProcessDate(new Date());
-				hibSession.update(qi);
+				hibSession.merge(qi);
 			}
 			
 			tx.commit();
@@ -145,7 +145,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					updateMessage(message, Queue.STATUS_FAILED);
 					error("Failed to process message #" + message.getQueueId() +": " + e.getMessage(), e);
 				} finally {
-					_RootDAO.closeCurrentThreadSessions();
+					HibernateUtil.closeCurrentThreadSessions();
 				}
 			}
 		} catch (Exception ex) {
@@ -447,7 +447,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					out.setXml(document);
 					out.setStatus(QueueOut.STATUS_READY);
 					out.setPostDate(new Date());
-					hibSession.save(out);
+					hibSession.persist(out);
 					info("Future session updates for " + iUpdateRequests.size() + " students requested.");
 				}
 				hibSession.flush();
@@ -475,26 +475,26 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 					}
 				} finally {
 					hibSession.close();
-					_RootDAO.closeCurrentThreadSessions();
+					HibernateUtil.closeCurrentThreadSessions();
 				}
 			}
 			
 			protected List<BannerSession> getBannerSessions(String bannerSession, org.hibernate.Session hibSession) {
 				List<BannerSession> sessionIds = iSession2ids.get(bannerSession);
 				if (sessionIds == null) {
-					sessionIds = (List<BannerSession>)hibSession.createQuery(
-							"select bs from BannerSession bs where bs.bannerTermCode = :termCode")
-							.setString("termCode", bannerSession).list();
+					sessionIds = hibSession.createQuery(
+							"select bs from BannerSession bs where bs.bannerTermCode = :termCode", BannerSession.class)
+							.setParameter("termCode", bannerSession).list();
 					iSession2ids.put(bannerSession, sessionIds);
 				}
 				return sessionIds;
 			}
 			
 			protected boolean hasStudent(BannerSession session, String externalId, org.hibernate.Session hibSession) {
-				return ((Number)hibSession.createQuery(
-						"select count(s) from Student s where s.externalUniqueId = :externalId and s.session = :sessionId"
-						).setString("externalId", externalId).setLong("sessionId", session.getSession().getUniqueId())
-						.uniqueResult()).intValue() > 0;
+				return hibSession.createQuery(
+						"select count(s) from Student s where s.externalUniqueId = :externalId and s.session = :sessionId", Number.class
+						).setParameter("externalId", externalId).setParameter("sessionId", session.getSession().getUniqueId())
+						.uniqueResult().intValue() > 0;
 			}
 			
 			void processStudent(Element studentElement, org.hibernate.Session hibSession, boolean locking) {
@@ -536,7 +536,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 									result = server.execute(update, user());
 									checkForOfferingChecks(sessionId, result);
 								} finally {
-									_RootDAO.closeCurrentThreadSessions();
+									HibernateUtil.closeCurrentThreadSessions();
 								}
 							} else {
 								OnlineSectioningHelper h = new OnlineSectioningHelper(QueueInDAO.getInstance().createNewSession(), user(), CacheMode.REFRESH);
@@ -583,7 +583,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 												result = server.execute(update, user());
 												checkForOfferingChecks(sessionId, result);
 											} finally {
-												_RootDAO.closeCurrentThreadSessions();
+												HibernateUtil.closeCurrentThreadSessions();
 											}
 										} else {
 											OnlineSectioningHelper h = new OnlineSectioningHelper(QueueInDAO.getInstance().createNewSession(), user(), CacheMode.REFRESH);
@@ -698,7 +698,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 			processMessage(rootElement);
 			new MessageProcessor(rootElement).process();
 		} finally {
-			_RootDAO.closeCurrentThreadSessions();
+			HibernateUtil.closeCurrentThreadSessions();
 		}
 	}
 

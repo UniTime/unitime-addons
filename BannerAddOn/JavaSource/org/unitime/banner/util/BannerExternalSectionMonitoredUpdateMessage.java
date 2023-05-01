@@ -32,15 +32,15 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 		  .append("\"%'")
 		  ;
 		Debug.info(sb.toString());
-		return (Long) hibSession.createQuery(sb.toString()).setCacheable(false).uniqueResult();
+		return hibSession.createQuery(sb.toString(), Number.class).setCacheable(false).uniqueResult().longValue();
 	}
 	
 
 	private QueueIn getQueueInMessageFor(Long outgoingUniqueId, int secondsToWait, org.hibernate.Session hibSession) {
 		for (int i = 0 ; i < secondsToWait; i = i + 2) {
-			QueueIn queueIn = (QueueIn) hibSession
-					.createQuery("from QueueIn qi where qi.matchId = :queueOutId")
-					.setLong("queueOutId", outgoingUniqueId)
+			QueueIn queueIn = hibSession
+					.createQuery("from QueueIn qi where qi.matchId = :queueOutId", QueueIn.class)
+					.setParameter("queueOutId", outgoingUniqueId)
 					.setCacheable(false)
 					.uniqueResult();
 			if (queueIn != null) {
@@ -58,11 +58,10 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 	}
 
 	private List<BannerResponse> getResponseMessageFor(Long outgoingUniqueId, Integer crn, org.hibernate.Session hibSession) {
-		@SuppressWarnings("unchecked")
-		List<BannerResponse> bannerResponses = (List<BannerResponse>) hibSession
-				.createQuery("from BannerResponse br where br.queueId = :queueOutId and br.crn = :crn order by br.uniqueId")
-				.setLong("queueOutId", outgoingUniqueId)
-				.setString("crn", crn.toString())
+		List<BannerResponse> bannerResponses = hibSession
+				.createQuery("from BannerResponse br where br.queueId = :queueOutId and br.crn = :crn order by br.uniqueId", BannerResponse.class)
+				.setParameter("queueOutId", outgoingUniqueId)
+				.setParameter("crn", crn.toString())
 				.setCacheable(false)
 				.list();
 		if (!bannerResponses.isEmpty()) {
@@ -84,7 +83,7 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 			return ExternalSectionCreationStatus.DOES_NOT_EXIST;			
 		}
 		
-		Long latestQueueUid = (Long) hibSession.createQuery("select max(qo.uniqueId) from QueueOut qo").setCacheable(false).uniqueResult();
+		Long latestQueueUid = hibSession.createQuery("select max(qo.uniqueId) from QueueOut qo", Long.class).setCacheable(false).uniqueResult();
 		configChangeAction.performExternalInstrOffrConfigChangeAction(courseOffering.getInstructionalOffering(), hibSession);
 		BannerSection bannerSection = BannerSection.findBannerSectionForClassAndCourseOffering(clazz, courseOffering, hibSession);
 		Long updateRequestOutgoingUid = getUniqueIdOfQueueMessage(bannerSession, bannerSection, latestQueueUid, hibSession);

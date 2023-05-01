@@ -20,6 +20,12 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.lang.reflect.InvocationTargetException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -80,6 +86,9 @@ import org.unitime.timetable.util.Constants;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_section")
 public class BannerSection extends BaseBannerSection {
 	protected static GwtConstants CONSTANTS = Localization.create(GwtConstants.class);
 	
@@ -164,7 +173,8 @@ public class BannerSection extends BaseBannerSection {
 					if (clazz != null && bsc.getClassId().equals(clazz.getUniqueId())){
 						classes.add(clazz);
 					} else {
-						Class_ c = (Class_)querySession.createQuery("from Class_ c where c.uniqueId = :classId").setLong("classId", bsc.getClassId().longValue()).setFlushMode(FlushMode.MANUAL).uniqueResult();
+						Class_ c = querySession.createQuery("from Class_ c where c.uniqueId = :classId", Class_.class)
+								.setParameter("classId", bsc.getClassId().longValue()).setHibernateFlushMode(FlushMode.MANUAL).uniqueResult();
 						if (c != null){
 							classes.add(c);
 						}
@@ -186,26 +196,27 @@ public class BannerSection extends BaseBannerSection {
 
 
 	public static BannerSection findBannerSectionForClassAndCourseExternalId(Class_ clazz, String courseExternalId, Session hibSession, org.unitime.timetable.model.Session acadSession){
-		return((BannerSection)hibSession
+		return hibSession
 				.createQuery("select bs from BannerSection bs inner join bs.bannerSectionToClasses as bsc where bs.bannerConfig.bannerCourse.courseOfferingId = " +
 						" (select co.uniqueId from CourseOffering co where co.externalUniqueId = :courseExternalId and co.instructionalOffering.session.uniqueId = :sessionId)" +
-						" and bsc.classId = :classId")
-				.setLong("classId", clazz.getUniqueId().longValue())
-				.setLong("sessionId", acadSession.getUniqueId().longValue())
-				.setString("courseExternalId", courseExternalId)
-				.setFlushMode(FlushMode.MANUAL)
+						" and bsc.classId = :classId", BannerSection.class)
+				.setParameter("classId", clazz.getUniqueId().longValue())
+				.setParameter("sessionId", acadSession.getUniqueId().longValue())
+				.setParameter("courseExternalId", courseExternalId)
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(false)
-				.uniqueResult());
+				.uniqueResult();
 	}
 	
 	@SuppressWarnings("unchecked")
 	public static List<BannerSection> findBannerSectionsForInstructionalOffering(InstructionalOffering instructionalOffering, Session hibSession){
-		return((List<BannerSection>) hibSession.createQuery("select bs from BannerSection bs, CourseOffering co where co.instructionalOffering = :instrOfferId and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId")
-				           .setLong("instrOfferId", instructionalOffering.getUniqueId().longValue())
-				           .setFlushMode(FlushMode.MANUAL)
-				           .list());
+		return hibSession.createQuery("select bs from BannerSection bs, CourseOffering co where co.instructionalOffering = :instrOfferId and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId", BannerSection.class)
+				           .setParameter("instrOfferId", instructionalOffering.getUniqueId().longValue())
+				           .setHibernateFlushMode(FlushMode.MANUAL)
+				           .list();
 	}
 		
+	@Transient
 	public boolean isNestedSection(){
 		return(getBannerSectionToClasses() != null && getBannerSectionToClasses().size() > 1);
 	}
@@ -218,7 +229,7 @@ public class BannerSection extends BaseBannerSection {
 		if (querySession == null){
 			querySession = Class_DAO.getInstance().getSession();
 		}
-		return((Long)querySession.createQuery("select count(bsc) from BannerSectionToClass bsc where bsc.classId = :classId").setLong("classId", classId.longValue()).setFlushMode(FlushMode.MANUAL).uniqueResult()).intValue();
+		return querySession.createQuery("select count(bsc) from BannerSectionToClass bsc where bsc.classId = :classId", Number.class).setParameter("classId", classId.longValue()).setHibernateFlushMode(FlushMode.MANUAL).uniqueResult().intValue();
 		
 	}
 
@@ -313,6 +324,7 @@ public class BannerSection extends BaseBannerSection {
 	
 	}
 
+	@Transient
 	public Class_ getFirstClass() {
 		Class_ c = null;
 		if (getBannerSectionToClasses() != null && !getBannerSectionToClasses().isEmpty()){
@@ -491,29 +503,29 @@ public class BannerSection extends BaseBannerSection {
 	
 	@SuppressWarnings("unchecked")
 	public static List<BannerSection> findBannerSectionsForClass(Class_ clazz, Session hibSession) {
-		return((List<BannerSection>)hibSession
-			.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc where bsc.classId = :classId")
-			.setLong("classId", clazz.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc where bsc.classId = :classId", BannerSection.class)
+			.setParameter("classId", clazz.getUniqueId().longValue())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
 	@SuppressWarnings("unchecked")
 	public static List<BannerSection> findBannerSectionsForInstrOfferingConfig(InstrOfferingConfig instrOfferingConfig, Session hibSession) {
-		return((List<BannerSection>)hibSession
-			.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Class_ c where c.schedulingSubpart.instrOfferingConfig.uniqueId = :configId and bsc.classId = c.uniqueId")
-			.setLong("configId", instrOfferingConfig.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Class_ c where c.schedulingSubpart.instrOfferingConfig.uniqueId = :configId and bsc.classId = c.uniqueId", BannerSection.class)
+			.setParameter("configId", instrOfferingConfig.getUniqueId().longValue())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
 	@SuppressWarnings("unchecked")
 	public static List<BannerSection> findBannerSectionsForSchedulingSubpart(SchedulingSubpart schedulingSubpart, Session hibSession) {
-		return((List<BannerSection>)hibSession
-			.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and bsc.classId = c.uniqueId")
-			.setLong("subpartId", schedulingSubpart.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and bsc.classId = c.uniqueId", BannerSection.class)
+			.setParameter("subpartId", schedulingSubpart.getUniqueId().longValue())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -521,9 +533,9 @@ public class BannerSection extends BaseBannerSection {
 			Solution solution, Session hibSession) {
 		Vector<BannerSection> hs = new Vector<BannerSection>();
 		List<BannerSection> sections = hibSession
-		.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Assignment a where a.solution.uniqueId = :solutionId and bsc.classId = a.clazz.uniqueId")
-		.setLong("solutionId", solution.getUniqueId().longValue())
-		.setFlushMode(FlushMode.MANUAL)
+		.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc, Assignment a where a.solution.uniqueId = :solutionId and bsc.classId = a.clazz.uniqueId", BannerSection.class)
+		.setParameter("solutionId", solution.getUniqueId().longValue())
+		.setHibernateFlushMode(FlushMode.MANUAL)
 		.setCacheable(false)
 		.list();
 		for(BannerSection bs : sections){
@@ -543,19 +555,19 @@ public class BannerSection extends BaseBannerSection {
 		if (!trans.isActive()) {
 			trans.begin();
 		}
-		List<BannerSection> orphanedBannerCourses = (List<BannerSection>) hibSession.createQuery(orphanedBannerCoursesQuery)
-		.setFlushMode(FlushMode.MANUAL)
+		List<BannerSection> orphanedBannerCourses = hibSession.createQuery(orphanedBannerCoursesQuery, BannerSection.class)
+		.setHibernateFlushMode(FlushMode.MANUAL)
 		.list();
 		for (BannerSection bs : orphanedBannerCourses){
 			SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
 			orphanedCourses.add(bs.getBannerConfig().getBannerCourse());
 		}
 		for(BannerCourse bc : orphanedCourses){
-			hibSession.delete(bc);
+			hibSession.remove(bc);
 			hibSession.flush();
 		}
-		List<BannerSection> orphanedBannerSections = (List<BannerSection>) hibSession.createQuery(orphanedBannerSectionsQuery)
-				.setFlushMode(FlushMode.MANUAL)
+		List<BannerSection> orphanedBannerSections = hibSession.createQuery(orphanedBannerSectionsQuery, BannerSection.class)
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.list();
 		for(BannerSection bs : orphanedBannerSections){
 			if (bs.getClasses(hibSession).size() > 0) {
@@ -565,12 +577,12 @@ public class BannerSection extends BaseBannerSection {
 				for (BannerSectionToClass bstc : l) {
 					if (bstc.getClassId() == null) {
 						bs.getBannerSectionToClasses().remove(bstc);
-						hibSession.update(bs);
+						hibSession.merge(bs);
 					} else {
 						Class_ c = Class_DAO.getInstance().get(bstc.getClassId(), hibSession);
 						if (c == null) {
 							bs.getBannerSectionToClasses().remove(bstc);
-							hibSession.update(bs);
+							hibSession.merge(bs);
 						}
 					}
 				}
@@ -590,7 +602,7 @@ public class BannerSection extends BaseBannerSection {
 			}
 		}
 		for(BannerConfig bc : parentList){		
-				hibSession.update(bc);
+				hibSession.merge(bc);
 		}
 
 		trans.commit();
@@ -601,14 +613,14 @@ public class BannerSection extends BaseBannerSection {
 		if (clazz == null || courseOffering == null){
 			return(null);
 		}
-		return((BannerSection)hibSession
+		return hibSession
 				.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc where bsc.bannerSection.bannerConfig.bannerCourse.courseOfferingId = :courseOfferingId " +
-						" and bsc.classId = :classId")
-				.setLong("classId", clazz.getUniqueId().longValue())
-				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
-				.setFlushMode(FlushMode.MANUAL)
+						" and bsc.classId = :classId", BannerSection.class)
+				.setParameter("classId", clazz.getUniqueId().longValue())
+				.setParameter("courseOfferingId", courseOffering.getUniqueId().longValue())
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(false)
-				.uniqueResult());
+				.uniqueResult();
 
 	}
 	
@@ -617,14 +629,14 @@ public class BannerSection extends BaseBannerSection {
 		if (clazz == null || courseOffering == null){
 			return(null);
 		}
-		return((BannerSection)hibSession
+		return hibSession
 				.createQuery("select distinct bsc.bannerSection from BannerSectionToClass as bsc where bsc.bannerSection.bannerConfig.bannerCourse.courseOfferingId = :courseOfferingId " +
-						" and bsc.classId = :classId")
-				.setLong("classId", clazz.getUniqueId().longValue())
-				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
-				.setFlushMode(FlushMode.MANUAL)
+						" and bsc.classId = :classId", BannerSection.class)
+				.setParameter("classId", clazz.getUniqueId().longValue())
+				.setParameter("courseOfferingId", courseOffering.getUniqueId().longValue())
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(true)
-				.uniqueResult());
+				.uniqueResult();
 
 	}
 	
@@ -650,13 +662,13 @@ public class BannerSection extends BaseBannerSection {
 		if (!getClasses(null).isEmpty()){
 		Class_ c = (Class_)getClasses(null).iterator().next();
 		String qs = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.class_id = :classId and bsc.bannerSection.uniqueId != :sectionId";
-		return(BannerSectionDAO.getInstance()
-				               .getQuery(qs)
-				               .setLong("classId", c.getUniqueId().longValue())
-				               .setLong("sectionId", getUniqueId().longValue())
-				               .list());
+		return BannerSectionDAO.getInstance().getSession()
+				               .createQuery(qs, BannerSection.class)
+				               .setParameter("classId", c.getUniqueId().longValue())
+				               .setParameter("sectionId", getUniqueId().longValue())
+				               .list();
 		} else {
-			return(new Vector<BannerSection>());
+			return new ArrayList<BannerSection>();
 		}
 		
 	}
@@ -704,13 +716,13 @@ public class BannerSection extends BaseBannerSection {
 
 	public void assignNewSectionIndex(Session hibSession){
 		this.setSectionIndex(BannerSection.findNextUnusedSectionIndexFor(this.getSession(), this.getBannerConfig().getBannerCourse().getCourseOffering(hibSession), hibSession));
-		hibSession.update(this);
+		hibSession.merge(this);
 		updateClassSuffixForClassesIfNecessary(hibSession);
 	}
 	
 	public void assignNewCrn(Session hibSession){	
 		this.setCrn(BannerSection.findNextUnusedCrnFor(this.getSession(), hibSession));
-		hibSession.update(this);
+		hibSession.merge(this);
 		updateClassSuffixForClassesIfNecessary(hibSession);
 	}
 	
@@ -730,7 +742,7 @@ public class BannerSection extends BaseBannerSection {
 					if(clazz.getClassSuffix() == null || !clazz.getClassSuffix().equals(classSuffix)){
 						clazz.setClassSuffix(classSuffix);
 						clazz.setExternalUniqueId(this.externalUniqueIdFor(clazz, hibSession));
-						hibSession.update(clazz);
+						hibSession.merge(clazz);
 						hibSession.flush();
 						if (refresh){
 							hibSession.refresh(clazz);
@@ -749,11 +761,11 @@ public class BannerSection extends BaseBannerSection {
 			return(null);
 		}
 		String qs = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.classId = :classId and bsc.bannerSection.bannerConfig.bannerCourse.uniqueId = :bannerCourseId";
-		return((BannerSection)bsDao.getQuery(qs)
-		     .setLong("classId", clazz.getUniqueId().longValue())
-		     .setLong("bannerCourseId", bannerCourse.getUniqueId().longValue())
-		     .setFlushMode(FlushMode.MANUAL)
-		     .uniqueResult());
+		return bsDao.getSession().createQuery(qs, BannerSection.class)
+		     .setParameter("classId", clazz.getUniqueId().longValue())
+		     .setParameter("bannerCourseId", bannerCourse.getUniqueId().longValue())
+		     .setHibernateFlushMode(FlushMode.MANUAL)
+		     .uniqueResult();
 	}
 	
 	public OfferingConsentType effectiveConsentType(){
@@ -1168,13 +1180,11 @@ public class BannerSection extends BaseBannerSection {
        return(sb.toString());
     }
 
-    @SuppressWarnings("unchecked")
 	public static List<BannerSection> findAll(Long sessionId) {
-    	return (new BannerSectionDAO()).
-    		getSession().
+    	return BannerSectionDAO.getInstance().getSession().
     		createQuery("select distinct bs from BannerSection bs where " +
-    				"bs.session.uniqueId=:sessionId").
-    		setLong("sessionId",sessionId.longValue()).
+    				"bs.session.uniqueId=:sessionId", BannerSection.class).
+    		setParameter("sessionId",sessionId.longValue()).
     		list();
     }
 
@@ -1182,14 +1192,13 @@ public class BannerSection extends BaseBannerSection {
     	return(findAllClassesForCrnAndTermCode((new BannerSectionDAO()).getSession(), crn, termCode));
     }
     
-    @SuppressWarnings("unchecked")
 	public static List<Class_> findAllClassesForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
-    	return (hibSession.
+    	return hibSession.
 			createQuery("select distinct c from BannerSession bsess, BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where " +
-					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and bstc.classId = c.uniqueId").
-			setString("termCode",termCode).
-			setInteger("crn", crn).
-			list());
+					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and bstc.classId = c.uniqueId", Class_.class).
+			setParameter("termCode",termCode).
+			setParameter("crn", crn).
+			list();
     }
 
     public static BannerSection findBannerSectionForCrnAndTermCode(Integer crn, String termCode){
@@ -1197,12 +1206,12 @@ public class BannerSection extends BaseBannerSection {
     }
     
  	public static BannerSection findBannerSectionForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
-    	return ((BannerSection)hibSession.
+    	return hibSession.
 			createQuery("select bs from BannerSession bsess, BannerSection bs where " +
-					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn").
-			setString("termCode",termCode).
-			setInteger("crn", crn).
-			uniqueResult());
+					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn", BannerSection.class).
+			setParameter("termCode",termCode).
+			setParameter("crn", crn).
+			uniqueResult();
     }
 
 	public static CourseOffering findCourseOfferingForCrnAndTermCode(Integer crn, String termCode){
@@ -1210,14 +1219,15 @@ public class BannerSection extends BaseBannerSection {
     }
   
     public static CourseOffering findCourseOfferingForCrnAndTermCode(Session hibSession, Integer crn, String termCode){
-    	return ((CourseOffering)hibSession.
+    	return hibSession.
 			createQuery("select distinct co from BannerSession bsess, BannerSection bs, CourseOffering co where " +
-					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId").
-			setString("termCode",termCode).
-			setInteger("crn", crn).
-			uniqueResult());
+					"bs.session.uniqueId=bsess.session.uniqueId and bsess.bannerTermCode = :termCode and bs.crn = :crn and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId", CourseOffering.class).
+			setParameter("termCode",termCode).
+			setParameter("crn", crn).
+			uniqueResult();
     }
     
+	@Transient
 	public static ExternalBannerCampusCodeElementHelperInterface getExternalCampusCodeElementHelper(){
 		if (externalCampusCodeElementHelper == null){
             String className = ApplicationProperties.getProperty("tmtbl.banner.campus.element.helper");
@@ -1261,6 +1271,7 @@ public class BannerSection extends BaseBannerSection {
 
 	}
 
+	@Transient
 	public static ExternalBannerSubjectAreaElementHelperInterface getExternalSubjectAreaElementHelper(){
 		if (externalSubjectAreaElementHelper == null){
             String className = ApplicationProperties.getProperty("tmtbl.banner.subjectArea.element.helper");
@@ -1387,9 +1398,9 @@ public class BannerSection extends BaseBannerSection {
 			for (BannerCohortRestriction bcr : deleteList) {
 				bcr.setBannerSection(null);
 				this.getBannerLastSentBannerRestrictions().remove(bcr);
-				hibSession.delete(bcr);
+				hibSession.remove(bcr);
 			}
-			hibSession.update(this);
+			hibSession.merge(this);
 			if (trans == null) {
 				hibSession.flush();
 			} else {
@@ -1398,10 +1409,10 @@ public class BannerSection extends BaseBannerSection {
 			}
 			for (BannerCohortRestriction bcr : newLastSentCohortRestrictions) {
 				bcr.setBannerSection(this);
-				bcr.setUniqueId((Long) hibSession.save(bcr));
+				hibSession.persist(bcr);
 				this.addTobannerLastSentBannerRestrictions(bcr);
 			}
-			hibSession.update(this);
+			hibSession.merge(this);
 			if (trans == null) {
 				hibSession.flush();
 			} else {
@@ -1422,6 +1433,7 @@ public class BannerSection extends BaseBannerSection {
 		return(mergeBannerCohortRestrictions(lastSentCohortRestrictions, imRestrictions));
 	}
 
+	@Transient
 	private ArrayList<BannerCohortRestriction> getAllLastSentCohortRestrictions() {
 		ArrayList<BannerCohortRestriction> lastSentCohortRestrictions = new ArrayList<BannerCohortRestriction>();
 		if (getBannerLastSentBannerRestrictions() != null) {
@@ -1434,34 +1446,24 @@ public class BannerSection extends BaseBannerSection {
 		return lastSentCohortRestrictions;
 	}
 
-	@SuppressWarnings("unchecked")
-	public static ArrayList<InstructionalOffering> findOfferingsMissingBannerSections(
-			org.unitime.timetable.model.Session academicSession, Session hibSession) {
-		ArrayList<InstructionalOffering> offeringList = new ArrayList<InstructionalOffering>();
+	public static List<InstructionalOffering> findOfferingsMissingBannerSections(org.unitime.timetable.model.Session academicSession, Session hibSession) {
 		String query = " select distinct c.schedulingSubpart.instrOfferingConfig.instructionalOffering"
 				+ " from Class_ c inner join c.schedulingSubpart.instrOfferingConfig.instructionalOffering.courseOfferings as co"
 				+ " where c.schedulingSubpart.instrOfferingConfig.instructionalOffering.session = :sessionId"
 				+ "  and 0 = (select count(bs)"
 				+ "               from BannerSection bs inner join bs.bannerSectionToClasses as bstc"
 				+ "               where bstc.classId = c.uniqueId)";
-		offeringList.addAll(hibSession.createQuery(query).setLong("sessionId", academicSession.getUniqueId().longValue()).list());
-		
-		return offeringList;
+		return hibSession.createQuery(query, InstructionalOffering.class).setParameter("sessionId", academicSession.getUniqueId().longValue()).list();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static ArrayList<InstructionalOffering> findOfferingsMissingBannerSectionsForSubjectArea(
-			SubjectArea subjectArea, Session hibSession) {
-		ArrayList<InstructionalOffering> offeringList = new ArrayList<InstructionalOffering>();
+	public static List<InstructionalOffering> findOfferingsMissingBannerSectionsForSubjectArea(SubjectArea subjectArea, Session hibSession) {
 		String query = " select distinct c.schedulingSubpart.instrOfferingConfig.instructionalOffering"
 				+ " from Class_ c inner join c.schedulingSubpart.instrOfferingConfig.instructionalOffering.courseOfferings as co"
 				+ " where co.subjectArea.uniqueId = :subjId"
 				+ "  and 0 = (select count(bs)"
 				+ "               from BannerSection bs inner join bs.bannerSectionToClasses as bstc"
 				+ "               where bstc.classId = c.uniqueId)";
-		offeringList.addAll(hibSession.createQuery(query).setLong("subjId", subjectArea.getUniqueId().longValue()).list());
-		
-		return offeringList;
+		return hibSession.createQuery(query, InstructionalOffering.class).setParameter("subjId", subjectArea.getUniqueId().longValue()).list();
 	}
 
 }

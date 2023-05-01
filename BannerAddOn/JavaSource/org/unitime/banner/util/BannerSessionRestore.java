@@ -19,7 +19,6 @@
 */
 package org.unitime.banner.util;
 
-import org.hibernate.metadata.ClassMetadata;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSectionToClass;
@@ -29,6 +28,8 @@ import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 
+import jakarta.persistence.metamodel.EntityType;
+
 /** 
  * @author Tomas Muller
  */
@@ -37,13 +38,13 @@ public class BannerSessionRestore extends SessionRestore {
 	@Override
 	protected void add(Entity entity) {
 		if (entity.getObject().getClass().getSimpleName().startsWith("Banner"))
-			entity = new BannerEntity(entity.getMetaData(), entity.getRecord(), entity.getObject(), entity.getId());
+			entity = new BannerEntity(entity.getMeta(), entity.getRecord(), entity.getObject(), entity.getId());
 		super.add(entity);
 	}
 	
 	class BannerEntity extends SessionRestore.Entity {
 		
-		BannerEntity(ClassMetadata metadata, Record record, Object object, String id) {
+		BannerEntity(EntityType metadata, Record record, Object object, String id) {
 			super(metadata, record, object, id);
 		}
 

@@ -165,10 +165,9 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 	            student.setSchedulePreference(Integer.valueOf(0));
 	            student.setClassEnrollments(new HashSet<StudentClassEnrollment>());
 	            student.setCourseDemands(new HashSet<CourseDemand>());
-	            studentId = (Long)getHibSession().save(student);
-			} else {
-				studentId = student.getUniqueId();
+	            getHibSession().persist(student);
 			}
+			studentId = student.getUniqueId();
 			Element roleElement = memberElement.element("role");
 			if (roleElement == null){
 				throw new Exception("Missing role element.");				
@@ -277,22 +276,25 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
     		// removed unused course demands
     		for (CourseDemand cd: remaining) {
     			if (cd.getFreeTime() != null)
-    				getHibSession().delete(cd.getFreeTime());
+    				getHibSession().remove(cd.getFreeTime());
     			for (CourseRequest cr: cd.getCourseRequests())
-    				getHibSession().delete(cr);
+    				getHibSession().remove(cr);
     			student.getCourseDemands().remove(cd);
-    			getHibSession().delete(cd);
+    			getHibSession().remove(cd);
     		}
     		// fix priorities
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
     			cd.setPriority(priority++);
-    			getHibSession().saveOrUpdate(cd);
+    			if (cd.getUniqueId() == null)
+    				getHibSession().persist(cd);
+    			else
+    				getHibSession().merge(cd);
     		}
     	}
     	
 		if (changed){
-			getHibSession().saveOrUpdate(student);
+			getHibSession().merge(student);
 		}
 		return changed;
 	}
@@ -303,10 +305,10 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 		for (StudentClassEnrollment sce : enrollments){
 			changed = true;
 			student.getClassEnrollments().remove(sce);
-			getHibSession().delete(sce);
+			getHibSession().remove(sce);
 		}
 		if (changed){
-			getHibSession().update(student);
+			getHibSession().merge(student);
 		}
 		return changed;
 	}

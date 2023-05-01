@@ -149,9 +149,9 @@ public class BannerOfferingModifyAction extends UniTimeAction<BannerOfferingModi
     }
 
     private void setupItypeChoices() {
-    	ItypeDescDAO itDao = ItypeDescDAO.getInstance();
-    	String qs = "select distinct it from ItypeDesc it, BannerConfig bc, SchedulingSubpart ss where bc.uniqueId = :configId and ss.instrOfferingConfig.uniqueId = bc.instrOfferingConfigId and it.itype = ss.itype.itype";
-	    request.setAttribute("availableItypes", itDao.getQuery(qs).setLong("configId", form.getBannerConfigId().longValue()).setCacheable(true).list());
+	    request.setAttribute("availableItypes", ItypeDescDAO.getInstance().getSession().createQuery(
+	    		 "select distinct it from ItypeDesc it, BannerConfig bc, SchedulingSubpart ss where bc.uniqueId = :configId and ss.instrOfferingConfig.uniqueId = bc.instrOfferingConfigId and it.itype = ss.itype.itype",
+	    		 ItypeDesc.class).setParameter("configId", form.getBannerConfigId()).setCacheable(true).list());
 	}
 
 	/**
@@ -268,7 +268,7 @@ public class BannerOfferingModifyAction extends UniTimeAction<BannerOfferingModi
 	        		itype = ItypeDescDAO.getInstance().get(form.getItypeId());
 	        	}
 	        	bannerConfig.setGradableItype(itype);
-	        	hibSession.update(bannerConfig);
+	        	hibSession.merge(bannerConfig);
 	        }
 
 	        // If the banner offering config gradable itype has changed update it.
@@ -277,7 +277,7 @@ public class BannerOfferingModifyAction extends UniTimeAction<BannerOfferingModi
 	        		|| (form.getLabHours() != null && !form.getLabHours().equals(bannerConfig.getLabHours()))){
 	        	
 	        	bannerConfig.setLabHours(form.getLabHours());
-	        	hibSession.update(bannerConfig);
+	        	hibSession.merge(bannerConfig);
 	        }
 
 	        // For all changed classes, update them
@@ -393,7 +393,7 @@ public class BannerOfferingModifyAction extends UniTimeAction<BannerOfferingModi
 				changed = true;
 			} 
 			if (changed){
-				hibSession.update(bs);
+				hibSession.merge(bs);
 			}
 		}
     }

@@ -130,7 +130,10 @@ public class BannerCampusOverrideEditAction extends UniTimeAction<BannerCampusOv
             campusOverride.setBannerCampusCode(form.getBannerCampusCode());
             campusOverride.setVisible(form.getVisible());
 
-            hibSession.saveOrUpdate(campusOverride);
+            if (campusOverride.getUniqueId() == null)
+            	hibSession.persist(campusOverride);
+            else
+            	hibSession.merge(campusOverride);
             form.setCampusOverrideId(campusOverride.getUniqueId());
 
             ChangeLog.addChange(

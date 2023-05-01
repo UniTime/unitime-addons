@@ -46,8 +46,8 @@ public class BannerSessionEditForm implements UniTimeForm {
 	Long sessionId;
 	Long acadSessionId;
 	String acadSessionLabel;
-	ArrayList<Session> availableAcadSessions;
-	ArrayList<BannerSession> availableBannerSessions;
+	List<Session> availableAcadSessions;
+	List<BannerSession> availableBannerSessions;
 	String studentCampus;
 	String bannerTermCode;
 	String bannerCampus;
@@ -85,14 +85,14 @@ public class BannerSessionEditForm implements UniTimeForm {
 	/**
 	 * @return the availableAcadSessions
 	 */
-	public ArrayList<Session> getAvailableAcadSessions() {
+	public List<Session> getAvailableAcadSessions() {
 		return availableAcadSessions;
 	}
 
 	/**
 	 * @param availableAcadSessions the availableAcadSessions to set
 	 */
-	public void setAvailableAcadSessions(ArrayList<Session> availableAcadSessions) {
+	public void setAvailableAcadSessions(List<Session> availableAcadSessions) {
 		this.availableAcadSessions = availableAcadSessions;
 	}
 
@@ -104,8 +104,8 @@ public class BannerSessionEditForm implements UniTimeForm {
 		return acadSessionLabel;
 	}
 	
-	public void setAvailableBannerSessions(ArrayList<BannerSession> availableBannerSessions) { this.availableBannerSessions = availableBannerSessions; }
-	public ArrayList<BannerSession> getAvailableBannerSessions() { return availableBannerSessions; }
+	public void setAvailableBannerSessions(List<BannerSession> availableBannerSessions) { this.availableBannerSessions = availableBannerSessions; }
+	public List<BannerSession> getAvailableBannerSessions() { return availableBannerSessions; }
 
 	/**
 	 * @param acadSessionLabel the acadSessionLabel to set

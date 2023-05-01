@@ -91,7 +91,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 		out.setXml(document);
 		out.setStatus(QueueOut.STATUS_READY);
 		out.setPostDate(new Date());
-		helper.getHibSession().save(out);
+		helper.getHibSession().persist(out);
 		helper.getHibSession().flush();
 		return true;
 	}
@@ -148,7 +148,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
         	// remove duplicate enrollments
         	for (StudentClassEnrollment enrollment: duplicates) {
     			student.getClassEnrollments().remove(enrollment);
-    			helper.getHibSession().delete(enrollment);
+    			helper.getHibSession().remove(enrollment);
     			changed = true;
         	}
     	}
@@ -211,7 +211,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     			}
     			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
 					StudentEnrollmentMessage message = i.next();
-					helper.getHibSession().delete(message);
+					helper.getHibSession().remove(message);
 					i.remove();
 				}
     		}
@@ -237,7 +237,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     		if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle() && !co.equals(cr.getCourseDemand().getWaitListSwapWithCourseOffering())) {
     			cr.getCourseDemand().setWaitlist(false);
     			changed = true;
-    			helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    			helper.getHibSession().merge(cr.getCourseDemand());
     			if (student.getWaitListMode() == WaitListMode.WaitList)
     				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession());
     		}
@@ -253,13 +253,13 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     					exDropDeletes.add(cr.getCourseDemand());
     				else if (cr.getCourseDemand().isWaitlist() && isResetWaitListToggle()) {
     					cr.getCourseDemand().setWaitlist(false);
-    					helper.getHibSession().saveOrUpdate(cr.getCourseDemand());
+    					helper.getHibSession().merge(cr.getCourseDemand());
     					if (student.getWaitListMode() == WaitListMode.WaitList)
     	    				student.addWaitList(cr.getCourseOffering(), WaitListType.EXTERNAL_UPDATE, false, "BANNER", ts, helper.getHibSession());
     				}
     			}
     			student.getClassEnrollments().remove(enrollment);
-    			helper.getHibSession().delete(enrollment);
+    			helper.getHibSession().remove(enrollment);
     		}
     		changed = true;
     	}
@@ -269,18 +269,21 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
     		if (!exDropDeletes.isEmpty()) {
     			for (CourseDemand cd: exDropDeletes) {
         			if (cd.getFreeTime() != null)
-        				helper.getHibSession().delete(cd.getFreeTime());
+        				helper.getHibSession().remove(cd.getFreeTime());
         			for (CourseRequest cr: cd.getCourseRequests())
-        				helper.getHibSession().delete(cr);
+        				helper.getHibSession().remove(cr);
         			student.getCourseDemands().remove(cd);
-        			helper.getHibSession().delete(cd);
+        			helper.getHibSession().remove(cd);
         		}
     		}
     		// fix priorities
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
     			cd.setPriority(priority++);
-    			helper.getHibSession().saveOrUpdate(cd);
+    			if (cd.getUniqueId() == null)
+    				helper.getHibSession().persist(cd);
+    			else
+    				helper.getHibSession().merge(cd);
     		}
     	}
     	
@@ -305,7 +308,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 			boolean changed = updateClassEnrollments(student, enrollments, helper);
 			
 			if (changed)
-				helper.getHibSession().update(student);
+				helper.getHibSession().merge(student);
 				
 			for (int i = 0; i < helper.getAction().getEnrollmentCount(); i++)
 				if (helper.getAction().getEnrollment(i).getType() == OnlineSectioningLog.Enrollment.EnrollmentType.STORED)
@@ -352,12 +355,12 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 		// ignore sections that do not exist in UniTime
 		// this is to fix synchronization issues when a class is cancelled
 		// (it does not exist in UniTime, but still contains enrolled students in Banner)
-		Number count = (Number)helper.getHibSession().createQuery(
+		Number count = helper.getHibSession().createQuery(
 				"select count(bs) from BannerSection bs where " +
-				"bs.session = :sessionId and bs.crn = :crn "
+				"bs.session = :sessionId and bs.crn = :crn ", Number.class
 				)
-				.setLong("sessionId", server.getAcademicSession().getUniqueId())
-				.setString("crn", reg.courseReferenceNumber)
+				.setParameter("sessionId", server.getAcademicSession().getUniqueId())
+				.setParameter("crn", reg.courseReferenceNumber)
 				.uniqueResult();
 		return count.intValue() == 0;
 	}

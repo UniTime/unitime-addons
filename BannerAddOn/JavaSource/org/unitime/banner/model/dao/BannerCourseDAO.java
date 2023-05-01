@@ -17,18 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerCourseDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.banner.model.BannerCourse;
 
+public class BannerCourseDAO extends _RootDAO<BannerCourse,Long> {
+	private static BannerCourseDAO sInstance;
 
-public class BannerCourseDAO extends BaseBannerCourseDAO {
+	public BannerCourseDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public BannerCourseDAO () {}
+	public static BannerCourseDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerCourseDAO();
+		return sInstance;
+	}
 
-
+	public Class<BannerCourse> getReferenceClass() {
+		return BannerCourse.class;
+	}
 }

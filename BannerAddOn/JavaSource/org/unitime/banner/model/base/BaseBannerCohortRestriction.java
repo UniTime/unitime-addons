@@ -19,8 +19,15 @@
 */
 package org.unitime.banner.model.base;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.unitime.banner.model.BannerCohortRestriction;
 import org.unitime.banner.model.BannerLastSentSectionRestriction;
 import org.unitime.timetable.model.StudentGroup;
@@ -29,37 +36,40 @@ import org.unitime.timetable.model.StudentGroup;
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
+@MappedSuperclass
 public abstract class BaseBannerCohortRestriction extends BannerLastSentSectionRestriction implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private StudentGroup iCohort;
 
-
 	public BaseBannerCohortRestriction() {
-		initialize();
 	}
 
 	public BaseBannerCohortRestriction(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@ManyToOne(optional = false, fetch = FetchType.EAGER)
+	@JoinColumn(name = "cohort_id", nullable = false)
+	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public StudentGroup getCohort() { return iCohort; }
 	public void setCohort(StudentGroup cohort) { iCohort = cohort; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerCohortRestriction)) return false;
 		if (getUniqueId() == null || ((BannerCohortRestriction)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((BannerCohortRestriction)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "BannerCohortRestriction["+getUniqueId()+"]";
 	}

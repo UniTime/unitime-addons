@@ -117,7 +117,7 @@ public class SendBannerMessage {
 		outQ.setPostDate(new Date());
 		Session newSession = QueueOutDAO.getInstance().createNewSession();
 		Transaction trans = newSession.beginTransaction();
-		newSession.save(outQ);
+		newSession.persist(outQ);
 		trans.commit();
 		newSession.close();
 	}

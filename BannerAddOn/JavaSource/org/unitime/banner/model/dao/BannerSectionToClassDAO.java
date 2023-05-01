@@ -17,18 +17,31 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseBannerSectionToClassDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.banner.model.BannerSectionToClass;
 
+public class BannerSectionToClassDAO extends _RootDAO<BannerSectionToClass,Long> {
+	private static BannerSectionToClassDAO sInstance;
 
-public class BannerSectionToClassDAO extends BaseBannerSectionToClassDAO {
+	public BannerSectionToClassDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public BannerSectionToClassDAO () {}
+	public static BannerSectionToClassDAO getInstance() {
+		if (sInstance == null) sInstance = new BannerSectionToClassDAO();
+		return sInstance;
+	}
 
+	public Class<BannerSectionToClass> getReferenceClass() {
+		return BannerSectionToClass.class;
+	}
 
+	@SuppressWarnings("unchecked")
+	public List<BannerSectionToClass> findByBannerSection(org.hibernate.Session hibSession, Long bannerSectionId) {
+		return hibSession.createQuery("from BannerSectionToClass x where x.bannerSection.uniqueId = :bannerSectionId", BannerSectionToClass.class).setParameter("bannerSectionId", bannerSectionId).list();
+	}
 }

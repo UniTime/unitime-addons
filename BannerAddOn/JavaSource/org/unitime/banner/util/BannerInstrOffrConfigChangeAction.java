@@ -120,7 +120,7 @@ public class BannerInstrOffrConfigChangeAction implements
 						} else if (!trans.isActive()) {
 							trans.begin();
 						}
-						hibSession.update(bc);
+						hibSession.merge(bc);
 						trans.commit();
 						hibSession.flush();
 					}
@@ -170,11 +170,11 @@ public class BannerInstrOffrConfigChangeAction implements
 					     ;
 			for (CourseOffering co : instructionalOffering.getCourseOfferings()){
 				//count all classes that match this course number minus any suffix in all matching academic terms
-				int count = Integer.parseInt(hibSession.createQuery(query)
-				          .setString("subject", co.getSubjectAreaAbbv())
-				          .setString("crsNbrBase", (co.getCourseNbr().substring(0, getCourseNumberLength()) + "%"))
-				          .setLong("sessionId",	instructionalOffering.getSession().getUniqueId().longValue())
-				          .uniqueResult().toString())
+				int count = hibSession.createQuery(query, Number.class)
+				          .setParameter("subject", co.getSubjectAreaAbbv())
+				          .setParameter("crsNbrBase", (co.getCourseNbr().substring(0, getCourseNumberLength()) + "%"))
+				          .setParameter("sessionId",	instructionalOffering.getSession().getUniqueId().longValue())
+				          .uniqueResult().intValue()
 				          ;
 				if (count > maxNumClassesAllowed) {
 					canOccur = false;

@@ -110,13 +110,13 @@ public class BannerStudentEnrollmentImport extends BaseImport {
 				ChangeLog.addChange(getHibSession(), manger, session, session, created, ChangeLog.Source.DATA_IMPORT_STUDENT_ENROLLMENTS, ChangeLog.Operation.UPDATE, null, null);
          
 	        Hashtable<String, Student> students = new Hashtable<String, Student>();
-	        for (Student student: (List<Student>)getHibSession().createQuery(
+	        for (Student student: getHibSession().createQuery(
                     "select distinct s from Student s " +
                     "left join fetch s.courseDemands as cd " +
                     "left join fetch cd.courseRequests as cr " +
                     "left join fetch s.classEnrollments as e " +
-                    "where s.session.uniqueId=:sessionId and s.externalUniqueId is not null").
-                    setLong("sessionId",session.getUniqueId()).list()) { 
+                    "where s.session.uniqueId=:sessionId and s.externalUniqueId is not null", Student.class).
+                    setParameter("sessionId",session.getUniqueId()).list()) { 
                         students.put(student.getExternalUniqueId(), student);
                 }
 
@@ -232,31 +232,34 @@ public class BannerStudentEnrollmentImport extends BaseImport {
             	if (!enrollments.isEmpty()) {
             		for (StudentClassEnrollment enrollment: enrollments.values()) {
             			student.getClassEnrollments().remove(enrollment);
-            			getHibSession().delete(enrollment);
+            			getHibSession().remove(enrollment);
                 		updatedStudents.add(student.getUniqueId());
             		}
             	}
             	
             	if (student.getUniqueId() == null) {
-            		updatedStudents.add((Long)getHibSession().save(student));
+            		getHibSession().persist(student);
             	} else {
-            		getHibSession().update(student);
+            		getHibSession().merge(student);
             	}
             	
             	if (fixCourseDemands) {
             		// removed unused course demands
             		for (CourseDemand cd: remaining) {
             			if (cd.getFreeTime() != null)
-            				getHibSession().delete(cd.getFreeTime());
+            				getHibSession().remove(cd.getFreeTime());
             			for (CourseRequest cr: cd.getCourseRequests())
-            				getHibSession().delete(cr);
+            				getHibSession().remove(cr);
             			student.getCourseDemands().remove(cd);
-            			getHibSession().delete(cd);
+            			getHibSession().remove(cd);
             		}
             		int priority = 0;
             		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
             			cd.setPriority(priority++);
-            			getHibSession().saveOrUpdate(cd);
+            			if (cd.getUniqueId() == null)
+                			getHibSession().persist(cd);
+            			else
+            				getHibSession().merge(cd);
             		}
             	}
 
@@ -266,11 +269,11 @@ public class BannerStudentEnrollmentImport extends BaseImport {
  	        for (Student student: students.values()) {
         		for (Iterator<StudentClassEnrollment> i = student.getClassEnrollments().iterator(); i.hasNext(); ) {
         			StudentClassEnrollment enrollment = i.next();
-        			getHibSession().delete(enrollment);
+        			getHibSession().remove(enrollment);
         			i.remove();
      	        	updatedStudents.add(student.getUniqueId());
         		}
-        		getHibSession().update(student);
+        		getHibSession().merge(student);
  	        }
  	        
  	        if (!updatedStudents.isEmpty())

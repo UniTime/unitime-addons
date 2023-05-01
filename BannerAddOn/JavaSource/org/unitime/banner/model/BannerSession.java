@@ -20,8 +20,13 @@
 
 package org.unitime.banner.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.List;
-import java.util.Vector;
 
 import org.hibernate.FlushMode;
 import org.unitime.banner.model.base.BaseBannerSession;
@@ -38,6 +43,9 @@ import org.unitime.timetable.model.dao.Class_DAO;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Table(name = "banner_session")
 public class BannerSession extends BaseBannerSession {
 	private static final long serialVersionUID = 1L;
 	protected final static BannerMessages BMSG = Localization.create(BannerMessages.class);
@@ -78,7 +86,8 @@ public class BannerSession extends BaseBannerSession {
 			querySession = BannerSessionDAO.getInstance().getSession();
 		}
 
-		return((BannerSession) querySession.createQuery("from BannerSession bs where bs.session.uniqueId = :sessionId").setFlushMode(FlushMode.MANUAL).setLong("sessionId", acadSessionId.longValue()).setCacheable(true).uniqueResult());
+		return querySession.createQuery("from BannerSession bs where bs.session.uniqueId = :sessionId", BannerSession.class)
+				.setHibernateFlushMode(FlushMode.MANUAL).setParameter("sessionId", acadSessionId.longValue()).setCacheable(true).uniqueResult();
 	}
 	
 	public static boolean shouldGenerateBannerDataFieldsForSession(Session acadSession, org.hibernate.Session hibSession){
@@ -126,13 +135,9 @@ public class BannerSession extends BaseBannerSession {
 		return(bs.isStoreDataForBanner() && bs.isSendDataToBanner() && !bs.isLoadingOfferingsFile());
 	}
 
+	@Transient
 	public static List<BannerSession> getAllSessions() {
-		BannerSessionDAO bsDao = new BannerSessionDAO();
-		List l = bsDao.getSession().createQuery("from BannerSession").list();
-		if (l == null){
-			l = new Vector();
-		}
-		return(l);
+		return BannerSessionDAO.getInstance().getSession().createQuery("from BannerSession", BannerSession.class).list();
 	}
 
 	public static BannerSession getBannerSessionById(Long id) {
@@ -147,6 +152,7 @@ public class BannerSession extends BaseBannerSession {
 			setFutureSessionUpdateModeInt(mode.ordinal());
 	}
 	
+	@Transient
 	public FutureSessionUpdateMode getFutureSessionUpdateMode() {
 		if (getFutureSessionUpdateModeInt() == null)
 			return FutureSessionUpdateMode.NO_UPDATE;
@@ -154,6 +160,7 @@ public class BannerSession extends BaseBannerSession {
 			return FutureSessionUpdateMode.values()[getFutureSessionUpdateModeInt()];
 	}
 	
+	@Transient
 	public String getFutureSessionUpdateModeLabel() {
 		if (getFutureSession() == null) return "";
 		switch (getFutureSessionUpdateMode()) {
@@ -164,6 +171,7 @@ public class BannerSession extends BaseBannerSession {
 		}
 	}
 	
+	@Transient
 	public String getLabel() {
 		return getBannerTermCode() + " (" + getBannerCampus() + ")";
 	}

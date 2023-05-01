@@ -64,13 +64,12 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 		return new PageName(MESSAGES.pageBannerInstrMethodCohortRestriction(), MESSAGES.pageBannerInstrMethodCohortRestrictions());
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	@PreAuthorize("checkPermission('AcademicSessions')")
 	public SimpleEditInterface load(SessionContext context, Session hibSession) {
 		List<ListItem> instrMethods = new ArrayList<ListItem>();
 		String query = "from InstructionalMethod im order by im.label";		
-		for (InstructionalMethod im: ((List<InstructionalMethod>)hibSession.createQuery(query).list())) {
+		for (InstructionalMethod im: hibSession.createQuery(query, InstructionalMethod.class).list()) {
 			instrMethods.add(new ListItem(im.getUniqueId().toString(), im.getLabel()));
 		}
 		List<ListItem> cohorts = new ArrayList<ListItem>();
@@ -79,7 +78,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 //			throw new RuntimeException(MESSAGES.exceptionNoCohortStudentGroupTypeDefined());
 //		}
 		String cohortQuery = "from StudentGroup sg where sg.session.uniqueId = :sessId and sg.type.reference = 'COHORT' order by sg.groupName";
-		for (StudentGroup sg: ((List<StudentGroup>)hibSession.createQuery(cohortQuery).setLong("sessId", context.getUser().getCurrentAcademicSessionId()).list())) {
+		for (StudentGroup sg: hibSession.createQuery(cohortQuery, StudentGroup.class).setParameter("sessId", context.getUser().getCurrentAcademicSessionId()).list()) {
 			cohorts.add(new ListItem(sg.getUniqueId().toString(), sg.getGroupName()));
 		}
 		List<ListItem> restrActions = new ArrayList<ListItem>();
@@ -103,9 +102,9 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 				r.setField(3, restriction.getRemoved().toString());
 				r.setDeletable(false);
 				boolean used = false;
-				int count = Integer.parseInt(hibSession.createQuery("select count(im) from InstrOfferingConfig ioc inner join ioc.instructionalMethod as im where im.uniqueId = :instrMethodId")
-						              .setLong("instrMethodId", restriction.getInstructionalMethod().getUniqueId())
-						              .uniqueResult().toString());
+				int count = hibSession.createQuery("select count(im) from InstrOfferingConfig ioc inner join ioc.instructionalMethod as im where im.uniqueId = :instrMethodId", Number.class)
+						              .setParameter("instrMethodId", restriction.getInstructionalMethod().getUniqueId())
+						              .uniqueResult().intValue();
 				used = count > 0;
 				r.setDeletable(!used);
 			}
@@ -145,7 +144,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 		validateRestrictionsHaveSameActionForInstrMethod(restriction, action, removed, hibSession);
 		restriction.setRestrictionAction(action);
 		restriction.setRemoved(removed);
-		record.setUniqueId((Long)hibSession.save(restriction));
+		hibSession.persist(restriction);
 		ChangeLog.addChange(hibSession,
 				context,
 				restriction,
@@ -202,7 +201,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 				ToolBox.equals(restriction.getRemoved(), record.getField(3))) return;
 		restriction.setRestrictionAction(action);
 		restriction.setRemoved(removed);
-		hibSession.update(restriction);
+		hibSession.merge(restriction);
 		ChangeLog.addChange(hibSession,
 				context,
 				restriction,
@@ -229,7 +228,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 				Operation.DELETE,
 				null,
 				null);
-		hibSession.delete(restriction);
+		hibSession.remove(restriction);
 	}
 
 	@Override

@@ -18,7 +18,6 @@
  * 
 */package org.unitime.banner.dataexchange;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.unitime.banner.model.BannerSection;
@@ -89,13 +88,12 @@ public class BannerSectionInfoHelper {
 	}
 	
 	private BannerSection getControllingBannerSectionForCrosslist(String termCode, String crossListIdentifier) {
-		@SuppressWarnings("unchecked")
-		ArrayList<BannerSection> controllingBannerSections = (ArrayList<BannerSection>) BannerSectionDAO
+		List<BannerSection> controllingBannerSections = BannerSectionDAO
 				.getInstance()
 				.getSession()
-				.createQuery("select bs from BannerSession bsess, BannerSection bs, CourseOffering co where bsess.bannerTermCode = :termCode and bs.session = bsess.session and bs.crossListIdentifier = :xlst and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId and co.isControl = true")
-				.setString("termCode", termCode)
-				.setString("xlst", crossListIdentifier).list();
+				.createQuery("select bs from BannerSession bsess, BannerSection bs, CourseOffering co where bsess.bannerTermCode = :termCode and bs.session = bsess.session and bs.crossListIdentifier = :xlst and co.uniqueId = bs.bannerConfig.bannerCourse.courseOfferingId and co.isControl = true", BannerSection.class)
+				.setParameter("termCode", termCode)
+				.setParameter("xlst", crossListIdentifier).list();
 		if (controllingBannerSections.size() != 1) {
 			return null;
 		} else {
@@ -230,11 +228,10 @@ public class BannerSectionInfoHelper {
 			return null;
 		}
 		
-		@SuppressWarnings("unchecked")
-		List<BannerSession> possibleSessions = (List<BannerSession>) BannerSessionDAO.getInstance()
+		List<BannerSession> possibleSessions = BannerSessionDAO.getInstance()
 				.getSession()
-				.createQuery("from BannerSession bs where bs.bannerTermCode = :termCode")
-				.setString("termCode", getTermCode()).list();
+				.createQuery("from BannerSession bs where bs.bannerTermCode = :termCode", BannerSession.class)
+				.setParameter("termCode", getTermCode()).list();
 		if (possibleSessions.size() == 1) {
 			return possibleSessions.get(0);
 		}

@@ -17,18 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.banner.model.dao;
 
-import org.unitime.banner.model.base.BaseQueueDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.banner.model.Queue;
 
+public class QueueDAO extends _RootDAO<Queue,Long> {
+	private static QueueDAO sInstance;
 
-public class QueueDAO extends BaseQueueDAO {
+	public QueueDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public QueueDAO () {}
+	public static QueueDAO getInstance() {
+		if (sInstance == null) sInstance = new QueueDAO();
+		return sInstance;
+	}
 
-
+	public Class<Queue> getReferenceClass() {
+		return Queue.class;
+	}
 }

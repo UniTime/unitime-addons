@@ -19,10 +19,15 @@
 */
 package org.unitime.banner.model;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
 import org.unitime.banner.model.base.BaseBannerCohortRestriction;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 
+@Entity
+@DiscriminatorValue("0")
 public class BannerCohortRestriction extends BaseBannerCohortRestriction {
 
 	/**
