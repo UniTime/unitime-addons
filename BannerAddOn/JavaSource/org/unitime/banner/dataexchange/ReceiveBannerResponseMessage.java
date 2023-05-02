@@ -74,7 +74,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 	}
 
 	public static void receiveResponseDocument(QueueIn queueIn) throws LoggableException  {
-		Element rootElement = queueIn.getXml().getRootElement();
+		Element rootElement = queueIn.getDocument().getRootElement();
 		if (rootElement.getName().equalsIgnoreCase(rootName)){
 			try {
 				ReceiveBannerResponseMessage rbrm = new ReceiveBannerResponseMessage();
@@ -437,7 +437,7 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 		Debug.info("Starting loadxml");
 		QueueOut sentMessage = QueueOutDAO.getInstance().get(iQueueId);
 		if (sentMessage != null) {
-			processMessageWithMatchingSentMessage(rootElement, sentMessage.getXml().getRootElement());
+			processMessageWithMatchingSentMessage(rootElement, sentMessage.getDocument().getRootElement());
 		} else {
 			processResponseWithNoMatchingSentMessage(rootElement);
 		}

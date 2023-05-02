@@ -62,7 +62,7 @@ public class QueuedItem extends BannerCaller {
 			qod.getSession().merge(item);
 			qod.getSession().flush();
 
-			Document result = callOracleProcess(item.getXml());
+			Document result = callOracleProcess(item.getDocument());
 
 			QueueIn qi = new QueueIn();
 			try {
@@ -72,7 +72,7 @@ public class QueuedItem extends BannerCaller {
 
 				qi.setMatchId(item.getUniqueId());
 				qi.setStatus(QueueIn.STATUS_POSTED);
-				qi.setXml(result);
+				qi.setDocument(result);
 
 				qid.getSession().persist(qi);
 				qid.getSession().flush();

@@ -182,7 +182,7 @@ public class BannerTermCrnPropertiesEditAction extends UniTimeAction<BannerTermC
             }
             for (String bsId : form.getBannerSessionIds()) {
             		BannerSession bs = BannerSession.getBannerSessionById(Long.valueOf(bsId));
-            		bannerTermCrnProperties.addTobannerSessions(bs);
+            		bannerTermCrnProperties.addToBannerSessions(bs);
             		bs.setBannerTermCrnProperties(bannerTermCrnProperties);
             		origSessions.remove(bs);
             }

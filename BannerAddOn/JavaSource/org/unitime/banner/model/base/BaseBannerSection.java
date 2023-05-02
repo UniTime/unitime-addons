@@ -155,27 +155,39 @@ public abstract class BaseBannerSection implements Serializable {
 	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerSectionToClass> getBannerSectionToClasses() { return iBannerSectionToClasses; }
 	public void setBannerSectionToClasses(Set<BannerSectionToClass> bannerSectionToClasses) { iBannerSectionToClasses = bannerSectionToClasses; }
-	public void addTobannerSectionToClasses(BannerSectionToClass bannerSectionToClass) {
+	public void addToBannerSectionToClasses(BannerSectionToClass bannerSectionToClass) {
 		if (iBannerSectionToClasses == null) iBannerSectionToClasses = new HashSet<BannerSectionToClass>();
 		iBannerSectionToClasses.add(bannerSectionToClass);
+	}
+	@Deprecated
+	public void addTobannerSectionToClasses(BannerSectionToClass bannerSectionToClass) {
+		addToBannerSectionToClasses(bannerSectionToClass);
 	}
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "parentBannerSection")
 	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerSection> getBannerSectionToChildSections() { return iBannerSectionToChildSections; }
 	public void setBannerSectionToChildSections(Set<BannerSection> bannerSectionToChildSections) { iBannerSectionToChildSections = bannerSectionToChildSections; }
-	public void addTobannerSectionToChildSections(BannerSection bannerSection) {
+	public void addToBannerSectionToChildSections(BannerSection bannerSection) {
 		if (iBannerSectionToChildSections == null) iBannerSectionToChildSections = new HashSet<BannerSection>();
 		iBannerSectionToChildSections.add(bannerSection);
+	}
+	@Deprecated
+	public void addTobannerSectionToChildSections(BannerSection bannerSection) {
+		addToBannerSectionToChildSections(bannerSection);
 	}
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "bannerSection", cascade = {CascadeType.ALL})
 	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerLastSentSectionRestriction> getBannerLastSentBannerRestrictions() { return iBannerLastSentBannerRestrictions; }
 	public void setBannerLastSentBannerRestrictions(Set<BannerLastSentSectionRestriction> bannerLastSentBannerRestrictions) { iBannerLastSentBannerRestrictions = bannerLastSentBannerRestrictions; }
-	public void addTobannerLastSentBannerRestrictions(BannerLastSentSectionRestriction bannerLastSentSectionRestriction) {
+	public void addToBannerLastSentBannerRestrictions(BannerLastSentSectionRestriction bannerLastSentSectionRestriction) {
 		if (iBannerLastSentBannerRestrictions == null) iBannerLastSentBannerRestrictions = new HashSet<BannerLastSentSectionRestriction>();
 		iBannerLastSentBannerRestrictions.add(bannerLastSentSectionRestriction);
+	}
+	@Deprecated
+	public void addTobannerLastSentBannerRestrictions(BannerLastSentSectionRestriction bannerLastSentSectionRestriction) {
+		addToBannerLastSentBannerRestrictions(bannerLastSentSectionRestriction);
 	}
 
 	@Override

@@ -125,7 +125,7 @@ public class BannerSection extends BaseBannerSection {
 		BannerSectionToClass bsc = new BannerSectionToClass();
 		bsc.setBannerSection(this);
 		bsc.setClassId(clazz.getUniqueId());
-		addTobannerSectionToClasses(bsc);
+		addToBannerSectionToClasses(bsc);
 		if (classes == null){
 			classes = new HashSet<Class_>();
 		}
@@ -1410,7 +1410,7 @@ public class BannerSection extends BaseBannerSection {
 			for (BannerCohortRestriction bcr : newLastSentCohortRestrictions) {
 				bcr.setBannerSection(this);
 				hibSession.persist(bcr);
-				this.addTobannerLastSentBannerRestrictions(bcr);
+				this.addToBannerLastSentBannerRestrictions(bcr);
 			}
 			hibSession.merge(this);
 			if (trans == null) {

@@ -75,7 +75,7 @@ public class BannerCourse extends BaseBannerCourse {
 
 	public static BannerCourse findBannerCourseForCourseOffering(Long courseOfferingId, Session hibSession){
 		return hibSession
-			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId)", BannerCourse.class)
+			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId", BannerCourse.class)
 			.setParameter("courseOfferingId", courseOfferingId.longValue())
 			.setHibernateFlushMode(FlushMode.MANUAL)
 			.setCacheable(false)
@@ -84,7 +84,7 @@ public class BannerCourse extends BaseBannerCourse {
 
 	public static List<BannerCourse> findBannerCoursesForCourseOffering(Long courseOfferingId, Session hibSession){
 		return hibSession
-			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId)", BannerCourse.class)
+			.createQuery("from BannerCourse bc where bc.courseOfferingId=:courseOfferingId", BannerCourse.class)
 			.setParameter("courseOfferingId", courseOfferingId.longValue())
 			.setHibernateFlushMode(FlushMode.MANUAL)
 			.setCacheable(false)

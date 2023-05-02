@@ -82,9 +82,13 @@ public abstract class BaseBannerCourse implements Serializable {
 	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerConfig> getBannerConfigs() { return iBannerConfigs; }
 	public void setBannerConfigs(Set<BannerConfig> bannerConfigs) { iBannerConfigs = bannerConfigs; }
-	public void addTobannerConfigs(BannerConfig bannerConfig) {
+	public void addToBannerConfigs(BannerConfig bannerConfig) {
 		if (iBannerConfigs == null) iBannerConfigs = new HashSet<BannerConfig>();
 		iBannerConfigs.add(bannerConfig);
+	}
+	@Deprecated
+	public void addTobannerConfigs(BannerConfig bannerConfig) {
+		addToBannerConfigs(bannerConfig);
 	}
 
 	@Override

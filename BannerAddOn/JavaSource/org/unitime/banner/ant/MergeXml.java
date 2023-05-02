@@ -82,6 +82,8 @@ public class MergeXml extends Task {
                     if (element.getText()!=null && element.getText().trim().length()>0) {
                         target.addElement("property").addAttribute("name", name).setText(element.getText());
                     }
+                } else if ("mapping".equals(element.getName())) {
+                	merge(target.addElement(element.getName()),element);
                 } else {
                     if (target.elements(element.getName()).size()==1 && source.elements(element.getName()).size()==1)
                         merge(target.element(element.getName()),element);

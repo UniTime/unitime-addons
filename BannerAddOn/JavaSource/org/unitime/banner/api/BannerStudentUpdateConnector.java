@@ -203,7 +203,7 @@ public class BannerStudentUpdateConnector extends ApiConnector {
 			QueueIn qi = new QueueIn();
 			qi.setPostDate(new Date());
 			qi.setStatus(QueueIn.STATUS_READY);
-			qi.setXml(document);
+			qi.setDocument(document);
 			QueueInDAO.getInstance().getSession().persist(qi);
 			QueueInDAO.getInstance().getSession().flush();
 		} else {

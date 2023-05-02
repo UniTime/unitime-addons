@@ -193,7 +193,7 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 					bcfg = new BannerConfig();
 					BannerCourse bc = BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), newSession);
 					bcfg.setBannerCourse(bc);
-					bc.addTobannerConfigs(bcfg);
+					bc.addToBannerConfigs(bcfg);
 					bcfg.setInstrOfferingConfigId(instrOfferingConfig.getUniqueId());
 					newSession.merge(bc);
 					trans.commit();
@@ -226,10 +226,10 @@ public class BannerCourseOfferingImport extends BaseCourseOfferingImport {
 						BannerSectionToClass bsc = new BannerSectionToClass();
 						bsc.setClassId(clazz.getUniqueId());
 						bsc.setBannerSection(bs);
-						bs.addTobannerSectionToClasses(bsc);
+						bs.addToBannerSectionToClasses(bsc);
 						BannerConfig bc = BannerConfig.findBannerConfigForInstrOffrConfigAndCourseOffering(clazz.getSchedulingSubpart().getInstrOfferingConfig(), co, newSession);
 						bs.setBannerConfig(bc);
-						bc.addTobannerSections(bs);
+						bc.addToBannerSections(bs);
 						bs.setSession(session);
 						newSession.persist(bs);
 						addNote("added class to existing banner section");

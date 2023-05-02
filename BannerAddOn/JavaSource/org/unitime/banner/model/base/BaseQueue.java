@@ -27,7 +27,6 @@ import jakarta.persistence.MappedSuperclass;
 import java.io.Serializable;
 import java.util.Date;
 
-import org.dom4j.Document;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.Queue;
@@ -42,7 +41,7 @@ public abstract class BaseQueue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long iUniqueId;
-	private Document iXml;
+	private String iXml;
 	private String iStatus;
 	private Date iPostDate;
 	private Date iProcessDate;
@@ -66,8 +65,8 @@ public abstract class BaseQueue implements Serializable {
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
 	@Column(name = "xml", nullable = false)
-	public Document getXml() { return iXml; }
-	public void setXml(Document xml) { iXml = xml; }
+	public String getXml() { return iXml; }
+	public void setXml(String xml) { iXml = xml; }
 
 	@Column(name = "status", nullable = true, length = 10)
 	public String getStatus() { return iStatus; }

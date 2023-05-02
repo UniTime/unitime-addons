@@ -661,8 +661,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				posMajor.setSession(iSession);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					posMajor.addToacademicAreas(aa);
-					aa.addToposMajors(posMajor);
+					posMajor.addToAcademicAreas(aa);
+					aa.addToPosMajors(posMajor);
 					hibSession.persist(posMajor);
 					hibSession.flush();
 				} finally {
@@ -682,8 +682,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				posMajor.setExternalUniqueId(major);
 				posMajor.setName(major);
 				posMajor.setSession(iSession);
-				posMajor.addToacademicAreas(aa);
-				aa.addToposMajors(posMajor);
+				posMajor.addToAcademicAreas(aa);
+				aa.addToPosMajors(posMajor);
 				helper.getHibSession().persist(posMajor);
 				helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 			}
@@ -753,7 +753,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				conc.setMajor(posMajor);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					posMajor.addToconcentrations(conc);
+					posMajor.addToConcentrations(conc);
 					hibSession.persist(conc);
 					hibSession.flush();
 				} finally {
@@ -771,7 +771,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				conc.setCode(concentration);
 				conc.setName(concentration);
 				conc.setMajor(posMajor);
-				posMajor.addToconcentrations(conc);
+				posMajor.addToConcentrations(conc);
 				helper.getHibSession().persist(conc);
 				helper.info("Added Concentration:  " + concentration + " to Major:  " + area + "/" + major);
 			}
@@ -1042,7 +1042,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aac.setProgram(program);
 				aac.setCampus(campus);
 				aac.setWeight(acm.getWeight());
-				student.addToareaClasfMajors(aac);
+				student.addToAreaClasfMajors(aac);
 				changed = true;
 			}
 			
@@ -1092,7 +1092,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					aac.setAcademicClassification(getAcademicClassification(helper, "00"));
 				aac.setMinor(posMinor);
 				aac.setStudent(student);
-				student.addToareaClasfMinors(aac);
+				student.addToAreaClasfMinors(aac);
 				changed = true;
 			}
 			
@@ -1283,8 +1283,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			}
 		}
 		for (StudentGroup g: groups) {
-			g.addTostudents(student);
-			student.addTogroups(g);
+			g.addToStudents(student);
+			student.addToGroups(g);
 			changed = true;
 			helper.info("Student " + student.getExternalUniqueId() + " added to " + g.getGroupName() + (g.getType() == null ? "" : " (" + g.getType().getReference() + ")"));
 		}
@@ -1463,7 +1463,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					} else {
 						// student not present --> add this student
 						override = (OverrideReservation)r;
-						override.addTostudents(student);
+						override.addToStudents(student);
 						helper.info("Updated " + type.getReference() + " override for " + io.getCourseName() + " [" + student.getExternalUniqueId()  + " added]");
 						helper.getHibSession().merge(override);
 						break;
@@ -1479,11 +1479,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				override.setConfigurations(new HashSet<InstrOfferingConfig>());
 				override.setClasses(new HashSet<Class_>());
 				override.setInstructionalOffering(io);
-				io.addToreservations(override);
-				override.addTostudents(student);
+				io.addToReservations(override);
+				override.addToStudents(student);
 				for (Class_ c: classes)
 					if (!hasChild(c, classes))
-						override.addToclasses(c);
+						override.addToClasses(c);
 
 				helper.info("Created " + type.getReference() + " override for " + io.getCourseName() + " [" + student.getExternalUniqueId()  + " added]");
 				helper.getHibSession().persist(override);
@@ -1820,8 +1820,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.info("Student " + student.getExternalUniqueId() + " dropped from advisor " + a.getExternalUniqueId());
 			}
 		for (Advisor a: advisors) {
-			a.addTostudents(student);
-			student.addToadvisors(a);
+			a.addToStudents(student);
+			student.addToAdvisors(a);
 			changed = true;
 			helper.info("Student " + student.getExternalUniqueId() + " added to advisor " + a.getExternalUniqueId());
 		}

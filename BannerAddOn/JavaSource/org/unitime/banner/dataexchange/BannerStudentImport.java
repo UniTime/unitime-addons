@@ -225,8 +225,8 @@ public class BannerStudentImport extends StudentImport {
 					override.setConfigurations(new HashSet<InstrOfferingConfig>());
 					override.setClasses(new HashSet<Class_>());
 					override.setInstructionalOffering(io);
-					io.addToreservations(override);
-					override.addTostudents(student);
+					io.addToReservations(override);
+					override.addToStudents(student);
 				} else {
 					override.getConfigurations().clear();
 					override.getClasses().clear();
@@ -235,7 +235,7 @@ public class BannerStudentImport extends StudentImport {
 				String rx = null;
 				for (Class_ c: classes)
 					if (!hasChild(c, classes)) {
-						override.addToclasses(c);
+						override.addToClasses(c);
 						rx = (rx == null ? c.getExternalId(io.getControllingCourseOffering()) : rx + ", " + c.getExternalId(io.getControllingCourseOffering()));
 					}
 				

@@ -88,7 +88,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 			studentEl.addAttribute("session", term);
 		}
 		QueueOut out = new QueueOut();
-		out.setXml(document);
+		out.setDocument(document);
 		out.setStatus(QueueOut.STATUS_READY);
 		out.setPostDate(new Date());
 		helper.getHibSession().persist(out);

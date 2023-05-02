@@ -99,9 +99,13 @@ public abstract class BaseBannerTermCrnProperties implements Serializable {
 	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerSession> getBannerSessions() { return iBannerSessions; }
 	public void setBannerSessions(Set<BannerSession> bannerSessions) { iBannerSessions = bannerSessions; }
-	public void addTobannerSessions(BannerSession bannerSession) {
+	public void addToBannerSessions(BannerSession bannerSession) {
 		if (iBannerSessions == null) iBannerSessions = new HashSet<BannerSession>();
 		iBannerSessions.add(bannerSession);
+	}
+	@Deprecated
+	public void addTobannerSessions(BannerSession bannerSession) {
+		addToBannerSessions(bannerSession);
 	}
 
 	@Override

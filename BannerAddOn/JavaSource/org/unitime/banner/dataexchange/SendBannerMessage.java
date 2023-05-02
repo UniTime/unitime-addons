@@ -112,7 +112,7 @@ public class SendBannerMessage {
 		  Debug.info("message = " + asxml.substring(1,2000) + " ....and more....");
 		else
 		  Debug.info("message = " + asxml);
-		outQ.setXml(document);
+		outQ.setDocument(document);
 		outQ.setStatus(QueueOut.STATUS_POSTED);
 		outQ.setPostDate(new Date());
 		Session newSession = QueueOutDAO.getInstance().createNewSession();

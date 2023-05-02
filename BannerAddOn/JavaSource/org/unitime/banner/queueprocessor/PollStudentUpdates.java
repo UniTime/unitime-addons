@@ -65,7 +65,7 @@ public class PollStudentUpdates extends BannerCaller {
 				}
 			}
 
-			Document result = callOracleProcess(qo == null ? null : qo.getXml());
+			Document result = callOracleProcess(qo == null ? null : qo.getDocument());
 			
 			if (qo != null) {
 				qo.setProcessDate(new Date());
@@ -83,7 +83,7 @@ public class PollStudentUpdates extends BannerCaller {
 
 				qi.setMatchId(null);
 				qi.setStatus(QueueIn.STATUS_READY);
-				qi.setXml(result);
+				qi.setDocument(result);
 
 				QueueInDAO.getInstance().getSession().persist(qi);
 				QueueInDAO.getInstance().getSession().flush();

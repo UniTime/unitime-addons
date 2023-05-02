@@ -270,7 +270,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 							toBcfg.setBannerCourse(toBc);
 							toBcfg.setGradableItype(fromBcfg.getGradableItype());
 							toBcfg.setLabHours(fromBcfg.getLabHours());
-							toBc.addTobannerConfigs(toBcfg);
+							toBc.addToBannerConfigs(toBcfg);
 							for(Iterator<BannerSection> fromBannerSectionsIt = fromBcfg.getBannerSections().iterator(); fromBannerSectionsIt.hasNext();){
 								BannerSection fromBs = (BannerSection) fromBannerSectionsIt.next();
 								BannerSection toBs = new BannerSection();
@@ -291,13 +291,13 @@ public class BannerSessionRollForward extends SessionRollForward {
 									if (toClass != null) {
 										BannerSectionToClass toBsc = new BannerSectionToClass();
 										toBsc.setBannerSection(toBs);
-										toBs.addTobannerSectionToClasses(toBsc);
+										toBs.addToBannerSectionToClasses(toBsc);
 										toBsc.setClassId(toClass.getUniqueId());
 									}
 								}
 								if (toBs.getBannerSectionToClasses() != null){
 									toBs.setBannerConfig(toBcfg);
-									toBcfg.addTobannerSections(toBs);								
+									toBcfg.addToBannerSections(toBs);								
 									toBs.setConsentType(fromBs.getConsentType());
 									toBs.setSession(toSession);
 								}

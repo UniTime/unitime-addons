@@ -94,7 +94,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 			if (qi != null) {
 				qi.setStatus(Queue.STATUS_PROCESSING);
 				hibSession.merge(qi);
-				ret = new XmlMessage(qi.getUniqueId(), qi.getPostDate(), qi.getXml());
+				ret = new XmlMessage(qi.getUniqueId(), qi.getPostDate(), qi.getDocument());
 			}
 
 			tx.commit();
@@ -444,7 +444,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 						studentEl.addAttribute("session", student.getBannerTerm());
 					}
 					QueueOut out = new QueueOut();
-					out.setXml(document);
+					out.setDocument(document);
 					out.setStatus(QueueOut.STATUS_READY);
 					out.setPostDate(new Date());
 					hibSession.persist(out);

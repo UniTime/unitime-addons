@@ -226,7 +226,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
 		    	sce.setClazz(c);
 		    	sce.setCourseOffering(courseOffering);
 		    	sce.setTimestamp(new java.util.Date());
-		    	student.addToclassEnrollments(sce);
+		    	student.addToClassEnrollments(sce);
 			}
 		}
 		
@@ -254,7 +254,7 @@ public class BannerStudentEnrollmentMessage extends BaseImport {
     			cd.setTimestamp(new java.util.Date());
     			cd.setCourseRequests(new HashSet<CourseRequest>());
     			cd.setStudent(student);
-    			student.addTocourseDemands(cd);
+    			student.addToCourseDemands(cd);
     			cd.setAlternative(false);
     			cd.setPriority(student.getCourseDemands().size() + 1);
     			cd.setWaitlist(false);

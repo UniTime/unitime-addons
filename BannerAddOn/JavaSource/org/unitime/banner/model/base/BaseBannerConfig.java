@@ -104,9 +104,13 @@ public abstract class BaseBannerConfig implements Serializable {
 	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
 	public Set<BannerSection> getBannerSections() { return iBannerSections; }
 	public void setBannerSections(Set<BannerSection> bannerSections) { iBannerSections = bannerSections; }
-	public void addTobannerSections(BannerSection bannerSection) {
+	public void addToBannerSections(BannerSection bannerSection) {
 		if (iBannerSections == null) iBannerSections = new HashSet<BannerSection>();
 		iBannerSections.add(bannerSection);
+	}
+	@Deprecated
+	public void addTobannerSections(BannerSection bannerSection) {
+		addToBannerSections(bannerSection);
 	}
 
 	@Override
