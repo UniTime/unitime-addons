@@ -185,7 +185,7 @@ public class BannerResponse extends BaseBannerResponse {
             if ((searchManager != null && searchManager > 0 ) || (searchDepartment != null && searchDepartment > 0 )) {
             	joinHql += " SubjectArea as sa " +
             	" inner join sa.department as dept ";
-            	whereHql += " and sa.session = :sessionId " +
+            	whereHql += " and sa.session.uniqueId = :sessionId " +
             			"and sa.subjectAreaAbbreviation = rp.subjectCode ";
                 if (searchDepartment != null && searchDepartment > 0 ) {
                    	whereHql += " and dept.uniqueId = :departmentId ";

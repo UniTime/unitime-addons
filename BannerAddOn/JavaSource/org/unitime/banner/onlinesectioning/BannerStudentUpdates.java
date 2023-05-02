@@ -492,7 +492,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 			
 			protected boolean hasStudent(BannerSession session, String externalId, org.hibernate.Session hibSession) {
 				return hibSession.createQuery(
-						"select count(s) from Student s where s.externalUniqueId = :externalId and s.session = :sessionId", Number.class
+						"select count(s) from Student s where s.externalUniqueId = :externalId and s.session.uniqueId = :sessionId", Number.class
 						).setParameter("externalId", externalId).setParameter("sessionId", session.getSession().getUniqueId())
 						.uniqueResult().intValue() > 0;
 			}

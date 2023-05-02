@@ -124,7 +124,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 			StringBuffer sb = new StringBuffer();
 			sb.append("select bs1")
 			  .append(" from BannerSection bs1, BannerSection bs2, BannerSession bsess1, BannerSession bsess2, CourseOffering co1, CourseOffering co2")
-			  .append(" where bs1.session = :sessionId")
+			  .append(" where bs1.session.uniqueId = :sessionId")
 			  .append(" and bs1.session != bs2.session")
 			  .append(" and bsess1.session = bs1.session")
 			  .append(" and bsess2.session = bs2.session")

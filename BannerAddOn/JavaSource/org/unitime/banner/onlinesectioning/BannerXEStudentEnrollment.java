@@ -357,7 +357,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 		// (it does not exist in UniTime, but still contains enrolled students in Banner)
 		Number count = helper.getHibSession().createQuery(
 				"select count(bs) from BannerSection bs where " +
-				"bs.session = :sessionId and bs.crn = :crn ", Number.class
+				"bs.session.uniqueId = :sessionId and bs.crn = :crn ", Number.class
 				)
 				.setParameter("sessionId", server.getAcademicSession().getUniqueId())
 				.setParameter("crn", reg.courseReferenceNumber)

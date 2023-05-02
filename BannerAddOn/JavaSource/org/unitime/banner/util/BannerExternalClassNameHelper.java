@@ -170,7 +170,7 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		public GradableSubpartsCache(Long sessionId, Session hibSession) {
 			for (Object[] o: hibSession.createQuery(
 					"select bc.bannerCourse.courseOfferingId, bc.instrOfferingConfigId, bc.gradableItype.itype " +
-					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.session = :sessionId", Object[].class
+					"from BannerConfig bc, InstrOfferingConfig c where bc.instrOfferingConfigId = c.uniqueId and c.instructionalOffering.session.uniqueId = :sessionId", Object[].class
 					).setParameter("sessionId", sessionId).list()) {
 				Long courseId = (Long)o[0];
 				Long configId = (Long)o[1];

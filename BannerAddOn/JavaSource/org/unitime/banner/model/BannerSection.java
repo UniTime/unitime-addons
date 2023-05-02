@@ -210,7 +210,7 @@ public class BannerSection extends BaseBannerSection {
 	
 	@SuppressWarnings("unchecked")
 	public static List<BannerSection> findBannerSectionsForInstructionalOffering(InstructionalOffering instructionalOffering, Session hibSession){
-		return hibSession.createQuery("select bs from BannerSection bs, CourseOffering co where co.instructionalOffering = :instrOfferId and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId", BannerSection.class)
+		return hibSession.createQuery("select bs from BannerSection bs, CourseOffering co where co.instructionalOffering.uniqueId = :instrOfferId and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId", BannerSection.class)
 				           .setParameter("instrOfferId", instructionalOffering.getUniqueId().longValue())
 				           .setHibernateFlushMode(FlushMode.MANUAL)
 				           .list();
@@ -1449,7 +1449,7 @@ public class BannerSection extends BaseBannerSection {
 	public static List<InstructionalOffering> findOfferingsMissingBannerSections(org.unitime.timetable.model.Session academicSession, Session hibSession) {
 		String query = " select distinct c.schedulingSubpart.instrOfferingConfig.instructionalOffering"
 				+ " from Class_ c inner join c.schedulingSubpart.instrOfferingConfig.instructionalOffering.courseOfferings as co"
-				+ " where c.schedulingSubpart.instrOfferingConfig.instructionalOffering.session = :sessionId"
+				+ " where c.schedulingSubpart.instrOfferingConfig.instructionalOffering.session.uniqueId = :sessionId"
 				+ "  and 0 = (select count(bs)"
 				+ "               from BannerSection bs inner join bs.bannerSectionToClasses as bstc"
 				+ "               where bstc.classId = c.uniqueId)";
