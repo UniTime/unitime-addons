@@ -483,8 +483,8 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		sb.append("select br from BannerResponse br, BannerSession bs where bs.session.uniqueId = ")
 		  .append(sessionId)
 		  .append(" and br.termCode = bs.bannerTermCode")
-		  .append(" and br.crn >= bs.bannerTermCrnProperties.minCrn")
-		  .append(" and br.crn <= bs.bannerTermCrnProperties.maxCrn")
+		  .append(" and cast(br.crn as int) >= bs.bannerTermCrnProperties.minCrn")
+		  .append(" and cast(br.crn as int) <= bs.bannerTermCrnProperties.maxCrn")
 		  ;
 		ArrayList<Set<String>> searchSubjects = subjectsToSearchFor(sessionId, subj, department, manager, userIsDeptIndependent, userDepartments);
 		if (!searchSubjects.get(0).isEmpty()) {
