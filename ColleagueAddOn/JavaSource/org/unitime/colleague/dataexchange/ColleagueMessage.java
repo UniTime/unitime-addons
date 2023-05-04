@@ -195,7 +195,7 @@ public class ColleagueMessage {
 		}
 		if (cSession != null && cSession.isStoreDataForColleague() && (action.equals(MessageAction.AUDIT) || cSession.isSendDataToColleague())) {
 			Element sectionElement = beginSectionElement(section, clazz, courseOffering, action, cSession, hibSession);
-			if (!action.equals(MessageAction.DELETE)){
+			if (!action.equals(MessageAction.DELETE) && sectionElement != null){
 				createMeetingElementsXml(section, hibSession, sectionElement);
 				createInstructorXml(section, hibSession, sectionElement);
 				createCrossListXml(section, clazz, courseOffering, hibSession, sectionElement);
