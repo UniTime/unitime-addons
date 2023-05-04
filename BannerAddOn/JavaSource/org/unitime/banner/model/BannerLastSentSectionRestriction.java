@@ -35,7 +35,7 @@ import org.unitime.localization.impl.Localization;
 import org.unitime.timetable.gwt.resources.BannerGwtMessages;
 
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_last_sent_sect_restr")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name="restriction_type", discriminatorType = DiscriminatorType.INTEGER)

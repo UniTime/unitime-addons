@@ -39,7 +39,7 @@ import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_campus_override")
 public class BannerCampusOverride extends BaseBannerCampusOverride {
 

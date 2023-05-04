@@ -96,7 +96,7 @@ public abstract class BaseBannerTermCrnProperties implements Serializable {
 	public void setMaxCrn(Integer maxCrn) { iMaxCrn = maxCrn; }
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "bannerTermCrnProperties")
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Set<BannerSession> getBannerSessions() { return iBannerSessions; }
 	public void setBannerSessions(Set<BannerSession> bannerSessions) { iBannerSessions = bannerSessions; }
 	public void addToBannerSessions(BannerSession bannerSession) {

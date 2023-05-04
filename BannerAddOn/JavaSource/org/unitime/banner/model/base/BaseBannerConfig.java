@@ -96,12 +96,12 @@ public abstract class BaseBannerConfig implements Serializable {
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "banner_course_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public BannerCourse getBannerCourse() { return iBannerCourse; }
 	public void setBannerCourse(BannerCourse bannerCourse) { iBannerCourse = bannerCourse; }
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "bannerConfig", cascade = {CascadeType.ALL}, orphanRemoval = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Set<BannerSection> getBannerSections() { return iBannerSections; }
 	public void setBannerSections(Set<BannerSection> bannerSections) { iBannerSections = bannerSections; }
 	public void addToBannerSections(BannerSection bannerSection) {

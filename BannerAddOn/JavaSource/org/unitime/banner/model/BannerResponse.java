@@ -48,7 +48,7 @@ import org.unitime.timetable.model.dao.SubjectAreaDAO;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_response")
 public class BannerResponse extends BaseBannerResponse {
 

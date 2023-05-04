@@ -44,7 +44,7 @@ import org.unitime.timetable.model.dao.Class_DAO;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_session")
 public class BannerSession extends BaseBannerSession {
 	private static final long serialVersionUID = 1L;

@@ -172,6 +172,8 @@ public class ProcessQueue {
 			le.logError();
 
 			le.printStackTrace();
+		} finally {
+			HibernateUtil.closeCurrentThreadSessions();
 		}
 	}
 }

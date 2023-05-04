@@ -73,7 +73,7 @@ public abstract class BaseBannerSectionToClass implements Serializable {
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "banner_section_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public BannerSection getBannerSection() { return iBannerSection; }
 	public void setBannerSection(BannerSection bannerSection) { iBannerSection = bannerSection; }
 

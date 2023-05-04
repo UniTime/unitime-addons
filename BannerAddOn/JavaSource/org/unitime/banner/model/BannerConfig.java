@@ -41,7 +41,7 @@ import org.unitime.timetable.model.InstrOfferingConfig;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_config")
 public class BannerConfig extends BaseBannerConfig {
 	private static final long serialVersionUID = 1L;

@@ -34,7 +34,7 @@ import org.unitime.banner.model.base.BaseBannerSectionToClass;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_section_join_class")
 public class BannerSectionToClass extends BaseBannerSectionToClass {
 	private static final long serialVersionUID = 1L;

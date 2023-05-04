@@ -31,7 +31,7 @@ import org.unitime.timetable.model.InstructionalMethod;
 import org.unitime.timetable.model.Session;
 
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_inst_method_cohort_rstrct")
 public class BannerInstrMethodCohortRestriction extends BaseBannerInstrMethodCohortRestriction {
 

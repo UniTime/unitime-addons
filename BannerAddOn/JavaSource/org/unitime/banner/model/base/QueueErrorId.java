@@ -19,19 +19,13 @@
 */
 package org.unitime.banner.model.base;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-
 import java.io.Serializable;
 import java.util.Date;
-import org.unitime.banner.model.QueueError;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
-@MappedSuperclass
 public class QueueErrorId implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -47,26 +41,20 @@ public class QueueErrorId implements Serializable {
 		iErrorDate = errorDate;
 	}
 
-	@Id
-	@Column(name="null")
 	public Long getQueueId() { return iQueueId; }
 	public void setQueueId(Long queueId) { iQueueId = queueId; }
 
-	@Id
-	@Column(name="null")
 	public String getErrorType() { return iErrorType; }
 	public void setErrorType(String errorType) { iErrorType = errorType; }
 
-	@Id
-	@Column(name="null")
 	public Date getErrorDate() { return iErrorDate; }
 	public void setErrorDate(Date errorDate) { iErrorDate = errorDate; }
 
 
 	@Override
 	public boolean equals(Object o) {
-		if (o == null || !(o instanceof QueueError)) return false;
-		QueueError queueError = (QueueError)o;
+		if (o == null || !(o instanceof QueueErrorId)) return false;
+		QueueErrorId queueError = (QueueErrorId)o;
 		if (getQueueId() == null || queueError.getQueueId() == null || !getQueueId().equals(queueError.getQueueId())) return false;
 		if (getErrorType() == null || queueError.getErrorType() == null || !getErrorType().equals(queueError.getErrorType())) return false;
 		if (getErrorDate() == null || queueError.getErrorDate() == null || !getErrorDate().equals(queueError.getErrorDate())) return false;

@@ -85,19 +85,19 @@ public abstract class BaseBannerInstrMethodCohortRestriction implements Serializ
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "session_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "instr_method_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public InstructionalMethod getInstructionalMethod() { return iInstructionalMethod; }
 	public void setInstructionalMethod(InstructionalMethod instructionalMethod) { iInstructionalMethod = instructionalMethod; }
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "cohort_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public StudentGroup getCohort() { return iCohort; }
 	public void setCohort(StudentGroup cohort) { iCohort = cohort; }
 

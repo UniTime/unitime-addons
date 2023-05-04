@@ -20,8 +20,12 @@
 package org.unitime.banner.model.base;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.MappedSuperclass;
+
+import java.io.Serializable;
+import java.util.Date;
 
 import org.unitime.banner.model.QueueError;
 
@@ -31,12 +35,33 @@ import org.unitime.banner.model.QueueError;
  */
 @MappedSuperclass
 @IdClass(QueueErrorId.class)
-public abstract class BaseQueueError extends QueueErrorId {
+public abstract class BaseQueueError implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	private Long iQueueId;
+	private String iErrorType;
+	private Date iErrorDate;
 	private String iErrorText;
 
 
+	public BaseQueueError() {
+	}
+
+
+	@Id
+	@Column(name="null")
+	public Long getQueueId() { return iQueueId; }
+	public void setQueueId(Long queueId) { iQueueId = queueId; }
+
+	@Id
+	@Column(name="null")
+	public String getErrorType() { return iErrorType; }
+	public void setErrorType(String errorType) { iErrorType = errorType; }
+
+	@Id
+	@Column(name="null")
+	public Date getErrorDate() { return iErrorDate; }
+	public void setErrorDate(Date errorDate) { iErrorDate = errorDate; }
 
 	@Column(name = "errortext", nullable = true)
 	public String getErrorText() { return iErrorText; }

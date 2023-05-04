@@ -79,7 +79,7 @@ public abstract class BaseBannerCourse implements Serializable {
 	public void setUniqueIdRolledForwardFrom(Long uniqueIdRolledForwardFrom) { iUniqueIdRolledForwardFrom = uniqueIdRolledForwardFrom; }
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "bannerCourse", cascade = {CascadeType.ALL}, orphanRemoval = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Set<BannerConfig> getBannerConfigs() { return iBannerConfigs; }
 	public void setBannerConfigs(Set<BannerConfig> bannerConfigs) { iBannerConfigs = bannerConfigs; }
 	public void addToBannerConfigs(BannerConfig bannerConfig) {

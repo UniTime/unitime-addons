@@ -87,7 +87,7 @@ import org.unitime.timetable.util.Constants;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_section")
 public class BannerSection extends BaseBannerSection {
 	protected static GwtConstants CONSTANTS = Localization.create(GwtConstants.class);

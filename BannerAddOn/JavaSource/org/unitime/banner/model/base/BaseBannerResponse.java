@@ -148,19 +148,19 @@ public abstract class BaseBannerResponse implements Serializable {
 
 	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "session_id", nullable = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
 
 	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "banner_section_id", nullable = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public BannerSection getBannerSection() { return iBannerSection; }
 	public void setBannerSection(BannerSection bannerSection) { iBannerSection = bannerSection; }
 
 	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "subject_area_id", nullable = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public SubjectArea getSubjectArea() { return iSubjectArea; }
 	public void setSubjectArea(SubjectArea subjectArea) { iSubjectArea = subjectArea; }
 

@@ -124,7 +124,7 @@ public abstract class BaseBannerSection implements Serializable {
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "banner_config_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public BannerConfig getBannerConfig() { return iBannerConfig; }
 	public void setBannerConfig(BannerConfig bannerConfig) { iBannerConfig = bannerConfig; }
 
@@ -135,24 +135,24 @@ public abstract class BaseBannerSection implements Serializable {
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "session_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Session getSession() { return iSession; }
 	public void setSession(Session session) { iSession = session; }
 
 	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "parent_banner_section_id", nullable = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public BannerSection getParentBannerSection() { return iParentBannerSection; }
 	public void setParentBannerSection(BannerSection parentBannerSection) { iParentBannerSection = parentBannerSection; }
 
 	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "banner_campus_override_id", nullable = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public BannerCampusOverride getBannerCampusOverride() { return iBannerCampusOverride; }
 	public void setBannerCampusOverride(BannerCampusOverride bannerCampusOverride) { iBannerCampusOverride = bannerCampusOverride; }
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "bannerSection", cascade = {CascadeType.ALL}, orphanRemoval = true)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Set<BannerSectionToClass> getBannerSectionToClasses() { return iBannerSectionToClasses; }
 	public void setBannerSectionToClasses(Set<BannerSectionToClass> bannerSectionToClasses) { iBannerSectionToClasses = bannerSectionToClasses; }
 	public void addToBannerSectionToClasses(BannerSectionToClass bannerSectionToClass) {
@@ -165,7 +165,7 @@ public abstract class BaseBannerSection implements Serializable {
 	}
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "parentBannerSection")
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Set<BannerSection> getBannerSectionToChildSections() { return iBannerSectionToChildSections; }
 	public void setBannerSectionToChildSections(Set<BannerSection> bannerSectionToChildSections) { iBannerSectionToChildSections = bannerSectionToChildSections; }
 	public void addToBannerSectionToChildSections(BannerSection bannerSection) {
@@ -178,7 +178,7 @@ public abstract class BaseBannerSection implements Serializable {
 	}
 
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "bannerSection", cascade = {CascadeType.ALL})
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public Set<BannerLastSentSectionRestriction> getBannerLastSentBannerRestrictions() { return iBannerLastSentBannerRestrictions; }
 	public void setBannerLastSentBannerRestrictions(Set<BannerLastSentSectionRestriction> bannerLastSentBannerRestrictions) { iBannerLastSentBannerRestrictions = bannerLastSentBannerRestrictions; }
 	public void addToBannerLastSentBannerRestrictions(BannerLastSentSectionRestriction bannerLastSentSectionRestriction) {

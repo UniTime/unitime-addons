@@ -52,7 +52,7 @@ public abstract class BaseBannerCohortRestriction extends BannerLastSentSectionR
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
 	@JoinColumn(name = "cohort_id", nullable = false)
-	@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+	@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 	public StudentGroup getCohort() { return iCohort; }
 	public void setCohort(StudentGroup cohort) { iCohort = cohort; }
 

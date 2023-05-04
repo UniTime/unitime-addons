@@ -46,7 +46,7 @@ import org.unitime.commons.Debug;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class Queue extends BaseQueue {
 	private static final long serialVersionUID = 1L;

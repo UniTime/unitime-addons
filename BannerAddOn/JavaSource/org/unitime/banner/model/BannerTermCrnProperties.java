@@ -41,7 +41,7 @@ import org.unitime.banner.model.dao.BannerTermCrnPropertiesDAO;
  *
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.TRANSACTIONAL, includeLazy = false)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "banner_crn_provider")
 public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 	private static final long serialVersionUID = 1L;
