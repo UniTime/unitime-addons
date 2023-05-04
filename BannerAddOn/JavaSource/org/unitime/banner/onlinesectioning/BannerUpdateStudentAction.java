@@ -966,8 +966,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			changed = true;
 		}
 		
-		if (result.getStudentId() == null)
+		if (result.getStudentId() == null) {
 			helper.getHibSession().persist(student);
+			result.setStudentId(student.getUniqueId());
+		}
 		
 		if (iUpdateAcadAreaClasfMj) {
 			if (!iAcadAreaClasfMj.isEmpty()) {

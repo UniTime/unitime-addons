@@ -27,6 +27,7 @@ import java.util.Map;
 import org.hibernate.Session;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.dao.BannerSectionDAO;
+import org.unitime.commons.Debug;
 import org.unitime.timetable.interfaces.ExternalClassNameHelperInterface;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseCreditUnitConfig;
@@ -40,7 +41,7 @@ import org.unitime.timetable.util.DefaultExternalClassNameHelper;
  * @author says
  *
  */
-public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelper implements ExternalClassNameHelperInterface.HasGradableSubpartCache {
+public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelper implements ExternalClassNameHelperInterface.HasGradableSubpartCache, ExternalClassNameHelperInterface.HasClassNamesCache {
 
 	/**
 	 * 
@@ -223,5 +224,146 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 			}
 			return true;
 		}
+	}
+	
+	public ExternalClassNameHelperInterface getClassNamesCache(Long sessionId, org.hibernate.Session hibSession) {
+		return new ClassNamesCache(sessionId, hibSession);
+	}
+	
+	public ExternalClassNameHelperInterface getClassNamesCache(Collection<Long> offeringIds, org.hibernate.Session hibSession) {
+		return new ClassNamesCache(offeringIds, hibSession);
+	}
+	
+	public static class ClassNamesCache extends DefaultExternalClassNameHelper implements ExternalClassNameHelperInterface {
+		Map<Long, Map<Long, BannerSectionCache>> iCache = new HashMap<Long, Map<Long,BannerSectionCache>>();
+		
+		public ClassNamesCache(Long sessionId, org.hibernate.Session hibSession) {
+			for (Object[] o: hibSession.createQuery(
+					"select bs.bannerConfig.bannerCourse.courseOfferingId, bsc.classId, bs " +
+					"from BannerSection bs inner join bs.bannerSectionToClasses bsc, CourseOffering co where " +
+					"bs.session.uniqueId = :sessionId and " +
+					"bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId and " +
+					"(co.isControl = false or bs.overrideCourseCredit is not null)", Object[].class)
+					.setParameter("sessionId", sessionId)
+					.setCacheable(true).list()) {
+				Long courseId = (Long)o[0];
+				Long classId = (Long)o[1];
+				BannerSection bs = (BannerSection)o[2];
+				Map<Long, BannerSectionCache> class2bsc = iCache.get(courseId);
+				if (class2bsc == null) {
+					class2bsc = new HashMap<Long, BannerSectionCache>();
+					iCache.put(courseId, class2bsc);
+				}
+				class2bsc.put(classId, new BannerSectionCache(bs));
+			}
+		}
+		
+		public ClassNamesCache(Collection<Long> offeringIds, org.hibernate.Session hibSession) {
+			for (Object[] o: hibSession.createQuery(
+					"select bs.bannerConfig.bannerCourse.courseOfferingId, bsc.classId, bs " +
+					"from BannerSection bs inner join bs.bannerSectionToClasses bsc, CourseOffering co where " +
+					"co.instructionalOffering.uniqueId in (:offeringIds) and " +
+					"bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId and " +
+					"(co.isControl = false or bs.overrideCourseCredit is not null)", Object[].class)
+					.setParameterList("offeringIds", offeringIds, Long.class)
+					.setCacheable(true).list()) {
+				Long courseId = (Long)o[0];
+				Long classId = (Long)o[1];
+				BannerSection bs = (BannerSection)o[2];
+				Map<Long, BannerSectionCache> class2bsc = iCache.get(courseId);
+				if (class2bsc == null) {
+					class2bsc = new HashMap<Long, BannerSectionCache>();
+					iCache.put(courseId, class2bsc);
+				}
+				class2bsc.put(classId, new BannerSectionCache(bs));
+			}
+		}
+
+		@Override
+		public String getClassLabel(Class_ clazz, CourseOffering courseOffering) {
+			if (courseOffering.isIsControl()) {
+				return super.getClassLabel(clazz, courseOffering);
+			} else {
+				BannerSectionCache bs = getBannerSectionCache(clazz, courseOffering);
+				if (bs != null) {
+					return courseOffering.getCourseName()+" "+clazz.getItypeDesc().trim()+" "+ bs.getCrn().toString();
+				} else {
+					return super.getClassLabel(clazz, courseOffering);
+				}
+			}
+		}
+
+		@Override
+		public String getClassLabelWithTitle(Class_ clazz, CourseOffering courseOffering) {
+			if (courseOffering.isIsControl()) {
+				return super.getClassLabelWithTitle(clazz, courseOffering);
+			} else {
+				BannerSectionCache bs = getBannerSectionCache(clazz, courseOffering);
+		    	if (bs != null) {
+		    		return courseOffering.getCourseNameWithTitle()+" "+clazz.getItypeDesc().trim()+" "+bs.getCrn().toString();
+		    	} else {
+		    		return super.getClassLabelWithTitle(clazz, courseOffering);
+		    	}
+			}
+		}
+
+		@Override
+		public String getClassSuffix(Class_ clazz, CourseOffering courseOffering) {
+			if (courseOffering.isIsControl()) {
+				return clazz.getClassSuffix();			
+			} else {
+				BannerSectionCache bs = getBannerSectionCache(clazz, courseOffering);
+				if (bs != null){
+					return bs.getCrn().toString() + '-' + bs.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+				} else {
+					Debug.warning("No banner section cached for " + courseOffering.getCourseName() + " " + clazz.getItypeDesc().trim() + " " + clazz.getSectionNumberString());
+					return clazz.getClassSuffix();
+				}
+			}
+		}
+
+		@Override
+		public String getExternalId(Class_ clazz, CourseOffering courseOffering) {
+			if (courseOffering.isIsControl()) {
+				return clazz.getExternalUniqueId();
+			} else {
+				BannerSectionCache bs = getBannerSectionCache(clazz, courseOffering);
+				if (bs != null) {
+					return bs.getCrn().toString();
+				} else {
+					return clazz.getExternalUniqueId();
+				}
+			}
+		}
+		
+		@Override
+		public Float getClassCredit(Class_ clazz, CourseOffering courseOffering) {
+			CourseCreditUnitConfig credit = courseOffering.getCredit();
+			if (credit == null || credit instanceof FixedCreditUnitConfig) return null;
+			if (clazz.getParentClass() != null && clazz.getSchedulingSubpart().getItype().equals(clazz.getParentClass().getSchedulingSubpart().getItype())) return null;
+			BannerSectionCache bs = getBannerSectionCache(clazz, courseOffering);
+			return bs == null ? null : bs.getOverrideCourseCredit();
+		}
+		
+		protected BannerSectionCache getBannerSectionCache(Class_ clazz, CourseOffering courseOffering) {
+			Map<Long, BannerSectionCache> class2bsc = iCache.get(courseOffering.getUniqueId());
+			return (class2bsc == null ? null : class2bsc.get(clazz.getUniqueId()));
+		}
+	}
+	
+	public static class BannerSectionCache {
+		Integer iCRN;
+		String iSectionIndex;
+		Float iOverrideCourseCredit;
+		
+		BannerSectionCache(BannerSection bs) {
+			iCRN = bs.getCrn();
+			iSectionIndex = bs.getSectionIndex();
+			iOverrideCourseCredit = bs.getOverrideCourseCredit();
+		}
+		
+		public Integer getCrn() { return iCRN; }
+		public String getSectionIndex() { return iSectionIndex; }
+		public Float getOverrideCourseCredit() { return iOverrideCourseCredit; }
 	}
 }
