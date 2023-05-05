@@ -132,7 +132,8 @@ public class ColleagueSuffixDefs implements AdminTable {
 		suffix.setNote(record.getField(9));
 		ColleagueSession collSession = ColleagueSession.findColleagueSessionForSession(context.getUser().getCurrentAcademicSessionId(), hibSession);
 		suffix.setTermCode(collSession.getColleagueTermCode());
-		record.setUniqueId((Long)hibSession.save(suffix));
+		hibSession.persist(suffix);
+		record.setUniqueId(suffix.getUniqueId());
 		ChangeLog.addChange(hibSession,
 				context,
 				suffix,
@@ -167,7 +168,7 @@ public class ColleagueSuffixDefs implements AdminTable {
 			suffix.setMaxSectionNum(Integer.valueOf(record.getField(7)));
 			suffix.setCampusCode(record.getField(8));
 			suffix.setNote(record.getField(9));
-			hibSession.saveOrUpdate(suffix);
+			hibSession.merge(suffix);
 			if (changed)
 				ChangeLog.addChange(hibSession,
 						context,
@@ -195,7 +196,7 @@ public class ColleagueSuffixDefs implements AdminTable {
 				Operation.DELETE,
 				null,
 				null);
-		hibSession.delete(suffix);		
+		hibSession.remove(suffix);		
 	}
 
 	@Override

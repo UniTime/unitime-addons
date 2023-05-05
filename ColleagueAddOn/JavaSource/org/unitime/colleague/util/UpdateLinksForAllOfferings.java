@@ -20,13 +20,12 @@
 
 package org.unitime.colleague.util;
 
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.unitime.colleague.dataexchange.ColleagueMessage;
 import org.unitime.colleague.dataexchange.SendColleagueMessage;
 import org.unitime.colleague.dataexchange.ColleagueMessage.MessageAction;
@@ -66,13 +65,13 @@ public class UpdateLinksForAllOfferings {
 			TreeSet<SubjectArea> subjectAreas = new TreeSet<SubjectArea>();
 			subjectAreas.addAll((Set<SubjectArea>)session.getSubjectAreas());
 			String qs = "select distinct co.instructionalOffering from CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId and co.subjectArea.uniqueId = :subjectId and co.isControl = true";
-			Query query = hibSession.createQuery(qs);
+			Query<InstructionalOffering> query = hibSession.createQuery(qs, InstructionalOffering.class);
 			ColleagueInstrOffrConfigChangeAction biocca = null;
 			for(SubjectArea sa : subjectAreas){
-				query.setLong("sessionId", session.getUniqueId().longValue())
-					 .setLong("subjectId", sa.getUniqueId().longValue());
+				query.setParameter("sessionId", session.getUniqueId().longValue())
+					 .setParameter("subjectId", sa.getUniqueId().longValue());
 				TreeSet<InstructionalOffering> instructionalOfferings = new TreeSet<InstructionalOffering>(new InstructionalOfferingComparator(sa.getUniqueId()));
-				instructionalOfferings.addAll((List<InstructionalOffering>)query.list());		
+				instructionalOfferings.addAll(query.list());		
 				for (InstructionalOffering io : instructionalOfferings){
 					biocca = new ColleagueInstrOffrConfigChangeAction();
 					biocca.updateInstructionalOffering(io, hibSession);

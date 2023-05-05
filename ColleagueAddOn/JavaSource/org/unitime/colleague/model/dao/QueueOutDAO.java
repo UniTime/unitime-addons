@@ -17,106 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import java.util.List;
-
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
-import org.hibernate.Transaction;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
 import org.unitime.colleague.model.QueueOut;
-import org.unitime.colleague.model.base.BaseQueueOutDAO;
-import org.unitime.colleague.queueprocessor.exception.LoggableException;
 
+public class QueueOutDAO extends _RootDAO<QueueOut,Long> {
+	private static QueueOutDAO sInstance;
 
+	public QueueOutDAO() {}
 
-public class QueueOutDAO extends BaseQueueOutDAO {
-
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public QueueOutDAO () {}
-
-    /**
-     * Finds all QueueOuts in the database based on status
-     * @param status
-     * @return
-     * @throws LoggableException 
-     */
-    public List findByStatus(String status) throws LoggableException {
-        List queueOuts = null;
-        Transaction tx = null;
-        try {
-            
-            tx = getSession().beginTransaction();
-            
-            String hql = "from QueueOut "
-            			+ "where status = :status " +
-            					"order by postDate ";
-            
-            Query query = getSession().createQuery(hql);
-            query.setString("status", status);
-            
-            queueOuts =  query.list();
-            tx.commit();
-            
-        } catch (HibernateException e) {
-        	tx.rollback();
-        	throw new LoggableException(e);
-        } finally {
-        	getSession().close();
-        }
-        return queueOuts;
-    }
-    
-	public QueueOut findById(Long queueId) throws LoggableException {
-
-        List list = null;
-        Transaction tx = null;
-        try {
-            
-            tx = getSession().beginTransaction();
-            
-            String hql = "from QueueOut "
-            			+ "where uniqueId = :queueId ";
-            
-            Query query = getSession().createQuery(hql);
-            query.setLong("queueId", queueId);
-            
-            list = query.list();
-            tx.commit();
-            
-        } catch (HibernateException e) {
-        	tx.rollback();
-        	throw new LoggableException(e);
-        } finally {
-        	getSession().close();
-        }
-		
-        if(list.size() > 0) return (QueueOut) list.get(0);
-        
-        return null;
+	public static QueueOutDAO getInstance() {
+		if (sInstance == null) sInstance = new QueueOutDAO();
+		return sInstance;
 	}
-	
-	public QueueOut findFirstByStatus(String status) throws LoggableException {
-		List<QueueOut> list = null;
-		Transaction tx = null;
-		try {
-			tx = getSession().beginTransaction();
-			
-			Query query = getSession().createQuery("from QueueOut where status = :status order by uniqueId");
-			query.setString("status", status);
-			query.setMaxResults(1);
-			
-			list = query.list();
-			tx.commit();
-        } catch (HibernateException e) {
-        	tx.rollback();
-        	throw new LoggableException(e);
-        } finally {
-        	getSession().close();
-        }
-		return (list == null || list.isEmpty() ? null : list.get(0));
+
+	public Class<QueueOut> getReferenceClass() {
+		return QueueOut.class;
 	}
 }

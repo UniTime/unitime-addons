@@ -117,13 +117,13 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			org.hibernate.Session hibSession = ColleagueSectionDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
 				iLog.info("Rolling Colleague Data for Subject Area:  " + sa.getSubjectAreaAbbreviation());
-				Iterator fromColleagueSectionIt = hibSession.createQuery(queryString)
-									.setLong("sessionId", toSessionId.longValue())
-									.setLong("subjectId", sa.getUniqueId().longValue())
+				Iterator<ColleagueSection> fromColleagueSectionIt = hibSession.createQuery(queryString, ColleagueSection.class)
+									.setParameter("sessionId", toSessionId.longValue())
+									.setParameter("subjectId", sa.getUniqueId().longValue())
 									.list()
 									.iterator();
 				while (fromColleagueSectionIt.hasNext()){
-					ColleagueSection fromCs = (ColleagueSection) fromColleagueSectionIt.next();
+					ColleagueSection fromCs = fromColleagueSectionIt.next();
 					ColleagueSection toCs = new ColleagueSection();
 					//
 					// Do not roll forward the section index.  This should be generated on the first send to Colleague to prevent
@@ -145,7 +145,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 						if (toClass != null) {
 							ColleagueSectionToClass toBsc = new ColleagueSectionToClass();
 							toBsc.setColleagueSection(toCs);
-							toCs.addTocolleagueSectionToClasses(toBsc);
+							toCs.addToColleagueSectionToClasses(toBsc);
 							toBsc.setClassId(toClass.getUniqueId());
 						}
 					}
@@ -155,10 +155,10 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 					
 					for (ColleagueRestriction fromRestriction : fromCs.getRestrictions()){
 						ColleagueRestriction toRestriction = ColleagueRestriction.findColleagueRestrictionTermCode(fromRestriction.getCode(), cs.getColleagueTermCode(), ColleagueRestrictionDAO.getInstance().getSession());
-						toCs.addTocolleagueRestrictions(toRestriction);
+						toCs.addToRestrictions(toRestriction);
 					}
 				
-					hibSession.save(toCs);
+					hibSession.persist(toCs);
 					hibSession.flush();
 					hibSession.evict(toCs);
 					hibSession.evict(fromCs);
@@ -188,24 +188,24 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			org.hibernate.Session hibSession = ColleagueSectionDAO.getInstance().getSession();
 			for(SubjectArea sa : subjectAreas){
 				iLog.info("Updating Class External Ids for Subject Area:  " + sa.getSubjectAreaAbbreviation());
-				Iterator colleagueSectionIt = hibSession.createQuery(queryString)
-									.setLong("subjectId", sa.getUniqueId().longValue())
+				Iterator<ColleagueSection> colleagueSectionIt = hibSession.createQuery(queryString, ColleagueSection.class)
+									.setParameter("subjectId", sa.getUniqueId().longValue())
 									.list()
 									.iterator();
-				List classes = hibSession.createQuery(queryString2)
-									.setLong("sessionId", toSessionId.longValue())
-									.setLong("subjectId", sa.getUniqueId().longValue())
+				List<Class_> classes = hibSession.createQuery(queryString2, Class_.class)
+									.setParameter("sessionId", toSessionId.longValue())
+									.setParameter("subjectId", sa.getUniqueId().longValue())
 									.setCacheable(true)
 									.list();
 				while (colleagueSectionIt.hasNext()){
-					ColleagueSection colleagueSection = (ColleagueSection) colleagueSectionIt.next();
+					ColleagueSection colleagueSection = colleagueSectionIt.next();
 					colleagueSection.updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, false);
 					
 					hibSession.evict(colleagueSection);
 				}
 				hibSession.flush();
-				for(Iterator cIt = classes.iterator(); cIt.hasNext();){
-					hibSession.evict((Class_) cIt.next());
+				for(Iterator<Class_> cIt = classes.iterator(); cIt.hasNext();){
+					hibSession.evict(cIt.next());
 				}
 			}
 		}
@@ -215,10 +215,9 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			Session fromSession) {
 		ColleagueSession toCs = ColleagueSession.findColleagueSessionForSession(toSession, null);
 		ColleagueSession fromCs = ColleagueSession.findColleagueSessionForSession(fromSession, null);
-		@SuppressWarnings("unchecked")
-		List<ColleagueSuffixDef> fromSuffixes = (List<ColleagueSuffixDef>)ColleagueSuffixDefDAO.getInstance()
-				.getQuery("from ColleagueSuffixDef csd where csd.termCode = :termCode")
-				.setString("termCode", fromCs.getColleagueTermCode())
+		List<ColleagueSuffixDef> fromSuffixes = ColleagueSuffixDefDAO.getInstance().getSession()
+				.createQuery("from ColleagueSuffixDef csd where csd.termCode = :termCode", ColleagueSuffixDef.class)
+				.setParameter("termCode", fromCs.getColleagueTermCode())
 				.list();
 		for (ColleagueSuffixDef fromDef : fromSuffixes){
 			SubjectArea fromSa = null;
@@ -240,9 +239,10 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 					toDef.setSubjectAreaId(toSa.getUniqueId());
 				}
 				toDef.setTermCode(toCs.getColleagueTermCode());
-				ColleagueSuffixDefDAO.getInstance().save(toDef);
+				ColleagueSuffixDefDAO.getInstance().getSession().persist(toDef);
 			}
 		}
+		ColleagueSuffixDefDAO.getInstance().getSession().flush();
 	}
 
 	private void rollForwardColleagueRestrictionData(Session toSession,
@@ -255,9 +255,10 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			if (toRestriction == null) {
 				toRestriction = fromRestriction.clone();
 				toRestriction.setTermCode(toCs.getColleagueTermCode());
-				ColleagueRestrictionDAO.getInstance().save(toRestriction);
+				ColleagueRestrictionDAO.getInstance().getSession().persist(toRestriction);
 			}
 		}
+		ColleagueRestrictionDAO.getInstance().getSession().flush();
 	}
 
 	private void rollForwardColleagueSessionData(Session toSession,
@@ -273,8 +274,9 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 			toCs.setLoadingOfferingsFile(Boolean.valueOf(false));
 			toCs.setSession(toSession);
 			toCs.setUniqueIdRolledForwardFrom(fromSession.getUniqueId());
-			ColleagueSessionDAO.getInstance().save(toCs);
+			ColleagueSessionDAO.getInstance().getSession().persist(toCs);
 		}
+		ColleagueSessionDAO.getInstance().getSession().flush();
 	}
 
 	private ExternalSessionRollForwardCustomizationInterface getExternalSessionRollForwardCustomization() throws Exception{

@@ -19,44 +19,51 @@
 */
 package org.unitime.colleague.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 
 import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueIn;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+@MappedSuperclass
 public abstract class BaseQueueIn extends Queue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long iMatchId;
 
 
-	public static String PROP_MATCHID = "matchId";
-
 	public BaseQueueIn() {
-		initialize();
 	}
 
 	public BaseQueueIn(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Column(name = "matchid", nullable = true)
 	public Long getMatchId() { return iMatchId; }
 	public void setMatchId(Long matchId) { iMatchId = matchId; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof QueueIn)) return false;
 		if (getUniqueId() == null || ((QueueIn)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((QueueIn)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "QueueIn["+getUniqueId()+"]";
 	}

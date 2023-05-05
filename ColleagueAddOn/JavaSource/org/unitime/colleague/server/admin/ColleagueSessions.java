@@ -104,7 +104,8 @@ public class ColleagueSessions implements AdminTable {
 		colleagueSession.setLoadingOfferingsFile(Boolean.valueOf(record.getField(4)));
 		org.unitime.timetable.model.Session session = SessionDAO.getInstance().get(context.getUser().getCurrentAcademicSessionId(), hibSession);
 		colleagueSession.setSession(session);
-		record.setUniqueId((Long)hibSession.save(colleagueSession));
+		hibSession.persist(colleagueSession);
+		record.setUniqueId(colleagueSession.getUniqueId());
 		ChangeLog.addChange(hibSession,
 				context,
 				colleagueSession,
@@ -142,7 +143,7 @@ public class ColleagueSessions implements AdminTable {
 		colleagueSession.setSendDataToColleague(Boolean.valueOf(record.getField(3)));
 		
 		colleagueSession.setLoadingOfferingsFile(Boolean.valueOf(record.getField(4)));
-		hibSession.saveOrUpdate(colleagueSession);
+		hibSession.merge(colleagueSession);
 		ChangeLog.addChange(hibSession,
 				context,
 				colleagueSession,
@@ -181,7 +182,7 @@ public class ColleagueSessions implements AdminTable {
 				Operation.DELETE,
 				null,
 				null);
-		hibSession.delete(collSession);
+		hibSession.remove(collSession);
 	}
 
 	@Override

@@ -22,9 +22,7 @@ package org.unitime.colleague.queueprocessor;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 
-import org.cpsolver.ifs.util.ToolBox;
 import org.unitime.colleague.model.QueueOut;
 import org.unitime.colleague.model.dao.QueueInDAO;
 import org.unitime.colleague.model.dao.QueueOutDAO;
@@ -140,7 +138,7 @@ public class ProcessQueue {
 			do {
 			
 				try {
-					outList = qod.findByStatus(QueueOut.STATUS_POSTED);
+					outList = QueueOut.findByStatus(QueueOut.STATUS_POSTED);
 					error = false;
 				} catch(Exception ex) {
 					//Sleep for the error_sleep_interval and try again
@@ -181,6 +179,8 @@ public class ProcessQueue {
 			le.logError();
 
 			le.printStackTrace();
+		} finally {
+			 HibernateUtil.closeCurrentThreadSessions();
 		}
 	}
 }

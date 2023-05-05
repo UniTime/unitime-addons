@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd" >
+<!DOCTYPE hibernate-configuration
+    PUBLIC "-//Hibernate/Hibernate Configuration DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd" >
 
 <!-- 
  * Licensed to The Apereo Foundation under one or more contributor license
@@ -25,15 +27,7 @@
 	<session-factory>
 
 		<!-- Custom hbm.xml files -->
-		<mapping resource="ColleagueSession.hbm.xml" />
-		<mapping resource="ColleagueSuffixDef.hbm.xml" />
-		<mapping resource="ColleagueRestriction.hbm.xml" />
-		<mapping resource="ColleagueSection.hbm.xml" />
-		<mapping resource="ColleagueSectionToClass.hbm.xml" />
-		<mapping resource="Queue.hbm.xml" />
-		<mapping resource="QueueError.hbm.xml" />
-		<mapping resource="ColleagueResponse.hbm.xml" />
-		
+		<mapping package="org.unitime.colleague.model"/>
 		<!-- End of custom hbm.xml files -->
 	</session-factory>
 </hibernate-configuration>

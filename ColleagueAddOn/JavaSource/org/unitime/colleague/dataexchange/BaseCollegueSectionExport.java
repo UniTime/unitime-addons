@@ -16,7 +16,6 @@ public abstract class BaseCollegueSectionExport extends BaseExport {
 		super();
 	}
 
-	@SuppressWarnings("rawtypes")
 	protected void addColleagueSections(ColleagueMessage message, MessageAction action,
 			ColleagueSession colleagueSession, boolean isControl){
 		
@@ -37,18 +36,18 @@ public abstract class BaseCollegueSectionExport extends BaseExport {
 		  .append("order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, co.title");
 		String qs = sb.toString();
 	
-		Iterator subjectIt = getHibSession().createQuery(subjectQuery).setString("termCode", colleagueSession.getColleagueTermCode()).iterate();
+		Iterator<String> subjectIt = getHibSession().createQuery(subjectQuery, String.class).setParameter("termCode", colleagueSession.getColleagueTermCode()).list().iterator();
 		ArrayList<String> subjectAreaAbbreviations = new ArrayList<String>();
 		while (subjectIt.hasNext()){
 			subjectAreaAbbreviations.add((String) subjectIt.next());
 		}
 		for(String subjectAbbv : subjectAreaAbbreviations) {
-			Iterator it = getHibSession().createQuery(qs)
-			.setString("termCode", colleagueSession.getColleagueTermCode())
-			.setString("subjectAbbv", subjectAbbv)
-			.iterate();
+			Iterator<ColleagueSection> it = getHibSession().createQuery(qs, ColleagueSection.class)
+			.setParameter("termCode", colleagueSession.getColleagueTermCode())
+			.setParameter("subjectAbbv", subjectAbbv)
+			.list().iterator();
 			while(it.hasNext()){
-				ColleagueSection cs = (ColleagueSection) it.next();
+				ColleagueSection cs = it.next();
 				ColleagueSession colleagueSessionForColleagueSection = ColleagueSession.findColleagueSessionForSession(cs.getSession().getUniqueId(), getHibSession());
 				if (colleagueSessionForColleagueSection.isSendDataToColleague()){
 					message.addSectionToMessage(cs, action, getHibSession());

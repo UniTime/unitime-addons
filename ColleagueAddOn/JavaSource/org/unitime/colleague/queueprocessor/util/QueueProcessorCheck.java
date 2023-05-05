@@ -20,7 +20,7 @@
 
 package org.unitime.colleague.queueprocessor.util;
 
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.unitime.colleague.queueprocessor.ColleagueCaller;
 import org.unitime.colleague.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Email;
@@ -49,9 +49,9 @@ public class QueueProcessorCheck {
 			" where qo.postDate < sysdate - :mins /(24*60)" +
 			" and (qo.pickupDate is null or qo.processDate is null)";
 		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
-		Query query = hibSession.createQuery(qs);
+		Query<Long> query = hibSession.createQuery(qs, Long.class);
         int minutes = Integer.parseInt(ApplicationProperties.getProperty("tmtbl.queue.processor.check.minutes","60"));
-		query.setInteger("mins", minutes);
+		query.setParameter("mins", minutes);
 		Long ct= (Long) query.uniqueResult();
 		if (ct > 0) {
 			// See if Colleague is up

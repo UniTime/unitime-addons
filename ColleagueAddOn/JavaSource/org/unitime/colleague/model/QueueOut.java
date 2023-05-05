@@ -20,7 +20,15 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+
+import java.util.List;
+
 import org.unitime.colleague.model.base.BaseQueueOut;
+import org.unitime.colleague.model.dao.QueueOutDAO;
+import org.unitime.colleague.queueprocessor.exception.LoggableException;
 
 
 /**
@@ -28,6 +36,8 @@ import org.unitime.colleague.model.base.BaseQueueOut;
  * @author says
  *
  */
+@Entity
+@Table(name = "integrationqueueout")
 public class QueueOut extends BaseQueueOut {
 	private static final long serialVersionUID = 1L;
 
@@ -49,8 +59,28 @@ public class QueueOut extends BaseQueueOut {
 
 /*[CONSTRUCTOR MARKER END]*/
 
+	@Transient
 	public String getQueueType() {
 		return QUEUE_TYPE;
+	}
+	
+    public static List<QueueOut> findByStatus(String status) throws LoggableException {
+    	return QueueOutDAO.getInstance().getSession().createQuery(
+    			"from QueueOut where status = :status order by postDate", QueueOut.class)
+    			.setParameter("status", status).list();
+    }
+    
+	public static QueueOut findById(Long queueId) throws LoggableException {
+		return QueueOutDAO.getInstance().getSession().createQuery(
+				"from QueueOut where uniqueId = :queueId", QueueOut.class)
+				.setParameter("queueId", queueId).setMaxResults(1).uniqueResult();
+	}
+	
+	public static QueueOut findFirstByStatus(String status) throws LoggableException {
+		List<QueueOut> list = QueueOutDAO.getInstance().getSession().createQuery(
+    			"from QueueOut where status = :status order by uniqueId", QueueOut.class)
+    			.setParameter("status", status).setMaxResults(1).list();
+		return (list == null || list.isEmpty() ? null : list.get(0));
 	}
 
 }

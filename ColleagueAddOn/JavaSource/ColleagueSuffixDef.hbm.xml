@@ -38,7 +38,6 @@
             </generator>
         </id>
         
-  		<properties name="uniqueCourseSuffix" unique="true">
       		<property 
 				name="termCode" 
 				column="term_code"
@@ -69,7 +68,6 @@
 				not-null="false"
 				length="5"
 			/>
-		</properties>
 		
 		<property
 			name="campusCode"

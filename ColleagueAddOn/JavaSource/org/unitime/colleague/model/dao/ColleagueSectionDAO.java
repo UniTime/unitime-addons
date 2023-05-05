@@ -17,18 +17,36 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import org.unitime.colleague.model.base.BaseColleagueSectionDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.colleague.model.ColleagueSection;
 
+public class ColleagueSectionDAO extends _RootDAO<ColleagueSection,Long> {
+	private static ColleagueSectionDAO sInstance;
 
-public class ColleagueSectionDAO extends BaseColleagueSectionDAO {
+	public ColleagueSectionDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public ColleagueSectionDAO () {}
+	public static ColleagueSectionDAO getInstance() {
+		if (sInstance == null) sInstance = new ColleagueSectionDAO();
+		return sInstance;
+	}
 
+	public Class<ColleagueSection> getReferenceClass() {
+		return ColleagueSection.class;
+	}
 
+	@SuppressWarnings("unchecked")
+	public List<ColleagueSection> findBySession(org.hibernate.Session hibSession, Long sessionId) {
+		return hibSession.createQuery("from ColleagueSection x where x.session.uniqueId = :sessionId", ColleagueSection.class).setParameter("sessionId", sessionId).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<ColleagueSection> findByParentColleagueSection(org.hibernate.Session hibSession, Long parentColleagueSectionId) {
+		return hibSession.createQuery("from ColleagueSection x where x.parentColleagueSection.uniqueId = :parentColleagueSectionId", ColleagueSection.class).setParameter("parentColleagueSectionId", parentColleagueSectionId).list();
+	}
 }

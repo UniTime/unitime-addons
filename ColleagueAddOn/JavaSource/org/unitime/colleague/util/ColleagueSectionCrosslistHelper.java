@@ -50,7 +50,6 @@ public class ColleagueSectionCrosslistHelper {
 	}
 	
     
-	@SuppressWarnings("unchecked")
 	private void ensureAllSubpartClassesHaveColleagueSection(SchedulingSubpart schedSubpart) throws Exception{
 		
 		for(Class_ c : schedSubpart.getClasses()){
@@ -64,7 +63,7 @@ public class ColleagueSectionCrosslistHelper {
 					Transaction trans = hibSession.beginTransaction();
 					for(ColleagueSection cs : parentColleagueSections){
 						cs.addClass(c, hibSession);
-						hibSession.update(cs);
+						hibSession.merge(cs);
 					}
 					trans.commit();
 				} else {					
@@ -99,7 +98,7 @@ public class ColleagueSectionCrosslistHelper {
 								if (cs.getColleagueSectionToClasses().size() == 0) {
 									ColleagueSection.deleteSection(hibSession, cs);
 								} else {
-									hibSession.update(cs);
+									hibSession.merge(cs);
 								}
 								trans.commit();
 							}
@@ -109,7 +108,7 @@ public class ColleagueSectionCrosslistHelper {
 						for(ColleagueSection cs : addSet){
 							Transaction trans = hibSession.beginTransaction();
 							cs.addClass(c, hibSession);
-							hibSession.update(cs);
+							hibSession.merge(cs);
 							trans.commit();
 						}
 					}
@@ -158,8 +157,8 @@ public class ColleagueSectionCrosslistHelper {
 					ColleagueSection parentSection = cs.getParentColleagueSection();
 					cs.setParentColleagueSection(null);
 					parentSection.getColleagueSectionToChildSections().remove(cs);
-					hibSession.update(cs);
-					hibSession.update(parentSection);
+					hibSession.merge(cs);
+					hibSession.merge(parentSection);
 				}
 			} else {
 				ColleagueSection parentSection = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c.getParentClass(), cs.getCourseOffering(hibSession), hibSession);
@@ -176,12 +175,12 @@ public class ColleagueSectionCrosslistHelper {
 				}
 				if (parentSection != null && (cs.getParentColleagueSection() == null || !cs.getParentColleagueSection().getUniqueId().equals(parentSection.getUniqueId()))){
 					cs.setParentColleagueSection(parentSection);
-					parentSection.addTocolleagueSectionToChildSections(cs);
-					hibSession.update(parentSection);
-					hibSession.update(cs);
+					parentSection.addToColleagueSectionToChildSections(cs);
+					hibSession.merge(parentSection);
+					hibSession.merge(cs);
 				} else if (parentSection == null && cs.getParentColleagueSection() != null){
 					cs.setParentColleagueSection(null);
-					hibSession.update(cs);
+					hibSession.merge(cs);
 				}
 			}
 		}
@@ -192,7 +191,6 @@ public class ColleagueSectionCrosslistHelper {
 	}
 	
 
-	@SuppressWarnings("unchecked")
 	private void ensureAllClassesHaveColleagueSection() throws Exception{
 		// Remove any orphaned Colleague sections
 		ColleagueSection.removeOrphanedColleagueSections(hibSession);

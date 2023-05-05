@@ -19,11 +19,23 @@
 */
 package org.unitime.colleague.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.colleague.model.ColleagueRestriction;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 
-
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+@MappedSuperclass
 public abstract class BaseColleagueRestriction implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -34,61 +46,64 @@ public abstract class BaseColleagueRestriction implements Serializable {
 	private String iDescription;
 
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_TERM_CODE = "termCode";
-	public static String PROP_CODE = "code";
-	public static String PROP_NAME = "name";
-	public static String PROP_DESCRIPTION = "description";
-
 	public BaseColleagueRestriction() {
-		initialize();
 	}
 
 	public BaseColleagueRestriction(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "colleague_restriction_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "pref_group_seq")
+	})
+	@GeneratedValue(generator = "colleague_restriction_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "term_code", nullable = false, length = 20)
 	public String getTermCode() { return iTermCode; }
 	public void setTermCode(String termCode) { iTermCode = termCode; }
 
+	@Column(name = "code", nullable = false, length = 8)
 	public String getCode() { return iCode; }
 	public void setCode(String code) { iCode = code; }
 
+	@Column(name = "name", nullable = false, length = 30)
 	public String getName() { return iName; }
-	public void setName(String name) { this.iName = name; }
+	public void setName(String name) { iName = name; }
 
+	@Column(name = "description", nullable = true, length = 500)
 	public String getDescription() { return iDescription; }
-	public void setDescription(String description) { this.iDescription = description; }
+	public void setDescription(String description) { iDescription = description; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof ColleagueRestriction)) return false;
 		if (getUniqueId() == null || ((ColleagueRestriction)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((ColleagueRestriction)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
-		return "ColleagueRestriction["+getUniqueId()+"]";
+		return "ColleagueRestriction["+getUniqueId()+" "+getName()+"]";
 	}
 
 	public String toDebugString() {
 		return "ColleagueRestriction[" +
-			"\n	TermCode: " + getCode() +
 			"\n	Code: " + getCode() +
-			"\n	Name: " + getName() +
 			"\n	Description: " + getDescription() +
+			"\n	Name: " + getName() +
+			"\n	TermCode: " + getTermCode() +
 			"\n	UniqueId: " + getUniqueId() +
 			"]";
 	}
-
 }

@@ -230,12 +230,12 @@ public class SectionRestrictionAssignmentForm implements UniTimeForm {
                 Long restrictionId = getRestrictionUids(i);
                 if (restrictionId != null && restrictionId >= 0) {
 	                ColleagueRestriction colleagueRestriction =  new ColleagueRestrictionDAO().get(restrictionId);
-	                c.addTocolleagueRestrictions(colleagueRestriction);
+	                c.addToRestrictions(colleagueRestriction);
 	            };
             };
 
         	try {
-                hibSession.saveOrUpdate(c);
+                hibSession.merge(c);
 	            tx.commit();
         	} catch (Exception e) {
         		tx.rollback(); throw e;
@@ -258,7 +258,7 @@ public class SectionRestrictionAssignmentForm implements UniTimeForm {
         	Transaction tx = hibSession.beginTransaction();
         	try {
     		    c.deleteRestrictions(hibSession);
-                hibSession.saveOrUpdate(c);
+                hibSession.merge(c);
 	            tx.commit();
         	} catch (Exception e) {
         		tx.rollback(); throw e;

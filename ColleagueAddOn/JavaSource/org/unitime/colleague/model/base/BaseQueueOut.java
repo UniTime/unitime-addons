@@ -19,45 +19,52 @@
 */
 package org.unitime.colleague.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 import java.util.Date;
 
 import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueOut;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+@MappedSuperclass
 public abstract class BaseQueueOut extends Queue implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Date iPickupDate;
 
 
-	public static String PROP_PICKUPDATE = "pickupDate";
-
 	public BaseQueueOut() {
-		initialize();
 	}
 
 	public BaseQueueOut(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Column(name = "pickupdate", nullable = true)
 	public Date getPickupDate() { return iPickupDate; }
 	public void setPickupDate(Date pickupDate) { iPickupDate = pickupDate; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof QueueOut)) return false;
 		if (getUniqueId() == null || ((QueueOut)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((QueueOut)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "QueueOut["+getUniqueId()+"]";
 	}

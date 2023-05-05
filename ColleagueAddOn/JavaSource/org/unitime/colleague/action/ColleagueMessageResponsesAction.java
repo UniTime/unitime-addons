@@ -35,7 +35,6 @@ import org.apache.struts2.tiles.annotation.TilesDefinition;
 import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.colleague.form.ColleagueMessageResponsesForm;
 import org.unitime.colleague.model.ColleagueResponse;
-import org.unitime.colleague.model.dao.ColleagueResponseDAO;
 import org.unitime.commons.web.WebTable;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
@@ -92,12 +91,12 @@ public class ColleagueMessageResponsesAction extends UniTimeAction<ColleagueMess
         String [] respTypes = new String[] {"AUDIT", "ERROR", "SUCCESS", "WARNING"};
         request.setAttribute("respTypes", respTypes);
  
-        Set subjects;
+        Set<SubjectArea> subjects;
         
 		if (sessionContext.hasPermission(Right.AcademicSessions)){
 			request.setAttribute("managers",TimetableManager.getManagerList());
 	        request.setAttribute("departments",Department.getUserDepartments(sessionContext.getUser()));
-	        subjects = new TreeSet();
+	        subjects = new TreeSet<SubjectArea>();
 		} else {
 	        subjects = SubjectArea.getUserSubjectAreas(sessionContext.getUser());
 		}
@@ -119,7 +118,7 @@ public class ColleagueMessageResponsesAction extends UniTimeAction<ColleagueMess
                 new String[] {"left", "left", "left", "left", "left", "left", "left",  "left"},
                 new boolean[] { false, true, true, true, true, true, true, true, true} );
      
-        List responses = ColleagueResponseDAO.getInstance().find(
+        List responses = ColleagueResponse.find(
         		sessionContext.getUser().getCurrentAcademicSessionId(),
         		(form.getStartDate() == null ? null : form.getStartDate()),
         		(form.getStopDate() == null ? null : form.getStopDate()),

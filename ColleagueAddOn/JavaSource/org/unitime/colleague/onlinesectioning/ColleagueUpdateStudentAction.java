@@ -209,10 +209,11 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					changed = true;
 				
 				if (iStudentId == null) {
-					iStudentId = (Long)helper.getHibSession().save(student);
+					helper.getHibSession().persist(student);
+					iStudentId = (Long)student.getUniqueId();
 					action.getStudentBuilder().setUniqueId(iStudentId);
 				} else if (changed)
-					helper.getHibSession().update(student);
+					helper.getHibSession().merge(student);
 				
 				if (updateStudentOverrides(student, server, helper))
 					changed = true;
@@ -295,10 +296,11 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			if (updateStudentGroups(student, helper))
 				changed = true;
 			
-			if (iStudentId == null)
-				iStudentId = (Long)helper.getHibSession().save(student);
-			else if (changed)
-				helper.getHibSession().update(student);
+			if (iStudentId == null) {
+				helper.getHibSession().persist(student);
+				iStudentId = student.getUniqueId();
+			} else if (changed)
+				helper.getHibSession().merge(student);
 
 			if (updateStudentOverrides(student, null, helper))
 				changed = true;
@@ -321,9 +323,9 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 	public Long getStudentId() { return iStudentId; }
 	
 	public Long getStudentId(OnlineSectioningHelper helper) {
-		return (Long)helper.getHibSession().createQuery("select s.uniqueId from Student s where " +
-				"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId")
-				.setLong("sessionId", iSession.getUniqueId()).setString("externalId",iExternalId)
+		return helper.getHibSession().createQuery("select s.uniqueId from Student s where " +
+				"s.session.uniqueId = :sessionId and s.externalUniqueId = :externalId", Long.class)
+				.setParameter("sessionId", iSession.getUniqueId()).setParameter("externalId",iExternalId)
 				.setCacheable(true).uniqueResult();
 	}
 	
@@ -387,7 +389,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					aa.setSession(student.getSession());
 					aa.setExternalUniqueId(area);
 					aa.setTitle(area);
-					aa.setUniqueId((Long)helper.getHibSession().save(aa));
+					helper.getHibSession().persist(aa);
 					helper.info("Added Academic Area:  " + area);
 				}
 				
@@ -400,7 +402,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					ac.setExternalUniqueId(clasf);
 					ac.setName(clasf);
 					ac.setSession(student.getSession());
-					ac.setUniqueId((Long) helper.getHibSession().save(ac));
+					helper.getHibSession().persist(ac);
 					helper.info("Added Academic Classification:  " + clasf);
 				}
 				
@@ -413,9 +415,9 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					posMajor.setExternalUniqueId(major);
 					posMajor.setName(major);
 					posMajor.setSession(student.getSession());
-					posMajor.setUniqueId((Long)helper.getHibSession().save(posMajor));
-					posMajor.addToacademicAreas(aa);
-					aa.addToposMajors(posMajor);
+					helper.getHibSession().persist(posMajor);
+					posMajor.addToAcademicAreas(aa);
+					aa.addToPosMajors(posMajor);
 					helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 				}
 
@@ -425,13 +427,13 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 				aac.setMajor(posMajor);
 				aac.setStudent(student);
 				aac.setWeight(1.0);
-				student.addToareaClasfMajors(aac);
+				student.addToAreaClasfMajors(aac);
 				changed = true;
 			}
 			
 			for (StudentAreaClassificationMajor aac: remaining) {
 				student.getAreaClasfMajors().remove(aac);
-				helper.getHibSession().delete(aac);
+				helper.getHibSession().remove(aac);
 				changed = true;
 			}
 		}
@@ -450,7 +452,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 				sg.setSession(iSession);
 				sg.setGroupAbbreviation(g[2] == null ? g[0] : g[2]);
 				sg.setGroupName(g[3] == null ? g[0] : g[3]);
-				sg.setUniqueId((Long)helper.getHibSession().save(sg));
+				helper.getHibSession().persist(sg);
 				helper.info("Added Student Group:  " + sg.getExternalUniqueId() + " -  " + sg.getGroupAbbreviation() + " - " + sg.getGroupName() + " to session " + sg.getSession().academicInitiativeDisplayString());
 			} else {
 				boolean changed = false;
@@ -465,7 +467,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 					changed = true;
 				}
 				if (changed) {
-					helper.getHibSession().update(sg);
+					helper.getHibSession().merge(sg);
 				}
 			}
 			groups.add(sg);
@@ -480,8 +482,8 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			}
 		}
 		for (StudentGroup g: groups) {
-			g.addTostudents(student);
-			student.addTogroups(g);
+			g.addToStudents(student);
+			student.addToGroups(g);
 			changed = true;
 		}
     	return changed;
@@ -523,11 +525,11 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			
 			if (colleagueId == null) {
 				@SuppressWarnings("unchecked")
-				List<CourseOffering> courses = (List<CourseOffering>)helper.getHibSession().createQuery(
+				List<CourseOffering> courses = helper.getHibSession().createQuery(
 						"from CourseOffering co where " +
 						"co.instructionalOffering.session.uniqueId = :sessionId and " +
-						"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course")
-						.setString("subject", subject).setString("course", course + "%").setLong("sessionId", iSession.getUniqueId()).list();
+						"co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :course", CourseOffering.class)
+						.setParameter("subject", subject).setParameter("course", course + "%").setParameter("sessionId", iSession.getUniqueId()).list();
 				if (course.isEmpty()) {
 					helper.error("No course offering found for subject " + subject + ", course number " + course + " and colleague session " + iTermCode);
 					iResult = UpdateResult.PROBLEM;
@@ -624,9 +626,9 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 		Map<InstructionalOffering, Map<String, Set<Class_>>> restrictions = getOverrides(helper);
 		
 		@SuppressWarnings("unchecked")
-		List<OverrideReservation> overrides = (List<OverrideReservation>)helper.getHibSession().createQuery(
-				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId")
-			.setLong("studentId", student.getUniqueId()).list();
+		List<OverrideReservation> overrides = helper.getHibSession().createQuery(
+				"select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId", OverrideReservation.class)
+			.setParameter("studentId", student.getUniqueId()).list();
 		
 		overrides: for (Map.Entry<InstructionalOffering, Map<String, Set<Class_>>> e: restrictions.entrySet()) {
 			InstructionalOffering io = e.getKey();
@@ -673,8 +675,8 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 				override.setConfigurations(new HashSet<InstrOfferingConfig>());
 				override.setClasses(new HashSet<Class_>());
 				override.setInstructionalOffering(io);
-				io.addToreservations(override);
-				override.addTostudents(student);
+				io.addToReservations(override);
+				override.addToStudents(student);
 			} else {
 				override.getConfigurations().clear();
 				override.getClasses().clear();
@@ -683,16 +685,16 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			String rx = null;
 			for (Class_ c: classes)
 				if (!hasChild(c, classes)) {
-					override.addToclasses(c);
+					override.addToClasses(c);
 					rx = (rx == null ? c.getExternalId(io.getControllingCourseOffering()) : rx + ", " + c.getExternalId(io.getControllingCourseOffering()));
 				}
 			
 			helper.info((override.getUniqueId() == null ? "Added " : "Updated ") + type.getReference() + " override for " + io.getCourseName() + (rx == null ? "" : " (" + rx + ")"));
 
 			if (override.getUniqueId() == null)
-				override.setUniqueId((Long)helper.getHibSession().save(override));
+				helper.getHibSession().persist(override);
 			else
-				helper.getHibSession().update(override);
+				helper.getHibSession().merge(override);
 			
 			if (server != null) {
 				Lock w = server.writeLock();
@@ -722,10 +724,10 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 			helper.info("Removed " + override.getOverrideType().getReference() + " override for " + override.getInstructionalOffering().getCourseName());
 			if (override.getStudents().size() > 1) {
 				override.getStudents().remove(student);
-				helper.getHibSession().update(override);
+				helper.getHibSession().merge(override);
 			} else {
 				override.getInstructionalOffering().getReservations().remove(override);
-				helper.getHibSession().delete(override);
+				helper.getHibSession().remove(override);
 			}
 			if (server != null) {
 				Lock w = server.writeLock();
@@ -771,7 +773,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
         	// remove duplicate enrollments
         	for (StudentClassEnrollment enrollment: duplicates) {
     			student.getClassEnrollments().remove(enrollment);
-    			helper.getHibSession().delete(enrollment);
+    			helper.getHibSession().remove(enrollment);
     			changed = true;
         	}
     	}
@@ -818,7 +820,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
     			remaining.remove(cr.getCourseDemand());
     			for (Iterator<StudentEnrollmentMessage> i = cr.getCourseDemand().getEnrollmentMessages().iterator(); i.hasNext(); ) {
 					StudentEnrollmentMessage message = i.next();
-					helper.getHibSession().delete(message);
+					helper.getHibSession().remove(message);
 					i.remove();
 				}
     		}
@@ -849,7 +851,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
     			if (cr != null && remaining.contains(cr.getCourseDemand()))
     				deletes.add(cr.getCourseDemand());
     			student.getClassEnrollments().remove(enrollment);
-    			helper.getHibSession().delete(enrollment);
+    			helper.getHibSession().remove(enrollment);
     		}
     		changed = true;
     	}
@@ -858,16 +860,19 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
     		// removed unused course demands
     		for (CourseDemand cd: (fixCourseDemands ? remaining : deletes)) {
     			if (cd.getFreeTime() != null)
-    				helper.getHibSession().delete(cd.getFreeTime());
+    				helper.getHibSession().remove(cd.getFreeTime());
     			for (CourseRequest cr: cd.getCourseRequests())
-    				helper.getHibSession().delete(cr);
+    				helper.getHibSession().remove(cr);
     			student.getCourseDemands().remove(cd);
-    			helper.getHibSession().delete(cd);
+    			helper.getHibSession().remove(cd);
     		}
     		int priority = 0;
     		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
     			cd.setPriority(priority++);
-    			helper.getHibSession().saveOrUpdate(cd);
+    			if (cd.getUniqueId() == null)
+    				helper.getHibSession().persist(cd);
+    			else
+    				helper.getHibSession().merge(cd);
     		}
     	}
     	

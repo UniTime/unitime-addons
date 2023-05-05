@@ -17,18 +17,31 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import org.unitime.colleague.model.base.BaseColleagueSectionToClassDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.colleague.model.ColleagueSectionToClass;
 
+public class ColleagueSectionToClassDAO extends _RootDAO<ColleagueSectionToClass,Long> {
+	private static ColleagueSectionToClassDAO sInstance;
 
-public class ColleagueSectionToClassDAO extends BaseColleagueSectionToClassDAO {
+	public ColleagueSectionToClassDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public ColleagueSectionToClassDAO () {}
+	public static ColleagueSectionToClassDAO getInstance() {
+		if (sInstance == null) sInstance = new ColleagueSectionToClassDAO();
+		return sInstance;
+	}
 
+	public Class<ColleagueSectionToClass> getReferenceClass() {
+		return ColleagueSectionToClass.class;
+	}
 
+	@SuppressWarnings("unchecked")
+	public List<ColleagueSectionToClass> findByColleagueSection(org.hibernate.Session hibSession, Long colleagueSectionId) {
+		return hibSession.createQuery("from ColleagueSectionToClass x where x.colleagueSection.uniqueId = :colleagueSectionId", ColleagueSectionToClass.class).setParameter("colleagueSectionId", colleagueSectionId).list();
+	}
 }

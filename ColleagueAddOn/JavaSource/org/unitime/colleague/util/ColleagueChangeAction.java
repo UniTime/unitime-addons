@@ -112,7 +112,7 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 				if (!colleagueSection.getColleagueCourseNumber().equals(crsNbr)) {
 					try {
 						colleagueSection.setColleagueCourseNumber(crsNbr);
-						hibSession.update(colleagueSection);
+						hibSession.merge(colleagueSection);
 						hibSession.flush();
 						hibSession.refresh(colleagueSection);
 					} catch (Exception e) {
@@ -124,7 +124,7 @@ public class ColleagueChangeAction implements ExternalClassEditAction,
 			if (!colleagueSection.isSectionIndexStillValid(hibSession)){
 				try {
 					colleagueSection.setSectionIndex(ColleagueSection.findNextUnusedActiveSectionIndexFor(colleagueSection.getSession(), colleagueSection.getCourseOffering(hibSession), colleagueSection.getFirstClass().getSchedulingSubpart().getItype(), hibSession));
-					hibSession.update(colleagueSection);
+					hibSession.merge(colleagueSection);
 					hibSession.flush();
 					hibSession.refresh(colleagueSection);
 					colleagueSection.updateClassSuffixForClassesIfNecessaryRefreshClasses(hibSession, true);

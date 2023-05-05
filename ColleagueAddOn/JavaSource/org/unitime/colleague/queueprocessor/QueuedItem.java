@@ -63,14 +63,15 @@ public class QueuedItem extends ColleagueCaller {
 
 			item.setPickupDate(new Date());
 			item.setStatus(QueueOut.STATUS_POSTED);
-			qod.update(item);
+			qod.getSession().merge(item);
+			qod.getSession().flush();
 
 			Document result = null;
 			String connectionType = getColleagueSectionInterfaceConnectionType();
 			if (CONNECTION_TYPES.ORACLE.toString().equals(connectionType.toUpperCase())) {
-				result = callOracleProcess(item.getXml());
+				result = callOracleProcess(item.getDocument());
 			} else if (CONNECTION_TYPES.HTTPS.toString().equals(connectionType.toUpperCase())) {
-				result = callHTTPProcess(item.getXml());				
+				result = callHTTPProcess(item.getDocument());				
 			} else {
 				throw (new Exception("Connection Type:  " + connectionType + " not found."));
 			}
@@ -83,12 +84,13 @@ public class QueuedItem extends ColleagueCaller {
 
 				qi.setMatchId(item.getUniqueId());
 				qi.setStatus(QueueIn.STATUS_POSTED);
-				qi.setXml(result);
+				qi.setDocument(result);
 
-				qid.save(qi);
+				qid.getSession().persist(qi);
+				qid.getSession().flush();
 				
 				// Process in UniTime
-				boolean sync = ("TRUE".equalsIgnoreCase(item.getXml().getRootElement().attributeValue("SYNC")));
+				boolean sync = ("TRUE".equalsIgnoreCase(item.getDocument().getRootElement().attributeValue("SYNC")));
 				ReceiveColleagueResponseMessage.receiveResponseDocument(qi, sync);
 				
 			} catch (Exception ex) {
@@ -101,7 +103,8 @@ Debug.info("received response for item");
 			item.setStatus(QueueOut.STATUS_PROCESSED);
 Debug.info("update item process state, before save");
 
-			qod.update(item);
+			qod.getSession().merge(item);
+			qod.getSession().flush();
 Debug.info("update item process state, after save");
 
 		} catch(SQLException sqlEx) {

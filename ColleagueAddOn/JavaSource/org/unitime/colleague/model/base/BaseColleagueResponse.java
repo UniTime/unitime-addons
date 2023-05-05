@@ -19,11 +19,24 @@
 */
 package org.unitime.colleague.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 import java.util.Date;
 
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.colleague.model.ColleagueResponse;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+@MappedSuperclass
 public abstract class BaseColleagueResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -35,7 +48,6 @@ public abstract class BaseColleagueResponse implements Serializable {
 	private String iSubjectCode;
 	private String iCourseNumber;
 	private String iSectionNumber;
-	private String iXlstGroup;
 	private String iExternalId;
 	private String iAction;
 	private String iType;
@@ -44,89 +56,89 @@ public abstract class BaseColleagueResponse implements Serializable {
 	private Long iQueueId;
 
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_SEQNO = "sequenceNumber";
-	public static String PROP_ACTIVITY_DATE = "activityDate";
-	public static String PROP_TERM_CODE = "termCode";
-	public static String PROP_COLLEAGUE_ID = "colleagueId";
-	public static String PROP_SUBJ_CODE = "subjectCode";
-	public static String PROP_CRSE_NUMB = "courseNumber";
-	public static String PROP_SEQ_NUMB = "sectionNumber";
-	public static String PROP_XLST_GROUP = "xlstGroup";
-	public static String PROP_EXTERNAL_ID = "externalId";
-	public static String PROP_ACTION = "action";
-	public static String PROP_TYPE = "type";
-	public static String PROP_MESSAGE = "message";
-	public static String PROP_PACKET_ID = "packetId";
-	public static String PROP_QUEUE_ID = "queueId";
-
 	public BaseColleagueResponse() {
-		initialize();
 	}
 
 	public BaseColleagueResponse(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "colleague_response_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "colleague_response_seq")
+	})
+	@GeneratedValue(generator = "colleague_response_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "seqno", nullable = false, length = 20)
 	public Integer getSequenceNumber() { return iSequenceNumber; }
 	public void setSequenceNumber(Integer sequenceNumber) { iSequenceNumber = sequenceNumber; }
 
+	@Column(name = "activity_date", nullable = false, length = 20)
 	public Date getActivityDate() { return iActivityDate; }
 	public void setActivityDate(Date activityDate) { iActivityDate = activityDate; }
 
+	@Column(name = "term_code", nullable = true, length = 20)
 	public String getTermCode() { return iTermCode; }
 	public void setTermCode(String termCode) { iTermCode = termCode; }
 
+	@Column(name = "colleague_id", nullable = true, length = 20)
 	public String getColleagueId() { return iColleagueId; }
 	public void setColleagueId(String colleagueId) { iColleagueId = colleagueId; }
 
+	@Column(name = "subj_code", nullable = true, length = 10)
 	public String getSubjectCode() { return iSubjectCode; }
 	public void setSubjectCode(String subjectCode) { iSubjectCode = subjectCode; }
 
+	@Column(name = "crse_numb", nullable = true, length = 5)
 	public String getCourseNumber() { return iCourseNumber; }
 	public void setCourseNumber(String courseNumber) { iCourseNumber = courseNumber; }
 
+	@Column(name = "sec_numb", nullable = true, length = 3)
 	public String getSectionNumber() { return iSectionNumber; }
 	public void setSectionNumber(String sectionNumber) { iSectionNumber = sectionNumber; }
 
-	public String getXlstGroup() { return iXlstGroup; }
-	public void setXlstGroup(String xlstGroup) { iXlstGroup = xlstGroup; }
-
+	@Column(name = "external_id", nullable = true, length = 50)
 	public String getExternalId() { return iExternalId; }
 	public void setExternalId(String externalId) { iExternalId = externalId; }
 
+	@Column(name = "action", nullable = true, length = 50)
 	public String getAction() { return iAction; }
 	public void setAction(String action) { iAction = action; }
 
+	@Column(name = "type", nullable = true, length = 50)
 	public String getType() { return iType; }
 	public void setType(String type) { iType = type; }
 
+	@Column(name = "message", nullable = false, length = 4000)
 	public String getMessage() { return iMessage; }
 	public void setMessage(String message) { iMessage = message; }
 
+	@Column(name = "packet_id", nullable = false, length = 500)
 	public String getPacketId() { return iPacketId; }
 	public void setPacketId(String packetId) { iPacketId = packetId; }
 
+	@Column(name = "queue_id", nullable = false, length = 20)
 	public Long getQueueId() { return iQueueId; }
 	public void setQueueId(Long queueId) { iQueueId = queueId; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof ColleagueResponse)) return false;
 		if (getUniqueId() == null || ((ColleagueResponse)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((ColleagueResponse)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "ColleagueResponse["+getUniqueId()+"]";
 	}
@@ -135,8 +147,8 @@ public abstract class BaseColleagueResponse implements Serializable {
 		return "ColleagueResponse[" +
 			"\n	Action: " + getAction() +
 			"\n	ActivityDate: " + getActivityDate() +
-			"\n	CourseNumber: " + getCourseNumber() +
 			"\n	ColleagueId: " + getColleagueId() +
+			"\n	CourseNumber: " + getCourseNumber() +
 			"\n	ExternalId: " + getExternalId() +
 			"\n	Message: " + getMessage() +
 			"\n	PacketId: " + getPacketId() +
@@ -147,7 +159,6 @@ public abstract class BaseColleagueResponse implements Serializable {
 			"\n	TermCode: " + getTermCode() +
 			"\n	Type: " + getType() +
 			"\n	UniqueId: " + getUniqueId() +
-			"\n	XlstGroup: " + getXlstGroup() +
 			"]";
 	}
 }

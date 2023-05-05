@@ -17,18 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import org.unitime.colleague.model.base.BaseColleagueSuffixDefDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.colleague.model.ColleagueSuffixDef;
 
+public class ColleagueSuffixDefDAO extends _RootDAO<ColleagueSuffixDef,Long> {
+	private static ColleagueSuffixDefDAO sInstance;
 
-public class ColleagueSuffixDefDAO extends BaseColleagueSuffixDefDAO {
+	public ColleagueSuffixDefDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public ColleagueSuffixDefDAO () {}
+	public static ColleagueSuffixDefDAO getInstance() {
+		if (sInstance == null) sInstance = new ColleagueSuffixDefDAO();
+		return sInstance;
+	}
 
-
+	public Class<ColleagueSuffixDef> getReferenceClass() {
+		return ColleagueSuffixDef.class;
+	}
 }

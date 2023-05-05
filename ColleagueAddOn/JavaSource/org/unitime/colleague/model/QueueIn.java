@@ -20,6 +20,10 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+
 import org.unitime.colleague.model.base.BaseQueueIn;
 
 
@@ -28,6 +32,8 @@ import org.unitime.colleague.model.base.BaseQueueIn;
  * @author says
  *
  */
+@Entity
+@Table(name = "integrationqueuein")
 public class QueueIn extends BaseQueueIn {
 	private static final long serialVersionUID = 1L;
 
@@ -47,6 +53,7 @@ public class QueueIn extends BaseQueueIn {
 
 /*[CONSTRUCTOR MARKER END]*/
 
+	@Transient
 	public String getQueueType() {
 		return QUEUE_TYPE;
 	}

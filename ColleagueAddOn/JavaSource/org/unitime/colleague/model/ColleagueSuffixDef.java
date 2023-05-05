@@ -20,9 +20,16 @@
 
 package org.unitime.colleague.model;
 
-import java.util.Collection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import org.hibernate.Query;
+import java.util.Collection;
+import java.util.List;
+
+import org.hibernate.query.Query;
 import org.hibernate.Session;
 import org.unitime.colleague.model.base.BaseColleagueSuffixDef;
 import org.unitime.colleague.model.dao.ColleagueSuffixDefDAO;
@@ -36,6 +43,9 @@ import org.unitime.timetable.model.dao.ItypeDescDAO;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "colleague_course_suffix_def")
 public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 	private static final long serialVersionUID = 1L;
 
@@ -89,16 +99,16 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 		} else {
 			sb.append(" and csd.courseSuffix = :suffix");
 		}
-		Query query = ColleagueSuffixDefDAO.getInstance().getQuery(sb.toString());
-		query.setString("termCode", termCode);
+		Query<ColleagueSuffixDef> query = ColleagueSuffixDefDAO.getInstance().getSession().createQuery(sb.toString(), ColleagueSuffixDef.class);
+		query.setParameter("termCode", termCode);
 		if (subjectAreaId != null){
-			query.setLong("subjectAreaId", subjectAreaId.longValue());
+			query.setParameter("subjectAreaId", subjectAreaId.longValue());
 		}
 		if (itypeId != null){
-			query.setInteger("itypeId", itypeId.intValue());
+			query.setParameter("itypeId", itypeId.intValue());
 		}
 		if (suffix != null){
-			query.setString("suffix", suffix);
+			query.setParameter("suffix", suffix);
 		}
 		return((ColleagueSuffixDef) query.uniqueResult());
 		
@@ -286,26 +296,27 @@ public class ColleagueSuffixDef extends BaseColleagueSuffixDef {
 		return(ColleagueSuffixDefDAO.getInstance().get(id));
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Collection<ColleagueSuffixDef> getAllColleagueSuffixDefs() {
-		return((Collection <ColleagueSuffixDef>)ColleagueSuffixDefDAO.getInstance().getQuery("from ColleagueSuffixDef").list());
+	@Transient
+	public static List<ColleagueSuffixDef> getAllColleagueSuffixDefs() {
+		return ColleagueSuffixDefDAO.getInstance().getSession().createQuery("from ColleagueSuffixDef", ColleagueSuffixDef.class).list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static Collection<ColleagueSuffixDef> getAllColleagueSuffixDefsForSession(Session hibSession, Long acadSessionId) {
 		ColleagueSession cSession = ColleagueSession.findColleagueSessionForSession(acadSessionId, hibSession);
-		return((Collection <ColleagueSuffixDef>)ColleagueSuffixDefDAO
-				.getInstance()
-				.getQuery("from ColleagueSuffixDef csd where csd.termCode = :termCode")
-				.setString("termCode", cSession.getColleagueTermCode()).list());
+		return ColleagueSuffixDefDAO
+				.getInstance().getSession()
+				.createQuery("from ColleagueSuffixDef csd where csd.termCode = :termCode", ColleagueSuffixDef.class)
+				.setParameter("termCode", cSession.getColleagueTermCode()).list();
 	}
         
+	@Transient
     public boolean isAllNumbers() {
     	return((this.getItypePrefix() == null || this.getItypePrefix().isEmpty()) 
     			&& (this.getPrefix() == null || this.getPrefix().isEmpty())
     			&& (this.getSuffix() == null || this.getSuffix().isEmpty()));
     }
     
+	@Transient
     public boolean isValidColleagueSuffixDef() {
     	if (this.getMinSectionNum() == null) {
     		return(false);

@@ -36,11 +36,11 @@ import org.unitime.colleague.model.Queue;
 import org.unitime.colleague.model.QueueIn;
 import org.unitime.colleague.model.dao.QueueInDAO;
 import org.unitime.colleague.onlinesectioning.ColleagueUpdateStudentAction.UpdateResult;
+import org.unitime.commons.hibernate.util.HibernateUtil;
 import org.unitime.timetable.dataexchange.BaseImport;
 import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentSectioningQueue;
-import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper.Message;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper.MessageHandler;
@@ -72,8 +72,8 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 		org.hibernate.Session hibSession = QueueInDAO.getInstance().createNewSession();
 		Transaction tx = hibSession.beginTransaction();
 		try {
-			QueueIn qi = (QueueIn)hibSession.createQuery("from QueueIn where status = :status order by uniqueId")
-					.setString("status", QueueIn.STATUS_READY)
+			QueueIn qi = (QueueIn)hibSession.createQuery("from QueueIn where status = :status order by uniqueId", QueueIn.class)
+					.setParameter("status", QueueIn.STATUS_READY)
 					.setMaxResults(1)
 					.uniqueResult();
 			
@@ -81,8 +81,8 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 			
 			if (qi != null) {
 				qi.setStatus(Queue.STATUS_PROCESSING);
-				hibSession.update(qi);
-				ret = new XmlMessage(qi.getUniqueId(), qi.getPostDate(), qi.getXml());
+				hibSession.merge(qi);
+				ret = new XmlMessage(qi.getUniqueId(), qi.getPostDate(), qi.getDocument());
 			}
 
 			tx.commit();
@@ -105,7 +105,7 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 			if (qi != null) {
 				qi.setStatus(status);
 				qi.setProcessDate(new Date());
-				hibSession.update(qi);
+				hibSession.merge(qi);
 			}
 			
 			tx.commit();
@@ -142,15 +142,21 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 					.append("'");
 					;
 			String countQuery = "select count(q) " + queryBase.toString();
-	    	    Long uniqueIdsToDeleteCount = (Long) hibSession.createQuery(countQuery).uniqueResult();
+	    	    Long uniqueIdsToDeleteCount = hibSession.createQuery(countQuery, Long.class).uniqueResult();
 	    	    if (0 == uniqueIdsToDeleteCount) {
 	    	    		info("-- no old student update records to delete from:  QueueIn");
-	    	    }
-	    	    else {
+	    	    } else {
 	    	        info("-- " + uniqueIdsToDeleteCount + " old student update records to delete from:  QueueIn");
 	    	        String deleteHql = "delete " + queryBase.toString();
 	    	        info("-- delete statement:  " + deleteHql);
-	    	        hibSession.createQuery(deleteHql).executeUpdate();
+	    	        Transaction tx = hibSession.beginTransaction();
+	    	        try {
+	    	        	hibSession.createMutationQuery(deleteHql).executeUpdate();
+	    	        	tx.commit();
+	    	        } catch (Exception e) {
+	    	        	tx.rollback();
+	    	        	error("dailed to delete old student update records: " + e.getMessage(), e);
+	    	        }
 	    	    }
 		}
 	}
@@ -174,7 +180,7 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 					error("Failed to process message #" + message.getQueueId() +": " + e.getMessage(), e);
 				} finally {
 					hibSession.close();
-					_RootDAO.closeCurrentThreadSessions();
+					HibernateUtil.closeCurrentThreadSessions();
 				}
 			}
 		} catch (Exception ex) {
@@ -183,7 +189,6 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void processMessage(org.hibernate.Session hibSession, Element rootElement) {
 		if (!"studentUpdates".equalsIgnoreCase(rootElement.getName())) return;
 		long maxElementTime = 0, minElementTime = 0;
@@ -213,9 +218,9 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 				}
 				List<Long> sessionIds = session2ids.get(colleagueSession);
 				if (sessionIds == null) {
-					sessionIds = (List<Long>)hibSession.createQuery(
-							"select cs.session.uniqueId from ColleagueSession cs where cs.colleagueTermCode = :termCode")
-							.setString("termCode", colleagueSession).list();
+					sessionIds = hibSession.createQuery(
+							"select cs.session.uniqueId from ColleagueSession cs where cs.colleagueTermCode = :termCode", Long.class)
+							.setParameter("termCode", colleagueSession).list();
 					session2ids.put(colleagueSession, sessionIds);
 				}
 				
@@ -314,7 +319,7 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 								case NO_CHANGE:
 								}
 							} finally {
-								_RootDAO.closeCurrentThreadSessions();
+								HibernateUtil.closeCurrentThreadSessions();
 							}
 						} else {
 							OnlineSectioningHelper h = new OnlineSectioningHelper(QueueInDAO.getInstance().createNewSession(), user(), CacheMode.REFRESH);
@@ -399,7 +404,7 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 			processMessage(hibSession, rootElement);
 		} finally {
 			hibSession.close();
-			_RootDAO.closeCurrentThreadSessions();
+			HibernateUtil.closeCurrentThreadSessions();
 		}
 	}
 

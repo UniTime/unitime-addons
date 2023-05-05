@@ -74,9 +74,9 @@ public class ColleagueRestrictions implements AdminTable {
 				r.setField(2, restriction.getDescription());
 				boolean used = false;
 				
-				int count = Integer.parseInt(hibSession.createQuery("select count(cr) from ColleagueSection cs inner join cs.restrictions as cr where cr.uniqueId = :restrictionId")
-						              .setLong("restrictionId", restriction.getUniqueId())
-						              .uniqueResult().toString());
+				int count = hibSession.createQuery("select count(cr) from ColleagueSection cs inner join cs.restrictions as cr where cr.uniqueId = :restrictionId", Number.class)
+						              .setParameter("restrictionId", restriction.getUniqueId())
+						              .uniqueResult().intValue();
 				used = count > 0;
 				r.setDeletable(!used);
 			}
@@ -109,7 +109,8 @@ public class ColleagueRestrictions implements AdminTable {
 		restriction.setDescription(record.getField(2));
 		ColleagueSession collSession = ColleagueSession.findColleagueSessionForSession(context.getUser().getCurrentAcademicSessionId(), hibSession);
 		restriction.setTermCode(collSession.getColleagueTermCode());
-		record.setUniqueId((Long)hibSession.save(restriction));
+		hibSession.persist(restriction);
+		record.setUniqueId(restriction.getUniqueId());
 		ChangeLog.addChange(hibSession,
 				context,
 				restriction,
@@ -128,7 +129,7 @@ public class ColleagueRestrictions implements AdminTable {
 		restriction.setCode(record.getField(0));
 		restriction.setName(record.getField(1));
 		restriction.setDescription(record.getField(2));
-		hibSession.saveOrUpdate(restriction);
+		hibSession.merge(restriction);
 		ChangeLog.addChange(hibSession,
 				context,
 				restriction,
@@ -155,7 +156,7 @@ public class ColleagueRestrictions implements AdminTable {
 				Operation.DELETE,
 				null,
 				null);
-		hibSession.delete(restriction);
+		hibSession.remove(restriction);
 	}
 
 	@Override

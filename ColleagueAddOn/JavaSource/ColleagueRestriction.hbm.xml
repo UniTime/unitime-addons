@@ -38,7 +38,6 @@
             </generator>
         </id>
 		
-  		<properties name="uniqueCode" unique="true">
       		<property 
 				name="termCode" 
 				column="term_code"
@@ -54,7 +53,6 @@
 				not-null="true"
 				length="8"
 			/>
-		</properties>
 
 		<property
 			name="name"

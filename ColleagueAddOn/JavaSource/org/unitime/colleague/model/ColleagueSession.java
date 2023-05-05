@@ -20,9 +20,14 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.List;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import org.hibernate.FlushMode;
 import org.unitime.colleague.model.base.BaseColleagueSession;
@@ -45,6 +50,9 @@ import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "colleague_session")
 public class ColleagueSession extends BaseColleagueSession {
 	private static final long serialVersionUID = 1L;
 
@@ -78,7 +86,8 @@ public class ColleagueSession extends BaseColleagueSession {
 			querySession = ColleagueSessionDAO.getInstance().getSession();
 		}
 
-		return((ColleagueSession) querySession.createQuery("from ColleagueSession cs where cs.session.uniqueId = :sessionId").setFlushMode(FlushMode.MANUAL).setLong("sessionId", acadSessionId.longValue()).setCacheable(true).uniqueResult());
+		return querySession.createQuery("from ColleagueSession cs where cs.session.uniqueId = :sessionId", ColleagueSession.class)
+				.setHibernateFlushMode(FlushMode.MANUAL).setParameter("sessionId", acadSessionId).setCacheable(true).uniqueResult();
 	}
 	
 	public static boolean shouldGenerateColleagueDataFieldsForSession(Session acadSession, org.hibernate.Session hibSession){
@@ -126,13 +135,9 @@ public class ColleagueSession extends BaseColleagueSession {
 		return(cs.isStoreDataForColleague() && cs.isSendDataToColleague() && !cs.isLoadingOfferingsFile());
 	}
 
-	public static List getAllSessions() {
-		ColleagueSessionDAO csDao = new ColleagueSessionDAO();
-		List l = csDao.getSession().createQuery("from ColleagueSession").list();
-		if (l == null){
-			l = new Vector();
-		}
-		return(l);
+	@Transient
+	public static List<ColleagueSession> getAllSessions() {
+		return ColleagueSessionDAO.getInstance().getSession().createQuery("from ColleagueSession", ColleagueSession.class).list();
 	}
 
 	public static ColleagueSession getColleagueSessionById(Long id) {
@@ -140,7 +145,6 @@ public class ColleagueSession extends BaseColleagueSession {
 		return(csDao.get(id));
 	}
 	
-	@SuppressWarnings("unchecked")
 	private List<InstructionalOffering> getAllControllingInstructionalOfferingsForSubjectArea(SubjectArea subjectArea) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("select co.instructionalOffering ")
@@ -151,7 +155,8 @@ public class ColleagueSession extends BaseColleagueSession {
 		String instructionalOfferingQuery = sb.toString();
 		
 		InstructionalOfferingDAO ioDao = new InstructionalOfferingDAO();
-		return((List<InstructionalOffering>)ioDao.getQuery(instructionalOfferingQuery).setLong("subjectAreaId", subjectArea.getUniqueId().longValue()).list());
+		return ioDao.getSession().createQuery(instructionalOfferingQuery, InstructionalOffering.class)
+				.setParameter("subjectAreaId", subjectArea.getUniqueId()).list();
 	}
 
 	public void assignSectionNumbersToAllSectionsForSession() {
@@ -184,7 +189,6 @@ public class ColleagueSession extends BaseColleagueSession {
 		for(SubjectArea sa : this.getSession().getSubjectAreas()){
 			for (InstructionalOffering io : getAllControllingInstructionalOfferingsForSubjectArea(sa)){
 				for(InstrOfferingConfig ioc : io.getInstrOfferingConfigs()){
-					@SuppressWarnings("unchecked")
 					TreeSet<SchedulingSubpart> subparts = new TreeSet<SchedulingSubpart>(ssc);
 					subparts.addAll(ioc.getSchedulingSubparts());
 					for (SchedulingSubpart ss : subparts){
@@ -196,7 +200,7 @@ public class ColleagueSession extends BaseColleagueSession {
 										ColleagueSection pcs = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c.getParentClass(), co, ioDao.getSession());
 										if (pcs != null){
 											pcs.addClass(c, ioDao.getSession());
-											ioDao.getSession().update(pcs);
+											ioDao.getSession().merge(pcs);
 										} else {
 											ColleagueSection.addColleagueSectionFor(co, c, ioDao.getSession());
 										}

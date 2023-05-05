@@ -19,117 +19,133 @@
 */
 package org.unitime.colleague.model.base;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+
 import java.io.Serializable;
 
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.unitime.colleague.model.ColleagueSuffixDef;
+import org.unitime.commons.hibernate.id.UniqueIdGenerator;
 
-
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+@MappedSuperclass
 public abstract class BaseColleagueSuffixDef implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long iUniqueId;
 	private String iTermCode;
-	private Long iSubjectAreaId;
 	private Integer iItypeId;
+	private Long iSubjectAreaId;
 	private String iCourseSuffix;
 	private String iCampusCode;
 	private Integer iMinSectionNum;
 	private Integer iMaxSectionNum;
 	private String iItypePrefix;
-	private String iSuffix;
 	private String iPrefix;
+	private String iSuffix;
 	private String iNote;
 
 
-	public static String PROP_UNIQUEID = "uniqueId";
-	public static String PROP_TERM_CODE = "termCode";
-	public static String PROP_SUBJECT_AREA_ID = "iSubjectAreaId";
-	public static String PROP_ITYPE_ID = "itypeId";
-	public static String PROP_COURSE_SUFFIX = "courseSuffix";
-	public static String PROP_CAMPUS_CODE = "campusCode";
-	public static String PROP_MIN_SECTION_NUM = "minSectionNum";
-	public static String PROP_MAX_SECTION_NUM = "maxSectionNum";
-	public static String PROP_ITYPE_PREFIX = "itypePrefix";
-	public static String PROP_PREFIX = "prefix";
-	public static String PROP_SUFFIX = "suffix";
-
 	public BaseColleagueSuffixDef() {
-		initialize();
 	}
 
 	public BaseColleagueSuffixDef(Long uniqueId) {
 		setUniqueId(uniqueId);
-		initialize();
 	}
 
-	protected void initialize() {}
 
+	@Id
+	@GenericGenerator(name = "colleague_course_suffix_def_id", type = UniqueIdGenerator.class, parameters = {
+		@Parameter(name = "sequence", value = "pref_group_seq")
+	})
+	@GeneratedValue(generator = "colleague_course_suffix_def_id")
+	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
 
+	@Column(name = "term_code", nullable = false, length = 20)
 	public String getTermCode() { return iTermCode; }
 	public void setTermCode(String termCode) { iTermCode = termCode; }
 
-	public Long getSubjectAreaId() { return iSubjectAreaId; }
-	public void setSubjectAreaId(Long subjectAreaId) { iSubjectAreaId = subjectAreaId; }
-
+	@Column(name = "itype_id", nullable = true, length = 2)
 	public Integer getItypeId() { return iItypeId; }
 	public void setItypeId(Integer itypeId) { iItypeId = itypeId; }
 
+	@Column(name = "subject_area_id", nullable = true)
+	public Long getSubjectAreaId() { return iSubjectAreaId; }
+	public void setSubjectAreaId(Long subjectAreaId) { iSubjectAreaId = subjectAreaId; }
+
+	@Column(name = "course_suffix", nullable = true, length = 5)
 	public String getCourseSuffix() { return iCourseSuffix; }
 	public void setCourseSuffix(String courseSuffix) { iCourseSuffix = courseSuffix; }
 
+	@Column(name = "campus_code", nullable = true, length = 20)
 	public String getCampusCode() { return iCampusCode; }
-	public void setCampusCode(String campusCode) { this.iCampusCode = campusCode; }
+	public void setCampusCode(String campusCode) { iCampusCode = campusCode; }
 
+	@Column(name = "min_section_num", nullable = false, length = 2)
 	public Integer getMinSectionNum() { return iMinSectionNum; }
 	public void setMinSectionNum(Integer minSectionNum) { iMinSectionNum = minSectionNum; }
 
+	@Column(name = "max_section_num", nullable = false, length = 2)
 	public Integer getMaxSectionNum() { return iMaxSectionNum; }
 	public void setMaxSectionNum(Integer maxSectionNum) { iMaxSectionNum = maxSectionNum; }
 
+	@Column(name = "itype_prefix", nullable = true, length = 1)
 	public String getItypePrefix() { return iItypePrefix; }
-	public void setItypePrefix(String itypePrefix) { this.iItypePrefix = itypePrefix; }
+	public void setItypePrefix(String itypePrefix) { iItypePrefix = itypePrefix; }
 
+	@Column(name = "prefix", nullable = true, length = 1)
 	public String getPrefix() { return iPrefix; }
-	public void setPrefix(String prefix) { this.iPrefix = prefix; }
+	public void setPrefix(String prefix) { iPrefix = prefix; }
 
+	@Column(name = "suffix", nullable = true, length = 1)
 	public String getSuffix() { return iSuffix; }
-	public void setSuffix(String suffix) { this.iSuffix = suffix; }
+	public void setSuffix(String suffix) { iSuffix = suffix; }
 
+	@Column(name = "note", nullable = true, length = 500)
 	public String getNote() { return iNote; }
-	public void setNote(String note) { this.iNote = note; }
+	public void setNote(String note) { iNote = note; }
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof ColleagueSuffixDef)) return false;
 		if (getUniqueId() == null || ((ColleagueSuffixDef)o).getUniqueId() == null) return false;
 		return getUniqueId().equals(((ColleagueSuffixDef)o).getUniqueId());
 	}
 
+	@Override
 	public int hashCode() {
 		if (getUniqueId() == null) return super.hashCode();
 		return getUniqueId().hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return "ColleagueSuffixDef["+getUniqueId()+"]";
 	}
 
 	public String toDebugString() {
 		return "ColleagueSuffixDef[" +
-			"\n	TermCode: " + getTermCode() +
-			"\n	SubjectAreaId: " + getSubjectAreaId() +
-			"\n	ItypeId: " + getItypeId() +
-			"\n	CourseSuffix: " + getCourseSuffix() +
 			"\n	CampusCode: " + getCampusCode() +
-			"\n	MinSectionNum: " + getMinSectionNum() +
-			"\n	MaxSectionNum: " + getMaxSectionNum() +
+			"\n	CourseSuffix: " + getCourseSuffix() +
+			"\n	ItypeId: " + getItypeId() +
 			"\n	ItypePrefix: " + getItypePrefix() +
-			"\n	Prefix: " + getPrefix() +
-			"\n	Suffix: " + getSuffix() +
+			"\n	MaxSectionNum: " + getMaxSectionNum() +
+			"\n	MinSectionNum: " + getMinSectionNum() +
 			"\n	Note: " + getNote() +
+			"\n	Prefix: " + getPrefix() +
+			"\n	SubjectAreaId: " + getSubjectAreaId() +
+			"\n	Suffix: " + getSuffix() +
+			"\n	TermCode: " + getTermCode() +
 			"\n	UniqueId: " + getUniqueId() +
 			"]";
 	}
-
 }

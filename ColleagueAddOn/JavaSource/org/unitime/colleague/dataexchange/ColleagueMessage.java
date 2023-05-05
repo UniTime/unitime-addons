@@ -108,7 +108,9 @@ public class ColleagueMessage {
 		manageDefaultDatePatternMapCache();
 		if (!sessionDefaultDatePatternMap.containsKey(acadSession.getUniqueId())){
 			Session hibSession = DatePatternDAO.getInstance().createNewSession();
-			DatePattern defaultDatePattern = (DatePattern)hibSession.createQuery("from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId").setLong("sessionId", acadSession.getUniqueId().longValue()).uniqueResult();
+			DatePattern defaultDatePattern = hibSession.createQuery(
+					"from DatePattern dp where dp.session.uniqueId = :sessionId and dp.session.defaultDatePattern.uniqueId = dp.uniqueId", DatePattern.class)
+					.setParameter("sessionId", acadSession.getUniqueId()).uniqueResult();
 			sessionDefaultDatePatternMap.put(acadSession.getUniqueId(), defaultDatePattern.getUniqueId());
 			updateDatesForDatePattern(defaultDatePattern);
 			hibSession.close();

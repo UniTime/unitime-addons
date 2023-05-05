@@ -20,6 +20,12 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -28,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
@@ -68,6 +73,9 @@ import org.unitime.timetable.util.Constants;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "colleague_section")
 public class ColleagueSection extends BaseColleagueSection {
 
 	/**
@@ -103,7 +111,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		ColleagueSectionToClass csc = new ColleagueSectionToClass();
 		csc.setColleagueSection(this);
 		csc.setClassId(clazz.getUniqueId());
-		addTocolleagueSectionToClasses(csc);
+		addToColleagueSectionToClasses(csc);
 		if (classes == null){
 			classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_HIERARCHY));
 		}
@@ -144,7 +152,8 @@ public class ColleagueSection extends BaseColleagueSection {
 					if (clazz != null && csc.getClassId().equals(clazz.getUniqueId())){
 						classes.add(clazz);
 					} else {
-						Class_ c = (Class_)querySession.createQuery("from Class_ c where c.uniqueId = :classId").setLong("classId", csc.getClassId().longValue()).setFlushMode(FlushMode.MANUAL).uniqueResult();
+						Class_ c = querySession.createQuery("from Class_ c where c.uniqueId = :classId", Class_.class)
+								.setParameter("classId", csc.getClassId()).setHibernateFlushMode(FlushMode.MANUAL).uniqueResult();
 						if (c != null){
 							classes.add(c);
 						}
@@ -166,26 +175,26 @@ public class ColleagueSection extends BaseColleagueSection {
 
 
 	public static ColleagueSection findColleagueSectionForClassAndCourseExternalId(Class_ clazz, String courseExternalId, Session hibSession, org.unitime.timetable.model.Session acadSession){
-		return((ColleagueSection)hibSession
+		return hibSession
 				.createQuery("select cs from ColleagueSection cs inner join cs.colleagueSectionToClasses as csc where cs.courseOfferingId = " +
 						" (select co.uniqueId from CourseOffering co where co.externalUniqueId = :courseExternalId and co.instructionalOffering.session.uniqueId = :sessionId)" +
-						" and csc.classId = :classId")
-				.setLong("classId", clazz.getUniqueId().longValue())
-				.setLong("sessionId", acadSession.getUniqueId().longValue())
-				.setString("courseExternalId", courseExternalId)
-				.setFlushMode(FlushMode.MANUAL)
+						" and csc.classId = :classId", ColleagueSection.class)
+				.setParameter("classId", clazz.getUniqueId())
+				.setParameter("sessionId", acadSession.getUniqueId())
+				.setParameter("courseExternalId", courseExternalId)
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(false)
-				.uniqueResult());
+				.uniqueResult();
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findColleagueSectionsForInstructionalOffering(InstructionalOffering instructionalOffering, Session hibSession){
-		return((List<ColleagueSection>) hibSession.createQuery("select cs from ColleagueSection cs, CourseOffering co where co.instructionalOffering = :instrOfferId and cs.courseOfferingId = co.uniqueId")
-				           .setLong("instrOfferId", instructionalOffering.getUniqueId().longValue())
-				           .setFlushMode(FlushMode.MANUAL)
-				           .list());
+		return hibSession.createQuery("select cs from ColleagueSection cs, CourseOffering co where co.instructionalOffering.uniqueId = :instrOfferId and cs.courseOfferingId = co.uniqueId", ColleagueSection.class)
+				           .setParameter("instrOfferId", instructionalOffering.getUniqueId())
+				           .setHibernateFlushMode(FlushMode.MANUAL)
+				           .list();
 	}
 		
+	@Transient
 	public boolean isNestedSection(){
 		return(getColleagueSectionToClasses() != null && getColleagueSectionToClasses().size() > 1);
 	}
@@ -198,7 +207,9 @@ public class ColleagueSection extends BaseColleagueSection {
 		if (querySession == null){
 			querySession = Class_DAO.getInstance().getSession();
 		}
-		return((Long)querySession.createQuery("select count(csc) from ColleagueSectionToClass csc where csc.classId = :classId").setLong("classId", classId.longValue()).setFlushMode(FlushMode.MANUAL).uniqueResult()).intValue();
+		return querySession.createQuery("select count(csc) from ColleagueSectionToClass csc where csc.classId = :classId", Number.class)
+				.setParameter("classId", classId)
+				.setHibernateFlushMode(FlushMode.MANUAL).uniqueResult().intValue();
 		
 	}
 
@@ -217,6 +228,7 @@ public class ColleagueSection extends BaseColleagueSection {
 	}
 	
 	
+	@Transient
 	public Class_ getFirstClass() {
 		Class_ c = null;
 		if (getColleagueSectionToClasses() != null && !getColleagueSectionToClasses().isEmpty()){
@@ -258,12 +270,12 @@ public class ColleagueSection extends BaseColleagueSection {
     				+ "   and sa.subjectAreaAbbreviation = :subject"
     				+ "   and cs.courseNumber = :crsNbr"
     				;
-    		sectionExists =  Integer.parseInt(hibSession.createQuery(sectionExistsSql)
-    		      .setLong("sessId", acadSession.getUniqueId().longValue())
-    		      .setString("sectionId", sectionId)
-    		      .setString("subject", subjectAreaAbbreviation)
-    		      .setString("crsNbr", courseNumber)
-    		      .uniqueResult().toString());
+    		sectionExists =  hibSession.createQuery(sectionExistsSql, Number.class)
+    		      .setParameter("sessId", acadSession.getUniqueId())
+    		      .setParameter("sectionId", sectionId)
+    		      .setParameter("subject", subjectAreaAbbreviation)
+    		      .setParameter("crsNbr", courseNumber)
+    		      .uniqueResult().intValue();
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
@@ -474,7 +486,6 @@ public class ColleagueSection extends BaseColleagueSection {
 	}
 
 	
-	@SuppressWarnings("unchecked")
 	private static List<String> findExistingSectionIds(ColleagueSession colleagueSession,
 			ColleagueSuffixDef suffix, CourseOffering courseOffering2,
 			Session hibSession) {
@@ -488,92 +499,78 @@ public class ColleagueSection extends BaseColleagueSection {
    		  .append("  and sa.subjectAreaAbbreviation = :subject")
    		  .append("  and cs.colleagueCourseNumber = :colleagueCourseNumber");
    		
-   		return (List<String>)hibSession.createQuery(sb.toString())
-          .setString("termCode", colleagueSession.getColleagueTermCode())
-          .setString("subject", courseOffering2.getSubjectArea().getSubjectAreaAbbreviation())
-          .setString("colleagueCourseNumber", colleagueCourseNumber).setCacheable(false).list();
+   		return hibSession.createQuery(sb.toString(), String.class)
+          .setParameter("termCode", colleagueSession.getColleagueTermCode())
+          .setParameter("subject", courseOffering2.getSubjectArea().getSubjectAreaAbbreviation())
+          .setParameter("colleagueCourseNumber", colleagueCourseNumber).setCacheable(false).list();
 	}
 
 
 	
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findColleagueSectionsForClass(Class_ clazz, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.classId = :classId")
-			.setLong("classId", clazz.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.classId = :classId", ColleagueSection.class)
+			.setParameter("classId", clazz.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findNotDeletedColleagueSectionsForClass(Class_ clazz, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.colleagueSection.deleted = false and csc.classId = :classId")
-			.setLong("classId", clazz.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.colleagueSection.deleted = false and csc.classId = :classId", ColleagueSection.class)
+			.setParameter("classId", clazz.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findColleagueSectionsForInstrOfferingConfig(InstrOfferingConfig instrOfferingConfig, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.instrOfferingConfig.uniqueId = :configId and csc.classId = c.uniqueId")
-			.setLong("configId", instrOfferingConfig.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.instrOfferingConfig.uniqueId = :configId and csc.classId = c.uniqueId", ColleagueSection.class)
+			.setParameter("configId", instrOfferingConfig.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findNotDeletedColleagueSectionsForInstrOfferingConfig(InstrOfferingConfig instrOfferingConfig, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where csc.colleagueSection.deleted = false and c.schedulingSubpart.instrOfferingConfig.uniqueId = :configId and csc.classId = c.uniqueId")
-			.setLong("configId", instrOfferingConfig.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where csc.colleagueSection.deleted = false and c.schedulingSubpart.instrOfferingConfig.uniqueId = :configId and csc.classId = c.uniqueId", ColleagueSection.class)
+			.setParameter("configId", instrOfferingConfig.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findColleagueSectionsForSchedulingSubpart(SchedulingSubpart schedulingSubpart, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and csc.classId = c.uniqueId")
-			.setLong("subpartId", schedulingSubpart.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and csc.classId = c.uniqueId", ColleagueSection.class)
+			.setParameter("subpartId", schedulingSubpart.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findNotDeletedColleagueSectionsForSchedulingSubpart(SchedulingSubpart schedulingSubpart, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and csc.classId = c.uniqueId and csc.colleagueSection.deleted = false")
-			.setLong("subpartId", schedulingSubpart.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and csc.classId = c.uniqueId and csc.colleagueSection.deleted = false", ColleagueSection.class)
+			.setParameter("subpartId", schedulingSubpart.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findNotDeletedColleagueSectionsForSchedulingSubpartAndCourse(SchedulingSubpart schedulingSubpart, CourseOffering courseOffering, Session hibSession) {
-		return((List<ColleagueSection>)hibSession
-			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and csc.classId = c.uniqueId and csc.colleagueSection.deleted = false and csc.colleagueSection.courseOfferingId = :courseId")
-			.setLong("subpartId", schedulingSubpart.getUniqueId().longValue())
-			.setLong("courseId", courseOffering.getUniqueId().longValue())
-			.setFlushMode(FlushMode.MANUAL)
-			.list());
+		return hibSession
+			.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Class_ c where c.schedulingSubpart.uniqueId = :subpartId and csc.classId = c.uniqueId and csc.colleagueSection.deleted = false and csc.colleagueSection.courseOfferingId = :courseId", ColleagueSection.class)
+			.setParameter("subpartId", schedulingSubpart.getUniqueId())
+			.setParameter("courseId", courseOffering.getUniqueId())
+			.setHibernateFlushMode(FlushMode.MANUAL)
+			.list();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static List<ColleagueSection> findColleagueSectionsForSolution(
-			Solution solution, Session hibSession) {
-		Vector<ColleagueSection> hs = new Vector<ColleagueSection>();
-		List<ColleagueSection> sections = hibSession
-		.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Assignment a where a.solution.uniqueId = :solutionId and csc.classId = a.clazz.uniqueId and csc.colleagueSection.deleted = false")
-		.setLong("solutionId", solution.getUniqueId().longValue())
-		.setFlushMode(FlushMode.MANUAL)
-		.setCacheable(false)
-		.list();
-		for (ColleagueSection cs : sections) {
-			hs.add(cs);
-		}
-		return(hs);
+	public static List<ColleagueSection> findColleagueSectionsForSolution(Solution solution, Session hibSession) {
+		return hibSession
+				.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc, Assignment a where a.solution.uniqueId = :solutionId and csc.classId = a.clazz.uniqueId and csc.colleagueSection.deleted = false", ColleagueSection.class)
+				.setParameter("solutionId", solution.getUniqueId())
+				.setHibernateFlushMode(FlushMode.MANUAL)
+				.setCacheable(false)
+				.list();
 	}
 	
 	public static void deleteSection(Session hibSession, ColleagueSection colleagueSection) {
@@ -588,7 +585,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		}
 		SendColleagueMessage.sendColleagueMessage(colleagueSection, MessageAction.DELETE, hibSession);
 		colleagueSection.setDeleted(Boolean.valueOf(true));
-		hibSession.update(colleagueSection);
+		hibSession.merge(colleagueSection);
 	}
 
 	private static void removeOrphanedColleagueSections(Session hibSession, List<ColleagueSection> orphanedSections){
@@ -597,12 +594,12 @@ public class ColleagueSection extends BaseColleagueSection {
 			if (cs.getParentColleagueSection() != null){
 				ColleagueSection pCs = cs.getParentColleagueSection();
 				pCs.getColleagueSectionToChildSections().remove(cs);
-				hibSession.update(pCs);
+				hibSession.merge(pCs);
 			}
 			if (cs.getColleagueSectionToChildSections() != null && !cs.getColleagueSectionToChildSections().isEmpty()){
 				for(ColleagueSection cCs : (Set<ColleagueSection>)cs.getColleagueSectionToChildSections()){
 					cCs.setParentColleagueSection(null);
-					hibSession.update(cCs);
+					hibSession.merge(cCs);
 				}
 			}
 			deleteSection(hibSession, cs);
@@ -610,19 +607,18 @@ public class ColleagueSection extends BaseColleagueSection {
 		}		
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static void removeOrphanedColleagueSections(Session hibSession){
 		String orphanedSectionsQuery = "select distinct cs from ColleagueSection cs where cs.deleted = false and cs.courseOfferingId not in ( select co.uniqueId from CourseOffering co )";
 		String potentiallyOrphanedSectionsQuery = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.colleagueSection.deleted = false and csc.classId not in ( select c.uniqueId from Class_ c )";
 
 		Transaction trans = hibSession.beginTransaction();
-		List<ColleagueSection> orphanedColleagueSections = (List<ColleagueSection>) hibSession.createQuery(orphanedSectionsQuery)
-		.setFlushMode(FlushMode.MANUAL)
-		.list();
+		List<ColleagueSection> orphanedColleagueSections = hibSession.createQuery(orphanedSectionsQuery, ColleagueSection.class)
+				.setHibernateFlushMode(FlushMode.MANUAL)
+				.list();
 		removeOrphanedColleagueSections(hibSession, orphanedColleagueSections);
 		
-		List<ColleagueSection> potentiallyOrphanedColleagueSections = (List<ColleagueSection>) hibSession.createQuery(potentiallyOrphanedSectionsQuery)
-				.setFlushMode(FlushMode.MANUAL)
+		List<ColleagueSection> potentiallyOrphanedColleagueSections = hibSession.createQuery(potentiallyOrphanedSectionsQuery, ColleagueSection.class)
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.list();
 		
 		ArrayList<ColleagueSection> orphanedColleagueSections2 = new ArrayList<ColleagueSection>();
@@ -634,12 +630,12 @@ public class ColleagueSection extends BaseColleagueSection {
 				for(ColleagueSectionToClass cstc : l) {
 					if (cstc.getClassId() == null) {
 						cs.getColleagueSectionToClasses().remove(cstc);
-						hibSession.update(cs);
+						hibSession.merge(cs);
 					} else {
 						Class_ c = Class_DAO.getInstance().get(cstc.getClassId(), hibSession);
 						if (c == null) {
 							cs.getColleagueSectionToClasses().remove(cstc);
-							hibSession.update(cs);
+							hibSession.merge(cs);
 						}
 					}
 				}
@@ -657,14 +653,14 @@ public class ColleagueSection extends BaseColleagueSection {
 		if (clazz == null || courseOffering == null){
 			return(null);
 		}
-		return((ColleagueSection)hibSession
+		return hibSession
 				.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.colleagueSection.courseOfferingId = :courseOfferingId " +
-						" and csc.classId = :classId and csc.colleagueSection.deleted = false")
-				.setLong("classId", clazz.getUniqueId().longValue())
-				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
-				.setFlushMode(FlushMode.MANUAL)
+						" and csc.classId = :classId and csc.colleagueSection.deleted = false", ColleagueSection.class)
+				.setParameter("classId", clazz.getUniqueId())
+				.setParameter("courseOfferingId", courseOffering.getUniqueId())
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(false)
-				.uniqueResult());
+				.uniqueResult();
 
 	}
 	
@@ -673,14 +669,14 @@ public class ColleagueSection extends BaseColleagueSection {
 		if (clazz == null || courseOffering == null){
 			return(null);
 		}
-		return((ColleagueSection)hibSession
+		return hibSession
 				.createQuery("select distinct csc.colleagueSection from ColleagueSectionToClass as csc where csc.colleagueSection.courseOfferingId = :courseOfferingId " +
-						" and csc.classId = :classId and csc.colleagueSection.deleted = false")
-				.setLong("classId", clazz.getUniqueId().longValue())
-				.setLong("courseOfferingId", courseOffering.getUniqueId().longValue())
-				.setFlushMode(FlushMode.MANUAL)
+						" and csc.classId = :classId and csc.colleagueSection.deleted = false", ColleagueSection.class)
+				.setParameter("classId", clazz.getUniqueId())
+				.setParameter("courseOfferingId", courseOffering.getUniqueId())
+				.setHibernateFlushMode(FlushMode.MANUAL)
 				.setCacheable(true)
-				.uniqueResult());
+				.uniqueResult();
 
 	}
 	
@@ -710,18 +706,17 @@ public class ColleagueSection extends BaseColleagueSection {
 	
 	@SuppressWarnings("unchecked")
 	public List<ColleagueSection> colleagueSectionsCrosslistedWithThis(){
-		if (!getClasses(null).isEmpty()){
-		Class_ c = (Class_)getClasses(null).iterator().next();
-		String qs = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.class_id = :classId and csc.colleagueSection.uniqueId != :sectionId";
-		return(ColleagueSectionDAO.getInstance()
-				               .getQuery(qs)
-				               .setLong("classId", c.getUniqueId().longValue())
-				               .setLong("sectionId", getUniqueId().longValue())
-				               .list());
+		if (!getClasses(null).isEmpty()) {
+			Class_ c = (Class_)getClasses(null).iterator().next();
+			String qs = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.class_id = :classId and csc.colleagueSection.uniqueId != :sectionId";
+			return ColleagueSectionDAO.getInstance().getSession()
+					               .createQuery(qs, ColleagueSection.class)
+					               .setParameter("classId", c.getUniqueId())
+					               .setParameter("sectionId", getUniqueId())
+					               .list();
 		} else {
-			return(new Vector<ColleagueSection>());
+			return new ArrayList<ColleagueSection>();
 		}
-		
 	}
 		
 	public String classSuffixFor(Class_ clazz){
@@ -767,7 +762,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		ColleagueSession cSess = ColleagueSession.findColleagueSessionForSession(this.getSession().getUniqueId(), hibSession);
 		if (cSess.isSendDataToColleague() && this.getSectionIndex() == null) {
 			this.setSectionIndex(ColleagueSection.findNextUnusedActiveSectionIndexFor(this.getSession(), this.getCourseOffering(hibSession), itype, hibSession));
-			hibSession.update(this);
+			hibSession.merge(this);
 			updateClassSuffixForClassesIfNecessary(hibSession);
 		}
 	}
@@ -798,7 +793,7 @@ public class ColleagueSection extends BaseColleagueSection {
 					if(clazz.getClassSuffix() == null || !clazz.getClassSuffix().equals(classSuffix)){
 						clazz.setClassSuffix(classSuffix);
 						clazz.setExternalUniqueId(this.externalUniqueIdFor(clazz, hibSession));
-						hibSession.update(clazz);
+						hibSession.merge(clazz);
 						hibSession.flush();
 						if (refresh){
 							hibSession.refresh(clazz);
@@ -1274,28 +1269,25 @@ public class ColleagueSection extends BaseColleagueSection {
        return(sb.toString());
     }
 
-    @SuppressWarnings("unchecked")
 	public static List<ColleagueSection> findAll(Long sessionId) {
-    	return (new ColleagueSectionDAO()).
-    		getSession().
+    	return ColleagueSectionDAO.getInstance().getSession().
     		createQuery("select distinct cs from ColleagueSection cs where " +
-    				"cs.session.uniqueId=:sessionId").
-    		setLong("sessionId",sessionId.longValue()).
+    				"cs.session.uniqueId=:sessionId", ColleagueSection.class).
+    		setParameter("sessionId",sessionId).
     		list();
     }
 
     public static List<Class_> findAllClassesForColleagueIdAndTermCode(Integer collegueId, String termCode){
-    	return(findAllClassesForColleagueIdAndTermCode((new ColleagueSectionDAO()).getSession(), collegueId, termCode));
+    	return findAllClassesForColleagueIdAndTermCode((new ColleagueSectionDAO()).getSession(), collegueId, termCode);
     }
     
-    @SuppressWarnings("unchecked")
-	public static List<Class_> findAllClassesForColleagueIdAndTermCode(Session hibSession, Integer colleagueId, String termCode){
-    	return (hibSession.
+    public static List<Class_> findAllClassesForColleagueIdAndTermCode(Session hibSession, Integer colleagueId, String termCode){
+    	return hibSession.
 			createQuery("select distinct c from ColleagueSession csess, ColleagueSection cs inner join cs.colleagueSectionToClasses as cstc, Class_ c where " +
-					"cs.session.uniqueId=csess.session.uniqueId and csess.colleagueTermCode = :termCode and cs.colleagueId = :colleagueId and cstc.classId = c.uniqueId").
-			setString("termCode",termCode).
-			setInteger("colleagueId", colleagueId).
-			list());
+					"cs.session.uniqueId=csess.session.uniqueId and csess.colleagueTermCode = :termCode and cs.colleagueId = :colleagueId and cstc.classId = c.uniqueId", Class_.class).
+			setParameter("termCode",termCode).
+			setParameter("colleagueId", colleagueId).
+			list();
     }
 
     public static CourseOffering findCourseOfferingForColleagueIdAndTermCode(Integer colleagueId, String termCode){
@@ -1303,12 +1295,12 @@ public class ColleagueSection extends BaseColleagueSection {
     }
   
     public static CourseOffering findCourseOfferingForColleagueIdAndTermCode(Session hibSession, Integer colleagueId, String termCode){
-    	return ((CourseOffering)hibSession.
+    	return hibSession.
 			createQuery("select distinct co from ColleagueSession csess, ColleagueSection cs, CourseOffering co where " +
-					"cs.session.uniqueId=csess.session.uniqueId and csess.colleagueTermCode = :termCode and cs.colleagueId = :colleagueId and co.uniqueId = cs.courseOfferingId").
-			setString("termCode",termCode).
-			setInteger("colleagueId", colleagueId).
-			uniqueResult());
+					"cs.session.uniqueId=csess.session.uniqueId and csess.colleagueTermCode = :termCode and cs.colleagueId = :colleagueId and co.uniqueId = cs.courseOfferingId", CourseOffering.class).
+			setParameter("termCode",termCode).
+			setParameter("colleagueId", colleagueId).
+			uniqueResult();
     }
     
 	public String getCampusCode(ColleagueSession colleagueSession,
@@ -1319,7 +1311,7 @@ public class ColleagueSection extends BaseColleagueSection {
 						 clazz.getSchedulingSubpart().getItype(), 
 						 this.getCourseOffering(ColleagueSectionDAO.getInstance().getSession()), 
 						 colleagueSession.getColleagueTermCode(), 
-						 ColleagueSuffixDefDAO.getInstance().getCurrentThreadSession());
+						 ColleagueSuffixDefDAO.getInstance().getSession());
 		if (colleagueSuffixDef.getCampusCode() != null) {
 			campusCode = colleagueSuffixDef.getCampusCode();
 		} else {
@@ -1333,6 +1325,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(getCampusCode(colleagueSession, clazz));
 	}
 	
+	@Transient
 	public CourseOffering getCourseOffering() {
 		return(getCourseOffering(null));
 	}
@@ -1370,10 +1363,9 @@ public class ColleagueSection extends BaseColleagueSection {
 		setSubjectAreaId(subjectArea.getUniqueId());
 	}
 
-	@SuppressWarnings("unchecked")
-	public static List<ColleagueSection> findColleagueSectionsForCourseOfferingId(
-			Long courseOfferingId, Session hibSession) {
-		return((List<ColleagueSection>)hibSession.createQuery("from ColleagueSection cs where cs.courseOfferingId = :crsId").setLong("crsId", courseOfferingId).list());
+	public static List<ColleagueSection> findColleagueSectionsForCourseOfferingId(Long courseOfferingId, Session hibSession) {
+		return hibSession.createQuery("from ColleagueSection cs where cs.courseOfferingId = :crsId", ColleagueSection.class)
+				.setParameter("crsId", courseOfferingId).list();
 	}
 
 	/**
@@ -1388,8 +1380,8 @@ public class ColleagueSection extends BaseColleagueSection {
 
 		for (ColleagueRestriction cr : s) {
 			this.getRestrictions().remove(cr);
-			hibSession.saveOrUpdate(this);
 		}
+		hibSession.merge(this);
 	}
 
 	public static String calculateColleagueCourseNumber(CourseOffering courseOffering, Class_ cls) {
@@ -1427,7 +1419,7 @@ public class ColleagueSection extends BaseColleagueSection {
 		} else {
 			trans = hibSession.beginTransaction();
 		}
-		hibSession.saveOrUpdate(cs);
+		hibSession.persist(cs);
 		if (!alreadyInTransaction) {
 			trans.commit();
 		}

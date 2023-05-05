@@ -20,7 +20,23 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Transient;
+
+import java.io.StringReader;
+import java.io.StringWriter;
+
+import org.dom4j.Document;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import org.unitime.colleague.model.base.BaseQueue;
+import org.unitime.commons.Debug;
 
 
 
@@ -29,6 +45,9 @@ import org.unitime.colleague.model.base.BaseQueue;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class Queue extends BaseQueue {
 	private static final long serialVersionUID = 1L;
 
@@ -56,6 +75,33 @@ public abstract class Queue extends BaseQueue {
 	}
 /*[CONSTRUCTOR MARKER END]*/
 
+	@Transient
 	public abstract String getQueueType();
-
+	
+	@Transient
+	public Document getDocument() {
+		if (getXml() == null) return null;
+		try {
+			return new SAXReader().read(new StringReader(getXml()));
+		} catch (Exception e) {
+			Debug.error("Failed to parse XML document: " + e.getMessage(), e);
+			return null;
+		}
+	}
+	
+	public void setDocument(Document document) {
+		try {
+			if (document == null) {
+				setXml(null);
+			} else {
+				StringWriter string = new StringWriter();
+				XMLWriter writer = new XMLWriter(string, OutputFormat.createCompactFormat());
+				writer.write(document);
+				writer.flush(); writer.close();
+				setXml(string.toString());
+			}
+		} catch (Exception e) {
+			Debug.error("Failed to store XML document: " + e.getMessage(), e);
+		}
+	}
 }

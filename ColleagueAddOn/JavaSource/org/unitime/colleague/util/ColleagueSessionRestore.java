@@ -19,7 +19,6 @@
 */
 package org.unitime.colleague.util;
 
-import org.hibernate.metadata.ClassMetadata;
 import org.unitime.colleague.model.ColleagueSection;
 import org.unitime.colleague.model.ColleagueSectionToClass;
 import org.unitime.timetable.backup.SessionRestore;
@@ -27,6 +26,8 @@ import org.unitime.timetable.backup.TableData.Record;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.SubjectArea;
+
+import jakarta.persistence.metamodel.EntityType;
 
 /** 
  * @author Tomas Muller, Stephanie Schluttenhofer
@@ -36,13 +37,13 @@ public class ColleagueSessionRestore extends SessionRestore {
 	@Override
 	protected void add(Entity entity) {
 		if (entity.getObject().getClass().getSimpleName().startsWith("Colleague"))
-			entity = new ColleagueEntity(entity.getMetaData(), entity.getRecord(), entity.getObject(), entity.getId());
+			entity = new ColleagueEntity(entity.getMeta(), entity.getRecord(), entity.getObject(), entity.getId());
 		super.add(entity);
 	}
 	
 	class ColleagueEntity extends SessionRestore.Entity {
 		
-		ColleagueEntity(ClassMetadata metadata, Record record, Object object, String id) {
+		ColleagueEntity(EntityType metadata, Record record, Object object, String id) {
 			super(metadata, record, object, id);
 		}
 

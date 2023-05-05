@@ -40,6 +40,7 @@ import org.unitime.colleague.queueprocessor.exception.LoggableException;
 import org.unitime.colleague.queueprocessor.https.HttpsConnector;
 import org.unitime.colleague.queueprocessor.oracle.OracleConnector;
 import org.unitime.commons.Debug;
+import org.unitime.commons.hibernate.util.HibernateUtil;
 import org.unitime.timetable.ApplicationProperties;
 
 public class PollStudentUpdates extends ColleagueCaller {
@@ -72,24 +73,24 @@ public class PollStudentUpdates extends ColleagueCaller {
 		try {
 			qi.setPostDate(new Date());
 
-			QueueInDAO qid = new QueueInDAO();
-
 			qi.setMatchId(null);
 			qi.setStatus(QueueIn.STATUS_READY);
-			qi.setXml(result);
+			qi.setDocument(result);
 
-			qi.setUniqueId(qid.save(qi));
+			QueueInDAO.getInstance().getSession().persist(qi);
+			QueueInDAO.getInstance().getSession().flush();
 			
 			if (!"true".equalsIgnoreCase(getColleagueStudentInterfaceProcessInStudentSectioningSolverServer())){
-				Element rootElement = qi.getXml().getRootElement();
+				Element rootElement = qi.getDocument().getRootElement();
 				if (rootElement.getName().equalsIgnoreCase("studentUpdates")){
 					try {
 						ColleagueStudentUpdates csu = new ColleagueStudentUpdates();
 						csu.loadXml(rootElement);
 						qi.setProcessDate(new Date());
 						qi.setStatus(Queue.STATUS_PROCESSED);
-						QueueInDAO.getInstance().getSession().update(qi);
-						csu.removeOldStudentUpdateMessages(qi.getUniqueId(), qi.getXml().getRootElement(), QueueInDAO.getInstance().getSession());
+						QueueInDAO.getInstance().getSession().merge(qi);
+						QueueInDAO.getInstance().getSession().flush();
+						csu.removeOldStudentUpdateMessages(qi.getUniqueId(), qi.getDocument().getRootElement(), QueueInDAO.getInstance().getSession());
 					} catch (Exception e) {
 						LoggableException le = new LoggableException(e, qi);
 						le.logError();
@@ -105,11 +106,12 @@ public class PollStudentUpdates extends ColleagueCaller {
 
 	}
 	
-	private void markQueueOutAsProcessed(QueueOutDAO qod, QueueOut qo){
+	private void markQueueOutAsProcessed(QueueOut qo){
 		if (qo != null) {
 			qo.setProcessDate(new Date());
 			qo.setStatus(QueueOut.STATUS_PROCESSED);
-			qod.update(qo);
+			QueueOutDAO.getInstance().getSession().merge(qo);
+			QueueOutDAO.getInstance().getSession().flush();
 		}
 
 	}
@@ -118,31 +120,31 @@ public class PollStudentUpdates extends ColleagueCaller {
 		if (!pollForStudentUpdates) return;
 		try {
 			
-			QueueOutDAO qod = QueueOutDAO.getInstance();
 			QueueOut qo = null;
 			if (studentUpdateRequests) {
-				qo = qod.findFirstByStatus(QueueOut.STATUS_READY);
+				qo = QueueOut.findFirstByStatus(QueueOut.STATUS_READY);
 				if (qo != null) {
 					qo.setPickupDate(new Date());
 					qo.setStatus(QueueOut.STATUS_PICKED_UP);
-					qod.update(qo);
+					QueueOutDAO.getInstance().getSession().merge(qo);
+					QueueOutDAO.getInstance().getSession().flush();
 				}
 			}
 
 			Document result = null;
 			String connectionType = getColleagueStudentInterfaceConnectionType();
 			if (CONNECTION_TYPES.ORACLE.toString().equals(connectionType.toUpperCase())) {
-				result = callOracleProcess(qo == null ? null : qo.getXml());
-				markQueueOutAsProcessed(qod, qo);
+				result = callOracleProcess(qo == null ? null : qo.getDocument());
+				markQueueOutAsProcessed(qo);
 				processResult(result);
 				
 			} else if (CONNECTION_TYPES.HTTPS.toString().equals(connectionType.toUpperCase())) {
-				result = callHTTPProcess(qo == null ? null : qo.getXml());				
-				markQueueOutAsProcessed(qod, qo);
+				result = callHTTPProcess(qo == null ? null : qo.getDocument());				
+				markQueueOutAsProcessed(qo);
 				processResult(result);
 			} else if (CONNECTION_TYPES.FILE.toString().equals(connectionType.toUpperCase())) {
-				ArrayList<File> resultFiles = callFileProcess(qo == null ? null : qo.getXml());				
-				markQueueOutAsProcessed(qod, qo);
+				ArrayList<File> resultFiles = callFileProcess(qo == null ? null : qo.getDocument());				
+				markQueueOutAsProcessed(qo);
 				processResultFiles(resultFiles);
 			} else {
 				throw (new Exception("Connection Type:  " + connectionType + " not found."));
@@ -157,8 +159,9 @@ public class PollStudentUpdates extends ColleagueCaller {
 		} catch (Exception ex) {			
 			LoggableException le = new LoggableException(ex);
 			le.logError();
+		} finally {
+			 HibernateUtil.closeCurrentThreadSessions();
 		}
-
 	}
 	
 	private ArrayList<File> callFileProcess(Document document) throws Exception {

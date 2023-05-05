@@ -20,7 +20,13 @@
 
 package org.unitime.colleague.model;
 
-import java.util.Collection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
+import java.util.List;
 
 import org.hibernate.Session;
 import org.unitime.colleague.model.base.BaseColleagueRestriction;
@@ -32,6 +38,9 @@ import org.unitime.colleague.model.dao.ColleagueRestrictionDAO;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "colleague_restriction")
 public class ColleagueRestriction extends BaseColleagueRestriction {
 	private static final long serialVersionUID = 1L;
 
@@ -51,41 +60,38 @@ public class ColleagueRestriction extends BaseColleagueRestriction {
 	public static ColleagueRestriction findColleagueRestrictionTermCode(String restrictionCode,
 			String termCode, Session session) {
 
-		return((ColleagueRestriction)ColleagueRestrictionDAO.getInstance()
-				.getQuery("from ColleagueRestriction cr where cr.code = :code and cr.termCode = :termCode", session)
-				.setString("code", restrictionCode)
-				.setString("termCode", termCode)
-				.uniqueResult());
+		return ColleagueRestrictionDAO.getInstance().getSession()
+				.createQuery("from ColleagueRestriction cr where cr.code = :code and cr.termCode = :termCode", ColleagueRestriction.class)
+				.setParameter("code", restrictionCode)
+				.setParameter("termCode", termCode)
+				.uniqueResult();
 	}
 
 	public static ColleagueRestriction getColleagueRestrictionById(Long id) {
 		return(ColleagueRestrictionDAO.getInstance().get(id));
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Collection<ColleagueRestriction> getAllColleagueRestrictions() {
-		return((Collection <ColleagueRestriction>)ColleagueRestrictionDAO.getInstance().getQuery("from ColleagueRestrictions").list());
+	@Transient
+	public static List<ColleagueRestriction> getAllColleagueRestrictions() {
+		return ColleagueRestrictionDAO.getInstance().getSession().createQuery("from ColleagueRestrictions", ColleagueRestriction.class).list();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Collection<ColleagueRestriction> getAllColleagueRestrictionsForTerm(String termCode) {
-		return((Collection <ColleagueRestriction>)ColleagueRestrictionDAO.getInstance()
-				.getQuery("from ColleagueRestriction cr where cr.termCode = :termCode")
-				.setString("termCode", termCode)
-				.list());
+	public static List<ColleagueRestriction> getAllColleagueRestrictionsForTerm(String termCode) {
+		return ColleagueRestrictionDAO.getInstance().getSession()
+				.createQuery("from ColleagueRestriction cr where cr.termCode = :termCode", ColleagueRestriction.class)
+				.setParameter("termCode", termCode)
+				.list();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Collection<ColleagueRestriction> getAllColleagueRestrictionsForSession(Session hibSession, Long sessionId) {
+	public static List<ColleagueRestriction> getAllColleagueRestrictionsForSession(Session hibSession, Long sessionId) {
 		ColleagueSession cSession = ColleagueSession.findColleagueSessionForSession(sessionId, hibSession);
-		if (cSession == null){
-			return(null);
-		}
-		return((Collection <ColleagueRestriction>)ColleagueRestrictionDAO.getInstance()
-				.getQuery("from ColleagueRestriction cr where cr.termCode = :termCode", hibSession)
-				.setString("termCode", cSession.getColleagueTermCode())
-				.list());
+		if (cSession == null) return null;
+		return ColleagueRestrictionDAO.getInstance().getSession()
+				.createQuery("from ColleagueRestriction cr where cr.termCode = :termCode", ColleagueRestriction.class)
+				.setParameter("termCode", cSession.getColleagueTermCode())
+				.list();
 	}
+
 	public ColleagueRestriction clone() {
 		ColleagueRestriction cr = new ColleagueRestriction();
 		cr.setCode(this.getCode());
@@ -94,6 +100,7 @@ public class ColleagueRestriction extends BaseColleagueRestriction {
         return(cr);
 	}
 	
+	@Transient
 	public String getOptionLabel(){
 		return(this.getCode() + " - " + this.getName());
 	}

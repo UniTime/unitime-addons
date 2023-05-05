@@ -17,18 +17,31 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import org.unitime.colleague.model.base.BaseColleagueSessionDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import java.util.List;
+import org.unitime.colleague.model.ColleagueSession;
 
+public class ColleagueSessionDAO extends _RootDAO<ColleagueSession,Long> {
+	private static ColleagueSessionDAO sInstance;
 
-public class ColleagueSessionDAO extends BaseColleagueSessionDAO {
+	public ColleagueSessionDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public ColleagueSessionDAO () {}
+	public static ColleagueSessionDAO getInstance() {
+		if (sInstance == null) sInstance = new ColleagueSessionDAO();
+		return sInstance;
+	}
 
+	public Class<ColleagueSession> getReferenceClass() {
+		return ColleagueSession.class;
+	}
 
+	@SuppressWarnings("unchecked")
+	public List<ColleagueSession> findBySession(org.hibernate.Session hibSession, Long sessionId) {
+		return hibSession.createQuery("from ColleagueSession x where x.session.uniqueId = :sessionId", ColleagueSession.class).setParameter("sessionId", sessionId).list();
+	}
 }

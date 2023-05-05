@@ -17,18 +17,25 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import org.unitime.colleague.model.base.BaseColleagueRestrictionDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.colleague.model.ColleagueRestriction;
 
+public class ColleagueRestrictionDAO extends _RootDAO<ColleagueRestriction,Long> {
+	private static ColleagueRestrictionDAO sInstance;
 
-public class ColleagueRestrictionDAO extends BaseColleagueRestrictionDAO {
+	public ColleagueRestrictionDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public ColleagueRestrictionDAO () {}
+	public static ColleagueRestrictionDAO getInstance() {
+		if (sInstance == null) sInstance = new ColleagueRestrictionDAO();
+		return sInstance;
+	}
 
-
+	public Class<ColleagueRestriction> getReferenceClass() {
+		return ColleagueRestriction.class;
+	}
 }

@@ -20,6 +20,11 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import org.unitime.colleague.model.base.BaseColleagueSectionToClass;
 
 
@@ -28,6 +33,9 @@ import org.unitime.colleague.model.base.BaseColleagueSectionToClass;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "colleague_section_join_class")
 public class ColleagueSectionToClass extends BaseColleagueSectionToClass {
 	private static final long serialVersionUID = 1L;
 

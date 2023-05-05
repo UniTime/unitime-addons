@@ -59,7 +59,10 @@ public class ImportColleagueRestrictions extends BaseImport {
 				restriction.setName(getRequiredStringAttribute(colleagueRestriction, "NAME", colleagueRestrictionName));
 				restriction.setDescription(getOptionalStringAttribute(colleagueRestriction, "DESCRIPTION"));
 
-				getHibSession().saveOrUpdate(restriction);
+				if (restriction.getUniqueId() == null)
+					getHibSession().persist(restriction);
+				else
+					getHibSession().merge(restriction);
 			}
 			commitTransaction();
 		}

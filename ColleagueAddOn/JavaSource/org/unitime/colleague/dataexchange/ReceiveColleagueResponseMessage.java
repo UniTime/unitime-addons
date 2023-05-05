@@ -67,7 +67,7 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 	}
 
 	public static void receiveResponseDocument(QueueIn queueIn, boolean sync) throws LoggableException  {
-		Element rootElement = queueIn.getXml().getRootElement();
+		Element rootElement = queueIn.getDocument().getRootElement();
 		if (rootElement.getName().equalsIgnoreCase(rootName)){
 			try {
 				ReceiveColleagueResponseMessage rbrm = new ReceiveColleagueResponseMessage();
@@ -75,7 +75,8 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 				rbrm.loadXml(rootElement);
 				queueIn.setProcessDate(new Date());
 				queueIn.setStatus(Queue.STATUS_PROCESSED);
-				QueueInDAO.getInstance().getSession().update(queueIn);
+				QueueInDAO.getInstance().getSession().merge(queueIn);
+				QueueInDAO.getInstance().getSession().flush();
 			} catch (Exception e) {
 				LoggableException le = new LoggableException(e, queueIn);
 				le.logError();
@@ -115,13 +116,13 @@ public class ReceiveColleagueResponseMessage extends BaseImport {
 					resp.setMessage(getRequiredStringAttribute(colleagueResponseElement, "MESSAGE", colleagueResponseName));
 					resp.setPacketId(getRequiredStringAttribute(colleagueResponseElement, "PACKET_ID", colleagueResponseName));
 					resp.setQueueId(queueId);
-					getHibSession().save(resp);
+					getHibSession().persist(resp);
 					
 					ColleagueSection colleagueSection = csDao.get(Long.valueOf(resp.getExternalId()), getHibSession());
 					if (colleagueSection != null){
 						if ((colleagueSection.getColleagueId() == null) && (resp.getColleagueId() != null)){
 							colleagueSection.setColleagueId(resp.getColleagueId());
-							csDao.update(colleagueSection, getHibSession());
+							getHibSession().merge(colleagueSection);
 						}
 						colleagueSection.updateClassSuffixForClassesIfNecessary(getHibSession());
 					}

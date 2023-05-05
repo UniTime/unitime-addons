@@ -17,18 +17,26 @@
  * limitations under the License.
  * 
 */
-
 package org.unitime.colleague.model.dao;
 
-import org.unitime.colleague.model.base.BaseQueueErrorDAO;
+/**
+ * Do not change this class. It has been automatically generated using ant create-model.
+ * @see org.unitime.commons.ant.CreateBaseModelFromXml
+ */
+import org.unitime.colleague.model.base.QueueErrorId;
+import org.unitime.colleague.model.QueueError;
 
+public class QueueErrorDAO extends _RootDAO<QueueError,QueueErrorId> {
+	private static QueueErrorDAO sInstance;
 
-public class QueueErrorDAO extends BaseQueueErrorDAO {
+	public QueueErrorDAO() {}
 
-	/**
-	 * Default constructor.  Can be used in place of getInstance()
-	 */
-	public QueueErrorDAO () {}
+	public static QueueErrorDAO getInstance() {
+		if (sInstance == null) sInstance = new QueueErrorDAO();
+		return sInstance;
+	}
 
-
+	public Class<QueueError> getReferenceClass() {
+		return QueueError.class;
+	}
 }

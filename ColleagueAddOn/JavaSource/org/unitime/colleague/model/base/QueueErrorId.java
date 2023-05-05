@@ -19,58 +19,42 @@
 */
 package org.unitime.colleague.model.base;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.MappedSuperclass;
-
 import java.io.Serializable;
 import java.util.Date;
-
-import org.unitime.colleague.model.QueueError;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
  * @see org.unitime.commons.ant.CreateBaseModelFromXml
  */
-@MappedSuperclass
-@IdClass(QueueErrorId.class)
-public abstract class BaseQueueError implements Serializable {
+public class QueueErrorId implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long iQueueId;
 	private String iErrorType;
 	private Date iErrorDate;
-	private String iErrorText;
 
+	public QueueErrorId() {}
 
-	public BaseQueueError() {
+	public QueueErrorId(Long queueId, String errorType, Date errorDate) {
+		iQueueId = queueId;
+		iErrorType = errorType;
+		iErrorDate = errorDate;
 	}
 
-
-	@Id
-	@Column(name="null")
 	public Long getQueueId() { return iQueueId; }
 	public void setQueueId(Long queueId) { iQueueId = queueId; }
 
-	@Id
-	@Column(name="null")
 	public String getErrorType() { return iErrorType; }
 	public void setErrorType(String errorType) { iErrorType = errorType; }
 
-	@Id
-	@Column(name="null")
 	public Date getErrorDate() { return iErrorDate; }
 	public void setErrorDate(Date errorDate) { iErrorDate = errorDate; }
 
-	@Column(name = "errortext", nullable = true)
-	public String getErrorText() { return iErrorText; }
-	public void setErrorText(String errorText) { iErrorText = errorText; }
 
 	@Override
 	public boolean equals(Object o) {
-		if (o == null || !(o instanceof QueueError)) return false;
-		QueueError queueError = (QueueError)o;
+		if (o == null || !(o instanceof QueueErrorId)) return false;
+		QueueErrorId queueError = (QueueErrorId)o;
 		if (getQueueId() == null || queueError.getQueueId() == null || !getQueueId().equals(queueError.getQueueId())) return false;
 		if (getErrorType() == null || queueError.getErrorType() == null || !getErrorType().equals(queueError.getErrorType())) return false;
 		if (getErrorDate() == null || queueError.getErrorDate() == null || !getErrorDate().equals(queueError.getErrorDate())) return false;
@@ -83,16 +67,4 @@ public abstract class BaseQueueError implements Serializable {
 		return getQueueId().hashCode() ^ getErrorType().hashCode() ^ getErrorDate().hashCode();
 	}
 
-	public String toString() {
-		return "QueueError[" + getQueueId() + ", " + getErrorType() + ", " + getErrorDate() + "]";
-	}
-
-	public String toDebugString() {
-		return "QueueError[" +
-			"\n	ErrorDate: " + getErrorDate() +
-			"\n	ErrorText: " + getErrorText() +
-			"\n	ErrorType: " + getErrorType() +
-			"\n	QueueId: " + getQueueId() +
-			"]";
-	}
 }

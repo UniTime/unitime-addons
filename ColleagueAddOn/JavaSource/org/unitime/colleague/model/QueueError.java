@@ -20,6 +20,11 @@
 
 package org.unitime.colleague.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import java.util.Date;
 
 import org.unitime.colleague.model.base.BaseQueueError;
@@ -31,6 +36,9 @@ import org.unitime.colleague.model.base.BaseQueueError;
  * @author says
  *
  */
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "integrationqueueerror")
 public class QueueError extends BaseQueueError {
 	private static final long serialVersionUID = 1L;
 
