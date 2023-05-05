@@ -148,7 +148,7 @@
 						<s:if test="form.hasCredit == true">
 							<TD class="BottomBorderGray">
 								<s:if test="#co.credit != null">
-									<span title='${co.credit.creditText()}'><s:property value="#co.credit.creditAbbv()"/></span>
+									<span title=''><s:property value="#co.credit.creditAbbv()"/></span>
 								</s:if>
 							</TD>
 						</s:if>
