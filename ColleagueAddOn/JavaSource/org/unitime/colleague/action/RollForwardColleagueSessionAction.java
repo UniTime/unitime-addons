@@ -22,6 +22,7 @@ package org.unitime.colleague.action;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +40,7 @@ import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.action.RollForwardSessionAction.RollForwardError;
 import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
+import org.unitime.timetable.action.RollForwardSessionAction.SessionComparator;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.security.UserContext;
@@ -100,19 +102,27 @@ public class RollForwardColleagueSessionAction extends UniTimeAction<RollForward
 	protected void setToFromSessionsInForm(){
 		List<Session> sessionList = new ArrayList<Session>();
 		sessionList.addAll(Session.getAllSessions());
-		form.setFromSessions(new ArrayList<Session>());
-		form.setToSessions(new ArrayList<Session>());
+		List<Session> fromSessions = new ArrayList<Session>(); form.setFromSessions(fromSessions);
+		List<Session> toSessions = new ArrayList<Session>(); form.setToSessions(toSessions);
 		Session session = null;
 		for (int i = (sessionList.size() - 1); i >= 0; i--){
 			session = (Session)sessionList.get(i);
 			if (session.getStatusType().isAllowRollForward()) {
-				form.getToSessions().add(session);
+				toSessions.add(session);
 				if (form.getSessionToRollForwardTo() == null){
 					form.setSessionToRollForwardTo(session.getUniqueId());
 				}
 			} else {
-				form.getFromSessions().add(session);				
+				fromSessions.add(session);				
 			}
+		}
+		Long currentSessionId = form.getSessionToRollForwardTo();
+		if (currentSessionId == null || currentSessionId <= 0l)
+			currentSessionId = sessionContext.getUser().getCurrentAcademicSessionId();
+		Session currentSession = (currentSessionId == null ? null : SessionDAO.getInstance().get(currentSessionId));
+		if (currentSession != null) {
+			Collections.sort(fromSessions, new SessionComparator(currentSession.getAcademicInitiative()));
+			Collections.sort(toSessions, new SessionComparator(currentSession.getAcademicInitiative()));
 		}
 	}
 	
