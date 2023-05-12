@@ -85,8 +85,8 @@ public class RollForwardColleagueSessionForm extends RollForwardSessionForm  {
 	
 	public void copyTo(RollForwardColleagueSessionForm form) {
 		form.setButtonAction(getButtonAction());
-		form.setToSessions(getToSessions());
-		form.setFromSessions(getFromSessions());
+		// form.setToSessions(getToSessions());
+		// form.setFromSessions(getFromSessions());
 		form.setSessionToRollForwardTo(getSessionToRollForwardTo());
 		form.setRollForwardColleagueSession(getRollForwardColleagueSession());
 		form.setSessionToRollColleagueDataForwardFrom(getSessionToRollColleagueDataForwardFrom());

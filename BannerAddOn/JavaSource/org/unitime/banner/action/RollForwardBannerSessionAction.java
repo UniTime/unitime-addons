@@ -199,14 +199,14 @@ public class RollForwardBannerSessionAction extends UniTimeAction<RollForwardBan
 				addFieldError(e.getType(), e.getMessage());
 	}
 	
-	private class BannerRollForwardQueueItem extends QueueItem {
+	private static class BannerRollForwardQueueItem extends QueueItem {
 		private static final long serialVersionUID = 1L;
 		private RollForwardBannerSessionForm iForm;
 		private int iProgress = 0;
 		private RollForwardErrors iErrors = new RollForwardErrors();
 		
 		public BannerRollForwardQueueItem(Session session, UserContext owner, RollForwardBannerSessionForm form) {
-			super(session, sessionContext.getUser());
+			super(session, owner);
 			iForm = form;
 		}
 		

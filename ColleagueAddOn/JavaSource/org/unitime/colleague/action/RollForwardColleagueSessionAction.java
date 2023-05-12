@@ -198,14 +198,14 @@ public class RollForwardColleagueSessionAction extends UniTimeAction<RollForward
 	}
 
 	
-	private class ColleagueRollForwardQueueItem extends QueueItem {
+	private static class ColleagueRollForwardQueueItem extends QueueItem {
 		private static final long serialVersionUID = 1L;
 		private RollForwardColleagueSessionForm iForm;
 		private int iProgress = 0;
 		private RollForwardErrors iErrors = new RollForwardErrors();
 		
 		public ColleagueRollForwardQueueItem(Session session, UserContext owner, RollForwardColleagueSessionForm form) {
-			super(session, sessionContext.getUser());
+			super(session, owner);
 			iForm = form;
 		}
 		
