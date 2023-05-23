@@ -68,15 +68,12 @@ import org.unitime.timetable.onlinesectioning.model.XReservation;
 import org.unitime.timetable.onlinesectioning.model.XReservationType;
 import org.unitime.timetable.onlinesectioning.model.XSection;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
-import org.unitime.timetable.onlinesectioning.server.CheckMaster;
-import org.unitime.timetable.onlinesectioning.server.CheckMaster.Master;
 import org.unitime.timetable.onlinesectioning.updates.NotifyStudentAction;
 import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
 
 /**
  * @author Tomas Muller, Stephanie Schluttenhofer
  */
-@CheckMaster(Master.REQUIRED)
 public class ColleagueUpdateStudentAction implements OnlineSectioningAction<ColleagueUpdateStudentAction.UpdateResult> {
 	private static final long serialVersionUID = 1L;
 	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail;
