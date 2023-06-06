@@ -60,7 +60,7 @@ def getGroupName(name):
     return name
     
 def getGroup(name):
-    group = hibSession.createQuery("from StudentGroup where groupName = :name and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("name", getGroupName(name)).setMaxResults(1).uniqueResult();
+    group = hibSession.createQuery("from StudentGroup where groupName = :name and session.uniqueId = :sessionId").setParameter("sessionId", session.getUniqueId()).setParameter("name", getGroupName(name)).setMaxResults(1).uniqueResult();
     if not group:
         log.info("Creating group for name %s" % name)
         group = StudentGroup()
@@ -72,8 +72,8 @@ def getGroup(name):
     return group
 
 def addClass(course2classes, group, subject, courseNbr, crn, title):
-    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
+    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session.uniqueId = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if clazz and course:
         log.debug(clazz.getClassLabelWithTitle(course))
         classes = None
@@ -100,7 +100,7 @@ def hasChild(clazz, classes):
 def createReservations(offerings, group, course2classes):
     for course in course2classes.keys():
         log.info("Checking reservation for %s..." % course.getCourseName())
-        reservation = hibSession.createQuery("from LearningCommunityReservation where instructionalOffering = :offeringId and group = :groupId").setLong("offeringId", course.getInstructionalOffering().getUniqueId()).setLong("groupId", group.getUniqueId()).uniqueResult()
+        reservation = hibSession.createQuery("from LearningCommunityReservation where instructionalOffering = :offeringId and group = :groupId").setParameter("offeringId", course.getInstructionalOffering().getUniqueId()).setParameter("groupId", group.getUniqueId()).uniqueResult()
         if not reservation:
             reservation = LearningCommunityReservation()
             reservation.setGroup(group)
@@ -180,7 +180,7 @@ from java.lang import Long
 from java.text import SimpleDateFormat
 
 def getGroup(abbv, name, size):
-    group = hibSession.createQuery("from StudentGroup where groupAbbreviation = :abbv and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", abbv).setMaxResults(1).uniqueResult();
+    group = hibSession.createQuery("from StudentGroup where groupAbbreviation = :abbv and session.uniqueId = :sessionId").setParameter("sessionId", session.getUniqueId()).setParameter("abbv", abbv).setMaxResults(1).uniqueResult();
     if not group:
         log.info("Creating group %s - %s" % (abbv, name))
         group = StudentGroup()
@@ -194,8 +194,8 @@ def getGroup(abbv, name, size):
     return group
 
 def addClass(course2classes, course2limit, group, subject, courseNbr, crn, limit, writer):
-    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
+    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session.uniqueId = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if clazz and course:
         if not course.getSubjectAreaAbbv() == subject or not course.getCourseNbr().startswith(courseNbr):
             log.error("Class %s %s %d is wrong (found %s)." % (subject, courseNbr, crn, course.getCourseNameWithTitle()))
@@ -216,8 +216,8 @@ def addClass(course2classes, course2limit, group, subject, courseNbr, crn, limit
         writer.writerow([group.getGroupAbbreviation(), group.getGroupName(), subject, courseNbr, crn, "Class %s %s %d not found." % (subject, courseNbr, crn)])
 
 def addCourse(course2classes, course2limit, group, subject, courseNbr, limit, writer):
-    course = hibSession.createQuery("from CourseOffering co where co.subjectArea.session = :sessionId and co.subjectAreaAbbv = :subject and co.courseNbr = :courseNbr"
-                                    ).setLong("sessionId", session.getUniqueId()).setString("subject", subject).setString("courseNbr", courseNbr).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("from CourseOffering co where co.subjectArea.session.uniqueId = :sessionId and co.subjectAreaAbbv = :subject and co.courseNbr = :courseNbr"
+                                    ).setParameter("sessionId", session.getUniqueId()).setParameter("subject", subject).setParameter("courseNbr", courseNbr).setMaxResults(1).uniqueResult()
     if course:
         log.debug(course.getCourseNameWithTitle())
         if course not in course2classes:
@@ -241,7 +241,7 @@ def hasChild(clazz, classes):
 
 def createReservations(offerings, group, course2classes, course2limit):
     reservations = {}
-    for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+    for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setParameter("groupId", group.getUniqueId()).list():
         reservations[r.getInstructionalOffering().getUniqueId()] = r
     for course in course2classes.keys():
         reservation = None
@@ -385,7 +385,7 @@ from java.util import HashSet
 from java.lang import Long
 
 def lookupStudent(puid):
-    student = hibSession.createQuery("from Student where session = :sessionId and externalUniqueId = :puid").setLong("sessionId", session.getUniqueId()).setString("puid", puid).setMaxResults(1).uniqueResult()
+    student = hibSession.createQuery("from Student where session.uniqueId = :sessionId and externalUniqueId = :puid").setParameter("sessionId", session.getUniqueId()).setParameter("puid", puid).setMaxResults(1).uniqueResult()
     if not student:
         log.warn("Student %s not found." % puid)
     else:
@@ -393,7 +393,7 @@ def lookupStudent(puid):
     return student
 
 def enroll(students, lcAbbv, puids, status, writer):
-    group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
+    group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session.uniqueId = :sessionId").setParameter("sessionId", session.getUniqueId()).setParameter("abbv", lcAbbv).setMaxResults(1).uniqueResult();
     if not group and canCreateGroup:
         group = StudentGroup()
         group.setGroupAbbreviation(lcAbbv)
@@ -426,7 +426,7 @@ def enroll(students, lcAbbv, puids, status, writer):
             writer.writerow([group.getGroupAbbreviation(), puid, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
     if updateSpace:
-        for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+        for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setParameter("groupId", group.getUniqueId()).list():
             r.setLimit(len(puids))
             hibSession.saveOrUpdate(r)
 
@@ -478,7 +478,7 @@ from java.util import Date, HashSet
 from java.lang import Long
 from __builtin__ import True
 
-groups = hibSession.createQuery("from StudentGroup where session = :sid and type.reference = :ref").setLong("sid", session.getUniqueId()).setString("ref", groupTypeRef).list()
+groups = hibSession.createQuery("from StudentGroup where session.uniqueId = :sid and type.reference = :ref").setParameter("sid", session.getUniqueId()).setParameter("ref", groupTypeRef).list()
 
 status = None
 if statusRef:
@@ -489,13 +489,13 @@ students = HashSet()
 studentFilter = None
 if status:
    for student in hibSession.createQuery(
-        "from Student where sectioningStatus.uniqueId = :statusId and session = :sessionId"
-        ).setLong("sessionId", session.getUniqueId()).setLong("statusId", status.getUniqueId()).list():
+        "from Student where sectioningStatus.uniqueId = :statusId and session.uniqueId = :sessionId"
+        ).setParameter("sessionId", session.getUniqueId()).setParameter("statusId", status.getUniqueId()).list():
        if not studentFilter: studentFilter = {}
        studentFilter[student.getUniqueId()] = True
 
 for group in groups:
-    reservations = hibSession.createQuery("from LearningCommunityReservation where group = :gid order by uniqueId").setLong("gid", group.getUniqueId()).list()
+    reservations = hibSession.createQuery("from LearningCommunityReservation where group = :gid order by uniqueId").setParameter("gid", group.getUniqueId()).list()
     courses = map(lambda r: r.getCourse(), reservations)
     log.info("%s: %s" % (group.getGroupAbbreviation(), ', '.join(map(lambda course: course.getCourseName(), courses))))
     for student in group.students:
@@ -576,7 +576,7 @@ from java.lang import Long
 from __builtin__ import None
 
 def lookupStudent(puid):
-    student = hibSession.createQuery("from Student where session = :sessionId and externalUniqueId = :puid").setLong("sessionId", session.getUniqueId()).setString("puid", puid).setMaxResults(1).uniqueResult()
+    student = hibSession.createQuery("from Student where session.uniqueId = :sessionId and externalUniqueId = :puid").setParameter("sessionId", session.getUniqueId()).setParameter("puid", puid).setMaxResults(1).uniqueResult()
     if not student:
         log.warn("Student %s not found." % puid)
     else:
@@ -593,7 +593,7 @@ def match(name, student):
     return 100.0 * ratio
 
 def enroll(students, lcAbbv, puids, status, writer):
-    group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session = :sessionId").setLong("sessionId", session.getUniqueId()).setString("abbv", lcAbbv).setMaxResults(1).uniqueResult();
+    group = hibSession.createQuery("from StudentGroup where (groupAbbreviation = :abbv or groupName = :abbv) and session.uniqueId = :sessionId").setParameter("sessionId", session.getUniqueId()).setParameter("abbv", lcAbbv).setMaxResults(1).uniqueResult();
     if not group and canCreateGroup:
       group = StudentGroup()
       group.setGroupAbbreviation(lcAbbv)
@@ -630,7 +630,7 @@ def enroll(students, lcAbbv, puids, status, writer):
             writer.writerow([group.getGroupAbbreviation(), puid, name, None, None, None, "Student %s not found." % puid])
     hibSession.saveOrUpdate(group)
     if updateSpace:
-        for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setLong("groupId", group.getUniqueId()).list():
+        for r in hibSession.createQuery("from LearningCommunityReservation where group = :groupId").setParameter("groupId", group.getUniqueId()).list():
             r.setLimit(len(puids))
             hibSession.saveOrUpdate(r)
 
@@ -683,8 +683,8 @@ if students:
   <body><![CDATA[from org.unitime.timetable.model import StudentSectioningQueue
 
 offerings = hibSession.createQuery(
-  "select r.instructionalOffering.uniqueId from LearningCommunityReservation r where r.instructionalOffering.session = :sessionId"
-  ).setLong("sessionId", session.getUniqueId()).list()
+  "select r.instructionalOffering.uniqueId from LearningCommunityReservation r where r.instructionalOffering.session.uniqueId = :sessionId"
+  ).setParameter("sessionId", session.getUniqueId()).list()
 StudentSectioningQueue.offeringChanged(hibSession, None, session.getUniqueId(), offerings)]]></body>
 </script>
 <script name="Learning Communities: Check Student Status [XE]" permission="Student Group Edit" engine="python" created="Thu Jun 22 10:52:40 EDT 2017">
@@ -728,7 +728,7 @@ def getResource(client):
     return resource
 
 def getCourseNameForCrn(crn):
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if course:
         return course.getCourseName()
     return None
@@ -883,12 +883,12 @@ if registrationDate:
 students = None
 if statusRef:
     students = hibSession.createQuery(
-        "from Student s where s.sectioningStatus.reference = :statusRef and s.session = :sessionId order by s.lastName, s.firstName"
-        ).setString("statusRef", statusRef).setLong("sessionId", session.getUniqueId()).list()
+        "from Student s where s.sectioningStatus.reference = :statusRef and s.session.uniqueId = :sessionId order by s.lastName, s.firstName"
+        ).setParameter("statusRef", statusRef).setParameter("sessionId", session.getUniqueId()).list()
 else:
     students = hibSession.createQuery(
-        "from Student s where s.session = :sessionId order by s.lastName, s.firstName"
-        ).setLong("sessionId", session.getUniqueId()).list()
+        "from Student s where s.session.uniqueId = :sessionId order by s.lastName, s.firstName"
+        ).setParameter("sessionId", session.getUniqueId()).list()
 query = None
 if studentFilter:
     query = Query(studentFilter)
@@ -916,8 +916,8 @@ def groupSize(group):
     return ''
 
 groups = hibSession.createQuery(
-    "from StudentGroup g where g.session = :sessionId and g.type.reference = :ref order by g.groupAbbreviation"
-    ).setLong("sessionId", session.getUniqueId()).setString("ref", groupTypeRef).list()
+    "from StudentGroup g where g.session.uniqueId = :sessionId and g.type.reference = :ref order by g.groupAbbreviation"
+    ).setParameter("sessionId", session.getUniqueId()).setParameter("ref", groupTypeRef).list()
 
 output = open(log.createOutput('learning-communities','csv').getAbsolutePath(), 'w')
 writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -927,7 +927,7 @@ for g in groups:
     firstLine = True
     reservations = hibSession.createQuery(
         "from LearningCommunityReservation r where r.group = :groupId"
-        ).setLong("groupId", g.uniqueId).list()
+        ).setParameter("groupId", g.uniqueId).list()
     for r in reservations:
       line = None
       if firstLine:
@@ -953,8 +953,8 @@ output.close()]]></body>
 from java.util import TreeSet
 
 groups = hibSession.createQuery(
-    "from StudentGroup g where g.session = :sessionId order by g.groupAbbreviation"
-    ).setLong("sessionId", session.getUniqueId()).list()
+    "from StudentGroup g where g.session.uniqueId = :sessionId order by g.groupAbbreviation"
+    ).setParameter("sessionId", session.getUniqueId()).list()
 
 output = open(log.createOutput('students','csv').getAbsolutePath(), 'w')
 writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)

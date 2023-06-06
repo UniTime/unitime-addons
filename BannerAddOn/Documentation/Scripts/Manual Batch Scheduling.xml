@@ -110,8 +110,8 @@ def executeAction(server, action, student):
     return True
 
 def execute(online):
-    students = hibSession.createQuery("select distinct e.student from StudentClassEnrollment e where e.student.session = :session and lower(e.courseOffering.subjectAreaAbbv || ' ' || e.courseOffering.courseNbr) = :course"
-        ).setLong("session", session.getUniqueId()).setString("course", course.lower()).list()
+    students = hibSession.createQuery("select distinct e.student from StudentClassEnrollment e where e.student.session.uniqueId = :session and lower(e.courseOffering.subjectAreaAbbv || ' ' || e.courseOffering.courseNbr) = :course"
+        ).setParameter("session", session.getUniqueId()).setParameter("course", course.lower()).list()
     
     file = open(log.createOutput('%s_enrollments' % course,'csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -169,8 +169,8 @@ def getOnlineServer():
     return server
 
 def getStudent(puid, name):
-    student = hibSession.createQuery("from Student where session = :session and externalUniqueId = :puid"
-        ).setLong("session", session.getUniqueId()).setString("puid", puid).uniqueResult()
+    student = hibSession.createQuery("from Student where session.uniqueId = :session and externalUniqueId = :puid"
+        ).setParameter("session", session.getUniqueId()).setParameter("puid", puid).uniqueResult()
     if not student:
         log.warn("Student %s (%s) does not exist." % (name, puid))
         return None
@@ -380,8 +380,6 @@ else:
 from xml.dom import minidom
 from java.lang import Long
 from java.util import ArrayList, HashSet, Date
-from java.io import StringReader
-from org.dom4j.io import SAXReader
 from org.restlet import Client
 from org.restlet.data import Protocol, ChallengeScheme, MediaType
 from org.restlet.resource import ClientResource, ResourceException
@@ -405,15 +403,15 @@ def getResource(client):
     return resource
 
 def getCourseNameForCrn(crn):
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if course:
         return course.getCourseName()
     return None
 
 def getConsent(crn):
     return hibSession.createQuery(
-        "select co.consentType.reference from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId"
-        ).setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+        "select co.consentType.reference from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId"
+        ).setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
 
 def getDefaultOverride(crn, messageType):
     if messageType == 'DEPT' or messageType == 'SAPR':
@@ -777,7 +775,7 @@ def requestStudentUpdate(puids):
     log.info('Requesting student update...')
     message = createStudentRequestUpdateMessage(puids)
     out = QueueOut()
-    out.setXml(SAXReader().read(StringReader(message)))
+    out.setXml(message)
     out.setStatus(QueueOut.STATUS_READY)
     out.setPostDate(Date())
     hibSession.save(out)
@@ -867,8 +865,6 @@ else:
 from xml.dom import minidom
 from java.lang import Long
 from java.util import ArrayList, HashSet, Date
-from java.io import StringReader
-from org.dom4j.io import SAXReader
 from org.restlet import Client
 from org.restlet.data import Protocol, ChallengeScheme, MediaType
 from org.restlet.resource import ClientResource, ResourceException
@@ -892,7 +888,7 @@ def getResource(client):
     return resource
 
 def getCourseNameForCrn(crn):
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if course:
         return course.getCourseName()
     return None
@@ -1141,7 +1137,7 @@ def requestStudentUpdate(puids):
     log.info('Requesting student update...')
     message = createStudentRequestUpdateMessage(puids)
     out = QueueOut()
-    out.setXml(SAXReader().read(StringReader(message)))
+    out.setXml(message)
     out.setStatus(QueueOut.STATUS_READY)
     out.setPostDate(Date())
     hibSession.save(out)

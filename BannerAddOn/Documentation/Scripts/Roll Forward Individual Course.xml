@@ -33,7 +33,7 @@
   <parameter name="subpartLocationPrefs" label="Roll forward scheduling subpart location preferences" type="boolean" default="true"/>
   <body><![CDATA[function rollClassInstructors(io) {
 	var pairs = hibSession.createQuery("select c, d from Class_ c, Class_ d where c.schedulingSubpart.instrOfferingConfig.instructionalOffering = :offeringId and d.schedulingSubpart.instrOfferingConfig.instructionalOffering.session.uniqueId=:sessionId and d.uniqueIdRolledForwardFrom=c.uniqueId")
-		.setLong("offeringId", io.getUniqueId()).setLong("sessionId", session.getUniqueId()).list();
+		.setParameter("offeringId", io.getUniqueId()).setParameter("sessionId", session.getUniqueId()).list();
 	for (var i = pairs.iterator(); i.hasNext();) {
 		var pair = i.next();
 		var fromClass = pair[0];
@@ -112,7 +112,7 @@ function rollBannerCourses(io) {
 
 function updateClassSuffixes(io) {
 	var courses = hibSession.createQuery("select bc from BannerCourse bc, CourseOffering co where co.instructionalOffering.session.uniqueId = :sessionId and co.instructionalOffering.uniqueIdRolledForwardFrom = :offeringId and bc.courseOfferingId = co.uniqueId")
-		.setLong("sessionId", session.getUniqueId()).setLong("offeringId", io.getUniqueId()).list();
+		.setParameter("sessionId", session.getUniqueId()).setParameter("offeringId", io.getUniqueId()).list();
 	for (var i = courses.iterator(); i.hasNext(); ) {
 		var bc = i.next();
 		for (var bannerConfigsIt = bc.getBannerConfigs().iterator(); bannerConfigsIt.hasNext();) {
@@ -185,7 +185,7 @@ if (session.getStatusType() == null || !session.getStatusType().isAllowRollForwa
   throw new java.lang.RuntimeException("Roll forward not allowed for " + session + ".");
 }
 
-var previousSessionId = hibSession.createQuery("select max(s.uniqueId) from Session s where s.academicInitiative = :initiative and s.academicTerm = :term and s.uniqueId < :uniqueId").setString("initiative", session.getAcademicInitiative()).setString("term", session.getAcademicTerm()).setLong("uniqueId", session.getUniqueId()).uniqueResult();
+var previousSessionId = hibSession.createQuery("select max(s.uniqueId) from Session s where s.academicInitiative = :initiative and s.academicTerm = :term and s.uniqueId < :uniqueId").setParameter("initiative", session.getAcademicInitiative()).setParameter("term", session.getAcademicTerm()).setParameter("uniqueId", session.getUniqueId()).uniqueResult();
 
 if (previousSessionId == null) {
   throw new java.lang.RuntimeException("No previous academic session was found.");
@@ -195,7 +195,7 @@ var previousSession = new org.unitime.timetable.model.dao.SessionDAO().get(previ
 
 log.info("Previous session: " + previousSession);
 
-var prevCourse = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session = :sessionId and (lower(co.subjectAreaAbbv || ' ' || co.courseNbr) = :name or lower(co.subjectAreaAbbv || co.courseNbr) = :name)").setLong("sessionId", previousSession.getUniqueId()).setString("name", name.toLowerCase()).uniqueResult();
+var prevCourse = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session.uniqueId = :sessionId and (lower(co.subjectAreaAbbv || ' ' || co.courseNbr) = :name or lower(co.subjectAreaAbbv || co.courseNbr) = :name)").setParameter("sessionId", previousSession.getUniqueId()).setParameter("name", name.toLowerCase()).uniqueResult();
 
 if (prevCourse == null) {
   throw new java.lang.RuntimeException("Course " + name + " not found in " + previousSession + ".");
@@ -203,7 +203,7 @@ if (prevCourse == null) {
 
 log.info("Previous course: " + prevCourse.getCourseNameWithTitle());
 
-var course = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session = :sessionId and (lower(co.subjectAreaAbbv || ' ' || co.courseNbr) = :name or lower(co.subjectAreaAbbv || co.courseNbr) = :name)").setLong("sessionId", session.getUniqueId()).setString("name", name.toLowerCase()).uniqueResult();
+var course = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session.uniqueId = :sessionId and (lower(co.subjectAreaAbbv || ' ' || co.courseNbr) = :name or lower(co.subjectAreaAbbv || co.courseNbr) = :name)").setParameter("sessionId", session.getUniqueId()).setParameter("name", name.toLowerCase()).uniqueResult();
 
 if (course != null) {
   throw new java.lang.RuntimeException("Course " + name + " already exists in " + session + ".");

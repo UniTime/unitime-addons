@@ -38,13 +38,13 @@ from org.dom4j.io import SAXReader
 from org.unitime.timetable.model import Session, SubjectArea, CourseOffering, OverrideType, StudentSectioningQueue
 
 def getCourseForSubjectCourseNumber(subject, courseNbr):
-    course = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session = :sessionId and co.subjectArea.subjectAreaAbbreviation = :subj and co.courseNbr = :crsNbr").setLong("sessionId", session.getUniqueId()).setString("subj", subject).setString("crsNbr",courseNbr).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from CourseOffering co where co.subjectArea.session.uniqueId = :sessionId and co.subjectArea.subjectAreaAbbreviation = :subj and co.courseNbr = :crsNbr").setParameter("sessionId", session.getUniqueId()).setParameter("subj", subject).setParameter("crsNbr",courseNbr).setMaxResults(1).uniqueResult()
     if course:
         return course
     return None
 
 def getOverride(override):
-    override = hibSession.createQuery("select o from OverrideType o where o.reference = :ovrRd").setString("ovrRd", override).setMaxResults(1).uniqueResult()
+    override = hibSession.createQuery("select o from OverrideType o where o.reference = :ovrRd").setParameter("ovrRd", override).setMaxResults(1).uniqueResult()
     if override:
         return override
     return None

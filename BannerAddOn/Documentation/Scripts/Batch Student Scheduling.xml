@@ -67,8 +67,8 @@ def isOverrideNeeded(offering):
     return True
 
 def getStudent(puid, name, clear):
-    student = hibSession.createQuery("from Student where session = :session and externalUniqueId = :puid"
-        ).setLong("session", session.getUniqueId()).setString("puid", puid).uniqueResult()
+    student = hibSession.createQuery("from Student where session.uniqueId = :session and externalUniqueId = :puid"
+        ).setParameter("session", session.getUniqueId()).setParameter("puid", puid).uniqueResult()
     if not student:
         log.warn("Student %s (%s) does not exist." % (name, puid))
         return None
@@ -90,7 +90,7 @@ def getStudent(puid, name, clear):
             for offering in offerings:
                 reservation = hibSession.createQuery(
                     "select r from OverrideReservation r inner join r.students s where s.uniqueId = :studentId and r.instructionalOffering = :offeringId and r.type = 1 and r.configurations is empty and r.classes is empty"
-                    ).setLong("offeringId", offering.getUniqueId()).setLong("studentId", student.getUniqueId()).setMaxResults(1).uniqueResult()
+                    ).setParameter("offeringId", offering.getUniqueId()).setParameter("studentId", student.getUniqueId()).setMaxResults(1).uniqueResult()
                 if reservation:
                     reservation.getStudents().remove(student)
                     if reservation.getStudents().isEmpty(): hibSession.delete(reservation)
@@ -99,7 +99,7 @@ def getStudent(puid, name, clear):
             for offering in offerings:
                 reservation = hibSession.createQuery(
                     "select r from IndividualReservation r inner join r.students s where s.uniqueId = :studentId and r.instructionalOffering = :offeringId"
-                    ).setLong("offeringId", offering.getUniqueId()).setLong("studentId", student.getUniqueId()).setMaxResults(1).uniqueResult()
+                    ).setParameter("offeringId", offering.getUniqueId()).setParameter("studentId", student.getUniqueId()).setMaxResults(1).uniqueResult()
                 if reservation:
                     reservation.getStudents().remove(student)
                     if reservation.getStudents().isEmpty(): hibSession.delete(reservation)
@@ -139,7 +139,7 @@ def addCourse(student, course, classes, ts, offeringIds):
         log.debug("-- creating individual reservation for %s" % course.getCourseName())
         reservation = None
         for r in hibSession.createQuery("from IndividualReservation r where r.instructionalOffering = :offeringId and r.configurations is empty"
-                                        ).setLong("offeringId", course.getInstructionalOffering().getUniqueId()).list():
+                                        ).setParameter("offeringId", course.getInstructionalOffering().getUniqueId()).list():
             if r.getClasses().size() != len(classes): continue
             match = True
             for c in classes:
@@ -164,7 +164,7 @@ def addCourse(student, course, classes, ts, offeringIds):
         log.debug("-- creating override for %s" % course.getCourseName())
         reservation = hibSession.createQuery(
             "from OverrideReservation r where r.instructionalOffering = :offeringId and r.type = 1 and r.configurations is empty and r.classes is empty"
-            ).setLong("offeringId", course.getInstructionalOffering().getUniqueId()).setMaxResults(1).uniqueResult()
+            ).setParameter("offeringId", course.getInstructionalOffering().getUniqueId()).setMaxResults(1).uniqueResult()
         if not reservation:
             reservation = OverrideReservation()
             reservation.setType(1)
@@ -192,8 +192,8 @@ def lookupCourse(cn, courses, restrictions):
         return
     try:
         crn = int(cn)
-        clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-        course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
+        clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session.uniqueId = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
+        course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
         if not course or not clazz:
             log.error("Class %d not found." % crn)
             return
@@ -205,7 +205,7 @@ def lookupCourse(cn, courses, restrictions):
         else:
             restrictions[course].append(clazz)
     except ValueError:
-        course = hibSession.createQuery("from CourseOffering where subjectArea.session = :session and subjectAreaAbbv || ' ' || courseNbr = :name").setLong("session", session.getUniqueId()).setString("name", cn).uniqueResult()
+        course = hibSession.createQuery("from CourseOffering where subjectArea.session.uniqueId = :session and subjectAreaAbbv || ' ' || courseNbr = :name").setParameter("session", session.getUniqueId()).setParameter("name", cn).uniqueResult()
         if not course:
             log.warn("Course %s does not exist." % cn)
             return
@@ -290,8 +290,8 @@ def getStudent(student):
     return line
 
 def execute():
-    students = hibSession.createQuery("from Student where session = :session and sectioningStatus.reference = :status"
-        ).setLong("session", session.getUniqueId()).setString("status", status).list()
+    students = hibSession.createQuery("from Student where session.uniqueId = :session and sectioningStatus.reference = :status"
+        ).setParameter("session", session.getUniqueId()).setParameter("status", status).list()
     
     file = open(log.createOutput('%s_enrollments' % status,'csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -340,8 +340,8 @@ def getStudent(student):
     return line
 
 def execute():
-    students = hibSession.createQuery("from Student where session = :session and sectioningStatus.reference = :status"
-        ).setLong("session", session.getUniqueId()).setString("status", status).list()
+    students = hibSession.createQuery("from Student where session.uniqueId = :session and sectioningStatus.reference = :status"
+        ).setParameter("session", session.getUniqueId()).setParameter("status", status).list()
     
     file = open(log.createOutput('%s_courses' % status,'csv').getAbsolutePath(), 'w')
     writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -522,9 +522,9 @@ def generateRow(server, student):
         if not isinstance(req, XCourseRequest): continue
         enrl = req.getEnrollment()
         if not enrl: continue
-        course = hibSession.createQuery("from CourseOffering where uniqueId = :id").setLong("id", enrl.getCourseId()).uniqueResult()
+        course = hibSession.createQuery("from CourseOffering where uniqueId = :id").setParameter("id", enrl.getCourseId()).uniqueResult()
         for id in enrl.getSectionIds():
-            clazz = hibSession.createQuery("from Class_ where uniqueId = :id").setLong("id", id).uniqueResult()
+            clazz = hibSession.createQuery("from Class_ where uniqueId = :id").setParameter("id", id).uniqueResult()
             crns[clazz.getExternalId(course)] = True
     line.extend(sorted(crns.keys()))
     log.debug('-- %s' % ','.join(sorted(crns.keys())))
@@ -587,8 +587,6 @@ else:
 from xml.dom import minidom
 from java.lang import Long
 from java.util import ArrayList, HashSet, Date
-from java.io import StringReader
-from org.dom4j.io import SAXReader
 from org.restlet import Client
 from org.restlet.data import Protocol, ChallengeScheme, MediaType
 from org.restlet.resource import ClientResource, ResourceException
@@ -616,15 +614,15 @@ def getResource(client):
     return resource
 
 def getCourseNameForCrn(crn):
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if course:
         return course.getCourseName()
     return None
 
 def getConsent(crn):
     return hibSession.createQuery(
-        "select co.consentType.reference from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId"
-        ).setLong("sessionId", session.getUniqueId()).setString("crn", crn).setMaxResults(1).uniqueResult()
+        "select co.consentType.reference from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId"
+        ).setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
 
 def getDefaultOverride(crn, messageType):
     if messageType == 'DEPT' or messageType == 'SAPR':
@@ -983,7 +981,7 @@ def requestStudentUpdate(puids):
     log.info('Requesting student update...')
     message = createStudentRequestUpdateMessage(puids)
     out = QueueOut()
-    out.setXml(SAXReader().read(StringReader(message)))
+    out.setXml(message)
     out.setStatus(QueueOut.STATUS_READY)
     out.setPostDate(Date())
     hibSession.save(out)
@@ -1020,7 +1018,7 @@ def getUser():
 def getCrn(course, assignment):
     crns = hibSession.createQuery(
         "select bsc.bannerSection.crn from BannerSectionToClass as bsc where bsc.bannerSection.bannerConfig.bannerCourse.courseOfferingId = :courseId and bsc.classId = :classId"
-        ).setLong("classId", assignment.getClassId()).setLong("courseId", course.getCourseId()).setCacheable(True).list()
+        ).setParameter("classId", assignment.getClassId()).setParameter("courseId", course.getCourseId()).setCacheable(True).list()
     if crns: return str(crns[0])
     log.error('Failed to lookup CRN for: %s %s' % (course.getCourseName(), assignment.getSection()))
     return assignment.getSection()
@@ -1085,8 +1083,8 @@ from java.lang import Long
 def execute():
     studentIds = HashSet()
     for student in hibSession.createQuery(
-        "from Student where session = :sessionId and sectioningStatus.reference = :status"
-        ).setLong('sessionId', session.getUniqueId()).setString('status', statusRef).list():
+        "from Student where session.uniqueId = :sessionId and sectioningStatus.reference = :status"
+        ).setParameter('sessionId', session.getUniqueId()).setParameter('status', statusRef).list():
         log.info(student.getName('last-first-middle'))
         changed = False
         for cd in ArrayList(student.getCourseDemands()):

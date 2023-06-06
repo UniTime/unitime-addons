@@ -36,7 +36,7 @@ if (subjects == null || subjects.isEmpty()) {
         log.error('No override type was selected.');
     } else {
         
-        var override = hibSession.createQuery('from OverrideType ot where ot.reference = :ref').setString('ref', overrideTypeRef).uniqueResult();
+        var override = hibSession.createQuery('from OverrideType ot where ot.reference = :ref').setParameter('ref', overrideTypeRef).uniqueResult();
         
         for (var i = subjects.iterator(); i.hasNext(); ) {
             var subject = i.next();

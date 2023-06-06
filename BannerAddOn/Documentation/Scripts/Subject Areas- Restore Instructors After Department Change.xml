@@ -289,7 +289,7 @@ def execute():
 			    crff = None
 			    if c.getClassInstructors().size() == 0:
 				if (c.getUniqueIdRolledForwardFrom() != None):
-				    crff = hibSession.createQuery('from Class_ c where c.uniqueId = :cid').setLong('cid', c.getUniqueIdRolledForwardFrom()).uniqueResult()
+				    crff = hibSession.createQuery('from Class_ c where c.uniqueId = :cid').setParameter('cid', c.getUniqueIdRolledForwardFrom()).uniqueResult()
 			    if crff != None:
 				for ci in crff.getClassInstructors():
 				    if instructors.get(ci.getInstructor().getExternalUniqueId()) == None:

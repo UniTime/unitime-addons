@@ -33,8 +33,8 @@ AT  ,48700 ,18619,B/H
   <body><![CDATA[import csv
 
 def lookupConfig(subject, courseNbr, crn):
-    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
-    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setLong("sessionId", session.getUniqueId()).setInteger("crn", crn).setMaxResults(1).uniqueResult()
+    clazz = hibSession.createQuery("select c from BannerSection bs inner join bs.bannerSectionToClasses as bstc, Class_ c where bs.session.uniqueId = :sessionId and bs.crn = :crn and bstc.classId = c.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
+    course = hibSession.createQuery("select co from BannerSection bs, CourseOffering co where bs.session.uniqueId = :sessionId and bs.crn = :crn and bs.bannerConfig.bannerCourse.courseOfferingId = co.uniqueId").setParameter("sessionId", session.getUniqueId()).setParameter("crn", crn).setMaxResults(1).uniqueResult()
     if clazz and course:
         if not course.getSubjectAreaAbbv() == subject or not course.getCourseNbr().startswith(courseNbr):
             log.error("Class %s %s %d is wrong (found %s)." % (subject, courseNbr, crn, course.getCourseNameWithTitle()))

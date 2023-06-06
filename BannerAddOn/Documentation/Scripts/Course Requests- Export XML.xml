@@ -57,7 +57,7 @@ root.setAttribute("campus", session.getAcademicInitiative())
 root.setAttribute("year", session.getAcademicYear())
 root.setAttribute("term", session.getAcademicTerm())
 
-students = hibSession.createQuery(query).setLong("sessionId", session.getUniqueId()).list()
+students = hibSession.createQuery(query).setParameter("sessionId", session.getUniqueId()).list()
 
 for student in students:
     studentEl = doc.createElement("student")

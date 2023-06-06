@@ -45,7 +45,7 @@ class Course:
         self.courseNbr = courseNbr
         courses = hibSession.createQuery(
             "from CourseOffering co where co.subjectArea.session.uniqueId = :sessionId and co.subjectArea.subjectAreaAbbreviation = :subject and co.courseNbr like :courseNbr || '%' order by co.courseNbr"
-            ).setLong("sessionId", session.getUniqueId()).setString("subject", self.subject).setString("courseNbr", self.courseNbr).list()
+            ).setParameter("sessionId", session.getUniqueId()).setParameter("subject", self.subject).setParameter("courseNbr", self.courseNbr).list()
         offered = []
         for co in courses:
             if not co.getInstructionalOffering().getNotOffered(): offered.append(co)
@@ -176,34 +176,34 @@ class Classification:
     def countEnrolledStudents(self, template):
         return hibSession.createQuery(
             'select count(distinct s) from StudentClassEnrollment e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where s.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and aac.academicClassification.code = :classfication and m.code = :major'
-            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+            ).setParameter('sessionId', session.getUniqueId()).setParameter('area', template.area).setParameter('major', template.major).setParameter('classfication', self.code).uniqueResult()
         
     def countLastLikeStudents(self, template):
         return hibSession.createQuery(
             'select count(distinct s) from LastLikeCourseDemand e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where e.subjectArea.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and aac.academicClassification.code = :classfication and m.code = :major'
-            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+            ).setParameter('sessionId', session.getUniqueId()).setParameter('area', template.area).setParameter('major', template.major).setParameter('classfication', self.code).uniqueResult()
             
     def countProjectedStudents(self, template):
         projection = 1.0
         rule = hibSession.createQuery(
             'from CurriculumProjectionRule r where r.academicArea.session.uniqueId = :sessionId and r.academicArea.academicAreaAbbreviation = :area and r.academicClassification.code = :classfication and r.major.code = :major'
-            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+            ).setParameter('sessionId', session.getUniqueId()).setParameter('area', template.area).setParameter('major', template.major).setParameter('classfication', self.code).uniqueResult()
         if rule:
             projection = rule.getProjection()
         else:
             ruleNoMajor = hibSession.createQuery(
                 'from CurriculumProjectionRule r where r.academicArea.session.uniqueId = :sessionId and r.academicArea.academicAreaAbbreviation = :area and r.academicClassification.code = :classfication and r.major is null'
-                ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('classfication', self.code).uniqueResult()
+                ).setParameter('sessionId', session.getUniqueId()).setParameter('area', template.area).setParameter('classfication', self.code).uniqueResult()
             if ruleNoMajor: projection = ruleNoMajor.getProjection()
         nrStudents = hibSession.createQuery(
             'select count(distinct s) from LastLikeCourseDemand e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where e.subjectArea.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and aac.academicClassification.code = :classfication and m.code = :major'
-            ).setLong('sessionId', session.getUniqueId()).setString('area', template.area).setString('major', template.major).setString('classfication', self.code).uniqueResult()
+            ).setParameter('sessionId', session.getUniqueId()).setParameter('area', template.area).setParameter('major', template.major).setParameter('classfication', self.code).uniqueResult()
         return int(round(projection * nrStudents))
     
     def generateClassification(self, template, curriculum):
         acadClasf = hibSession.createQuery(
             'from AcademicClassification where session.uniqueId = :sessionId and code = :code'
-            ).setLong('sessionId', session.getUniqueId()).setString('code', self.code).uniqueResult()
+            ).setParameter('sessionId', session.getUniqueId()).setParameter('code', self.code).uniqueResult()
         classification = CurriculumClassification()
         classification.setCurriculum(curriculum)
         curriculum.getClassifications().add(classification)
@@ -391,17 +391,17 @@ class Template:
         if matchName:
             return hibSession.createQuery(
                 'select distinct c from Curriculum c inner join c.majors m where c.academicArea.session.uniqueId = :sessionId and c.academicArea.academicAreaAbbreviation = :area and m.code = :major and c.name = :name'
-                ).setLong('sessionId', session.getUniqueId()).setString('area', self.area).setString('major', self.major).setString('name', self.name).uniqueResult()
+                ).setParameter('sessionId', session.getUniqueId()).setParameter('area', self.area).setParameter('major', self.major).setParameter('name', self.name).uniqueResult()
         else:
             return hibSession.createQuery(
                 'select distinct c from Curriculum c inner join c.majors m where c.academicArea.session.uniqueId = :sessionId and c.academicArea.academicAreaAbbreviation = :area and m.code = :major'
-                ).setLong('sessionId', session.getUniqueId()).setString('area', self.area).setString('major', self.major).uniqueResult()
+                ).setParameter('sessionId', session.getUniqueId()).setParameter('area', self.area).setParameter('major', self.major).uniqueResult()
     
     def generateCurriculum(self, curriculum):
         if not curriculum:
             area = hibSession.createQuery(
                 "from AcademicArea where session.uniqueId = :sessionId and academicAreaAbbreviation = :area"
-                ).setLong('sessionId', session.getUniqueId()).setString('area', self.area).uniqueResult()
+                ).setParameter('sessionId', session.getUniqueId()).setParameter('area', self.area).uniqueResult()
             if not area:
                 area = AcademicArea()
                 area.setAcademicAreaAbbreviation(self.area)
@@ -411,7 +411,7 @@ class Template:
                 log.warn('Academic area %s did not exist' % self.area)
             major = hibSession.createQuery(
                 "select m from PosMajor m inner join m.academicAreas a where a.session.uniqueId = :sessionId and code = :major and a.academicAreaAbbreviation = :area"
-                ).setLong('sessionId', session.getUniqueId()).setString('area', self.area).setString('major', self.major).uniqueResult()
+                ).setParameter('sessionId', session.getUniqueId()).setParameter('area', self.area).setParameter('major', self.major).uniqueResult()
             if not major:
                 major = PosMajor()
                 major.setAcademicAreas(HashSet())
@@ -447,12 +447,12 @@ def getBannerTerm():
 def countEnrolledStudents(area, major):
     return hibSession.createQuery(
         'select count(distinct s) from StudentClassEnrollment e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where s.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and m.code = :major'
-    ).setLong('sessionId', session.getUniqueId()).setString('area', area).setString('major', major).uniqueResult()
+    ).setParameter('sessionId', session.getUniqueId()).setParameter('area', area).setParameter('major', major).uniqueResult()
 
 def countLastLikeStudents(area, major):
     return hibSession.createQuery(
         'select count(distinct s) from LastLikeCourseDemand e inner join e.student s inner join s.academicAreaClassifications aac inner join s.posMajors m where e.subjectArea.session.uniqueId = :sessionId and aac.academicArea.academicAreaAbbreviation = :area and m.code = :major'
-    ).setLong('sessionId', session.getUniqueId()).setString('area', area).setString('major', major).uniqueResult()
+    ).setParameter('sessionId', session.getUniqueId()).setParameter('area', area).setParameter('major', major).uniqueResult()
 
 log.info('Current Term: %s' % getBannerTerm())        
 termPattern = re.compile("%s Term ([1-9]+)" % session.getAcademicTerm())
