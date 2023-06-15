@@ -20,9 +20,9 @@
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-5.2.14.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.10.13.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-5.8.3.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-core-2.5.30.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-tiles-plugin-2.5.30.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-convention-plugin-2.5.30.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-core-2.5.31.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-tiles-plugin-2.5.31.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-convention-plugin-2.5.31.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-taglibs-5.8.3.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jakarta.persistence-api-3.1.0.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
