@@ -2198,6 +2198,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				return true;
 			} else if (o.getStatus() == CourseRequestOverrideStatus.APPROVED.ordinal()) {
 				// override approved -> go ahead and check
+				return true;
 			} else if (o.getStatus() == CourseRequestOverrideStatus.PENDING.ordinal()) {
 				// override pending -> check that an override was granted
 				for (String[] override: iOverrides) {
