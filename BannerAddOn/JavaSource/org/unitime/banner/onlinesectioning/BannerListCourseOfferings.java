@@ -82,7 +82,7 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 					Long courseId = (Long)courseClassId[0];
 					Long sectionId = (Long)courseClassId[1];
 					XCourse course = server.getCourse(courseId);
-					if (course != null && (iMatcher == null || iMatcher.match(course))) {
+					if (course != null && (iMatcher == null || iMatcher.match(course)) && matchFilter(server, iFilter, course)) {
 						XOffering offering = server.getOffering(course.getOfferingId());
 						XSection section = (offering == null ? null : offering.getSection(sectionId));
 						if (section != null) {
@@ -142,7 +142,7 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 		for (XCourseId id: server.findCourses(iQuery, iLimit, iMatcher)) {
 			if (courses != null && courses.containsKey(id.getCourseId())) continue;
 			XCourse course = server.getCourse(id.getCourseId());
-			if (course != null)
+			if (course != null && matchFilter(server, iFilter, course))
 				ret.add(convert(course, server));
 			if (iLimit != null && iLimit > 0 && ret.size() == iLimit) break;
 		}
