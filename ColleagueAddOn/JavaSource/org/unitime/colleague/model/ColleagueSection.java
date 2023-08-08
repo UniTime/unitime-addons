@@ -66,6 +66,7 @@ import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
+import org.unitime.timetable.solver.ClassAssignmentProxy.AssignmentInfo;
 import org.unitime.timetable.util.Constants;
 
 /**
@@ -997,7 +998,7 @@ public class ColleagueSection extends BaseColleagueSection {
     			sb.append("&nbsp;");
     		}
 	    	if (classAssignment!=null) {
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1056,7 +1057,7 @@ public class ColleagueSection extends BaseColleagueSection {
     		}
     		sb.append(aClass.getClassLabel());
 	    	if (classAssignment!=null) {
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1124,7 +1125,7 @@ public class ColleagueSection extends BaseColleagueSection {
     			sb.append("<br>");
     		}
 	    	if (classAssignment!=null) {
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1178,7 +1179,7 @@ public class ColleagueSection extends BaseColleagueSection {
     			sb.append("<br>");
     		}
 	    	if (classAssignment!=null){
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a= classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1229,7 +1230,7 @@ public class ColleagueSection extends BaseColleagueSection {
     			sb.append("<br>");
     		}
 	    	if (classAssignment!=null){
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a= classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {

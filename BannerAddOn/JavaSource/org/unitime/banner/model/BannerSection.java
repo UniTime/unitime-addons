@@ -58,7 +58,6 @@ import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.gwt.resources.GwtConstants;
-import org.unitime.timetable.model.Assignment;
 import org.unitime.timetable.model.ClassInstructor;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
@@ -79,6 +78,7 @@ import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.InstrOfferingConfigDAO;
 import org.unitime.timetable.model.dao._RootDAO;
 import org.unitime.timetable.solver.ClassAssignmentProxy;
+import org.unitime.timetable.solver.ClassAssignmentProxy.AssignmentInfo;
 import org.unitime.timetable.util.Constants;
 
 /**
@@ -879,7 +879,7 @@ public class BannerSection extends BaseBannerSection {
     			sb.append("&nbsp;");
     		}
 	    	if (classAssignment!=null) {
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -928,7 +928,7 @@ public class BannerSection extends BaseBannerSection {
     		}
     		sb.append(aClass.getClassLabel());
 	    	if (classAssignment!=null) {
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1033,7 +1033,7 @@ public class BannerSection extends BaseBannerSection {
     			sb.append("<br>");
     		}
 	    	if (classAssignment!=null) {
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a = classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1088,7 +1088,7 @@ public class BannerSection extends BaseBannerSection {
     			sb.append("<br>");
     		}
 	    	if (classAssignment!=null){
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a= classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
@@ -1139,7 +1139,7 @@ public class BannerSection extends BaseBannerSection {
     			sb.append("<br>");
     		}
 	    	if (classAssignment!=null){
-	    		Assignment a = null;
+	    		AssignmentInfo a = null;
 	    		try {
 	    			a= classAssignment.getAssignment(aClass);
 	    		} catch (Exception e) {
