@@ -1391,13 +1391,14 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	}
 	
 	protected OverrideType getType(Map<String, Set<Class_>> restrictions) {
-		boolean time = false, space = false;
+		boolean time = false, space = false, link = false;
 		OverrideType other = null;
 		Set<Class_> otherRestrictions = null;
 		for (Map.Entry<String, Set<Class_>> e: restrictions.entrySet()) {
 			String type = e.getKey();
 			if (OverrideType.AllowTimeConflict.getReference().equalsIgnoreCase(type)) time = true;
 			else if (OverrideType.AllowOverLimit.getReference().equalsIgnoreCase(type)) space = true;
+			else if (OverrideType.CoReqOverride.getReference().equalsIgnoreCase(type)) link = true;
 			else {
 				for (OverrideType t: OverrideType.values())
 					if (t.getReference().equalsIgnoreCase(type)) {
@@ -1408,6 +1409,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					}
 			}
 		}
+		if (time && space && link) return OverrideType.AllowOverLimitTimeConflictLink;
+		if (time && link) return OverrideType.AllowTimeConflictLink;
+		if (space && link) return OverrideType.AllowOverLimitLink;
+		if (link) return OverrideType.CoReqOverride;
 		if (time && space) return OverrideType.AllowOverLimitTimeConflict;
 		if (time) return OverrideType.AllowTimeConflict;
 		if (space) return OverrideType.AllowOverLimit;

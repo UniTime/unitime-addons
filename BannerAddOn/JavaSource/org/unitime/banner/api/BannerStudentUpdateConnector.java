@@ -147,6 +147,19 @@ public class BannerStudentUpdateConnector extends ApiConnector {
 					overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowOverLimit.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
 					overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowTimeConflict.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
 					break;
+				case AllowOverLimitTimeConflictLink:
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowTimeConflict.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowOverLimit.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.CoReqOverride.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					break;
+				case AllowOverLimitLink:
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowOverLimit.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.CoReqOverride.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					break;
+				case AllowTimeConflictLink:
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowTimeConflict.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					overrides.add(new OverridePair(ReservationInterface.OverrideType.CoReqOverride.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+					break;
 				default:
 					overrides.add(new OverridePair(reservation.getOverrideType().getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
 				}
@@ -163,6 +176,19 @@ public class BannerStudentUpdateConnector extends ApiConnector {
 					case AllowOverLimitTimeConflict:
 						overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowOverLimit.getReference(), clazz.getExternalId(course)));
 						overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowTimeConflict.getReference(), clazz.getExternalId(course)));
+						break;
+					case AllowOverLimitTimeConflictLink:
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowTimeConflict.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowOverLimit.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.CoReqOverride.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+						break;
+					case AllowOverLimitLink:
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowOverLimit.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.CoReqOverride.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+						break;
+					case AllowTimeConflictLink:
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.AllowTimeConflict.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
+						overrides.add(new OverridePair(ReservationInterface.OverrideType.CoReqOverride.getReference(), course.getSubjectAreaAbbv(), course.getCourseNbr()));
 						break;
 					default:
 						overrides.add(new OverridePair(reservation.getOverrideType().getReference(), clazz.getExternalId(course)));
