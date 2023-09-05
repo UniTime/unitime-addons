@@ -11,13 +11,13 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="com.gwtplugins.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/cpsolver-1.4-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/hibernate-core-6.2.7.Final.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/hibernate-core-6.2.8.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/dom4j-2.1.4.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/itext-2.1.7.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-beans-5.3.29.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-context-5.3.29.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/protobuf-java-3.23.3.jar"/>
-	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-5.2.16.Final.jar"/>
+	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/jgroups-5.2.18.Final.jar"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.10.13.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/spring-security-core-5.8.5.jar"/>
 	<classpathentry kind="lib" path="/UniTime/WebContent/WEB-INF/lib/struts2-core-2.5.31.jar"/>
