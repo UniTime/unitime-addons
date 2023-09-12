@@ -345,6 +345,7 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 		int iStudentElementCount = 0;
 		boolean iCheckSkipStudent;
 		
+		Set<String> iProcessedStudents = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 		Set<String> iFailedStudents = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 		Set<String> iProblemStudents = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 		Set<String> iUpdatedStudents = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
@@ -470,6 +471,24 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 						synchronized (iStudentElementIterator) {
 							if (!iStudentElementIterator.hasNext()) break;
 							studentElement = (Element)iStudentElementIterator.next();
+							
+							String externalId = studentElement.attributeValue("externalId");
+							if (externalId == null) {
+								warn("No externalId was given for a student.");
+								continue;
+							}
+							while (iTrimLeadingZerosFromExternalId && externalId.startsWith("0")) externalId = externalId.substring(1);
+							
+							String bannerSession = studentElement.attributeValue("session");
+							if (bannerSession == null) {
+								warn("[" + externalId + "] No session was given for a student.");
+								continue;
+							}
+							
+							if (!iProcessedStudents.add(externalId + ":" + bannerSession)) {
+								warn("[" + externalId + "] Student listed multiple times for " + bannerSession + ", later occurance ignored.");
+								continue;
+							}
 						}
 						processStudent(studentElement, hibSession, true);
 					}
