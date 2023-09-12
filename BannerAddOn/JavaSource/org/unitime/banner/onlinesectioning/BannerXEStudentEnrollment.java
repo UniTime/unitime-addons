@@ -292,7 +292,7 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 	
 	@Override
 	protected boolean updateStudentRegistration(OnlineSectioningServer server, OnlineSectioningHelper helper, XStudent s, List<XEInterface.Registration> registration) throws SectioningException {
-		if (s == null || s.getExternalId() == null) return false;
+		if (s == null || s.getExternalId() == null || registration == null) return false;
 		
 		try {
 			helper.beginTransaction();

@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -113,6 +115,8 @@ import org.unitime.timetable.util.Constants;
  */
 public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerUpdateStudentAction.UpdateResult> {
 	private static final long serialVersionUID = 1L;
+	private static ValueLock<String> sLock = new ValueLock<String>();
+
 	private String iTermCode, iExternalId, iFName, iMName, iLName, iEmail, iCampus, iStudentCampus;
 	private List<String[]> iGroups = new ArrayList<String[]>();
 	private List<ACM> iAcadAreaClasfMj = new ArrayList<ACM>();
@@ -564,7 +568,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected AcademicArea getAcademicArea(OnlineSectioningHelper helper, String area) {
 		if (iLocking) {
-			synchronized (("Area:" + iSession.getReference() + ":" + area).intern()) {
+			try {
+				sLock.lock("Area:" + iSession.getReference() + ":" + area);
 				AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), area);
 				if (aa != null) return aa;
 				aa = AcademicArea.findByAbbv(helper.getHibSession(), iSession.getUniqueId(), area);
@@ -585,6 +590,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.info("Added Academic Area:  " + area);
 				helper.getHibSession().merge(aa);
 				return aa;
+			} finally {
+				sLock.unlock("Area:" + iSession.getReference() + ":" + area);
 			}
 		} else {
 			AcademicArea aa = AcademicArea.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), area);
@@ -606,7 +613,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected AcademicClassification getAcademicClassification(OnlineSectioningHelper helper, String clasf) {
 		if (iLocking) {
-			synchronized (("Clasf:" + iSession.getReference() + ":" + clasf).intern()) {
+			try {
+				sLock.lock("Clasf:" + iSession.getReference() + ":" + clasf);
 				AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), clasf);
 				if (ac != null) return ac;
 				ac = AcademicClassification.findByCode(helper.getHibSession(), iSession.getUniqueId(), clasf);
@@ -626,6 +634,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.info("Added Academic Classification:  " + clasf);
 				helper.getHibSession().merge(ac);
 				return ac;
+			} finally {
+				sLock.unlock("Clasf:" + iSession.getReference() + ":" + clasf);
 			}
 		} else {
 			AcademicClassification ac = AcademicClassification.findByExternalId(helper.getHibSession(), iSession.getUniqueId(), clasf);
@@ -646,7 +656,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected PosMajor getPosMajor(OnlineSectioningHelper helper, AcademicArea aa, String area, String major) {
 		if (iLocking) {
-			synchronized (("Major:" + iSession.getReference() + ":" + area + ":" + major).intern()) {
+			try {
+				sLock.lock("Major:" + iSession.getReference() + ":" + area + ":" + major);
 				PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), iSession.getUniqueId(), major, area);
 				if (posMajor != null) return posMajor;
 				posMajor = PosMajor.findByCodeAcadAreaAbbv(helper.getHibSession(), iSession.getUniqueId(), major, area);
@@ -665,9 +676,11 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				} finally {
 					hibSession.close();
 				}
-				helper.getHibSession().merge(posMajor);
+				helper.getHibSession().merge(aa);
 				helper.info("Added Major:  " + major + " to Academic Area:  " + area);
 				return posMajor;
+			} finally {
+				sLock.unlock("Major:" + iSession.getReference() + ":" + area + ":" + major);
 			}
 		} else {
 			PosMajor posMajor = PosMajor.findByExternalIdAcadAreaExternalId(helper.getHibSession(), iSession.getUniqueId(), major, area);
@@ -740,7 +753,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected PosMajorConcentration getPosMajorConcentration(OnlineSectioningHelper helper, PosMajor posMajor, String area, String major, String concentration) {
 		if (iLocking) {
-			synchronized (("Concentration:" + iSession.getReference() + ":" + area + ":" + major + ":" + concentration).intern()) {
+			try {
+				sLock.lock("Concentration:" + iSession.getReference() + ":" + area + ":" + major + ":" + concentration);
 				PosMajorConcentration conc = findPosMajorConcentration(helper.getHibSession(), iSession.getUniqueId(), area, major, concentration);
 				if (conc != null) return conc;
 				conc = new PosMajorConcentration();
@@ -750,15 +764,17 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				conc.setMajor(posMajor);
 				org.hibernate.Session hibSession = AcademicAreaDAO.getInstance().createNewSession();
 				try {
-					posMajor.addToConcentrations(conc);
 					hibSession.persist(conc);
 					hibSession.flush();
 				} finally {
 					hibSession.close();
 				}
 				helper.getHibSession().merge(conc);
+				posMajor.addToConcentrations(conc);
 				helper.info("Added Concentration:  " + concentration + " to Major:  " + area + "/" + major);
 				return conc;
+			} finally {
+				sLock.unlock("Concentration:" + iSession.getReference() + ":" + area + ":" + major + ":" + concentration);
 			}
 		} else {
 			PosMajorConcentration conc = findPosMajorConcentration(helper.getHibSession(), iSession.getUniqueId(), area, major, concentration);
@@ -798,7 +814,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected Degree getDegree(OnlineSectioningHelper helper, String degree) {
 		if (iLocking) {
-			synchronized (("Degree:" + iSession.getReference() + ":" + degree).intern()) {
+			try {
+				sLock.lock("Degree:" + iSession.getReference() + ":" + degree);
 				Degree deg = findDegree(helper.getHibSession(), iSession.getUniqueId(), degree);
 				if (deg != null) return deg;
 				deg = new Degree();
@@ -816,6 +833,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.getHibSession().merge(deg);
 				helper.info("Added Degree:  " + degree);
 				return deg;
+			} finally {
+				sLock.unlock("Degree:" + iSession.getReference() + ":" + degree);
 			}
 		} else {
 			Degree deg = findDegree(helper.getHibSession(), iSession.getUniqueId(), degree);
@@ -854,7 +873,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected Program getProgram(OnlineSectioningHelper helper, String program) {
 		if (iLocking) {
-			synchronized (("Program:" + iSession.getReference() + ":" + program).intern()) {
+			try {
+				sLock.lock("Program:" + iSession.getReference() + ":" + program);
 				Program prog = findProgram(helper.getHibSession(), iSession.getUniqueId(), program);
 				if (prog != null) return prog;
 				prog = new Program();
@@ -872,6 +892,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.getHibSession().merge(prog);
 				helper.info("Added Program:  " + program);
 				return prog;
+			} finally {
+				sLock.unlock("Program:" + iSession.getReference() + ":" + program);
 			}
 		} else {
 			Program prog = findProgram(helper.getHibSession(), iSession.getUniqueId(), program);
@@ -910,7 +932,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected Campus getCampus(OnlineSectioningHelper helper, String campus) {
 		if (iLocking) {
-			synchronized (("Campus:" + iSession.getReference() + ":" + campus).intern()) {
+			try {
+				sLock.lock("Campus:" + iSession.getReference() + ":" + campus);
 				Campus camp = findCampus(helper.getHibSession(), iSession.getUniqueId(), campus);
 				if (camp != null) return camp;
 				camp = new Campus();
@@ -928,6 +951,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.getHibSession().merge(camp);
 				helper.info("Added Campus:  " + campus);
 				return camp;
+			} finally {
+				sLock.unlock("Campus:" + iSession.getReference() + ":" + campus);
 			}
 		} else {
 			Campus camp = findCampus(helper.getHibSession(), iSession.getUniqueId(), campus);
@@ -1107,7 +1132,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected StudentGroupType getStudentGroupType(OnlineSectioningHelper helper, String name) {
 		if (iLocking) {
-			synchronized (("GroupType:" + name).intern()) {
+			try {
+				sLock.lock("GroupType:" + name);
 				StudentGroupType type = StudentGroupType.findByReference(name, helper.getHibSession());
 				if (type != null) return type;
 				if (type == null && "SPORT".equals(name)) {
@@ -1137,6 +1163,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					helper.getHibSession().merge(type);
 				}
 				return type;
+			} finally {
+				sLock.unlock("GroupType:" + name);
 			}
 		} else {
 			StudentGroupType type = StudentGroupType.findByReference(name, helper.getHibSession());
@@ -1164,7 +1192,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	
 	protected StudentGroup getStudentGroup(OnlineSectioningHelper helper, StudentGroupType type, String[] g) {
 		if (iLocking) {
-			synchronized (("Group:" + g[0]).intern()) {
+			try {
+				sLock.lock("Group:" + g[0]);
 				StudentGroup sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
 				if (sg == null) {
 					sg = new StudentGroup();
@@ -1204,6 +1233,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 					}
 				}
 				return sg;
+			} finally {
+				sLock.unlock("Group:" + g[0]);
 			}
 		} else {
 			StudentGroup sg = StudentGroup.findByExternalId(helper.getHibSession(), g[0], iSession.getUniqueId());
@@ -1755,7 +1786,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			return null;
 		}
 		if (iLocking) {
-			synchronized (("Advisor:" + externalId).intern()) {
+			try {
+				sLock.lock("Advisor:" + externalId);
 				Advisor advisor = helper.getHibSession().createQuery(
 						"from Advisor where externalUniqueId = :externalId and role.roleId = :roleId and session.uniqueId = :sessionId", Advisor.class)
 						.setParameter("externalId", externalId).setParameter("roleId", role.getRoleId()).setParameter("sessionId", iSession.getUniqueId())
@@ -1781,6 +1813,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				helper.info("Added Advisor:  " + advisor.getExternalUniqueId() + " - " + advisor.getRole().getReference() + " to session " + iSession.academicInitiativeDisplayString());
 				helper.getHibSession().merge(advisor);
 				return advisor;
+			} finally {
+				sLock.unlock("Advisor:" + externalId);
 			}
 		} else {
 			Advisor advisor = helper.getHibSession().createQuery(
@@ -2217,5 +2251,35 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			}
 		}
     	return false;
+    }
+    
+    public static class ValueLock<T> {
+    	private ReentrantLock lock = new ReentrantLock();
+    	private Map<T, Condition> conditions  = new HashMap<T, Condition>();
+
+        public void lock(T t){
+            lock.lock();
+            try {
+                while (conditions.containsKey(t)){
+                    conditions.get(t).awaitUninterruptibly();
+                }
+                conditions.put(t, lock.newCondition());
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        public void unlock(T t){
+            lock.lock();
+            try {
+                Condition condition = conditions.get(t);
+                if (condition == null)
+                    throw new IllegalStateException();// possibly an attempt to release what wasn't acquired
+                conditions.remove(t);
+                condition.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 }
