@@ -32,6 +32,7 @@
 	<dialect type="plsql">org.hibernate.dialect.Oracle9iDialect</dialect>
 	<dialect type="plsql">org.hibernate.dialect.Oracle10gDialect</dialect>
 	<dialect type="plsql">org.hibernate.dialect.Oracle12cDialect</dialect>
- 
+	<dialect type="plsql">org.unitime.commons.hibernate.util.OracleDialectLegacyLimitQueries</dialect>
+  
 
  </dbupdate>
