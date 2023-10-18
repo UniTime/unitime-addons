@@ -85,6 +85,7 @@ import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentGroupType;
 import org.unitime.timetable.model.StudentNote;
+import org.unitime.timetable.model.StudentSectioningStatus.NotificationType;
 import org.unitime.timetable.model.WaitList.WaitListType;
 import org.unitime.timetable.model.dao.AcademicAreaDAO;
 import org.unitime.timetable.model.dao.SessionDAO;
@@ -428,7 +429,12 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						}
 					}
 
-					server.execute(server.createAction(NotifyStudentAction.class).forStudent(result.getStudentId()).fromAction(name()).oldStudent(oldStudent), helper.getUser());
+					if (result.has(Change.CLASSES))
+							server.execute(server.createAction(NotifyStudentAction.class)
+									.forStudent(result.getStudentId())
+									.fromAction(name())
+									.withType(NotificationType.ExternalChangeEnrollment)
+									.oldStudent(oldStudent), helper.getUser());
  				} else if (server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing() && student.getWaitListMode() == WaitListMode.WaitList) {
  					// no change in the enrollments --> still check the wait-listed override changes
 					XStudent newStudent = server.getStudent(student.getUniqueId());

@@ -53,6 +53,7 @@ import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentNote;
+import org.unitime.timetable.model.StudentSectioningStatus.NotificationType;
 import org.unitime.timetable.model.dao.SessionDAO;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningAction;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
@@ -202,8 +203,11 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 				}
 				helper.getAction().addEnrollment(external);
 				
-				if (updateClassEnrollments(student, enrollments, helper))
+				boolean classEnrollmentsChanged = false;
+				if (updateClassEnrollments(student, enrollments, helper)) {
 					changed = true;
+					classEnrollmentsChanged = true;
+				}
 				
 				if (iStudentId == null) {
 					helper.getHibSession().persist(student);
@@ -250,7 +254,12 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 						action.addEnrollment(enrollment);
 					}
 
-					server.execute(server.createAction(NotifyStudentAction.class).forStudent(iStudentId).fromAction(name()).oldStudent(oldStudent), helper.getUser());
+					if (classEnrollmentsChanged)
+						server.execute(server.createAction(NotifyStudentAction.class)
+							.forStudent(iStudentId)
+							.fromAction(name())
+							.withType(NotificationType.ExternalChangeEnrollment)
+							.oldStudent(oldStudent), helper.getUser());
 				}
 			
 				helper.commitTransaction();
