@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.hibernate.LazyInitializationException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.unitime.banner.model.BannerConfig;
@@ -404,12 +405,25 @@ public class BannerSectionLinkageHelper {
 			return(parentToTrueChildSubparts.get(ss));
 		}
 		TreeSet<SchedulingSubpart> childSubparts = new TreeSet<SchedulingSubpart>(new SchedulingSubpartComparator());
-		if (!ss.getChildSubparts().isEmpty()){
-			for (SchedulingSubpart childSubpart : ss.getChildSubparts()){
-				if (childSubpart.getItype().getItype().equals(ss.getItype().getItype())){
-					childSubparts.addAll(getTrueChildSubparts(childSubpart));
-				} else {
-					childSubparts.add(childSubpart);
+		try {
+			if (!ss.getChildSubparts().isEmpty()){
+				for (SchedulingSubpart childSubpart : ss.getChildSubparts()){
+					if (childSubpart.getItype().getItype().equals(ss.getItype().getItype())){
+						childSubparts.addAll(getTrueChildSubparts(childSubpart));
+					} else {
+						childSubparts.add(childSubpart);
+					}
+				}
+			}
+		} catch (LazyInitializationException e) {
+			Debug.warning(e.getMessage());
+			for (SchedulingSubpart childSubpart: ss.getInstrOfferingConfig().getSchedulingSubparts()) {
+				if (ss.equals(childSubpart.getParentSubpart())) {
+					if (childSubpart.getItype().getItype().equals(ss.getItype().getItype())){
+						childSubparts.addAll(getTrueChildSubparts(childSubpart));
+					} else {
+						childSubparts.add(childSubpart);
+					}
 				}
 			}
 		}
