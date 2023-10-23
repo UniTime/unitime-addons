@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import org.hibernate.LazyInitializationException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.engine.spi.SessionImplementor;
@@ -239,8 +240,16 @@ public class BannerSectionCrosslistHelper {
 			trans.commit();
 			hibSession.flush();
 		}
-		for(SchedulingSubpart ss : schedSubpart.getChildSubparts()){
-			ensureAllSubpartClassesHaveBannerSection(ss);
+		try {
+			for(SchedulingSubpart ss : schedSubpart.getChildSubparts()){
+				ensureAllSubpartClassesHaveBannerSection(ss);
+			}
+		} catch (LazyInitializationException e) {
+			Debug.warning(e.getMessage());
+			for (SchedulingSubpart ss: schedSubpart.getInstrOfferingConfig().getSchedulingSubparts()) {
+				if (schedSubpart.equals(ss.getParentSubpart()))
+					ensureAllSubpartClassesHaveBannerSection(ss);
+			}
 		}
 	}
 	
