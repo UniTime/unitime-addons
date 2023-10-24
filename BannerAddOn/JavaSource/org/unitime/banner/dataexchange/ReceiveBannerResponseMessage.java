@@ -139,119 +139,150 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 
 	}
 	
-	private void processResponseWithNoMatchingSentMessage(Element rootElement)  {
-		try {
-			HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
-			HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
-			if (rootElement.getName().equalsIgnoreCase(rootName)) {
-				beginTransaction();
-				for (Iterator<Element> eIt = rootElement.elementIterator(bannerResponseName); eIt.hasNext();) {
-					Element bannerResponseElement = (Element) eIt.next();
-					BannerSectionInfoHelper bsi = getBannerSectionInfoHelperForResponseElement(bannerResponseElement, bannerSections, bannerCrosslists);
-					BannerResponse resp = createBannerResponseForResponseElement(bannerResponseElement, bsi, bannerSections, bannerCrosslists); 
-					getHibSession().persist(resp);
-				}
-				commitTransaction();
-			}
-		} catch (Exception e) {
-            fatal("Unable to store response message, reason: "+e.getMessage(),e);
-			rollbackTransaction();
+	private void internalProcessResponseWithNoMatchingSentMessage(Element rootElement, boolean includeBanerSectionLinks) throws Exception {
+		HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
+		HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
+		for (Iterator<Element> eIt = rootElement.elementIterator(bannerResponseName); eIt.hasNext();) {
+			Element bannerResponseElement = (Element) eIt.next();
+			BannerSectionInfoHelper bsi = getBannerSectionInfoHelperForResponseElement(bannerResponseElement, bannerSections, bannerCrosslists);
+			BannerResponse resp = createBannerResponseForResponseElement(bannerResponseElement, bsi, bannerSections, bannerCrosslists);
+			if (!includeBanerSectionLinks) resp.setBannerSection(null);
+			getHibSession().persist(resp);
 		}
 	}
-		
-	private void processMessageWithMatchingSentMessage(Element rootElement, Element matchingSentRootElement) {
+	
+	private void processResponseWithNoMatchingSentMessage(Element rootElement)  {
 		try {
-	 		if (rootElement.getName().equalsIgnoreCase(rootName)) {
-				HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
-				HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
-				ArrayList<BannerSectionInfoHelper> sentMessages = new ArrayList<BannerSectionInfoHelper>();
-				
-				setSentTermCode(getRequiredStringAttribute(matchingSentRootElement, "TERM_CODE", "SCHEDULE"));
-				
+			if (rootElement.getName().equalsIgnoreCase(rootName)) {
 				beginTransaction();
-				Iterator<Element> matchingSentMessageElementIterator = matchingSentRootElement.elementIterator();
-				int order = 0;
-				boolean createMessagesForAllSentElements = !BannerMessage.BannerMessageAction.AUDIT.toString().equals(getRequiredStringAttribute(matchingSentRootElement, "ACTION", "SCHEDULE"));
-				if (createMessagesForAllSentElements) {
-					while (matchingSentMessageElementIterator.hasNext()) {
-						Element e = matchingSentMessageElementIterator.next();
-						BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForSentElement(e, bannerSections, bannerCrosslists, order);
-						sentMessages.add(bsih);	
-						order++;
+				internalProcessResponseWithNoMatchingSentMessage(rootElement, true);
+				getHibSession().getTransaction().commit();
+			}
+		} catch (Exception e) {
+			warn("Unable to store response message, retrying..., reason: "+e.getMessage());
+			rollbackTransaction();
+			try {
+				if (rootElement.getName().equalsIgnoreCase(rootName)) {
+					beginTransaction();
+					internalProcessResponseWithNoMatchingSentMessage(rootElement, false);
+					commitTransaction();
+				}
+			} catch (Exception f) {
+				warn("Unable to store response message, reason: "+f.getMessage(), f);
+				rollbackTransaction();
+			}
+		}
+	}
+	
+	private void internalProcessMessageWithMatchingSentMessage(Element rootElement, Element matchingSentRootElement, boolean includeBanerSectionLinks) throws Exception {
+		HashMap<Long, BannerSectionInfoHelper> bannerSections = new HashMap<Long, BannerSectionInfoHelper>();
+		HashMap<String, BannerSectionInfoHelper> bannerCrosslists = new HashMap<String, BannerSectionInfoHelper>();
+		ArrayList<BannerSectionInfoHelper> sentMessages = new ArrayList<BannerSectionInfoHelper>();
+		setSentTermCode(getRequiredStringAttribute(matchingSentRootElement, "TERM_CODE", "SCHEDULE"));
+		
+		Iterator<Element> matchingSentMessageElementIterator = matchingSentRootElement.elementIterator();
+		int order = 0;
+		boolean createMessagesForAllSentElements = !BannerMessage.BannerMessageAction.AUDIT.toString().equals(getRequiredStringAttribute(matchingSentRootElement, "ACTION", "SCHEDULE"));
+		if (createMessagesForAllSentElements) {
+			while (matchingSentMessageElementIterator.hasNext()) {
+				Element e = matchingSentMessageElementIterator.next();
+				BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForSentElement(e, bannerSections, bannerCrosslists, order);
+				sentMessages.add(bsih);	
+				order++;
+			}
+		}
+				
+		int lastMatchedSent = -1;
+		int currentMatchedSent = -1;
+		String packetId = getRequiredStringAttribute(rootElement, "PACKET_ID", rootName);
+		Iterator<Element> responseElementIterator = rootElement.elementIterator();
+		while (responseElementIterator.hasNext()) {
+			Element responseMessage = responseElementIterator.next();
+			String action = getOptionalStringAttribute(responseMessage, "ACTION");
+			BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForResponseElement(responseMessage, bannerSections, bannerCrosslists);
+			if (action == null) {
+				createMessagesForAllSentElements = false;
+				BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
+				if (!includeBanerSectionLinks) resp.setBannerSection(null);
+				getHibSession().persist(resp);
+				break;
+			} else {
+				BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
+				String xlstGrp = getOptionalStringAttribute(responseMessage, "XLST_GROUP");
+				if (xlstGrp == null) {
+	 				if (bsih.getSentSection()) {
+	 					bsih.setReceivedSectionResponse(true);
+	 					currentMatchedSent = bsih.getSentSectionPosition();
+	 				}
+				} else {
+					if (bsih.getSentCrosslist()) {
+						bsih.setReceivedCrosslistResponse(true);
+						currentMatchedSent = bsih.getSentCrosslistPosition();
 					}
 				}
-						
-				int lastMatchedSent = -1;
-				int currentMatchedSent = -1;
-				String packetId = getRequiredStringAttribute(rootElement, "PACKET_ID", rootName);
-				Iterator<Element> responseElementIterator = rootElement.elementIterator();
-				while (responseElementIterator.hasNext()) {
-					Element responseMessage = responseElementIterator.next();
-					String action = getOptionalStringAttribute(responseMessage, "ACTION");
-					BannerSectionInfoHelper bsih = getBannerSectionInfoHelperForResponseElement(responseMessage, bannerSections, bannerCrosslists);
-					if (action == null) {
-						createMessagesForAllSentElements = false;
-						BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
-						getHibSession().persist(resp);
-						break;
-					} else {
-						BannerResponse resp = createBannerResponseForResponseElement(responseMessage, bsih, bannerSections, bannerCrosslists);
-						String xlstGrp = getOptionalStringAttribute(responseMessage, "XLST_GROUP");
-						if (xlstGrp == null) {
-			 				if (bsih.getSentSection()) {
-			 					bsih.setReceivedSectionResponse(true);
-			 					currentMatchedSent = bsih.getSentSectionPosition();
-			 				}
-						} else {
-							if (bsih.getSentCrosslist()) {
-								bsih.setReceivedCrosslistResponse(true);
-								currentMatchedSent = bsih.getSentCrosslistPosition();
-							}
-						}
-						
-						String dateStr = getRequiredStringAttribute(responseMessage, "ACTIVITY_DATE", bannerResponseName);
-						DateFormat df = new SimpleDateFormat("MM/dd/yyyy H:m:s");
-						Date endTimestamp = null;				
-						try {
-							endTimestamp = df.parse(dateStr);
-						} catch (ParseException e) {
-							e.printStackTrace();
-						}
-						createNoChangeBannerResponsesForUnmatchedSentMessages(
-								createMessagesForAllSentElements, 
-								sentMessages, 
-								lastMatchedSent, 
-								currentMatchedSent,
-								endTimestamp,
-								packetId);
-						lastMatchedSent = currentMatchedSent;
-						getHibSession().persist(resp);
-						
-					}				
-				}
-							
-				String dateStr = getRequiredStringAttribute(rootElement, "END_TIMESTAMP", rootName);
-				DateFormat df = new SimpleDateFormat("yyyy-MM-dd H:m:s");
+				
+				String dateStr = getRequiredStringAttribute(responseMessage, "ACTIVITY_DATE", bannerResponseName);
+				DateFormat df = new SimpleDateFormat("MM/dd/yyyy H:m:s");
 				Date endTimestamp = null;				
 				try {
 					endTimestamp = df.parse(dateStr);
 				} catch (ParseException e) {
 					e.printStackTrace();
 				}
-				
 				createNoChangeBannerResponsesForUnmatchedSentMessages(
 						createMessagesForAllSentElements, 
 						sentMessages, 
 						lastMatchedSent, 
-						sentMessages.size(),
+						currentMatchedSent,
 						endTimestamp,
-						packetId);
+						packetId,
+						includeBanerSectionLinks);
+				lastMatchedSent = currentMatchedSent;
+				if (!includeBanerSectionLinks) resp.setBannerSection(null);
+				getHibSession().persist(resp);
 				
-				commitTransaction();
+			}				
+		}
+					
+		String dateStr = getRequiredStringAttribute(rootElement, "END_TIMESTAMP", rootName);
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd H:m:s");
+		Date endTimestamp = null;				
+		try {
+			endTimestamp = df.parse(dateStr);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		
+		createNoChangeBannerResponsesForUnmatchedSentMessages(
+				createMessagesForAllSentElements, 
+				sentMessages, 
+				lastMatchedSent, 
+				sentMessages.size(),
+				endTimestamp,
+				packetId,
+				includeBanerSectionLinks);
+	}
+		
+	private void processMessageWithMatchingSentMessage(Element rootElement, Element matchingSentRootElement) {
+		try {
+	 		if (rootElement.getName().equalsIgnoreCase(rootName)) {
+	 			beginTransaction();
+	 			internalProcessMessageWithMatchingSentMessage(rootElement, matchingSentRootElement, true);
+	 			getHibSession().getTransaction().commit();
 			}
 		} catch (Exception e) {
-			fatal("Unable to store response message, reason: "+e.getMessage(),e);
+			warn("Unable to store response message, retrying..., reason: "+e.getMessage());
 			rollbackTransaction();
+			try {
+				if (rootElement.getName().equalsIgnoreCase(rootName)) {
+		 			beginTransaction();
+		 			internalProcessMessageWithMatchingSentMessage(rootElement, matchingSentRootElement, false);
+		 			commitTransaction();
+				}
+			} catch (Exception f) {
+				warn("Unable to store response message, reason: " + f.getMessage(), f);
+				rollbackTransaction();
+			}
 		}
 	}
 	
@@ -261,12 +292,14 @@ public class ReceiveBannerResponseMessage extends BaseImport {
 			int lastMatchedSent, 
 			int currentMatchedSent,
 			Date endTimestamp,
-			String packetId) {
+			String packetId,
+			boolean includeBanerSectionLinks) {
 		
 		if (iSaveNoChangeMessages && responsesNeeded && currentMatchedSent != lastMatchedSent) {
 			for (int i = lastMatchedSent + 1 ; i < currentMatchedSent; i++) {
 				BannerResponse noChangeResponse = createNoChangeResponse(sentMessages.get(i), endTimestamp, packetId, i);
 				if (noChangeResponse != null) {
+					if (!includeBanerSectionLinks) noChangeResponse.setBannerSection(null);
 					getHibSession().persist(noChangeResponse);
 				}
 			}
