@@ -544,17 +544,12 @@ public class BannerSection extends BaseBannerSection {
 		return(hs);
 	}
 
-	@SuppressWarnings("unchecked")
-	public static void removeOrphanedBannerSections(Session hibSession){
+	private static void removeOrphanedBannerSectionsAction(Session hibSession) {
 		String orphanedBannerCoursesQuery = "select distinct bs from BannerSection bs where bs.bannerConfig.bannerCourse.courseOfferingId not in ( select co.uniqueId from CourseOffering co )";
-		HashSet<BannerConfig> parentList = new HashSet<BannerConfig>();
+		HashSet<BannerConfig> parentList2 = new HashSet<BannerConfig>();
 		String orphanedBannerSectionsQuery = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.classId not in ( select c.uniqueId from Class_ c )";
 		HashSet<BannerCourse> orphanedCourses = new HashSet<BannerCourse>();
 
-		Transaction trans = hibSession.getTransaction();
-		if (!trans.isActive()) {
-			trans.begin();
-		}
 		List<BannerSection> orphanedBannerCourses = hibSession.createQuery(orphanedBannerCoursesQuery, BannerSection.class)
 		.setHibernateFlushMode(FlushMode.MANUAL)
 		.list();
@@ -589,7 +584,8 @@ public class BannerSection extends BaseBannerSection {
 			} else {
 				Debug.info("removing orphaned banner section");
 				SendBannerMessage.sendBannerMessage(bs, BannerMessageAction.DELETE, hibSession);
-				parentList.add(bs.getBannerConfig());
+//				parentList.add(bs.getBannerConfig());
+				BannerConfig bc = bs.getBannerConfig();
 				if (bs.getParentBannerSection() != null){
 					bs.getParentBannerSection().getBannerSectionToChildSections().remove(bs);
 				}
@@ -599,13 +595,31 @@ public class BannerSection extends BaseBannerSection {
 					}
 				}
 				bs.getBannerConfig().getBannerSections().remove(bs);
+				hibSession.merge(bc);
 			}
 		}
-		for(BannerConfig bc : parentList){		
-				hibSession.merge(bc);
-		}
+//		for(BannerConfig bc : parentList){		
+//				hibSession.merge(bc);
+//		}
 
-		trans.commit();
+	}
+	@SuppressWarnings("unchecked")
+	public static void removeOrphanedBannerSections(Session hibSession){
+
+		Transaction trans = hibSession.getTransaction();
+		if (!trans.isActive()) {
+			trans.begin();
+		} else {
+			trans.commit();
+			trans.begin();
+		}
+		try {
+			removeOrphanedBannerSectionsAction(hibSession);
+			trans.commit();
+		} catch (Exception e) {
+			Debug.warning("Unable to remove orphaned Banner sections, rolling back and continuing because section has already been deleted ..., reason: "+e.getMessage());
+			trans.rollback();
+		}
 	}
 
 	public static BannerSection findBannerSectionForClassAndCourseOffering(
