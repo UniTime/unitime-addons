@@ -434,6 +434,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 									.forStudent(result.getStudentId())
 									.fromAction(name())
 									.withType(NotificationType.ExternalChangeEnrollment)
+									.skipWhenNoChange(true)
 									.oldStudent(oldStudent), helper.getUser());
  				} else if (server.getAcademicSession().isSectioningEnabled() && CustomStudentEnrollmentHolder.isAllowWaitListing() && student.getWaitListMode() == WaitListMode.WaitList) {
  					// no change in the enrollments --> still check the wait-listed override changes

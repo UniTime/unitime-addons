@@ -259,6 +259,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 							.forStudent(iStudentId)
 							.fromAction(name())
 							.withType(NotificationType.ExternalChangeEnrollment)
+							.skipWhenNoChange(true)
 							.oldStudent(oldStudent), helper.getUser());
 				}
 			
