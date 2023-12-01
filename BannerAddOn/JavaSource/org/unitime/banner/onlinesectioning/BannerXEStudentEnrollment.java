@@ -49,6 +49,7 @@ import org.unitime.timetable.model.Student;
 import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.CourseRequest.CourseRequestOverrideIntent;
+import org.unitime.timetable.model.StudentSectioningStatus.NotificationType;
 import org.unitime.timetable.model.WaitList.WaitListType;
 import org.unitime.timetable.onlinesectioning.AcademicSessionInfo;
 import org.unitime.timetable.onlinesectioning.OnlineSectioningHelper;
@@ -334,7 +335,12 @@ public class BannerXEStudentEnrollment extends XEStudentEnrollment {
 			}
 			
 			if (changed)
-				server.execute(server.createAction(NotifyStudentAction.class).forStudent(student.getUniqueId()).oldStudent(s), helper.getUser());
+				server.execute(server.createAction(NotifyStudentAction.class)
+						.forStudent(newStudent)
+						.fromAction("banner-update")
+						.withType(NotificationType.ExternalChangeEnrollment)
+						.skipWhenNoChange(true)
+						.oldStudent(s), helper.getUser());
 			
 			helper.commitTransaction();
 		} catch (SectioningException e) {
