@@ -431,7 +431,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 
 					if (result.has(Change.CLASSES))
 							server.execute(server.createAction(NotifyStudentAction.class)
-									.forStudent(result.getStudentId())
+									.forStudent(newStudent)
 									.fromAction(name())
 									.withType(NotificationType.ExternalChangeEnrollment)
 									.skipWhenNoChange(true)

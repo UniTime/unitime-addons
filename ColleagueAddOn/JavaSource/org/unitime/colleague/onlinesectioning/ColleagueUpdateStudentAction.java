@@ -256,7 +256,7 @@ public class ColleagueUpdateStudentAction implements OnlineSectioningAction<Coll
 
 					if (classEnrollmentsChanged)
 						server.execute(server.createAction(NotifyStudentAction.class)
-							.forStudent(iStudentId)
+							.forStudent(newStudent)
 							.fromAction(name())
 							.withType(NotificationType.ExternalChangeEnrollment)
 							.skipWhenNoChange(true)
