@@ -616,40 +616,45 @@ public class ColleagueSection extends BaseColleagueSection {
 		String potentiallyOrphanedSectionsQuery = "select distinct csc.colleagueSection from ColleagueSectionToClass csc where csc.colleagueSection.deleted = false and csc.classId not in ( select c.uniqueId from Class_ c )";
 
 		Transaction trans = hibSession.beginTransaction();
-		List<ColleagueSection> orphanedColleagueSections = (List<ColleagueSection>) hibSession.createQuery(orphanedSectionsQuery)
-		.setFlushMode(FlushMode.MANUAL)
-		.list();
-		removeOrphanedColleagueSections(hibSession, orphanedColleagueSections);
-		
-		List<ColleagueSection> potentiallyOrphanedColleagueSections = (List<ColleagueSection>) hibSession.createQuery(potentiallyOrphanedSectionsQuery)
-				.setFlushMode(FlushMode.MANUAL)
-				.list();
-		
-		ArrayList<ColleagueSection> orphanedColleagueSections2 = new ArrayList<ColleagueSection>();
-		for (ColleagueSection cs : potentiallyOrphanedColleagueSections) {
-			if (cs.getClasses(hibSession).size() > 0) {
-				Debug.info("removing deleted classes from colleague section");
-				HashSet<ColleagueSectionToClass> l = new HashSet<ColleagueSectionToClass>();
-				l.addAll(cs.getColleagueSectionToClasses());
-				for(ColleagueSectionToClass cstc : l) {
-					if (cstc.getClassId() == null) {
-						cs.getColleagueSectionToClasses().remove(cstc);
-						hibSession.update(cs);
-					} else {
-						Class_ c = Class_DAO.getInstance().get(cstc.getClassId(), hibSession);
-						if (c == null) {
+		try {
+			List<ColleagueSection> orphanedColleagueSections = (List<ColleagueSection>)hibSession.createQuery(orphanedSectionsQuery)
+					.setFlushMode(FlushMode.MANUAL)
+					.list();
+			removeOrphanedColleagueSections(hibSession, orphanedColleagueSections);
+			
+			List<ColleagueSection> potentiallyOrphanedColleagueSections = (List<ColleagueSection>)hibSession.createQuery(potentiallyOrphanedSectionsQuery)
+					.setFlushMode(FlushMode.MANUAL)
+					.list();
+			
+			ArrayList<ColleagueSection> orphanedColleagueSections2 = new ArrayList<ColleagueSection>();
+			for (ColleagueSection cs : potentiallyOrphanedColleagueSections) {
+				if (cs.getClasses(hibSession).size() > 0) {
+					Debug.info("removing deleted classes from colleague section");
+					HashSet<ColleagueSectionToClass> l = new HashSet<ColleagueSectionToClass>();
+					l.addAll(cs.getColleagueSectionToClasses());
+					for(ColleagueSectionToClass cstc : l) {
+						if (cstc.getClassId() == null) {
 							cs.getColleagueSectionToClasses().remove(cstc);
 							hibSession.update(cs);
+						} else {
+							Class_ c = Class_DAO.getInstance().get(cstc.getClassId(), hibSession);
+							if (c == null) {
+								cs.getColleagueSectionToClasses().remove(cstc);
+								hibSession.update(cs);
+							}
 						}
 					}
-				}
-			} else {
-				orphanedColleagueSections2.add(cs);
-			} 
+				} else {
+					orphanedColleagueSections2.add(cs);
+				} 
+			}
+			removeOrphanedColleagueSections(hibSession, orphanedColleagueSections2);
+			trans.commit();
+		} catch (Exception e) {
+			Debug.warning("Unable to remove orphaned Colleague sections, rolling back and continuing because section has already been deleted ..., reason: "+e.getMessage());
+			trans.rollback();
 		}
-		removeOrphanedColleagueSections(hibSession, orphanedColleagueSections2);
 
-		trans.commit();
 	}
 
 	public static ColleagueSection findColleagueSectionForClassAndCourseOffering(
