@@ -50,6 +50,7 @@ import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.ApplicationProperties;
 import org.unitime.timetable.defaults.ApplicationProperty;
+import org.unitime.timetable.gwt.server.Query;
 import org.unitime.timetable.gwt.shared.OnlineSectioningInterface.WaitListMode;
 import org.unitime.timetable.gwt.shared.ReservationInterface.OverrideType;
 import org.unitime.timetable.interfaces.ExternalUidTranslation;
@@ -85,6 +86,7 @@ import org.unitime.timetable.model.StudentEnrollmentMessage;
 import org.unitime.timetable.model.StudentGroup;
 import org.unitime.timetable.model.StudentGroupType;
 import org.unitime.timetable.model.StudentNote;
+import org.unitime.timetable.model.StudentSectioningStatus;
 import org.unitime.timetable.model.StudentSectioningStatus.NotificationType;
 import org.unitime.timetable.model.WaitList.WaitListType;
 import org.unitime.timetable.model.dao.AcademicAreaDAO;
@@ -106,6 +108,7 @@ import org.unitime.timetable.onlinesectioning.model.XReservation;
 import org.unitime.timetable.onlinesectioning.model.XReservationType;
 import org.unitime.timetable.onlinesectioning.model.XSection;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
+import org.unitime.timetable.onlinesectioning.status.db.DbFindEnrollmentInfoAction.DbStudentMatcher;
 import org.unitime.timetable.onlinesectioning.updates.CheckOfferingAction;
 import org.unitime.timetable.onlinesectioning.updates.NotifyStudentAction;
 import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
@@ -141,6 +144,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		iIgnoreGroupRegExp = ApplicationProperties.getProperty("banner.ignoreGroups.regexp");
 		iResetWaitList = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.resetWhenEnrolled"));
 		iDelayOfferingChecks = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.delayOfferingChecks"));
+	}
+	
+	protected String getNewStatusRules(Long sessionId) {
+		return ApplicationProperties.getProperty(sessionId, "banner.newstudent.status");
 	}
 	
 	public BannerUpdateStudentAction forStudent(String externalId, String termCode) {
@@ -341,6 +348,23 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 						result.add(Change.CLASSES);
 				}
 				
+				String newStudentsStatusRules = getNewStatusRules(server.getAcademicSession().getUniqueId());
+				if (newStudentsStatusRules != null && !newStudentsStatusRules.isEmpty() && result.has(Change.CREATED)) {
+					DbStudentMatcher matcher = new DbStudentMatcher(student);
+					for (String rule: newStudentsStatusRules.split("[\n\r]+")) {
+						if (rule != null && rule.indexOf('|') >= 0) {
+							String filter = rule.substring(0, rule.indexOf('|'));
+							String status = rule.substring(rule.indexOf('|') + 1);
+							if (filter.isEmpty() || new Query(filter).match(matcher)) {
+								student.setSectioningStatus(StudentSectioningStatus.getStatus(status, server.getAcademicSession().getUniqueId(), helper.getHibSession()));
+								result.add(Change.STATUS);
+								helper.getAction().addOptionBuilder().setKey("status").setValue(status);
+								break;
+							}
+						}
+					}
+				}
+				
 				if (result.hasChanges())
 					helper.getHibSession().merge(student);
 				
@@ -518,6 +542,22 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 			
 			if (updateAdvisors(student, helper))
 				result.add(Change.ADVISORS);
+			
+			String newStudentsStatusRules = getNewStatusRules(sessionId);
+			if (newStudentsStatusRules != null && !newStudentsStatusRules.isEmpty() && result.has(Change.CREATED)) {
+				DbStudentMatcher matcher = new DbStudentMatcher(student);
+				for (String rule: newStudentsStatusRules.split("[\n\r]+")) {
+					if (rule != null && rule.indexOf('|') >= 0) {
+						String filter = rule.substring(0, rule.indexOf('|'));
+						String status = rule.substring(rule.indexOf('|') + 1);
+						if (filter.isEmpty() || new Query(filter).match(matcher)) {
+							student.setSectioningStatus(StudentSectioningStatus.getStatus(status, sessionId, helper.getHibSession()));
+							result.add(Change.STATUS);
+							break;
+						}
+					}
+				}
+			}
 
 			if (result.hasChanges())
 				helper.getHibSession().merge(student);
@@ -1899,6 +1939,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		ADVISORS,
 		CLASSES,
 		OVERRIDES,
+		STATUS,
 		;
 		public int flag() { return 1 << ordinal(); }
 	}
