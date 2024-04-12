@@ -46,12 +46,12 @@ public class QueueProcessorCheck {
 		String qs = 
 			"select count(*)" +
 			" from QueueOut qo" +
-			" where qo.postDate < sysdate - :mins /(24*60)" +
+			" where qo.postDate < adddate(sysdate, - :mins /(24*60))" +
 			" and (qo.pickupDate is null or qo.processDate is null)";
 		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
 		Query<Long> query = hibSession.createQuery(qs, Long.class);
         int minutes = Integer.parseInt(ApplicationProperties.getProperty("tmtbl.queue.processor.check.minutes","60"));
-		query.setParameter("mins", minutes);
+        query.setParameter("mins", minutes);
 		Long ct= (Long) query.uniqueResult();
 		if (ct > 0) {
 			// See if Colleague is up
