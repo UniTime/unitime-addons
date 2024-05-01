@@ -546,7 +546,6 @@ public class BannerSection extends BaseBannerSection {
 
 	private static void removeOrphanedBannerSectionsAction(Session hibSession) {
 		String orphanedBannerCoursesQuery = "select distinct bs from BannerSection bs where bs.bannerConfig.bannerCourse.courseOfferingId not in ( select co.uniqueId from CourseOffering co )";
-		HashSet<BannerConfig> parentList2 = new HashSet<BannerConfig>();
 		String orphanedBannerSectionsQuery = "select distinct bsc.bannerSection from BannerSectionToClass bsc where bsc.classId not in ( select c.uniqueId from Class_ c )";
 		HashSet<BannerCourse> orphanedCourses = new HashSet<BannerCourse>();
 
