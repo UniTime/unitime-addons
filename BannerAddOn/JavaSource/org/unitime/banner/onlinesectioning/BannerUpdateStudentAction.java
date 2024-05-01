@@ -373,6 +373,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				if (iUpdateClasses && updateStudentOverrides(student, server, helper, result))
 					result.add(Change.OVERRIDES);
 				
+				if (!iUpdateClasses && result.hasChanges()) {
+					XStudent newStudent = ReloadAllData.loadStudent(student, null, server, helper);
+					if (newStudent != null) {
+						server.update(newStudent, true);
+					}
+				}
+				
 				if (iUpdateClasses && result.hasChanges()) {
 					// Unload student
 					XStudent oldStudent = server.getStudent(result.getStudentId());
