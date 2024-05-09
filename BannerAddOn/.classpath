@@ -11,6 +11,6 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.10.13.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container/UniTime"/>
-	<classpathentry kind="lib" path="/UniTime/3rd_party/gwt-dev-2.10.0.jar"/>
+	<classpathentry kind="lib" path="/UniTime/3rd_party/gwt-dev-2.11.0.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>
