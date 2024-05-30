@@ -66,14 +66,14 @@ public class BannerListCourseOfferings extends ListCourseOfferings {
 					query = helper.getHibSession().createQuery(
 							"select bc.courseOfferingId, bsc.classId " +
 							"from BannerSection bs inner join bs.bannerSectionToClasses bsc inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
-							"where bs.crn like :crn || '%' and co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
+							"where cast(bs.crn as string) like :crn || '%' and co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
 							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn", Object[].class
 						).setParameter("crn", Integer.parseInt(matcher.group(4)));					
 				} else {
 					query = helper.getHibSession().createQuery(
 							"select bc.courseOfferingId, bsc.classId " +
 							"from BannerSection bs inner join bs.bannerSectionToClasses bsc inner join bs.bannerConfig.bannerCourse bc, CourseOffering co " +
-							"where bs.crn like :crn || '%' and lower(co.subjectArea.subjectAreaAbbreviation) = :subject and lower(co.courseNbr) like :course || '%' and " +
+							"where cast(bs.crn as string) like :crn || '%' and lower(co.subjectArea.subjectAreaAbbreviation) = :subject and lower(co.courseNbr) like :course || '%' and " +
 							"co.uniqueId = bc.courseOfferingId and co.subjectArea.session.uniqueId = :sessionId " +
 							"order by co.subjectArea.subjectAreaAbbreviation, co.courseNbr, bs.crn", Object[].class
 						).setParameter("crn", Integer.parseInt(matcher.group(4))).setParameter("subject", matcher.group(2).toLowerCase()).setParameter("course", matcher.group(3).toLowerCase());
