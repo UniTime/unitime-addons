@@ -20,17 +20,14 @@
 package org.unitime.banner.model.base;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
 import java.io.Serializable;
 import java.util.Date;
 
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.Queue;
-import org.unitime.commons.hibernate.id.UniqueIdGenerator;
+import org.unitime.commons.annotations.UniqueIdGenerator;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
@@ -56,10 +53,7 @@ public abstract class BaseQueue implements Serializable {
 
 
 	@Id
-	@GenericGenerator(name = "null_id", type = UniqueIdGenerator.class, parameters = {
-		@Parameter(name = "sequence", value = "queue_seq")
-	})
-	@GeneratedValue(generator = "null_id")
+	@UniqueIdGenerator(sequence = "queue_seq")
 	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }

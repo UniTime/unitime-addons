@@ -21,7 +21,6 @@ package org.unitime.banner.model.base;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -32,11 +31,9 @@ import java.util.Date;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.BannerResponse;
 import org.unitime.banner.model.BannerSection;
-import org.unitime.commons.hibernate.id.UniqueIdGenerator;
+import org.unitime.commons.annotations.UniqueIdGenerator;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.SubjectArea;
 
@@ -78,10 +75,7 @@ public abstract class BaseBannerResponse implements Serializable {
 
 
 	@Id
-	@GenericGenerator(name = "banner_response_id", type = UniqueIdGenerator.class, parameters = {
-		@Parameter(name = "sequence", value = "banner_response_seq")
-	})
-	@GeneratedValue(generator = "banner_response_id")
+	@UniqueIdGenerator(sequence = "banner_response_seq")
 	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
