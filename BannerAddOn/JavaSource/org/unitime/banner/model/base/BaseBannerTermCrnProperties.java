@@ -21,7 +21,6 @@ package org.unitime.banner.model.base;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.OneToMany;
@@ -33,11 +32,9 @@ import java.util.Set;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.banner.model.BannerTermCrnProperties;
-import org.unitime.commons.hibernate.id.UniqueIdGenerator;
+import org.unitime.commons.annotations.UniqueIdGenerator;
 
 /**
  * Do not change this class. It has been automatically generated using ant create-model.
@@ -65,10 +62,7 @@ public abstract class BaseBannerTermCrnProperties implements Serializable {
 
 
 	@Id
-	@GenericGenerator(name = "banner_crn_provider_id", type = UniqueIdGenerator.class, parameters = {
-		@Parameter(name = "sequence", value = "pref_group_seq")
-	})
-	@GeneratedValue(generator = "banner_crn_provider_id")
+	@UniqueIdGenerator(sequence = "pref_group_seq")
 	@Column(name="uniqueid")
 	public Long getUniqueId() { return iUniqueId; }
 	public void setUniqueId(Long uniqueId) { iUniqueId = uniqueId; }
