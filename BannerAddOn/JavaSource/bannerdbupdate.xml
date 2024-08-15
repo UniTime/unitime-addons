@@ -1234,5 +1234,22 @@ END section_processor;		]]>
 			alter table %SCHEMA%.banner_response modify seq_numb varchar(10)
 		</mysql>
   	</update>
-
+	<update version="16" date="14-Aug-2024" comment="Various indexes">
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_CONFIG_BANNER_COURSE on %SCHEMA%.BANNER_CONFIG(BANNER_COURSE_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_CONFIG_GRADABLE_ITYPE on %SCHEMA%.BANNER_CONFIG(GRADABLE_ITYPE_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_COURSE_GRADABLE_ITYPE on %SCHEMA%.BANNER_COURSE(GRADABLE_ITYPE_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_INST_METHOD_COHORT_RSTRCT_COHORT on %SCHEMA%.BANNER_INST_METHOD_COHORT_RSTRCT(COHORT_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_INST_METHOD_COHORT_RSTRCT_INSTR_METHOD on %SCHEMA%.BANNER_INST_METHOD_COHORT_RSTRCT(INSTR_METHOD_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_LAST_SENT_SECT_RESTR_COHORT on %SCHEMA%.BANNER_LAST_SENT_SECT_RESTR(COHORT_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_RESPONSE_BANNER_SECTION on %SCHEMA%.BANNER_RESPONSE(BANNER_SECTION_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_RESPONSE_SUBJECT_AREA on %SCHEMA%.BANNER_RESPONSE(SUBJECT_AREA_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_RESPONSE_SESSION on %SCHEMA%.BANNER_RESPONSE(SESSION_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SECTION_BANNER_CONFIG on %SCHEMA%.BANNER_SECTION(BANNER_CONFIG_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SECTION_CONSENT_TYPE on %SCHEMA%.BANNER_SECTION(CONSENT_TYPE_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SECTION_PARENT_BANNER_SECTION on %SCHEMA%.BANNER_SECTION(PARENT_BANNER_SECTION_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SECTION_BANNER_CAMPUS_OVERRIDE on %SCHEMA%.BANNER_SECTION(BANNER_CAMPUS_OVERRIDE_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SESSION_FUTURE on %SCHEMA%.BANNER_SESSION(FUTURE_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SESSION_SESSION on %SCHEMA%.BANNER_SESSION(SESSION_ID)</plsql>
+		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SESSION_BANNER_TERM_CRN_PROP on %SCHEMA%.BANNER_SESSION(BANNER_TERM_CRN_PROP_ID)</plsql>
+	</update>
  </dbupdate>
