@@ -233,7 +233,7 @@ public class ColleagueCourseSearchAction extends UniTimeAction<ColleagueCourseLi
         boolean fetchCredits = false;
         boolean fetchInstructors = false;
         boolean fetchPreferences = false;
-        boolean fetchAssignments = true;
+        boolean fetchAssignments = false;
         boolean fetchReservations = false;
         return(InstructionalOffering.search(sessionId, Long.valueOf(form.getSubjectAreaId()), form.getCourseNbr(), fetchStructure, fetchCredits, fetchInstructors, fetchPreferences, fetchAssignments, fetchReservations));
     }
