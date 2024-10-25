@@ -363,17 +363,51 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					meetingEndDate = aCalendarDate.getTime();
 					tm.put(meetingStartDate, meetingEndDate);
 					haveMeetingBeginDate = false;
-				} else if ((sessionOffset+notMeetingIndex) > 0 && datePattern.getSession().getHolidays().charAt(sessionOffset+notMeetingIndex) == '0'){
+				} else if ((sessionOffset+notMeetingIndex) > 0 
+						    && (datePattern.getSession().getHolidays().length() > sessionOffset+notMeetingIndex 
+						    && datePattern.getSession().getHolidays().charAt(sessionOffset+notMeetingIndex) == '0')){
 						int j = 1;
-						while (datePattern.getSession().getHolidays().charAt(sessionOffset+notMeetingIndex - j) != '0' && (datePattern.getPattern().charAt(notMeetingIndex - j) == '0')){
+						while (datePattern.getSession().getHolidays().charAt(sessionOffset+notMeetingIndex - j) != '0' 
+								&& (datePattern.getPattern().charAt(notMeetingIndex - j) == '0')){
 							j++;
 						}
 						aCalendarDate.add(Calendar.DAY_OF_MONTH, (notMeetingIndex - previousNotMeetingIndex - j));
 						meetingEndDate = aCalendarDate.getTime();
 						tm.put(meetingStartDate, meetingEndDate);
+						if (datePattern.getPattern().indexOf("0", notMeetingIndex + 1) > (notMeetingIndex + 1)) {
+							haveMeetingBeginDate = true;
+							aCalendarDate.add(Calendar.DAY_OF_MONTH, j + 1);
+							meetingStartDate = aCalendarDate.getTime();
+							aCalendarDate.add(Calendar.DAY_OF_MONTH, -1);
+						} else if (datePattern.getPattern().indexOf("0", notMeetingIndex + 1) == -1) {
+							haveMeetingBeginDate = true;
+							aCalendarDate.add(Calendar.DAY_OF_MONTH, j + 1);
+							meetingStartDate = aCalendarDate.getTime();
+							aCalendarDate.add(Calendar.DAY_OF_MONTH, -1);
+						} else {
+							haveMeetingBeginDate = false;
+							aCalendarDate.add(Calendar.DAY_OF_MONTH, j);
+						}			    	
+				} else if ((sessionOffset+notMeetingIndex) < 0 || ((sessionOffset+notMeetingIndex) > 0 
+					    && (datePattern.getSession().getHolidays().length() <= sessionOffset+notMeetingIndex))){
+					aCalendarDate.add(Calendar.DAY_OF_MONTH, (notMeetingIndex - previousNotMeetingIndex - 1));
+					meetingEndDate = aCalendarDate.getTime();
+					tm.put(meetingStartDate, meetingEndDate);
+					if (datePattern.getPattern().indexOf("0", notMeetingIndex + 1) > (notMeetingIndex + 1)) {
+						haveMeetingBeginDate = true;
+						aCalendarDate.add(Calendar.DAY_OF_MONTH, 2);
+						meetingStartDate = aCalendarDate.getTime();
+						aCalendarDate.add(Calendar.DAY_OF_MONTH, -1);
+					} else if (datePattern.getPattern().indexOf("0", notMeetingIndex + 1) == -1) {
+						haveMeetingBeginDate = true;
+						aCalendarDate.add(Calendar.DAY_OF_MONTH, 2);
+						meetingStartDate = aCalendarDate.getTime();
+						aCalendarDate.add(Calendar.DAY_OF_MONTH, -1);
+					} else {
 						haveMeetingBeginDate = false;
-						aCalendarDate.add(Calendar.DAY_OF_MONTH, j);
-				} else {
+						aCalendarDate.add(Calendar.DAY_OF_MONTH, 1);
+					}			    	
+			    } else {
 					aCalendarDate.add(Calendar.DAY_OF_MONTH, (notMeetingIndex - previousNotMeetingIndex));
 				}
 			} else {
@@ -694,7 +728,40 @@ public class MeetingElement implements Comparable<MeetingElement> {
 					}
 				} else {
 					if (me.getBeginTime() == null && getBeginTime() == null){
-						return(0);
+						if (me.getBldgCode() != null && getBldgCode() != null && me.getBldgCode().equals(getBldgCode())){
+							if (me.getRoomCode() != null && getRoomCode() != null && me.getRoomCode().equals(getRoomCode())){
+								if (me.getHoursToArrange() == null && getHoursToArrange() != null){
+									return(1);
+								} else if (me.getHoursToArrange() != null && getHoursToArrange() == null){
+									return(-1);
+								} else if (me.getHoursToArrange() == null && getHoursToArrange() == null){
+									return(0);
+								} else {
+									return(Float.valueOf(getHoursToArrange()).compareTo(Float.valueOf(me.getHoursToArrange())));
+								}
+							} else {
+								if (me.getRoomCode() == null && getRoomCode() == null){
+									return(0);
+								} else if(me.getRoomCode() != null && getRoomCode() == null){
+									return(-1);
+								} else if (me.getRoomCode() == null && getRoomCode() != null){
+									return(1);
+								} else {
+									return(getRoomCode().compareTo(me.getRoomCode()));
+								}
+							}
+						} else {
+							if (me.getBldgCode() == null && getBldgCode() == null){
+								return(0);
+							} else if(me.getBldgCode() != null && getBldgCode() == null){
+								return(-1);
+							} else if (me.getBldgCode() == null && getBldgCode() != null){
+								return(1);
+							} else {
+								return(getBldgCode().compareTo(me.getBldgCode()));
+							}
+						}
+//						return(0);
 					} else if(me.getBeginTime() != null && getBeginTime() == null){
 						return(-1);
 					} else if (me.getBeginTime() == null && getBeginTime() != null){
