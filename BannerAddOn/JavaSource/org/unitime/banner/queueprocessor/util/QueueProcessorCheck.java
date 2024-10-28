@@ -46,7 +46,7 @@ public class QueueProcessorCheck {
 		String qs = 
 			"select count(*)" +
 			" from QueueOut qo" +
-			" where qo.postDate < adddate(sysdate, - :mins /(24*60))" +
+			" where qo.postDate < adddate(sysdate, - cast(:mins as int)  /(24*60))" +
 			" and (qo.pickupDate is null or qo.processDate is null)";
 		org.hibernate.Session hibSession = SessionDAO.getInstance().getSession();
 		Query<Number> query = hibSession.createQuery(qs, Number.class);
