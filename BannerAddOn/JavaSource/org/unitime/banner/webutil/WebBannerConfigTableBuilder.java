@@ -56,6 +56,11 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
 	 */
 	public WebBannerConfigTableBuilder() {
 	}
+	
+	@Override
+	public boolean isShowDemand() {
+		return true;
+	}
 
     public void htmlConfigTablesForBannerOffering(
     		ClassAssignmentProxy classAssignment, 
