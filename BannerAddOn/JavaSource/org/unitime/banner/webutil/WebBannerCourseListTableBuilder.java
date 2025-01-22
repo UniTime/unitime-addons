@@ -50,6 +50,7 @@ import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.LearningManagementSystemInfo;
 import org.unitime.timetable.model.SchedulingSubpart;
+import org.unitime.timetable.model.StudentClassEnrollment;
 import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.comparators.CourseOfferingComparator;
 import org.unitime.timetable.model.comparators.InstrOfferingConfigComparator;
@@ -75,6 +76,11 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
 	 * 
 	 */
 	public WebBannerCourseListTableBuilder() {
+	}
+	
+	@Override
+	public boolean isShowDemand() {
+		return false;
 	}
 	
 	
@@ -281,7 +287,7 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
     	    cell.setStyle("padding-left: " + indent + "px;");
         	cell.setNoWrap(true);
     	    row.addContent(cell);
-    	    cell = this.initCell(" &nbsp;", 18, false);
+    	    cell = this.initCell(" &nbsp;", 18 + (isShowDemand() && sessionHasEnrollments(ioc.getSessionId()) ? 1 : 0), false);
     	    row.addContent(cell);    
      	if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(ioc.getSessionId())) {
      		cell = this.initCell(" &nbsp;", 1, false);
@@ -379,6 +385,19 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
     	row.addContent(cell);
     	cell = initNormalCell(bs.getSectionIndex(), isEditable);
     	row.addContent(cell);
+    	if (isShowDemand() && sessionHasEnrollments(c.getSessionId())) {
+    		int enrl = 0;
+    		if (bs.isCrossListedSection(hibSession)) {
+        		for (StudentClassEnrollment e: c.getStudentEnrollments())
+        			if (e.getCourseOffering().getUniqueId().equals(bc.getCourseOfferingId())) enrl ++;
+    		} else {
+    			if (c.getEnrollment() != null)
+    				enrl = c.getEnrollment();
+    		}
+    		cell = initNormalCell(Integer.toString(enrl), isEditable);
+        	cell.setAlign("right");
+        	row.addContent(cell);
+    	}
     	cell = initNormalCell(Integer.toString(bs.calculateMaxEnrl(hibSession)), isEditable);
     	cell.setAlign("right");
     	row.addContent(cell);
@@ -482,6 +501,9 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
     		if (BannerSection.displayLabHours()){
     			span++;
     		}
+    		if (isShowDemand() && sessionHasEnrollments(io.getSessionId())) {
+    			span++;
+    		}
     		if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(io.getSessionId())) {
      		span++;	
      		}
@@ -531,7 +553,11 @@ public class WebBannerCourseListTableBuilder extends WebInstructionalOfferingTab
 		row.addContent(cell);
     	cell = this.headerCell(BMSG.colSecId(), 2, 1);
 		row.addContent(cell);
-    	cell = this.headerCell(MSG.columnLimit(), 2, 1);
+		if (isShowDemand() && sessionHasEnrollments(sessionId)) {
+    		cell = this.headerCell(MSG.columnDemand(), 2, 1);
+    		row.addContent(cell);
+		}
+		cell = this.headerCell(MSG.columnLimit(), 2, 1);
 		row.addContent(cell);
 		cell = this.headerCell(BMSG.colGradable(), 2, 1);
 		row.addContent(cell);
