@@ -30,7 +30,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.JspWriter;
 
 import org.unitime.colleague.form.ColleagueCourseListForm;
 import org.unitime.colleague.model.ColleagueRestriction;

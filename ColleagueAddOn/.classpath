@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="JavaSource"/>
 	<classpathentry kind="src" path="/UniTime"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-11">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
@@ -12,5 +12,7 @@
 	<classpathentry kind="lib" path="/UniTime/3rd_party/ant-1.10.13.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container/UniTime"/>
 	<classpathentry kind="lib" path="/UniTime/3rd_party/gwt-dev-2.12.1.jar"/>
+	<classpathentry kind="lib" path="/UniTime/3rd_party/jakarta.servlet.jsp-api-3.1.1.jar"/>
+	<classpathentry kind="lib" path="/UniTime/3rd_party/jakarta.servlet-api-6.0.0.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
 </classpath>

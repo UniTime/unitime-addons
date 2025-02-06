@@ -19,7 +19,7 @@
 */
 package org.unitime.colleague.form;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.form.UniTimeForm;

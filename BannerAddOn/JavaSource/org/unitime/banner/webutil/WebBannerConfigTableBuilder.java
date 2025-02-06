@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.JspWriter;
 
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.dao.BannerCourseDAO;
