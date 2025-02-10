@@ -46,6 +46,7 @@ import javax.naming.directory.SearchResult;
 
 import org.hibernate.CacheMode;
 import org.hibernate.FlushMode;
+import org.hibernate.HibernateException;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
 import org.unitime.timetable.ApplicationProperties;
@@ -1853,7 +1854,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				advisor.setSession(iSession);
 				advisor.setStudents(new HashSet<Student>());
 				try {
-					updateDetailsFromLdap(advisor);
+					if (!updateDetailsFromBanner(advisor, helper))
+						updateDetailsFromLdap(advisor);
 				} catch (Throwable t) {
 					helper.info("Failed to lookup advisor details: " + t.getMessage(), t);
 				}
@@ -1883,7 +1885,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				advisor.setStudents(new HashSet<Student>());
 				helper.getHibSession().persist(advisor);
 				try {
-					updateDetailsFromLdap(advisor);
+					if (!updateDetailsFromBanner(advisor, helper))
+						updateDetailsFromLdap(advisor);
 				} catch (Throwable t) {
 					helper.info("Failed to lookup advisor details: " + t.getMessage(), t);
 				}
@@ -2155,6 +2158,26 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
             } catch (Exception e) {}
         }
         return false;
+    }
+    
+    public static boolean updateDetailsFromBanner(Advisor advisor, OnlineSectioningHelper helper) {
+    	String lookupQuery = ApplicationProperties.getProperty("banner.advisorLookup.nativeQuery",
+    			"select first_name, last_name, email from timetable.szv_utm_advisors where puid = lpad(?,9,'0')");
+    	if (lookupQuery == null || lookupQuery.isEmpty()) return false;
+    	try {
+    		Object[] details = helper.getHibSession().createNativeQuery(
+    				lookupQuery, Object[].class
+        			).setParameter(1, advisor.getExternalUniqueId()).setMaxResults(1).uniqueResult();
+        	if (details != null) {
+        		advisor.setFirstName((String)details[0]);
+        		advisor.setLastName((String)details[1]);
+        		advisor.setEmail((String)details[2]);
+        		return true;
+        	}
+    	} catch (HibernateException e) {
+    		helper.info("Failed to lookup advisor details from Banner: " + e.getMessage(), e);
+    	}
+    	return false;
     }
     
     private static class ACM implements Serializable {
