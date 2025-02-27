@@ -1854,8 +1854,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				advisor.setSession(iSession);
 				advisor.setStudents(new HashSet<Student>());
 				try {
-					if (!updateDetailsFromBanner(advisor, helper))
-						updateDetailsFromLdap(advisor);
+					if ("true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.advisorLookup.ldapFirst", "true"))) {
+						if (!updateDetailsFromLdap(advisor))
+							updateDetailsFromBanner(advisor, helper);
+					} else {
+						if (!updateDetailsFromBanner(advisor, helper))
+							updateDetailsFromLdap(advisor);
+					}
 				} catch (Throwable t) {
 					helper.info("Failed to lookup advisor details: " + t.getMessage(), t);
 				}
@@ -2150,7 +2155,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
                 	advisor.setMiddleName(advisor.getMiddleName().replaceAll(" ?"+advisor.getLastName(), ""));
             	advisor.setAcademicTitle(getAttribute(a, ApplicationProperty.PeopleLookupLdapAcademicTitleAttribute.value()));
             	advisor.setEmail(getAttribute(a, ApplicationProperty.PeopleLookupLdapEmailAttribute.value()));
-            	return true;
+            	return advisor.getEmail() != null && !advisor.getEmail().isEmpty();
             }
         } finally {
             try {
