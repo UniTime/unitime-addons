@@ -220,6 +220,8 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return this;
 	}
 	
+	public Set<Integer> getCRNs() { return iCRNs; }
+	
 	public BannerUpdateStudentAction withOverride(String type, String subject, String course, String crn) {
 		iOverrides.add(new String[] {type, subject, course, crn});
 		return this;
