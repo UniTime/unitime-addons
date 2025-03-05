@@ -623,7 +623,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		return student;
 	}
 	
+	protected Map<String, AcademicArea> iCreatedAreas = new HashMap<String, AcademicArea>();
 	protected AcademicArea getAcademicArea(OnlineSectioningHelper helper, String area) {
+		if (iCreatedAreas.containsKey(area))
+			return iCreatedAreas.get(area);
 		if (iLocking) {
 			try {
 				sLock.lock("Area:" + iSession.getReference() + ":" + area);
@@ -646,6 +649,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				helper.info("Added Academic Area:  " + area);
 				helper.getHibSession().merge(aa);
+				iCreatedAreas.put(area, aa);
 				return aa;
 			} finally {
 				sLock.unlock("Area:" + iSession.getReference() + ":" + area);
@@ -663,12 +667,16 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				aa.setTitle(area);
 				helper.getHibSession().persist(aa);
 				helper.info("Added Academic Area:  " + area);
+				iCreatedAreas.put(area, aa);
 			}
 			return aa;
 		}
 	}
 	
+	protected Map<String, AcademicClassification> iCreatedClassifications = new HashMap<String, AcademicClassification>();
 	protected AcademicClassification getAcademicClassification(OnlineSectioningHelper helper, String clasf) {
+		if (iCreatedClassifications.containsKey(clasf))
+			return iCreatedClassifications.get(clasf);
 		if (iLocking) {
 			try {
 				sLock.lock("Clasf:" + iSession.getReference() + ":" + clasf);
@@ -690,6 +698,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				helper.info("Added Academic Classification:  " + clasf);
 				helper.getHibSession().merge(ac);
+				iCreatedClassifications.put(clasf, ac);
 				return ac;
 			} finally {
 				sLock.unlock("Clasf:" + iSession.getReference() + ":" + clasf);
@@ -706,6 +715,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				ac.setSession(iSession);
 				helper.getHibSession().persist(ac);
 				helper.info("Added Academic Classification:  " + clasf);
+				iCreatedClassifications.put(clasf, ac);
 			}
 			return ac;
 		}
@@ -869,7 +879,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
          uniqueResult();
     }
 	
+	protected Map<String, Degree> iCreatedDegrees = new HashMap<String, Degree>();
 	protected Degree getDegree(OnlineSectioningHelper helper, String degree) {
+		if (iCreatedDegrees.containsKey(degree))
+			return iCreatedDegrees.get(degree);
 		if (iLocking) {
 			try {
 				sLock.lock("Degree:" + iSession.getReference() + ":" + degree);
@@ -889,6 +902,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				helper.getHibSession().merge(deg);
 				helper.info("Added Degree:  " + degree);
+				iCreatedDegrees.put(degree, deg);
 				return deg;
 			} finally {
 				sLock.unlock("Degree:" + iSession.getReference() + ":" + degree);
@@ -903,6 +917,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				deg.setSession(iSession);
 				helper.getHibSession().persist(deg);
 				helper.info("Added Degree:  " + degree);
+				iCreatedDegrees.put(degree, deg);
 			}
 			return deg;
 		}
@@ -928,7 +943,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
          uniqueResult();
     }
 	
+	protected Map<String, Program> iCreatedPrograms = new HashMap<String, Program>();
 	protected Program getProgram(OnlineSectioningHelper helper, String program) {
+		if (iCreatedPrograms.containsKey(program))
+			return iCreatedPrograms.get(program);
 		if (iLocking) {
 			try {
 				sLock.lock("Program:" + iSession.getReference() + ":" + program);
@@ -948,6 +966,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				helper.getHibSession().merge(prog);
 				helper.info("Added Program:  " + program);
+				iCreatedPrograms.put(program, prog);
 				return prog;
 			} finally {
 				sLock.unlock("Program:" + iSession.getReference() + ":" + program);
@@ -962,6 +981,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				prog.setSession(iSession);
 				helper.getHibSession().persist(prog);
 				helper.info("Added Program:  " + program);
+				iCreatedPrograms.put(program, prog);
 			}
 			return prog;
 		}
@@ -987,7 +1007,10 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
          uniqueResult();
     }
 	
+	protected Map<String, Campus> iCreatedCampuses = new HashMap<String, Campus>();
 	protected Campus getCampus(OnlineSectioningHelper helper, String campus) {
+		if (iCreatedCampuses.containsKey(campus))
+			return iCreatedCampuses.get(campus);
 		if (iLocking) {
 			try {
 				sLock.lock("Campus:" + iSession.getReference() + ":" + campus);
@@ -1007,6 +1030,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				}
 				helper.getHibSession().merge(camp);
 				helper.info("Added Campus:  " + campus);
+				iCreatedCampuses.put(campus, camp);
 				return camp;
 			} finally {
 				sLock.unlock("Campus:" + iSession.getReference() + ":" + campus);
@@ -1021,6 +1045,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				camp.setSession(iSession);
 				helper.getHibSession().persist(camp);
 				helper.info("Added Campus:  " + campus);
+				iCreatedCampuses.put(campus, camp);
 			}
 			return camp;
 		}
