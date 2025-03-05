@@ -516,6 +516,14 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 						.uniqueResult().intValue() > 0;
 			}
 			
+			protected boolean hasCrns(BannerSession session, Set<Integer> crns, org.hibernate.Session hibSession) {
+				if (crns == null || crns.isEmpty()) return false;
+				return hibSession.createQuery(
+						"select count(s) from BannerSection s where s.crn in :crns and s.session.uniqueId = :sessionId", Number.class
+						).setParameterList("crns", crns).setParameter("sessionId", session.getSession().getUniqueId())
+						.uniqueResult().intValue() > 0;
+			}
+			
 			void processStudent(Element studentElement, org.hibernate.Session hibSession, boolean locking) {
 				long t0 = System.currentTimeMillis();
 				try {
@@ -541,6 +549,8 @@ public class BannerStudentUpdates extends BaseImport implements MessageHandler {
 						if (!update.isApplicable(bs)) {
 							if (iCheckSkipStudent && hasStudent(bs, externalId, hibSession)) {
 								warn("[" + externalId + "] Cannot skip campus " + bs.getBannerCampus() + " -- student already exists in " + bs.getSession().getLabel());
+							} else if (iCheckSkipStudent && hasCrns(bs, update.getCRNs(), hibSession)) {
+								warn("[" + externalId + "] Cannot skip campus " + bs.getBannerCampus() + " -- student already enrolled in one of the classes of " + bs.getSession().getLabel());
 							} else {
 								debug("[" + externalId + "] Skipping campus " + bs.getBannerCampus());
 								continue;
