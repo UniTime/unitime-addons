@@ -1917,8 +1917,13 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 				advisor.setStudents(new HashSet<Student>());
 				helper.getHibSession().persist(advisor);
 				try {
-					if (!updateDetailsFromBanner(advisor, helper))
-						updateDetailsFromLdap(advisor);
+					if ("true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.advisorLookup.ldapFirst", "true"))) {
+						if (!updateDetailsFromLdap(advisor))
+							updateDetailsFromBanner(advisor, helper);
+					} else {
+						if (!updateDetailsFromBanner(advisor, helper))
+							updateDetailsFromLdap(advisor);
+					}
 				} catch (Throwable t) {
 					helper.info("Failed to lookup advisor details: " + t.getMessage(), t);
 				}
