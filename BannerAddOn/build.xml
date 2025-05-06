@@ -364,6 +364,7 @@
 	</target>
 
 	<target name="compile-war" depends="timetable-jar,compile-gwt,copy-libs,copy-jsp,copy-gwt">
+		<mergexml target="${war.dir}/WEB-INF/web.xml" source="${jsp.dir}/WEB-INF/web.xml"/>
 		<copy todir="${war.dir}/WEB-INF/lib" file="${dist.dir}/timetable.jar"/>
 		<jar destfile="${dist.dir}/UniTimeB.war">
 			<fileset dir="${war.dir}">
