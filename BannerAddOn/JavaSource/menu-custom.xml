@@ -39,8 +39,15 @@
 				</condition>
 			</item>
 			<item name="Banner Offerings" page="bannerOfferingSearch.action">
-							<condition>
+				<condition>
 					<hasPermission name="InstructionalOfferings"/>
+					<propertyEquals name="banner.legacy.bannerOfferings" value="true" defaultValue="false"/>
+				</condition>
+			</item>
+			<item name="Banner Offerings" page="bannerOfferings" type="gwt">
+				<condition>
+					<hasPermission name="InstructionalOfferings"/>
+					<propertyEquals name="banner.legacy.bannerOfferings" value="false" defaultValue="false"/>
 				</condition>
 			</item>
 		</menu>

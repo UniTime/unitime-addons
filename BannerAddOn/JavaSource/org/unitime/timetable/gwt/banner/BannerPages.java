@@ -29,6 +29,10 @@ public enum BannerPages {
 		public Widget create() { return new BannerResponsesPage(); }
 		public String name(BannerGwtMessages messages) { return messages.pageBannerResponses(); }
 		}),
+	bannerOfferings(new PageFactory() {
+		public Widget create() { return new BannerOfferingsPage(); }
+		public String name(BannerGwtMessages messages) { return messages.pageBannerOfferings(); }
+		}),
 	;
 
 	private PageFactory iFactory;

@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- 
+/*
  * Licensed to The Apereo Foundation under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for
  * additional information regarding copyright ownership.
@@ -17,16 +16,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- -->
-<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
-         version="6.0">
+*/
+package org.unitime.banner.export;
 
-	<!-- Banner Add-On GWT simplified page mappings -->
-	<servlet-mapping>
-		<servlet-name>GWT</servlet-name>
-		<url-pattern>/bannerResponses</url-pattern>
-		<url-pattern>/bannerOfferings</url-pattern>
-	</servlet-mapping>
-</web-app>
+import java.io.IOException;
+
+import org.springframework.stereotype.Service;
+import org.unitime.timetable.export.ExportHelper;
+import org.unitime.timetable.export.courses.OfferingsXLS;
+import org.unitime.timetable.security.rights.Right;
+
+@Service("org.unitime.timetable.export.Exporter:banner-offerings.xls")
+public class BannerOfferingsXLS extends OfferingsXLS {
+
+	@Override
+	public String reference() {
+		return "banner-offerings.xls";
+	}
+
+	@Override
+	public void export(ExportHelper helper) throws IOException {
+		checkPermission(helper, Right.InstructionalOfferingsExportPDF);
+		exportDataXls(BannerOfferingsCSV.getBannerOfferings(helper, classAssignmentService.getAssignment()), helper);
+	}
+}
