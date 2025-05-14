@@ -28,5 +28,6 @@
 		<servlet-name>GWT</servlet-name>
 		<url-pattern>/bannerResponses</url-pattern>
 		<url-pattern>/bannerOfferings</url-pattern>
+		<url-pattern>/bannerOffering</url-pattern>
 	</servlet-mapping>
 </web-app>

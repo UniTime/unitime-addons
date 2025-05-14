@@ -306,7 +306,7 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
         BannerCourse bc = BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), BannerCourseDAO.getInstance().getSession());
         if (bc == null) return;
         LineInterface row = initRow(true);
-        if (isEditable) row.setURL("bannerOfferingDetail.action?op=view&bc=" + bc.getUniqueId());
+        if (isEditable) row.setURL("bannerOffering?bc=" + bc.getUniqueId());
         
         row.addCell(subjectAndCourseInfo(bc, io, co));
         table.addLine(row);
@@ -329,7 +329,7 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
 	    String configName = ioc.getName();
 		if (printConfigLine) {
 			LineInterface row = initRow(isHeaderRow);
-	        if (clickable) row.setURL("bannerOfferingDetail.action?op=view&bc=" + bc.getUniqueId());
+	        if (clickable) row.setURL("bannerOffering?bc=" + bc.getUniqueId());
 	        CellInterface cell = null;
     	    if (configName==null || configName.trim().length()==0)
     	        configName = ioc.getUniqueId().toString();
@@ -395,7 +395,7 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
         boolean isEditable = true;
         LineInterface row = initRow(isHeaderRow);
         if (clickable)
-        	row.setURL("bannerOfferingDetail.action?op=view&bc=" + bc.getUniqueId());
+        	row.setURL("bannerOffering?bc=" + bc.getUniqueId());
 		BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOffering(c, bc.getCourseOffering(hibSession), hibSession);
 		if (bs == null) return;
     	CellInterface cell = initNormalCell(bs.bannerSectionLabel(), isEditable);
@@ -512,7 +512,9 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
 			cell.add(tempCo.getCourseNameWithTitle())
 				.setTitle(tempCo.getCourseNameWithTitle())
 				.addStyle("padding-left: 20 px;")
-				.setColor(disabledColor);
+				.setColor(disabledColor)
+				.setNoWrap(true)
+				.setInline(false);
 		}
 		return cell;
     }
