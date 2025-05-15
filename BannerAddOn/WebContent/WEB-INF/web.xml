@@ -29,5 +29,6 @@
 		<url-pattern>/bannerResponses</url-pattern>
 		<url-pattern>/bannerOfferings</url-pattern>
 		<url-pattern>/bannerOffering</url-pattern>
+		<url-pattern>/bannerConfigEdit</url-pattern>
 	</servlet-mapping>
 </web-app>

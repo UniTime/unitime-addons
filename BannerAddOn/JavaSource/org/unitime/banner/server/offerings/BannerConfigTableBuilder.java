@@ -21,11 +21,12 @@ package org.unitime.banner.server.offerings;
 
 import java.util.TreeSet;
 
+import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
 import org.unitime.timetable.defaults.CommonValues;
 import org.unitime.timetable.defaults.UserProperty;
+import org.unitime.timetable.gwt.banner.BannerOfferingDetailPage.BannerOfferingConfigInterface;
 import org.unitime.timetable.gwt.banner.BannerOfferingDetailPage.BannerOfferingDetailResponse;
-import org.unitime.timetable.gwt.client.offerings.OfferingsInterface.OfferingConfigInterface;
 import org.unitime.timetable.model.ClassDurationType;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
@@ -72,8 +73,13 @@ public class BannerConfigTableBuilder extends BannerOfferingTableBuilder {
         }
     }			
 	
-    private OfferingConfigInterface generateTableForBannerConfig(ClassAssignmentProxy classAssignment, InstrOfferingConfig ioc, BannerCourse bc) {
-    	OfferingConfigInterface ret = new OfferingConfigInterface();
+    private BannerOfferingConfigInterface generateTableForBannerConfig(ClassAssignmentProxy classAssignment, InstrOfferingConfig ioc, BannerCourse bc) {
+    	BannerOfferingConfigInterface ret = new BannerOfferingConfigInterface();
+    	
+    	for (BannerConfig bcfg: bc.getBannerConfigs()) {
+    		if (bcfg.getInstrOfferingConfigId().equals(ioc.getUniqueId()))
+    			ret.setiBannerConfigId(bcfg.getUniqueId());
+    	}
     	
     	ret.setConfigId(ioc.getUniqueId());
 	    if (ioc.getInstructionalMethod() != null)

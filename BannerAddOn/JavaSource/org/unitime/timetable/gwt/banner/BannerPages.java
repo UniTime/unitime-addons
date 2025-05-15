@@ -37,6 +37,10 @@ public enum BannerPages {
 		public Widget create() { return new BannerOfferingDetailPage(); }
 		public String name(BannerGwtMessages messages) { return messages.pageBannerOfferingDetail(); }
 		}),
+	bannerConfigEdit(new PageFactory() {
+		public Widget create() { return new BannerConfigEditPage(); }
+		public String name(BannerGwtMessages messages) { return messages.pageBannerOfferingEdit(); }
+		}),
 	;
 
 	private PageFactory iFactory;

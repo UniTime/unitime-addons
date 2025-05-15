@@ -57,7 +57,6 @@ import org.unitime.banner.util.DefaultExternalBannerSubjectAreaElementHelper;
 import org.unitime.commons.Debug;
 import org.unitime.localization.impl.Localization;
 import org.unitime.timetable.ApplicationProperties;
-import org.unitime.timetable.gwt.client.solver.SolverPage.DateParameter;
 import org.unitime.timetable.gwt.client.tables.TableInterface.CellInterface;
 import org.unitime.timetable.gwt.client.tables.TableInterface.CellInterface.Alignment;
 import org.unitime.timetable.gwt.resources.GwtConstants;

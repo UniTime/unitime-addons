@@ -198,7 +198,7 @@ public class BannerOfferingDetailPage extends Composite {
 					for (PropertyInterface property: response.getProperties().getProperties())
 						iPanel.addRow(property.getName(), new TableWidget.CellWidget(property.getCell(), true));
 				if (response.hasConfigs()) {
-					for (final OfferingConfigInterface config: response.getConfigs()) {
+					for (final BannerOfferingConfigInterface config: response.getConfigs()) {
 						UniTimeHeaderPanel hp = new UniTimeHeaderPanel(config.getName());
 						iPanel.addHeaderRow(hp);
 						iPanel.addRow(new TableWidget(config));
@@ -210,8 +210,7 @@ public class BannerOfferingDetailPage extends Composite {
 							hp.addButton("banner-config-edit", BANNER.actionEditBannerConfig(), new ClickHandler() {
 								@Override
 								public void onClick(ClickEvent evt) {
-									ToolBox.open(GWT.getHostPageBaseURL() + "bannerOfferingModify.action?uid=" + config.getConfigId() + "&bc=" + iResponse.getBannerCourseId() +
-											"&op=" + URL.encodeQueryString(BANNER.actionEditBannerConfig()));
+									ToolBox.open(GWT.getHostPageBaseURL() + "bannerConfigEdit?id=" + config.getBannerConfigId());
 								}
 							});
 							hp.getButton("banner-config-edit").setTitle(BANNER.titleEditBannerConfig());
@@ -272,6 +271,13 @@ public class BannerOfferingDetailPage extends Composite {
 		public void setAction(Action action) { iAction = action; }
 	}
 	
+	public static class BannerOfferingConfigInterface extends OfferingConfigInterface {
+		private Long iBannerConfigId;
+		
+		public Long getBannerConfigId() { return iBannerConfigId; }
+		public void setiBannerConfigId(Long bannerConfigId) { iBannerConfigId = bannerConfigId; }
+	}
+	
 	public static class BannerOfferingDetailResponse implements GwtRpcResponse {
 		private Long iOfferingId, iBannerCourseId, iPreviousId, iNextId;
 		private Long iSubjectAreaId, iCourseId;
@@ -279,7 +285,7 @@ public class BannerOfferingDetailPage extends Composite {
 		private String iName;
 		private TableInterface iCourses;
 		private TableInterface iProperties;
-		private List<OfferingConfigInterface> iConfigurations;
+		private List<BannerOfferingConfigInterface> iConfigurations;
 		private Set<String> iOperations;
 		private TableInterface iLastChanges;
 		private boolean iOffered;
@@ -340,9 +346,9 @@ public class BannerOfferingDetailPage extends Composite {
 		}
 		
 		public boolean hasConfigs() { return iConfigurations != null && !iConfigurations.isEmpty(); }
-		public List<OfferingConfigInterface> getConfigs() { return iConfigurations; }
-		public void addConfig(OfferingConfigInterface configuration) {
-			if (iConfigurations == null) iConfigurations = new ArrayList<OfferingConfigInterface>();
+		public List<BannerOfferingConfigInterface> getConfigs() { return iConfigurations; }
+		public void addConfig(BannerOfferingConfigInterface configuration) {
+			if (iConfigurations == null) iConfigurations = new ArrayList<BannerOfferingConfigInterface>();
 			iConfigurations.add(configuration);
 		}
 		
