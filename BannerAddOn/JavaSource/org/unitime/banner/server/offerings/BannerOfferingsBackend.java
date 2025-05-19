@@ -22,18 +22,21 @@ package org.unitime.banner.server.offerings;
 import java.net.URLEncoder;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.unitime.banner.model.BannerCourse;
+import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.defaults.SessionAttribute;
 import org.unitime.timetable.gwt.banner.BannerOfferingsPage.BannerOfferingsRequest;
-import org.unitime.timetable.gwt.client.tables.TableInterface;
+import org.unitime.timetable.gwt.client.offerings.OfferingsInterface.OfferingsResponse;
 import org.unitime.timetable.gwt.command.client.GwtRpcException;
-import org.unitime.timetable.gwt.command.client.GwtRpcResponseList;
 import org.unitime.timetable.gwt.command.server.GwtRpcImplementation;
 import org.unitime.timetable.gwt.command.server.GwtRpcImplements;
 import org.unitime.timetable.gwt.shared.FilterInterface.FilterParameterInterface;
+import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.SubjectArea;
+import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.model.dao.SubjectAreaDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
@@ -42,21 +45,21 @@ import org.unitime.timetable.solver.service.AssignmentService;
 import org.unitime.timetable.webutil.BackTracker;
 
 @GwtRpcImplements(BannerOfferingsRequest.class)
-public class BannerOfferingsBackend implements GwtRpcImplementation<BannerOfferingsRequest, GwtRpcResponseList<TableInterface>> {
+public class BannerOfferingsBackend implements GwtRpcImplementation<BannerOfferingsRequest, OfferingsResponse> {
 	protected static CourseMessages MESSAGES = Localization.create(CourseMessages.class);
 	protected static BannerMessages BNR = Localization.create(BannerMessages.class);
 	
 	@Autowired AssignmentService<ClassAssignmentProxy> classAssignmentService;
 	
 	@Override
-	public GwtRpcResponseList<TableInterface> execute(BannerOfferingsRequest request, SessionContext context) {
+	public OfferingsResponse execute(BannerOfferingsRequest request, SessionContext context) {
 		context.checkPermission(Right.InstructionalOfferings);
 		
 		String subjectArea = request.getFilter().getParameterValue("subjectArea");
 		if (subjectArea == null || subjectArea.isEmpty())
 			throw new GwtRpcException(MESSAGES.errorSubjectRequired());
 		
-		GwtRpcResponseList<TableInterface> response = new GwtRpcResponseList<TableInterface>();
+		OfferingsResponse response = new OfferingsResponse();
 		BannerOfferingTableBuilder builder = new BannerOfferingTableBuilder(context, request.getBackType(), request.getBackId());
 		
 		for (FilterParameterInterface p: request.getFilter().getParameters()) {
@@ -95,6 +98,22 @@ public class BannerOfferingsBackend implements GwtRpcImplementation<BannerOfferi
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		if (request.isOpenDetailsOnSingleResult() && subjectArea != null && !subjectArea.isEmpty() && subjectArea.indexOf(',') < 0 && courseNbr != null && !courseNbr.isEmpty()) {
+			try {
+				CourseOffering co = CourseOfferingDAO.getInstance().getSession().createQuery(
+						"from CourseOffering where subjectArea.uniqueId = :subjectAreaId and courseNbr = :courseNbr", CourseOffering.class
+						).setParameter("subjectAreaId", Long.valueOf(subjectArea)).setParameter("courseNbr", courseNbr).uniqueResult();
+				if (co != null && context.hasPermission(co.getInstructionalOffering(), Right.InstructionalOfferingDetail)) {
+			        BannerCourse bc = BannerCourse.findBannerCourseForCourseOffering(co.getUniqueId(), BannerCourseDAO.getInstance().getSession());
+			        if (bc != null) {
+			        	response.setUrl("bannerOffering?bc=" + bc.getUniqueId());
+			        	return response;
+			        }
+				}
+			} catch (Exception e) {}
+		}
+
 		
 		builder.generateTableForBannerOfferings(
 				classAssignmentService.getAssignment(),

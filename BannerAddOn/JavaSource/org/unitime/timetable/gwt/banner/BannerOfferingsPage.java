@@ -23,6 +23,7 @@ import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.gwt.client.ToolBox;
 import org.unitime.timetable.gwt.client.offerings.OfferingsInterface.OfferingsRequest;
+import org.unitime.timetable.gwt.client.offerings.OfferingsInterface.OfferingsResponse;
 import org.unitime.timetable.gwt.client.page.UniTimeNotifications;
 import org.unitime.timetable.gwt.client.solver.PageFilter;
 import org.unitime.timetable.gwt.client.tables.TableInterface;
@@ -33,7 +34,6 @@ import org.unitime.timetable.gwt.client.widgets.P;
 import org.unitime.timetable.gwt.client.widgets.SimpleForm;
 import org.unitime.timetable.gwt.client.widgets.UniTimeHeaderPanel;
 import org.unitime.timetable.gwt.command.client.GwtRpcRequest;
-import org.unitime.timetable.gwt.command.client.GwtRpcResponseList;
 import org.unitime.timetable.gwt.command.client.GwtRpcService;
 import org.unitime.timetable.gwt.command.client.GwtRpcServiceAsync;
 import org.unitime.timetable.gwt.resources.GwtMessages;
@@ -90,7 +90,7 @@ public class BannerOfferingsPage extends Composite {
 				String token = iFilter.getQuery();
 				if (!History.getToken().equals(token))
 					History.newItem(token, false);
-				search(null);
+				search(null, true);
 			}
 		});
 		iFilter.getFooter().setEnabled("search", false);
@@ -148,7 +148,7 @@ public class BannerOfferingsPage extends Composite {
 					token = "";
 				iFilter.setQuery(token, true);
 				if (iPanel.getRowCount() > 1)
-					search(null);
+					search(null, false);
 			}
 		});
 	}
@@ -191,16 +191,17 @@ public class BannerOfferingsPage extends Composite {
 					DomEvent.fireNativeEvent(Document.get().createChangeEvent(), list);
 				}
 				if (autoSearch)
-					search(null);
+					search(null, false);
 			}
 		});
 	}
 	
-	protected void search(final AsyncCallback<Boolean> callback) {
+	protected void search(final AsyncCallback<Boolean> callback, boolean openDetailsOnSingleResult) {
 		final BannerOfferingsRequest request = new BannerOfferingsRequest();
 		request.setBackId(Window.Location.getParameter("backId"));
 		request.setBackType(Window.Location.getParameter("backType"));
 		request.setFilter(iFilter.getValue());
+		request.setOpenDetailsOnSingleResult(openDetailsOnSingleResult);
 		iFilter.getFooter().clearMessage();
 		for (int row = iPanel.getRowCount() - 1; row > 0; row--)
 			iPanel.removeRow(row);
@@ -210,7 +211,7 @@ public class BannerOfferingsPage extends Composite {
 		iFilter.getFooter().setEnabled("exportXls", false);
 		iFilter.getFooter().setEnabled("exportPdf", false);
 		LoadingWidget.showLoading(MESSAGES.waitLoadingData());
-		RPC.execute(request, new AsyncCallback<GwtRpcResponseList<TableInterface>>() {
+		RPC.execute(request, new AsyncCallback<OfferingsResponse>() {
 			@Override
 			public void onFailure(Throwable caught) {
 				LoadingWidget.hideLoading();
@@ -222,7 +223,11 @@ public class BannerOfferingsPage extends Composite {
 			}
 
 			@Override
-			public void onSuccess(GwtRpcResponseList<TableInterface> result) {
+			public void onSuccess(OfferingsResponse result) {
+				if (result.hasUrl()) {
+					ToolBox.open(GWT.getHostPageBaseURL() + result.getUrl());
+					return;
+				}
 				LoadingWidget.hideLoading();
 				iFilter.getFooter().clearMessage();
 				for (TableInterface table: result) {
