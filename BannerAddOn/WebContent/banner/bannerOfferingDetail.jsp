@@ -106,6 +106,9 @@
 						<s:if test="form.hasAlternativeCourse == true">
 							<TD align="left" class="WebTableHeader"><loc:message name="columnAlternativeCourse"/></TD>
 						</s:if>
+						<s:if test="form.hasParentCourse == true">
+							<TD align="left" class="WebTableHeader"><loc:message name="columnParentCourse"/></TD>
+						</s:if>
 						<TD align="left" class="WebTableHeader"><loc:message name="columnConsent"/></TD>
 						<s:if test="form.hasDisabledOverrides == true">
 							<TD align="left" class="WebTableHeader"><loc:message name="columnDisabledOverrides"/></TD>
@@ -166,6 +169,13 @@
 							<TD class="BottomBorderGray">&nbsp;
 								<s:if test="#co.alternativeOffering != null">
 									<s:property value="#co.alternativeOffering.courseName"/>
+								</s:if>
+							</TD>
+						</s:if>
+						<s:if test="form.hasParentCourse == true">
+							<TD class="BottomBorderGray">&nbsp;
+								<s:if test="#cx.parentOffering != null">
+									<s:property value="#cx.parentOffering.courseName"/>
 								</s:if>
 							</TD>
 						</s:if>
