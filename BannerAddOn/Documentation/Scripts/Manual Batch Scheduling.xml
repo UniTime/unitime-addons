@@ -301,7 +301,7 @@ def executeAction(server, action, student, writer):
     return True
 
 def execute(online):
-    lines = csv.reader(infile.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+    lines = csv.reader(infile.getString().split('\n'), delimiter=",", quotechar='"')
     outfile = open(log.createOutput('enrollments','csv').getAbsolutePath(), 'w')
     writer = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['PUID','Name','Course','CRN','Status','Message'])
@@ -804,7 +804,7 @@ def execute():
         for line in csv.reader(overrides.split('\n'), delimiter=",", quotechar='"'):
             manualOverrides.append(line)
     lines = []
-    for line in csv.reader(input.getString('utf-8').split('\n'), delimiter=",", quotechar='"'):
+    for line in csv.reader(input.getString().split('\n'), delimiter=",", quotechar='"'):
         if not line: continue
         if line[0].lower() == 'puid' or line[0].lower() == 'eof': continue
         lines.append(line)
@@ -1144,7 +1144,7 @@ def requestStudentUpdate(puids):
 
 def execute():
     lines = []
-    for line in csv.reader(input.getString('utf-8').split('\n'), delimiter=",", quotechar='"'):
+    for line in csv.reader(input.getString().split('\n'), delimiter=",", quotechar='"'):
         if not line: continue
         if line[0].lower() == 'puid' or line[0].lower() == 'eof': continue
         lines.append(line)

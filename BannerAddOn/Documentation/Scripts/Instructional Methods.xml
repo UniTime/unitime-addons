@@ -48,7 +48,7 @@ methods = {}
 for m in hibSession.createQuery("from InstructionalMethod").list():
     methods[m.getReference()] = m
 
-lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+lines = csv.reader(file.getString().split('\n'), delimiter=",", quotechar='"')
 header = True
 for line in lines:
     if not line: continue

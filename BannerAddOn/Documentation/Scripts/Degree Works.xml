@@ -464,7 +464,7 @@ template = None
 templates = []
 warn = {}
 tags = {}
-for line in file.getString('utf-8').split('\n'):
+for line in file.getString().split('\n'):
     data = line.split('!')
     recordType = data[0].split(':')[0]
     if "MST" == recordType:

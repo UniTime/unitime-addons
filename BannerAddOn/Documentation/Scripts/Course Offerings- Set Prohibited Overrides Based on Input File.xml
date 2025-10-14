@@ -54,7 +54,7 @@ def isValidSession(campus, year, term):
 
 def execute():
     lines = []
-    for line in csv.reader(input.getString('utf-8').split('\n'), delimiter=",", quotechar='"'):
+    for line in csv.reader(input.getString().split('\n'), delimiter=",", quotechar='"'):
         if not line: continue
         if line[0].lower() == 'campus' or line[0].lower() == 'eof': continue
         lines.append(line)

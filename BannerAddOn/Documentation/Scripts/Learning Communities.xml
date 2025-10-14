@@ -120,7 +120,7 @@ def createReservations(offerings, group, course2classes):
         offerings.add(Long(course.getInstructionalOffering().getUniqueId()))
         hibSession.saveOrUpdate(reservation)
 
-lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+lines = csv.reader(file.getString().split('\n'), delimiter=",", quotechar='"')
 
 group = None
 header = True
@@ -281,7 +281,7 @@ def createReservations(offerings, group, course2classes, course2limit):
         hibSession.delete(r)
     hibSession.flush()
 
-lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+lines = csv.reader(file.getString().split('\n'), delimiter=",", quotechar='"')
 output = open(log.createOutput('lc-import-results','csv').getAbsolutePath(), 'w')
 writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 writer.writerow(['LC','Name','Subject','Course','CRN','Error'])
@@ -430,7 +430,7 @@ def enroll(students, lcAbbv, puids, status, writer):
             r.setLimit(len(puids))
             hibSession.saveOrUpdate(r)
 
-lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+lines = csv.reader(file.getString().split('\n'), delimiter=",", quotechar='"')
 
 status = None
 if statusRef:
@@ -634,7 +634,7 @@ def enroll(students, lcAbbv, puids, status, writer):
             r.setLimit(len(puids))
             hibSession.saveOrUpdate(r)
 
-lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+lines = csv.reader(file.getString().split('\n'), delimiter=",", quotechar='"')
 
 status = None
 if statusRef:

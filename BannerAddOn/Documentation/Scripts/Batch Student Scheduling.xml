@@ -214,7 +214,7 @@ def lookupCourse(cn, courses, restrictions):
             courses.append(course)
 
 def execute():
-    lines = csv.reader(file.getString('utf-8').split('\n'), delimiter=",", quotechar='"')
+    lines = csv.reader(file.getString().split('\n'), delimiter=",", quotechar='"')
     status = None
     if statusRef:
         status = StudentSectioningStatus.getStatus(statusRef, session.getUniqueId(), hibSession)
