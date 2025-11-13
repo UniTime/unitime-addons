@@ -84,6 +84,7 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 		}
 		
 		Long latestQueueUid = hibSession.createQuery("select max(qo.uniqueId) from QueueOut qo", Long.class).setCacheable(false).uniqueResult();
+        latestQueueUid = Long.valueOf(0);
 		configChangeAction.performExternalInstrOffrConfigChangeAction(courseOffering.getInstructionalOffering(), hibSession);
 		BannerSection bannerSection = BannerSection.findBannerSectionForClassAndCourseOffering(clazz, courseOffering, hibSession);
 		Long updateRequestOutgoingUid = getUniqueIdOfQueueMessage(bannerSession, bannerSection, latestQueueUid, hibSession);
