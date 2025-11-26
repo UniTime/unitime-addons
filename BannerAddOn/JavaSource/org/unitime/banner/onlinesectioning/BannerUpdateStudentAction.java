@@ -1773,6 +1773,20 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     		}
     		changed = true;
     	}
+    	
+    	// ensure that there is enough primary course requests (desired number of courses) to cover all the registered courses  
+    	int nbrCourses = 0;
+    	for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
+    		if (cd.getFreeTime() != null || cd.getCourseRequests().isEmpty()) continue; //skip free times
+    		if (!cd.isAlternative())
+    			nbrCourses ++;
+    		else if (nbrCourses < courseToClassEnrollments.size()) {
+    			nbrCourses ++;
+    			cd.setAlternative(false);
+    			fixCourseDemands = true;
+    			changed = true;
+    		}
+    	}
 
     	if ((fixCourseDemands || !exDropDeletes.isEmpty()) && student.getUniqueId() != null) {
     		// removed intended extended course drops
