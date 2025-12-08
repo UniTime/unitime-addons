@@ -1,0 +1,59 @@
+.unitime-BannerCatalogPage .status-bold {
+	font-weight: bold;	
+}
+
+.unitime-BannerCatalogPage .indent-left {
+	padding-left: 2em;
+}
+
+.unitime-BannerCatalogPage .notvisible {
+	display: none;
+}
+
+.unitime-BannerCatalogPage .detail-popup-indentation {
+	padding-left: 2em;
+}
+
+.unitime-BannerCatalogPage .basePreqTable {
+	border-spacing: 0px;
+	padding: 2px;
+}
+
+.unitime-BannerCatalogPage .basePreqTable th {
+	font-family: sans-serif, verdana, arial;
+	padding-top: 5px;
+	font-weight: bold;
+	color: #666666;
+	background-image: linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
+	background-image: -o-linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
+	background-image: -moz-linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
+	background-image: -webkit-linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
+	background-image: -ms-linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
+	background-image: -webkit-gradient(
+		linear,
+		left bottom,
+		left top,
+		color-stop(0, #e3e8f3),
+		color-stop(1, #fbfcfd)
+	);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorStr='#fbfcfd', EndColorStr='#e3e8f3');
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#fbfcfd', EndColorStr='#e3e8f3')";
+  	background-color: #e3e8f3;
+  	border-bottom: 1px dashed #9CB0CE;
+}
+
+.unitime-BannerCatalogPage .basePreqTable tr:hover {
+	background-color: #DDD;
+}
+
+.unitime-BannerCatalogPage h3 {
+	display: none;
+}
+
+.unitime-BannerCatalogPage .disclaimer {
+	text-align: center;
+}
+
+.unitime-BannerCatalogPage span {
+	white-space: pre;
+}

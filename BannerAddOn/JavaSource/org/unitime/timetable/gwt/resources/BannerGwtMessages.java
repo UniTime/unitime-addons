@@ -38,6 +38,9 @@ public interface BannerGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Banner Offering Edit")
 	String pageBannerOfferingEdit();
+	
+	@DefaultMessage("Course Catalog")
+	String pageBannerCourseCatalog();
 
 	@DefaultMessage("Instructional Method")
 	String fieldInstructionalMethod();
