@@ -151,7 +151,7 @@ public class Banner9CatalogResponse implements GwtRpcImplementation<CatalogReque
 					getTermProvider().getExternalSubject(session, subject, courseNbr),
 					getTermProvider().getExternalCourseNumber(session, subject, courseNbr));
 			CatalogResponse response = execute(request, null);
-			StringBuffer ret = new StringBuffer("<table class='unitime-MainTable unitime-CatalogPage' cellpadding='2' cellspacing='0'>");
+			StringBuffer ret = new StringBuffer("<table class='unitime-MainTable unitime-BannerCatalogPage' cellpadding='2' cellspacing='0'>");
 			if (response.hasSections()) {
 				for (CatalogSection section: response.getSections()) {
 					ret.append("<tr class='unitime-MainTableHeaderRow'><td colspan='2' class='unitime-MainTableHeader'>");

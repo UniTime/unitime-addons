@@ -1,5 +1,6 @@
 .unitime-BannerCatalogPage .status-bold {
-	font-weight: bold;	
+	font-weight: bold;
+	padding-right: 5px;
 }
 
 .unitime-BannerCatalogPage .indent-left {
@@ -17,6 +18,7 @@
 .unitime-BannerCatalogPage .basePreqTable {
 	border-spacing: 0px;
 	padding: 2px;
+	min-width: 50%;
 }
 
 .unitime-BannerCatalogPage .basePreqTable th {
@@ -40,6 +42,7 @@
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#fbfcfd', EndColorStr='#e3e8f3')";
   	background-color: #e3e8f3;
   	border-bottom: 1px dashed #9CB0CE;
+  	text-align: left;
 }
 
 .unitime-BannerCatalogPage .basePreqTable tr:hover {
