@@ -1,5 +1,6 @@
 package org.unitime.banner.util;
 
+import java.util.Date;
 import java.util.List;
 
 import org.unitime.banner.dataexchange.BannerMessage.BannerMessageAction;
@@ -16,13 +17,12 @@ import org.unitime.timetable.model.CourseOffering;
 public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSectionMonitoredUpdateMessage {
 
 	
-	private Long getUniqueIdOfQueueMessage(BannerSession bannerSession, BannerSection bannerSection, Long afterQueueUniqueId, org.hibernate.Session hibSession) {
+	private Long getUniqueIdOfQueueMessage(BannerSession bannerSession, BannerSection bannerSection, Date createdAfterDate, org.hibernate.Session hibSession) {
 		if (bannerSession == null || bannerSection == null) {
 			return null;
 		}
 		StringBuffer sb = new StringBuffer();
-		sb.append("select min(qo.uniqueId) from QueueOut qo where qo.uniqueId > ")
-		  .append(afterQueueUniqueId) 
+		sb.append("select min(qo.uniqueId) from QueueOut qo where qo.postDate >= :date")
 		  .append(" and qo.xml like '%CRN=\"")
 		  .append(bannerSection.getCrn())
 		  .append("\"%' and qo.xml like '%TERM_CODE=\"")
@@ -32,7 +32,7 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 		  .append("\"%'")
 		  ;
 		Debug.info(sb.toString());
-		return hibSession.createQuery(sb.toString(), Number.class).setCacheable(false).uniqueResult().longValue();
+		return hibSession.createQuery(sb.toString(), Long.class).setParameter("date", createdAfterDate).setCacheable(false).uniqueResult();
 	}
 	
 
@@ -83,13 +83,11 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 			return ExternalSectionCreationStatus.DOES_NOT_EXIST;			
 		}
 		
-		Long latestQueueUid = hibSession.createQuery("select max(qo.uniqueId) from QueueOut qo", Long.class).setCacheable(false).uniqueResult();
-		if (latestQueueUid == null) {
-			latestQueueUid = Long.valueOf(0);
-		}
+		Date createdAfterDate = new Date();
+		
 		configChangeAction.performExternalInstrOffrConfigChangeAction(courseOffering.getInstructionalOffering(), hibSession);
 		BannerSection bannerSection = BannerSection.findBannerSectionForClassAndCourseOffering(clazz, courseOffering, hibSession);
-		Long updateRequestOutgoingUid = getUniqueIdOfQueueMessage(bannerSession, bannerSection, latestQueueUid, hibSession);
+		Long updateRequestOutgoingUid = getUniqueIdOfQueueMessage(bannerSession, bannerSection, createdAfterDate, hibSession);
 		if (updateRequestOutgoingUid == null) {
 			return ExternalSectionCreationStatus.DOES_NOT_EXIST;	
 		}
