@@ -60,3 +60,7 @@
 .unitime-BannerCatalogPage span {
 	white-space: pre;
 }
+
+.unitime-BannerCatalogPage .error {
+	color: red;
+}

@@ -83,12 +83,17 @@ public class BannerCatalogPage extends SimpleForm {
 		private String iTerm;
 		private String iSubject;
 		private String iCourseNbr;
+		private boolean iDetailsFirst = true;
 		
 		public CatalogRequest() {}
 		public CatalogRequest(String term, String subject, String courseNbr) {
 			iTerm = term;
 			iSubject = subject;
 			iCourseNbr = courseNbr;
+		}
+		public CatalogRequest(String term, String subject, String courseNbr, boolean detailsFirst) {
+			this(term, subject, courseNbr);
+			setDetailsFirst(detailsFirst);
 		}
 		
 		public String getTerm() { return iTerm; }
@@ -97,6 +102,9 @@ public class BannerCatalogPage extends SimpleForm {
 		public void setSubject(String subject) { iSubject = subject; }
 		public String getCourseNbr() { return iCourseNbr; }
 		public void setCourseNbr(String courseNbr) { iCourseNbr = courseNbr; }
+		
+		public boolean isDetailsFirst() { return iDetailsFirst; }
+		public void setDetailsFirst(boolean detailsFirst) { iDetailsFirst = detailsFirst; }
 		
 		@Override
 		public String toString() {
@@ -138,7 +146,6 @@ public class BannerCatalogPage extends SimpleForm {
 		public void addSection(String title, String content) {
 			addSection(new CatalogSection(title, content));
 		}
-		
 		public boolean hasDisclaimer() { return iDisclaimer != null && !iDisclaimer.isEmpty(); }
 		public String getDisclaimer() { return iDisclaimer; }
 		public void setDisclaimer(String disclaimer) { iDisclaimer = disclaimer; }

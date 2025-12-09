@@ -64,22 +64,30 @@ public class Banner9CatalogResponse implements GwtRpcImplementation<CatalogReque
 			String pageName = ApplicationProperties.getProperty("banner.catalog.pageName", null);
 			if (pageName != null && !pageName.isEmpty())
 				response.setPageLabel(pageName.replace("{0}", request.getSubject() + " " + request.getCourseNbr()));
-			response.addSection(downloadSection(request.getSubject() + " " + request.getCourseNbr(), base + "/getCourseCatalogDetails?" + params));
-			response.addSection(downloadSection("Course Description", base + "/getCourseDescription?" + params));
-			response.addSection(downloadSection("Syllabus", base + "/getSyllabus?" + params,
-					"No Syllabus Information Available"));
-			response.addSection(downloadSection("Attributes", base + "/getCourseAttributes?" + params,
-					"No Attribute information available."));
-			response.addSection(downloadSection("Restrictions", base + "/getRestrictions?" + params,
-					"No course restriction information is available."));
-			response.addSection(downloadSection("Corequisites", base + "/getCorequisites?" + params,
-					"No corequisite course information available."));
-			response.addSection(downloadSection("Prerequisites", base + "/getPrerequisites?" + params,
-					"No prerequisite information available."));
-			response.addSection(downloadSection("Mutual Exclusion", base + "/getCourseMutuallyExclusions?" + params,
-					"No Mutual Exclusion information available."));
-			response.addSection(downloadSection("Fees", base + "/getFees?" + params,
-					"No fee information available."));
+			CatalogSection details = downloadSection("Catalog", base + "/getCourseCatalogDetails?" + params);
+			if (details == null || details.getContent().contains("The requested URL was rejected. Please consult with your administrator.")) {
+				response.addSection(new CatalogSection(request.getSubject() + " " + request.getCourseNbr(),
+						"<span class='error'>" + ApplicationProperties.getProperty("banner.catalog.error", "Failed to load course details: The requested URL was rejected.") +
+						"</span>"));
+			} else {
+				response.addSection(downloadSection(request.getSubject() + " " + request.getCourseNbr(), base + "/getCourseDescription?" + params,
+						"No course description is available."));
+				response.addSection(details);
+				response.addSection(downloadSection("Syllabus", base + "/getSyllabus?" + params,
+						"No Syllabus Information Available"));
+				response.addSection(downloadSection("Attributes", base + "/getCourseAttributes?" + params,
+						"No Attribute information available."));
+				response.addSection(downloadSection("Restrictions", base + "/getRestrictions?" + params,
+						"No course restriction information is available."));
+				response.addSection(downloadSection("Corequisites", base + "/getCorequisites?" + params,
+						"No corequisite course information available."));
+				response.addSection(downloadSection("Prerequisites", base + "/getPrerequisites?" + params,
+						"No prerequisite information available."));
+				response.addSection(downloadSection("Mutual Exclusion", base + "/getCourseMutuallyExclusions?" + params,
+						"No Mutual Exclusion information available."));
+				response.addSection(downloadSection("Fees", base + "/getFees?" + params,
+						"No fee information available."));
+			}
 			
 			response.setDisclaimer(ApplicationProperties.getProperty("banner.catalog.disclaimer", null));
 			
