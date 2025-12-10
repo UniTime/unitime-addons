@@ -138,6 +138,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 	private boolean iLocking = false;
 	private boolean iResetWaitList = false;
 	private boolean iDelayOfferingChecks = true;
+	private boolean iCheckSubstitutes = true;
 	private Set<String> iCampusCodes = null;
 	
 	public BannerUpdateStudentAction() {
@@ -145,6 +146,7 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
 		iIgnoreGroupRegExp = ApplicationProperties.getProperty("banner.ignoreGroups.regexp");
 		iResetWaitList = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.resetWhenEnrolled"));
 		iDelayOfferingChecks = "true".equalsIgnoreCase(ApplicationProperties.getProperty("banner.waitlist.delayOfferingChecks"));
+		iCheckSubstitutes = ApplicationProperty.EnrollmentCheckSubstitutes.isTrue();
 	}
 	
 	protected String getNewStatusRules(Long sessionId) {
@@ -1774,31 +1776,33 @@ public class BannerUpdateStudentAction implements OnlineSectioningAction<BannerU
     		changed = true;
     	}
     	
-    	// ensure that there is enough primary course requests (desired number of courses) to cover all the registered courses  
-    	int alt = 0;
-    	for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
-    		if (cd.getFreeTime() != null || cd.getCourseRequests().isEmpty()) continue; //skip free times
-    		boolean waitlist = !cd.isAlternative() && cd.isWaitlist();
-    		boolean assigned = false;
-    		for (CourseRequest cr: cd.getCourseRequests())
-    			if (courseToClassEnrollments.containsKey(cr.getCourseOffering())) { assigned = true; break; }
-    		if (cd.isAlternative()) {
-    			if (assigned) alt--;
-    		} else {
-    			if (!waitlist && !assigned) alt++;
-    		}
-    	}
-    	if (alt < 0) {
-    		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
-    			if (cd.getFreeTime() != null || cd.getCourseRequests().isEmpty()) continue; //skip free times
-    			if (cd.isAlternative()) {
-    				alt++;
-    				cd.setAlternative(false);
-        			fixCourseDemands = true;
-        			changed = true;
-    			}
-    			if (alt >= 0) break;
-    		}
+    	if (iCheckSubstitutes) {
+        	// ensure that there is enough primary course requests (desired number of courses) to cover all the registered courses  
+        	int alt = 0;
+        	for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
+        		if (cd.getFreeTime() != null || cd.getCourseRequests().isEmpty()) continue; //skip free times
+        		boolean waitlist = !cd.isAlternative() && cd.isWaitlist();
+        		boolean assigned = false;
+        		for (CourseRequest cr: cd.getCourseRequests())
+        			if (courseToClassEnrollments.containsKey(cr.getCourseOffering())) { assigned = true; break; }
+        		if (cd.isAlternative()) {
+        			if (assigned) alt--;
+        		} else {
+        			if (!waitlist && !assigned) alt++;
+        		}
+        	}
+        	if (alt < 0) {
+        		for (CourseDemand cd: new TreeSet<CourseDemand>(student.getCourseDemands())) {
+        			if (cd.getFreeTime() != null || cd.getCourseRequests().isEmpty()) continue; //skip free times
+        			if (cd.isAlternative()) {
+        				alt++;
+        				cd.setAlternative(false);
+            			fixCourseDemands = true;
+            			changed = true;
+        			}
+        			if (alt >= 0) break;
+        		}
+        	}
     	}
 
     	if ((fixCourseDemands || !exDropDeletes.isEmpty()) && student.getUniqueId() != null) {
