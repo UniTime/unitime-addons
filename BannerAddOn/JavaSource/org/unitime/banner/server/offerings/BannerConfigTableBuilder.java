@@ -86,6 +86,7 @@ public class BannerConfigTableBuilder extends BannerOfferingTableBuilder {
 	    	ret.setName(MSG.labelConfigurationWithInstructionalMethod(ioc.getName(), ioc.getInstructionalMethod().getLabel()));
 	    else
 	    	ret.setName(MSG.labelConfiguration(ioc.getName()));
+	    ret.setSchedulingDisclaimer(ioc.getSchedulingDisclaimer());
 
 	    boolean notOffered = ioc.getInstructionalOffering().isNotOffered();
         boolean isEditable = getSessionContext().hasPermission(ioc, Right.InstrOfferingConfigEdit);
