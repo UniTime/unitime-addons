@@ -39,6 +39,7 @@ import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.SubjectArea;
+import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 import org.unitime.timetable.model.dao.Class_DAO;
 import org.unitime.timetable.model.dao.InstructionalOfferingDAO;
@@ -166,7 +167,9 @@ public class ColleagueSession extends BaseColleagueSession {
 			for (InstructionalOffering io : getAllControllingInstructionalOfferingsForSubjectArea(sa)){
 				for(InstrOfferingConfig ioc : io.getInstrOfferingConfigs()){
 					for (SchedulingSubpart ss : ioc.getSchedulingSubparts()){
-						for(Class_ c : ss.getClasses()){
+						TreeSet<Class_> classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_SUBJ_NBR_ITYP_SEC));
+						classes.addAll(ss.getClasses());
+						for(Class_ c : classes){
 							for(ColleagueSection cs : ColleagueSection.findColleagueSectionsForClass(c, ioDao.getSession())){
 								if (cs.getSectionIndex() == null){
 									try {
@@ -192,7 +195,9 @@ public class ColleagueSession extends BaseColleagueSession {
 					TreeSet<SchedulingSubpart> subparts = new TreeSet<SchedulingSubpart>(ssc);
 					subparts.addAll(ioc.getSchedulingSubparts());
 					for (SchedulingSubpart ss : subparts){
-						for(Class_ c : ss.getClasses()){
+						TreeSet<Class_> classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_SUBJ_NBR_ITYP_SEC));
+						classes.addAll(ss.getClasses());
+						for(Class_ c : classes){
 							for(CourseOffering co : io.getCourseOfferings()){
 								ColleagueSection cs = ColleagueSection.findColleagueSectionForClassAndCourseOffering(c, co, ioDao.getSession());
 								if (cs == null){
