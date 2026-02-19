@@ -34,6 +34,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
+import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.comparators.SchedulingSubpartComparator;
 
 
@@ -51,8 +52,9 @@ public class ColleagueSectionCrosslistHelper {
 	
     
 	private void ensureAllSubpartClassesHaveColleagueSection(SchedulingSubpart schedSubpart) throws Exception{
-		
-		for(Class_ c : schedSubpart.getClasses()){
+		TreeSet<Class_> classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_SUBJ_NBR_ITYP_SEC));
+		classes.addAll(schedSubpart.getClasses());
+		for(Class_ c : classes){
 			if (c.isCancelled().booleanValue()){
 				continue;
 			}
