@@ -91,7 +91,7 @@
 		<TR>
 			<TD valign="top"><loc:message name="colLoadingOfferings" id="BMSG"/>:</TD>
 			<TD align="left">
-				<s:checkbox name="form.loadingOfferingsFile"/><font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteLoadingOfferings" id="BMSG"/></font>
+				<s:checkbox name="form.loadingOfferingsFile"/><font color="#ec0000">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteLoadingOfferings" id="BMSG"/></font>
 			</TD>
 		</TR>
 		</s:if><s:else>
@@ -118,7 +118,7 @@
 			<TD valign="top"><loc:message name="colStudentCampus" id="BMSG"/>:</TD>
 			<TD>
 				<s:textfield name="form.studentCampus"  maxlength="500" size="50"/><br>
-				<font color="red">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteStudentCampus" id="BMSG"/></font>
+				<font color="#ec0000">&nbsp;&nbsp;&nbsp;&nbsp;<loc:message name="noteStudentCampus" id="BMSG"/></font>
 			</TD>
 		</TR>
 		<TR>
