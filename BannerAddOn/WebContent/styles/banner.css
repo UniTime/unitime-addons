@@ -25,7 +25,7 @@
 	font-family: sans-serif, verdana, arial;
 	padding-top: 5px;
 	font-weight: bold;
-	color: #666666;
+	color: #555;
 	background-image: linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
 	background-image: -o-linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
 	background-image: -moz-linear-gradient(bottom, #e3e8f3 0%, #fbfcfd 100%);
@@ -62,5 +62,5 @@
 }
 
 .unitime-BannerCatalogPage .error {
-	color: red;
+	color: #ec0000;
 }
