@@ -94,7 +94,7 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 		} else {
 			BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOfferingCacheable(clazz, courseOffering, BannerSectionDAO.getInstance().getSession());
 			if (bs != null){
-				return (bs.getCrn() == null?"":(bs.getCrn().toString())) + '-' + bs.getSectionIndex() == null?"":bs.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+				return (bs.getCrn() == null?"":(bs.getCrn().toString())) + '-' + (bs.getSectionIndex() == null?"":bs.getSectionIndex()) + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
 			} else {
 				return(clazz.getClassSuffix());
 			}
@@ -314,7 +314,7 @@ public class BannerExternalClassNameHelper extends DefaultExternalClassNameHelpe
 			} else {
 				BannerSectionCache bs = getBannerSectionCache(clazz, courseOffering);
 				if (bs != null){
-					return (bs.getCrn() == null?"":(bs.getCrn().toString())) + '-' + bs.getSectionIndex() == null?"":bs.getSectionIndex() + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
+					return (bs.getCrn() == null?"":(bs.getCrn().toString())) + '-' + (bs.getSectionIndex() == null?"":bs.getSectionIndex()) + (courseOffering.getInstructionalOffering().getCourseOfferings().size() > 1?"*":"");
 				} else {
 					Debug.warning("No banner section cached for " + courseOffering.getCourseName() + " " + clazz.getItypeDesc().trim() + " " + clazz.getSectionNumberString());
 					return clazz.getClassSuffix();
