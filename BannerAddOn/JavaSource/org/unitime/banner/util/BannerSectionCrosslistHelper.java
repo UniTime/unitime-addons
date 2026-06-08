@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.hibernate.LazyInitializationException;
 import org.hibernate.Session;
@@ -44,6 +45,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.SchedulingSubpart;
+import org.unitime.timetable.model.comparators.ClassComparator;
 import org.unitime.timetable.model.dao._RootDAO;
 
 
@@ -124,8 +126,10 @@ public class BannerSectionCrosslistHelper {
     }
     
 	private void ensureAllSubpartClassesHaveBannerSection(SchedulingSubpart schedSubpart) throws Exception{
+		TreeSet<Class_> classes = new TreeSet<Class_>(new ClassComparator(ClassComparator.COMPARE_BY_SUBJ_NBR_ITYP_SEC));
+		classes.addAll(schedSubpart.getClasses());
 		
-		for(Class_ c : schedSubpart.getClasses()){
+		for(Class_ c : classes){
 			if (c.isCancelled().booleanValue()){
 				continue;
 			}
