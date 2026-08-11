@@ -25,8 +25,8 @@ import org.unitime.banner.model.BannerSession;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
-import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
 import org.unitime.timetable.form.RollForwardSessionForm;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Session;
 
 
