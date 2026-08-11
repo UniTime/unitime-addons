@@ -40,7 +40,7 @@ import org.unitime.colleague.model.dao.ColleagueSuffixDefDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.ApplicationProperties;
-import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Session;

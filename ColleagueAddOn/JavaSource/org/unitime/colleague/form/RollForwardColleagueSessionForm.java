@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import org.unitime.colleague.model.ColleagueSession;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
-import org.unitime.timetable.action.RollForwardSessionAction.RollForwardErrors;
 import org.unitime.timetable.form.RollForwardSessionForm;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Session;
 
 
