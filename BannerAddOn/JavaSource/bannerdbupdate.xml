@@ -1252,4 +1252,23 @@ END section_processor;		]]>
 		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SESSION_SESSION on %SCHEMA%.BANNER_SESSION(SESSION_ID)</plsql>
 		<plsql onFail="next">create index %SCHEMA%.IDX_BANNER_SESSION_BANNER_TERM_CRN_PROP on %SCHEMA%.BANNER_SESSION(BANNER_TERM_CRN_PROP_ID)</plsql>
 	</update>
+	<update version="17" date="03-Dec-2024" comment="Add support for defining campus for a Banner section using regular expressions.">
+		<plsql>alter table %SCHEMA%.banner_campus_override add first_banner_term varchar2(8 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add last_banner_term varchar2(8 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add used_default_calc number(1,0)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add replace_campus_code number(1,0)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add acad_init_regex varchar2(100 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add mng_dept_code_regex varchar2(100 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add campus_code_regex varchar2(100 char)</plsql>
+		<plsql>alter table %SCHEMA%.banner_campus_override add sequence_order number(10,0)</plsql>
+
+		<mysql>alter table %SCHEMA%.banner_campus_override add first_banner_term varchar(8)</mysql>
+		<mysql>alter table %SCHEMA%.banner_campus_override add last_banner_term varchar(8)</mysql>
+		<mysql>alter table %SCHEMA%.banner_campus_override add used_default_calc decimal(1,0)</mysql>
+		<mysql>alter table %SCHEMA%.banner_campus_override add replace_campus_code decimal(1,0)</mysql>
+		<mysql>alter table %SCHEMA%.banner_campus_override add acad_init_regex varchar(100)</mysql>
+		<mysql>alter table %SCHEMA%.banner_campus_override add mng_dept_code_regex varchar(100)</mysql>
+		<mysql>alter table %SCHEMA%.banner_campus_override add campus_code_regex varchar(100)</mysql>	
+		<mysql>alter table %SCHEMA%.banner_campus_override add sequence_order number(10,0)</mysql>	
+	</update>
  </dbupdate>

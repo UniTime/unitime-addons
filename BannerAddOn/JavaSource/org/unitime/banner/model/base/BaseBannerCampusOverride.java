@@ -41,6 +41,14 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 	private String iBannerCampusCode;
 	private String iBannerCampusName;
 	private Boolean iVisible;
+	private String iFirstBannerTerm;
+	private String iLastBannerTerm;
+	private Boolean iUsedDefaultCalc;
+	private Boolean iReplaceCampusCode;
+	private String iAcademicInitiativeRegex;
+	private String iManagingDeptCodeRegex;
+	private String iCampusCodeRegex;
+	private Integer iOrder;
 
 
 	public BaseBannerCampusOverride() {
@@ -71,6 +79,42 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 	public Boolean getVisible() { return iVisible; }
 	public void setVisible(Boolean visible) { iVisible = visible; }
 
+	@Column(name = "first_banner_term", nullable = true, length = 8)
+	public String getFirstBannerTerm() { return iFirstBannerTerm; }
+	public void setFirstBannerTerm(String firstBannerTerm) { iFirstBannerTerm = firstBannerTerm; }
+
+	@Column(name = "last_banner_term", nullable = true, length = 8)
+	public String getLastBannerTerm() { return iLastBannerTerm; }
+	public void setLastBannerTerm(String lastBannerTerm) { iLastBannerTerm = lastBannerTerm; }
+
+	@Column(name = "used_default_calc", nullable = false)
+	public Boolean isUsedDefaultCalc() { return iUsedDefaultCalc; }
+	@Transient
+	public Boolean getUsedDefaultCalc() { return iUsedDefaultCalc; }
+	public void setUsedDefaultCalc(Boolean usedDefaultCalc) { iUsedDefaultCalc = usedDefaultCalc; }
+
+	@Column(name = "replace_campus_code", nullable = false)
+	public Boolean isReplaceCampusCode() { return iReplaceCampusCode; }
+	@Transient
+	public Boolean getReplaceCampusCode() { return iReplaceCampusCode; }
+	public void setReplaceCampusCode(Boolean replaceCampusCode) { iReplaceCampusCode = replaceCampusCode; }
+
+	@Column(name = "acad_init_regex", nullable = false, length = 100)
+	public String getAcademicInitiativeRegex() { return iAcademicInitiativeRegex; }
+	public void setAcademicInitiativeRegex(String academicInitiativeRegex) { iAcademicInitiativeRegex = academicInitiativeRegex; }
+
+	@Column(name = "mng_dept_code_regex", nullable = false, length = 100)
+	public String getManagingDeptCodeRegex() { return iManagingDeptCodeRegex; }
+	public void setManagingDeptCodeRegex(String managingDeptCodeRegex) { iManagingDeptCodeRegex = managingDeptCodeRegex; }
+
+	@Column(name = "campus_code_regex", nullable = false, length = 100)
+	public String getCampusCodeRegex() { return iCampusCodeRegex; }
+	public void setCampusCodeRegex(String campusCodeRegex) { iCampusCodeRegex = campusCodeRegex; }
+
+	@Column(name = "sequence_order", nullable = true)
+	public Integer getOrder() { return iOrder; }
+	public void setOrder(Integer order) { iOrder = order; }
+
 	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof BannerCampusOverride)) return false;
@@ -91,9 +135,17 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 
 	public String toDebugString() {
 		return "BannerCampusOverride[" +
+			"\n	AcademicInitiativeRegex: " + getAcademicInitiativeRegex() +
 			"\n	BannerCampusCode: " + getBannerCampusCode() +
 			"\n	BannerCampusName: " + getBannerCampusName() +
+			"\n	CampusCodeRegex: " + getCampusCodeRegex() +
+			"\n	FirstBannerTerm: " + getFirstBannerTerm() +
+			"\n	LastBannerTerm: " + getLastBannerTerm() +
+			"\n	ManagingDeptCodeRegex: " + getManagingDeptCodeRegex() +
+			"\n	Order: " + getOrder() +
+			"\n	ReplaceCampusCode: " + getReplaceCampusCode() +
 			"\n	UniqueId: " + getUniqueId() +
+			"\n	UsedDefaultCalc: " + getUsedDefaultCalc() +
 			"\n	Visible: " + getVisible() +
 			"]";
 	}
