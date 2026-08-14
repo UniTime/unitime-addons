@@ -60,7 +60,68 @@
 			type="java.lang.Boolean"
 			not-null="true"
 		/>
+
+		<property
+			name="firstBannerTerm"
+			column="first_banner_term"
+			type="java.lang.String"
+			not-null="false"
+			length="8"
+		/>
 		
+		<property
+			name="lastBannerTerm"
+			column="last_banner_term"
+			type="java.lang.String"
+			not-null="false"
+			length="8"
+		/>
+		
+		<property
+			name="usedDefaultCalc"
+			column="used_default_calc"
+			type="java.lang.Boolean"
+			not-null="true"
+		/>
+
+		<property
+			name="replaceCampusCode"
+			column="replace_campus_code"
+			type="java.lang.Boolean"
+			not-null="true"
+		/>
+
+		<property
+			name="academicInitiativeRegex"
+			column="acad_init_regex"
+			type="java.lang.String"
+			not-null="true"
+			length="100"
+		/>
+
+		<property
+			name="managingDeptCodeRegex"
+			column="mng_dept_code_regex"
+			type="java.lang.String"
+			not-null="true"
+			length="100"
+		/>
+
+		<property
+			name="campusCodeRegex"
+			column="campus_code_regex"
+			type="java.lang.String"
+			not-null="true"
+			length="100"
+		/>
+
+		<property
+			name="order"
+			column="sequence_order"
+			type="java.lang.Integer"
+			not-null="false"
+		/>
+
 	</class>
 
 </hibernate-mapping>
