@@ -133,16 +133,16 @@ public class ColleagueStudentUpdates extends BaseImport implements MessageHandle
 
 		for (String colleagueSessionId : colleagueSessionIds) {
 			StringBuilder queryBase = new StringBuilder();
-			queryBase.append(" from QueueIn q where q.xml like '%session=\"")
-					.append(colleagueSessionId)
-					.append("\"%' and q.uniqueId != ")
-					.append(queueId.toString())
-					.append(" and q.status = '")
-					.append(Queue.STATUS_PROCESSED)
-					.append("'");
+			queryBase.append(" from QueueIn q where q.xml like :session")
+					.append(" and q.uniqueId != :queueId")
+					.append(" and q.status = :status")
 					;
 			String countQuery = "select count(q) " + queryBase.toString();
-	    	    Long uniqueIdsToDeleteCount = hibSession.createQuery(countQuery, Long.class).uniqueResult();
+	    	    Long uniqueIdsToDeleteCount = hibSession.createQuery(countQuery, Long.class)
+	    	    		.setParameter("session", "%session=\"" + colleagueSessionId + "\"%")
+	    	    		.setParameter("queueId", queueId)
+	    	    		.setParameter("status", Queue.STATUS_PROCESSED)
+	    	    		.uniqueResult();
 	    	    if (0 == uniqueIdsToDeleteCount) {
 	    	    		info("-- no old student update records to delete from:  QueueIn");
 	    	    } else {

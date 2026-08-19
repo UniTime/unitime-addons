@@ -33,8 +33,8 @@ import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -276,7 +276,7 @@ public class ColleagueResponse extends BaseColleagueResponse {
 			boolean typeError,
 			boolean typeWarning) throws LoggableException {
 		
-        List queueOuts = null;
+        List<ColleagueResponse> queueOuts = null;
         Transaction tx = null;
         try {
         	
@@ -316,23 +316,14 @@ public class ColleagueResponse extends BaseColleagueResponse {
             	whereHql += " and rp.activityDate <= :stopDate";
             }
             
+            List<String> subjectAbbvs = null;
             if(searchSubject != null && searchSubject != "") {
             	whereHql += " and upper(rp.subjectCode) = upper(:searchSubject) ";
             } else {
-            	int i = 1;
-    	    	for (Iterator<SubjectArea> it = subjects.iterator(); it.hasNext();){
-    	    		SubjectArea s = it.next();
-    	    		if (i == 1) {
-    	    			whereHql += " and ( rp.subjectCode in ( ";
-    	    		} else {
-    	    			whereHql += " , ";
-    	    		}
-    	    		whereHql += " '" + s.getSubjectAreaAbbreviation() + "'";
-    	    		i++;
-    	    	}
-            	if (i>1) {
-            		whereHql += "))";
-            	}
+            	whereHql += " and rp.subjectCode in :subjectAbbvs";
+            	subjectAbbvs = new ArrayList<String>();
+            	for (SubjectArea s: subjects)
+            		subjectAbbvs.add(s.getSubjectAreaAbbreviation());
             }
             
             if(searchCourseNumber != null && searchCourseNumber != "") {
@@ -411,6 +402,8 @@ public class ColleagueResponse extends BaseColleagueResponse {
 
             if(searchSubject != null && searchSubject != "") {
             	query.setParameter("searchSubject", searchSubject);
+            } else if (subjectAbbvs != null && !subjectAbbvs.isEmpty()) {
+            	query.setParameterList("subjectAbbvs", subjectAbbvs);
             }
             
             if(searchCourseNumber != null && searchCourseNumber != "") {
