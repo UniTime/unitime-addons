@@ -203,17 +203,15 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		StringBuffer sb = new StringBuffer();
 		sb.append("select sa ")
 		  .append(" from SubjectArea sa ")
-		  .append(" where sa.session.uniqueId = ")
-		  .append(sessionId)
-		  .append(" and (sa.department.deptCode = '")
-		  .append(dept)
-		  .append("'  or sa.department.abbreviation = '")
-		  .append(dept)
-		  .append("' or sa.department.name like '%")
-		  .append(dept)
-		  .append("%')")
+		  .append(" where sa.session.uniqueId = :sessionId")
+		  .append(" and (sa.department.deptCode = :dept")
+		  .append("  or sa.department.abbreviation = :dept")
+		  .append(" or sa.department.name like ('%' || :dept || '%'))")
 		  ;
-		for ( SubjectArea sa : DepartmentDAO.getInstance().getSession().createQuery(sb.toString(), SubjectArea.class).setCacheable(true).list()) {
+		for ( SubjectArea sa : DepartmentDAO.getInstance().getSession().createQuery(sb.toString(), SubjectArea.class)
+				.setParameter("sessionId", sessionId)
+				.setParameter("dept", dept)
+				.setCacheable(true).list()) {
 			String bannerAbbv = BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(sa, null);
 			subjects.add(sa.getSubjectAreaAbbreviation());
 			if (bannerAbbv != sa.getSubjectAreaAbbreviation()) {
@@ -232,15 +230,15 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		StringBuffer sb = new StringBuffer();
 		sb.append("select sa ")
 		  .append(" from SubjectArea sa, TimetableManager tm inner join tm.departments as d ")
-		  .append(" where sa.session.uniqueId = ")
-		  .append(sessionId)
-		  .append(" and tm.externalUniqueId like '")
-		  .append(managerId)
-		  .append("%'")
+		  .append(" where sa.session.uniqueId = :sessionId")
+		  .append(" and tm.externalUniqueId like :managerId")
 		  .append(" and sa.department = d")
 		  .append(" order by sa.subjectAreaAbbreviation")
 		  ;
-		for ( SubjectArea sa : TimetableManagerDAO.getInstance().getSession().createQuery(sb.toString(), SubjectArea.class).setCacheable(true).list()) {
+		for ( SubjectArea sa : TimetableManagerDAO.getInstance().getSession().createQuery(sb.toString(), SubjectArea.class)
+				.setParameter("sessionId", sessionId)
+				.setParameter("managerId", managerId + "%")
+				.setCacheable(true).list()) {
 			String bannerAbbv = BannerSection.getExternalSubjectAreaElementHelper().getBannerSubjectAreaAbbreviation(sa, null);
 			subjects.add(sa.getSubjectAreaAbbreviation());
 			if (bannerAbbv != sa.getSubjectAreaAbbreviation()) {
@@ -334,9 +332,9 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				} else {
 					List<SubjectArea> matchSubjs = SubjectAreaDAO.getInstance()
 							.getSession()
-							.createQuery("from SubjectArea sa where sa.session.uniqueId = :sessId and sa.subjectAreaAbbreviation like ':" + delimiter+ "subj'", SubjectArea.class)
+							.createQuery("from SubjectArea sa where sa.session.uniqueId = :sessId and sa.subjectAreaAbbreviation like :subj", SubjectArea.class)
 							.setParameter("sessId", sessionId)
-							.setParameter("subj", s)
+							.setParameter("subj", "%" + delimiter + s)
 							.list();
 					for (SubjectArea sa : matchSubjs) {
 						searchSubjs.add(sa.getSubjectAreaAbbreviation());

@@ -23,16 +23,17 @@ public class BannerExternalSectionMonitoredUpdateMessage implements ExternalSect
 		}
 		StringBuffer sb = new StringBuffer();
 		sb.append("select min(qo.uniqueId) from QueueOut qo where qo.postDate >= :date")
-		  .append(" and qo.xml like '%CRN=\"")
-		  .append(bannerSection.getCrn())
-		  .append("\"%' and qo.xml like '%TERM_CODE=\"")
-		  .append(bannerSession.getBannerTermCode())
-		  .append("\"%' and qo.xml like '%ACTION=\"")
-		  .append(BannerMessageAction.UPDATE)
-		  .append("\"%'")
+		  .append(" and qo.xml like :crn")
+		  .append(" and qo.xml like :term")
+		  .append(" and qo.xml like :action")
 		  ;
 		Debug.info(sb.toString());
-		return hibSession.createQuery(sb.toString(), Long.class).setParameter("date", createdAfterDate).setCacheable(false).uniqueResult();
+		return hibSession.createQuery(sb.toString(), Long.class)
+				.setParameter("crn", "%CRN=\"" + bannerSection.getCrn() + "\"%")
+				.setParameter("term", "%TERM_CODE=\"" + bannerSession.getBannerTermCode() + "\"%")
+				.setParameter("action", "%ACTION=\"" + BannerMessageAction.UPDATE.name() + "\"%")
+				.setParameter("date", createdAfterDate)
+				.setCacheable(false).uniqueResult();
 	}
 	
 
