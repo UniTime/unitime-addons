@@ -428,7 +428,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		return subjects;
 	}
 	
-	private static void addOrConstraintsIfNeeded(StringBuffer sb, String objectName, String fieldName, Set<String> values, int length, boolean canUseLike, boolean mustUseLike, boolean useStartingAnd) {
+	private static void addOrConstraintsIfNeeded(StringBuffer sb, String objectName, String fieldName, Set<String> values, int length, boolean canUseLike, boolean mustUseLike, boolean useStartingAnd, Map<String,String> params) {
 		if (values != null && !values.isEmpty()) {
 			boolean first = true;
 			if (useStartingAnd) {
@@ -445,17 +445,15 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				} else {
 					sb.append(" or ");
 				}
+				String p = "X" + (1 + params.size());
+				params.put(p, value);
 				sb.append(objectName)
 				  .append(".")
 				  .append(fieldName);
 				if (mustUseLike || (canUseLike && value.length() < length)) {
-					sb.append(" like '")
-					  .append(value)
-					  .append("%'");
+					sb.append(" like (:" + p + "|| '%')");
 				} else {
-					sb.append(" = '")
-					  .append(value)
-					  .append("'");					
+					sb.append(" = :" + p);
 				}
 			}
 			if (values.size() > 1) {
@@ -464,7 +462,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		}
 	}
 		
-	private static String getBannerResponseHqlQuery(Long sessionId, Map<String, Set<String>> options, String ignoreCommand, boolean userIsDeptIndependent, Set<Department> userDepartments) {
+	private static String getBannerResponseHqlQuery(Long sessionId, Map<String, Set<String>> options, String ignoreCommand, boolean userIsDeptIndependent, Set<Department> userDepartments, Map<String, String> params) {
 		Set<String> subj = (options == null || "subj".equals(ignoreCommand) ? null : options.get("subj"));
 		Set<String> crsNbr = (options == null || "crsnbr".equals(ignoreCommand) ? null : options.get("crsnbr"));
 		Set<String> crn = (options == null || "crn".equals(ignoreCommand) ? null : options.get("crn"));
@@ -487,19 +485,19 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		ArrayList<Set<String>> searchSubjects = subjectsToSearchFor(sessionId, subj, department, manager, userIsDeptIndependent, userDepartments);
 		if (!searchSubjects.get(0).isEmpty()) {
 			sb.append(" and ( 0 < (select count(br2.uniqueId) from BannerResponse br2 where br2.uniqueId = br.uniqueId ");
-			addOrConstraintsIfNeeded(sb, "br2", "subjectArea.subjectAreaAbbreviation", searchSubjects.get(0), -1, false, false, true);
+			addOrConstraintsIfNeeded(sb, "br2", "subjectArea.subjectAreaAbbreviation", searchSubjects.get(0), -1, false, false, true, params);
 			sb.append(" ) or (((select br2.subjectArea from BannerResponse br2 where br2.uniqueId = br.uniqueId ) is null )");
 			if (!searchSubjects.get(1).isEmpty()) {
-				addOrConstraintsIfNeeded(sb, "br", "subjectCode", searchSubjects.get(1), -1, false, false, true);
+				addOrConstraintsIfNeeded(sb, "br", "subjectCode", searchSubjects.get(1), -1, false, false, true, params);
 			} else {
-				addOrConstraintsIfNeeded(sb, "br", "subjectCode", searchSubjects.get(0), -1, false, false, true);				
+				addOrConstraintsIfNeeded(sb, "br", "subjectCode", searchSubjects.get(0), -1, false, false, true, params);
 			}
 			sb.append("))");
 		}
-		addOrConstraintsIfNeeded(sb, "br", "courseNumber", crsNbr, 5, true, false, true);
-		addOrConstraintsIfNeeded(sb, "br", "crn", crn, 5, true, false, true);
-		addOrConstraintsIfNeeded(sb, "br", "xlstGroup", xlst, 2, true, false, true);
-		addOrConstraintsIfNeeded(sb, "br", "message", msg, -1, false, true, true);
+		addOrConstraintsIfNeeded(sb, "br", "courseNumber", crsNbr, 5, true, false, true, params);
+		addOrConstraintsIfNeeded(sb, "br", "crn", crn, 5, true, false, true, params);
+		addOrConstraintsIfNeeded(sb, "br", "xlstGroup", xlst, 2, true, false, true, params);
+		addOrConstraintsIfNeeded(sb, "br", "message", msg, -1, false, true, true, params);
 		
 		Set<String> actionList = new HashSet<String>();
 		if (action != null && !action.isEmpty()) {
@@ -513,7 +511,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				}
 			}
 		}
-		addOrConstraintsIfNeeded(sb, "br", "action", actionList, -1, false, false, true);
+		addOrConstraintsIfNeeded(sb, "br", "action", actionList, -1, false, false, true, params);
 		
 		Set<String> rspTypeList = new HashSet<String>();
 		if (rspType != null && !rspType.isEmpty()) {
@@ -529,7 +527,7 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 				}
 			}
 		}		
-		addOrConstraintsIfNeeded(sb, "br", "type", rspTypeList, -1, false, false, true);
+		addOrConstraintsIfNeeded(sb, "br", "type", rspTypeList, -1, false, false, true, params);
 
 		if (from != null && from.size() == 1) {
 			Date date = null;
@@ -590,7 +588,10 @@ public class BannerResponsesFilterBackend extends FilterBoxBackend<BannerRespons
 		}
 
 		
-		org.hibernate.query.Query<BannerResponse> hibQuery = hibSession.createQuery(getBannerResponseHqlQuery(sessionId, options, ignoreCommand, userIsDeptIndependent, userDepartments), BannerResponse.class);
+		Map<String, String> params = new HashMap<String, String>();
+		org.hibernate.query.Query<BannerResponse> hibQuery = hibSession.createQuery(getBannerResponseHqlQuery(sessionId, options, ignoreCommand, userIsDeptIndependent, userDepartments, params), BannerResponse.class);
+		for (Map.Entry<String, String> e: params.entrySet())
+			hibQuery.setParameter(e.getKey(), e.getValue());
 		if (from != null && from.size() >= 1) {
 			Date date = null;
 			String fromOption = from.iterator().next();
