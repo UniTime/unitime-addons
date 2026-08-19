@@ -109,7 +109,7 @@ import org.unitime.timetable.onlinesectioning.model.XReservation;
 import org.unitime.timetable.onlinesectioning.model.XReservationType;
 import org.unitime.timetable.onlinesectioning.model.XSection;
 import org.unitime.timetable.onlinesectioning.model.XStudent;
-import org.unitime.timetable.onlinesectioning.status.db.DbFindEnrollmentInfoAction.DbStudentMatcher;
+import org.unitime.timetable.onlinesectioning.status.db.DbStudentMatcher;
 import org.unitime.timetable.onlinesectioning.updates.CheckOfferingAction;
 import org.unitime.timetable.onlinesectioning.updates.NotifyStudentAction;
 import org.unitime.timetable.onlinesectioning.updates.ReloadAllData;
