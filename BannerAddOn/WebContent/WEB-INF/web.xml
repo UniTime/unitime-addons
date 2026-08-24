@@ -31,5 +31,6 @@
 		<url-pattern>/bannerOffering</url-pattern>
 		<url-pattern>/bannerConfigEdit</url-pattern>
 		<url-pattern>/bannerCatalog</url-pattern>
+		<url-pattern>/bannerCampusOverrides</url-pattern>
 	</servlet-mapping>
 </web-app>

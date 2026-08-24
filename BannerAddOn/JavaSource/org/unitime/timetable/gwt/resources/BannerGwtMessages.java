@@ -19,6 +19,8 @@
 */
 package org.unitime.timetable.gwt.resources;
 
+import com.google.gwt.i18n.client.Messages.DefaultMessage;
+
 public interface BannerGwtMessages extends GwtMessages {
 
 	@DefaultMessage("Banner Instructional Method Cohort Restriction")
@@ -168,6 +170,112 @@ public interface BannerGwtMessages extends GwtMessages {
 	@DefaultMessage("maxResults")
 	String tagMaxResults();
 
+	@DefaultMessage("Add Banner Campus Override")
+	String pageAddBannerCampusOverride();
+
+	@DefaultMessage("Banner Campus Override")
+	String pageBannerCampusOverride();
+
+	@DefaultMessage("Banner Campus Overrides")
+	String pageBannerCampusOverrides();
+
+	@DefaultMessage("Banner Campus Code")
+	String colBannerCampusCode();
 	
+	@DefaultMessage("Banner Campus Name")
+	String colBannerCampusName();
+	
+	@DefaultMessage("Visible")
+	String colBannerCampusVisible();
+	
+	@DefaultMessage("First Banner <br>Term Code")
+	String colFirstBannerTermCode();
+	
+	@DefaultMessage("Last Banner <br>Term Code")
+	String colLastBannerTermCode();
+		
+	@DefaultMessage("Visible On <br>Banner Offering <br>Page")
+	String colBannerCampusVisibleOnBannerOfferingPage();
+	
+	@DefaultMessage("Used In <br>Campus Code <br>Calculation")
+	String colUsedCampusCodeCalc();
+	
+	@DefaultMessage("Override <br>Calculated <br>Campus Code")
+	String colOverrideCalcCampusCode();
+	
+	@DefaultMessage("Regular Expression <br>Academic Initiative")
+	String colRegexAcademicInitiative();
+
+	@DefaultMessage("Regular Expression <br>Managing Dept Code")
+	String colRegexManagingDeptCode();
+
+	@DefaultMessage("Regular Expression <br>Code to Override")
+	String colRegexCampusCodeToOverride();
+
+	@DefaultMessage("First Banner Term Code")
+	String fieldFirstBannerTermCode();
+	
+	@DefaultMessage("Last Banner Term Code")
+	String fieldLastBannerTermCode();
+		
+	@DefaultMessage("Visible On Banner Offering Page")
+	String fieldBannerCampusVisibleOnBannerOfferingPage();
+	
+	@DefaultMessage("Used In Campus Code Calculation")
+	String fieldUsedCampusCodeCalc();
+	
+	@DefaultMessage("Override Calculated Campus Code")
+	String fieldOverrideCalcCampusCode();
+	
+	@DefaultMessage("Regular Expression Academic Initiative")
+	String fieldRegexAcademicInitiative();
+
+	@DefaultMessage("Regular Expression Managing Dept Code")
+	String fieldRegexManagingDeptCode();
+
+	@DefaultMessage("Regular Expression Code to Override")
+	String fieldRegexCampusCodeToOverride();
+	
+	@DefaultMessage("Add")
+	String buttonAddBannerCampusOverride();
+	
+	@DefaultMessage("Edit")
+	String buttonEditBannerCampusOverride();
+	
+	@DefaultMessage("bannerCampusOverride")
+	String objectBannerCampusOverride();
+
+	@DefaultMessage("Add Campus Override")
+	String actionAddCampusOverride();
+	
+	@DefaultMessage("Save")
+	String actionSaveCampusOverride();
+	
+	@DefaultMessage("Update")
+	String actionUpdateCampusOverride();
+	
+	@DefaultMessage("Back")
+	String actionBackToCampusOverrides();
+	
+	@DefaultMessage("Banner Campus Overrides")
+	String sectBannerCampusOverrides();
+
+	@DefaultMessage("Add Banner Campus Overrides")
+	String sectAddBannerCampusOverrides();
+
+	@DefaultMessage("Add Banner Campus Override")
+	String sectAddBannerCampusOverride();
+
+	@DefaultMessage("Edit Banner Campus Override")
+	String sectEditBannerCampusOverride();
+
+	@DefaultMessage("Update Data")
+	String buttonBannerCampusOverridesUpdateData();
+
+	@DefaultMessage("Banner Campus Code is required.")
+	String errorBannerCampusCodeIsEmpty();
+
+	@DefaultMessage("Banner Campus Name is required.")
+	String errorBannerCampusNameIsEmpty();
 
 }

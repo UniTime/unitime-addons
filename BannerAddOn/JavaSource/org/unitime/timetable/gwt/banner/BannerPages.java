@@ -19,6 +19,8 @@
 */
 package org.unitime.timetable.gwt.banner;
 
+import org.unitime.timetable.gwt.client.campusoverrides.BannerCampusOverridesEdit;
+import org.unitime.timetable.gwt.client.campusoverrides.BannerCampusOverridesPage;
 import org.unitime.timetable.gwt.client.responses.BannerResponsesPage;
 import org.unitime.timetable.gwt.resources.BannerGwtMessages;
 
@@ -44,6 +46,14 @@ public enum BannerPages {
 	bannerCatalog(new PageFactory() {
 		public Widget create() { return new BannerCatalogPage(); }
 		public String name(BannerGwtMessages messages) { return messages.pageBannerCourseCatalog(); }
+		}),
+	bannerCampusOverrides(new PageFactory() {
+		public Widget create() { return new BannerCampusOverridesPage(); }
+		public String name(BannerGwtMessages messages) { return messages.pageBannerCampusOverrides(); }
+		}),
+	bannerCampusOverrideEdit(new PageFactory() {
+		public Widget create() { return new BannerCampusOverridesEdit(); }
+		public String name(BannerGwtMessages messages) { return messages.pageBannerCampusOverride(); }
 		}),
 	;
 

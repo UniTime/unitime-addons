@@ -75,7 +75,20 @@
 			</item>
 			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.action">
 				<condition>
-					<hasPermission name="AcademicSessions"/>
+					<and>
+						<propertyEquals name="banner.menu.display_new_campus_overrides" value="true" defaultValue="false"/>
+						<hasPermission name="AcademicSessions"/>
+					</and>
+				</condition>
+ 			</item>
+			<item name="Banner Campus Overrides" page="bannerCampusOverrides" type="gwt">
+							<parameter name="type">bannerCampusOverride</parameter>
+			
+				<condition>
+					<and>
+						<propertyEquals name="banner.menu.display_new_campus_overrides" value="true" defaultValue="true"/>
+						<hasPermission name="Campuses"/>
+					</and>
 				</condition>
  			</item>
 			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.action">
