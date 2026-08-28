@@ -317,7 +317,7 @@ public class ColleagueResponse extends BaseColleagueResponse {
             }
             
             List<String> subjectAbbvs = null;
-            if(searchSubject != null && searchSubject != "") {
+            if(searchSubject != null && !searchSubject.isEmpty()) {
             	whereHql += " and upper(rp.subjectCode) = upper(:searchSubject) ";
             } else {
             	whereHql += " and rp.subjectCode in :subjectAbbvs";
@@ -326,11 +326,11 @@ public class ColleagueResponse extends BaseColleagueResponse {
             		subjectAbbvs.add(s.getSubjectAreaAbbreviation());
             }
             
-            if(searchCourseNumber != null && searchCourseNumber != "") {
+            if(searchCourseNumber != null && !searchCourseNumber.isEmpty()) {
             	whereHql += " and upper(rp.courseNumber) = upper(:searchCourseNumber) ";
             }
             
-            if(searchColleagueId != null && searchColleagueId != "") {
+            if(searchColleagueId != null && !searchColleagueId.isEmpty()) {
             	whereHql += " and rp.colleagueId = upper(:searchColleagueId) ";
             }
                         
@@ -366,7 +366,7 @@ public class ColleagueResponse extends BaseColleagueResponse {
             	whereHql += ") ";
             }
             	
-            if(searchMessage != null && searchMessage != "") {
+            if(searchMessage != null && !searchMessage.isEmpty()) {
             	whereHql += " and upper(rp.message) like upper(:searchMessage) ";
             }
             if (!showHistory) {
@@ -400,21 +400,21 @@ public class ColleagueResponse extends BaseColleagueResponse {
             }
             
 
-            if(searchSubject != null && searchSubject != "") {
+            if(searchSubject != null && !searchSubject.isEmpty()) {
             	query.setParameter("searchSubject", searchSubject);
             } else if (subjectAbbvs != null && !subjectAbbvs.isEmpty()) {
             	query.setParameterList("subjectAbbvs", subjectAbbvs);
             }
             
-            if(searchCourseNumber != null && searchCourseNumber != "") {
+            if(searchCourseNumber != null && !searchCourseNumber.isEmpty()) {
 				query.setParameter("searchCourseNumber", searchCourseNumber);
             }
             
-            if(searchColleagueId != null && searchColleagueId != "") {
+            if(searchColleagueId != null && !searchColleagueId.isEmpty()) {
 				query.setParameter("searchColleagueId", searchColleagueId);
             }
                         
-            if(searchMessage != null && searchMessage != "") {
+            if(searchMessage != null && !searchMessage.isEmpty()) {
             	query.setParameter("searchMessage", searchMessage.replace('*', '%'));
             }
             
