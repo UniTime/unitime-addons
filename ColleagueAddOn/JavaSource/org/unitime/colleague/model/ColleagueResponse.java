@@ -320,7 +320,7 @@ public class ColleagueResponse extends BaseColleagueResponse {
             if(searchSubject != null && !searchSubject.isEmpty()) {
             	whereHql += " and upper(rp.subjectCode) = upper(:searchSubject) ";
             } else {
-            	whereHql += " and rp.subjectCode in :subjectAbbvs";
+            	if (subjects != null && !subjects.isEmpty()) whereHql += " and rp.subjectCode in :subjectAbbvs";
             	subjectAbbvs = new ArrayList<String>();
             	for (SubjectArea s: subjects)
             		subjectAbbvs.add(s.getSubjectAreaAbbreviation());
