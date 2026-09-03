@@ -41,6 +41,9 @@ public interface BannerGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Course Catalog")
 	String pageBannerCourseCatalog();
+	
+	@DefaultMessage("Roll Forward Banner Session")
+	String pageRollForwardBannerSession();
 
 	@DefaultMessage("Instructional Method")
 	String fieldInstructionalMethod();

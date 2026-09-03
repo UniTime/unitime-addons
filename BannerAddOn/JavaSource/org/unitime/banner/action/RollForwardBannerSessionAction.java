@@ -19,11 +19,13 @@
 */
 package org.unitime.banner.action;
 
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 
 import org.apache.struts2.convention.annotation.Action;
@@ -31,7 +33,7 @@ import org.apache.struts2.convention.annotation.Result;
 import org.apache.struts2.tiles.annotation.TilesDefinition;
 import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.banner.form.RollForwardBannerSessionForm;
-import org.unitime.banner.util.BannerSessionRollForward;
+import org.unitime.banner.server.rollforward.BannerRollForwardQueueItem;
 import org.unitime.commons.web.WebTable;
 import org.unitime.commons.web.WebTable.WebTableLine;
 import org.unitime.localization.impl.Localization;
@@ -39,13 +41,13 @@ import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.action.RollForwardSessionAction.SessionComparator;
+import org.unitime.timetable.defaults.ApplicationProperty;
 import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardError;
-import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.dao.SessionDAO;
-import org.unitime.timetable.security.UserContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.util.queue.QueueItem;
+import org.unitime.timetable.util.queue.RollForwardQueueItem;
 
 
 
@@ -72,6 +74,17 @@ public class RollForwardBannerSessionAction extends UniTimeAction<RollForwardBan
 
 	@Override
 	public String execute() throws Exception {
+		if (ApplicationProperty.LegacyRollForward.isFalse()) {
+    		String url = "bannerRollForward";
+    		boolean first = true;
+    		for (Enumeration<String> e = getRequest().getParameterNames(); e.hasMoreElements(); ) {
+    			String param = e.nextElement();
+    			url += (first ? "?" : "&") + param + "=" + URLEncoder.encode(getRequest().getParameter(param), "utf-8");
+    			first = false;
+    		}
+    		response.sendRedirect(url);
+			return null;
+    	}
 		if (form == null) form = new RollForwardBannerSessionForm();
 
 		// Check Access
@@ -82,9 +95,7 @@ public class RollForwardBannerSessionAction extends UniTimeAction<RollForwardBan
     		form.validate(this);
             if (!hasFieldErrors() && (form.getRollForwardBannerSession() || form.getCreateMissingBannerSections())) {
             	getSolverServerService().getQueueProcessor().add(new BannerRollForwardQueueItem(
-            			SessionDAO.getInstance().get(form.getSessionToRollForwardTo()), 
-            			sessionContext.getUser(),
-            			(RollForwardBannerSessionForm)form.clone()));
+            			SessionDAO.getInstance().get(form.getSessionToRollForwardTo()), sessionContext.getUser(), form.toBannerRollForwardSessionInterface()));
             }
         }
 
@@ -132,7 +143,7 @@ public class RollForwardBannerSessionAction extends UniTimeAction<RollForwardBan
         WebTable.setOrder(sessionContext,"rollForwardBannerSession.ord",request.getParameter("ord"),1);
 		String log = request.getParameter("log");
 		DateFormat df = new SimpleDateFormat("h:mma");
-		List<QueueItem> queue = getSolverServerService().getQueueProcessor().getItems(null, null, "Banner Roll Forward");
+		List<QueueItem> queue = getSolverServerService().getQueueProcessor().getItems(null, null, "Roll Forward");
 		if (queue.isEmpty()) return null;
 		WebTable table = new WebTable(9, null, "rollForwardBannerSession.action?ord=%%",
 				new String[] {
@@ -184,8 +195,8 @@ public class RollForwardBannerSessionAction extends UniTimeAction<RollForwardBan
 				request.setAttribute("logname", name);
 				request.setAttribute("logid", item.getId().toString());
 				request.setAttribute("log", item.log());
-				((BannerRollForwardQueueItem)item).getForm().copyTo(form);
-				saveErrors(((BannerRollForwardQueueItem)item).getErrors());
+				form.copyFromRollForwardSessionInterface(((RollForwardQueueItem)item).getForm());
+				saveErrors(((RollForwardQueueItem)item).getErrors());
 				line.setBgColor("rgb(168,187,225)");
 			}
 
@@ -197,72 +208,6 @@ public class RollForwardBannerSessionAction extends UniTimeAction<RollForwardBan
 		if (errors != null)
 			for (RollForwardError e: errors)
 				addFieldError(e.getType(), e.getMessage());
-	}
-	
-	private static class BannerRollForwardQueueItem extends QueueItem {
-		private static final long serialVersionUID = 1L;
-		private RollForwardBannerSessionForm iForm;
-		private int iProgress = 0;
-		private RollForwardErrors iErrors = new RollForwardErrors();
-		
-		public BannerRollForwardQueueItem(Session session, UserContext owner, RollForwardBannerSessionForm form) {
-			super(session, owner);
-			iForm = form;
-		}
-		
-		public RollForwardErrors getErrors() {
-			return iErrors;
-		}
-		
-		public RollForwardBannerSessionForm getForm() {
-			return iForm;
-		}
-		
-		@Override
-		protected void execute() throws Exception {
-		    BannerSessionRollForward sessionRollForward = new BannerSessionRollForward(this);
-              
-	        Session toAcadSession = Session.getSessionById(iForm.getSessionToRollForwardTo());
-			if (toAcadSession == null){
-				iErrors.addFieldError("mustSelectSession", MSG.errorRollForwardMissingToSession());
-			}
-        	if (iErrors.isEmpty() && iForm.getRollForwardBannerSession()) {
-				setStatus(BMSG.rollForwardBannerSessionData() + " ...");
-				sessionRollForward.rollBannerSessionDataForward(iErrors, iForm);	
-	        }
-        	if (iErrors.isEmpty() && iForm.getCreateMissingBannerSections()) {
-    				setStatus(BMSG.rollForwardCreateMissingBannerSectionData() + " ...");
-    				sessionRollForward.createMissingBannerSections(iErrors, iForm);	
-    	        }
-    	
-	        iProgress++;
-	        if (!iErrors.isEmpty()) {
-	        	setError(new Exception(iErrors.get(0).getMessage()));
-	        } else {
-	        	log(MSG.logAllDone());
-	        }
-		}
-
-		@Override
-		public String name() {
-			List<String> names = new ArrayList<String>();
-        	if (iForm.getRollForwardBannerSession()) names.add(BMSG.rollForwardBannerSession());
-         	if (iForm.getCreateMissingBannerSections()) names.add(BMSG.rollForwardCreateMissingBannerSectionData());
-             	String name = names.toString().replace("[", "").replace("]", "");
-        	if (name.length() > 50) name = name.substring(0, 47) + "...";
-        	return name;
-		}
-
-		@Override
-		public double progress() {
-			return 100 * iProgress / ((iForm.getRollForwardBannerSession()?1:0) + (iForm.getCreateMissingBannerSections()?1:0));
-		}
-
-		@Override
-		public String type() {
-			return "Banner Roll Forward";
-		}
-		
 	}
 
 }

@@ -28,7 +28,6 @@ import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.hibernate.Transaction;
-import org.unitime.banner.form.RollForwardBannerSessionForm;
 import org.unitime.banner.interfaces.ExternalSessionRollForwardCustomizationInterface;
 import org.unitime.banner.model.BannerConfig;
 import org.unitime.banner.model.BannerCourse;
@@ -39,7 +38,8 @@ import org.unitime.banner.model.dao.BannerCourseDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.timetable.ApplicationProperties;
-import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
+import org.unitime.timetable.gwt.shared.BannerRollForwardSessionInterface;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrorLogger;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstrOfferingConfig;
@@ -67,7 +67,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 		super(log);
 	}
 	
-	public void rollBannerSessionDataForward(RollForwardErrors errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
+	public void rollBannerSessionDataForward(RollForwardErrorLogger errors, BannerRollForwardSessionInterface rollForwardBannerSessionForm){
 		Session toSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollForwardTo());
 		Session fromSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollBannerDataForwardFrom());
 		
@@ -167,7 +167,7 @@ public class BannerSessionRollForward extends SessionRollForward {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void createMissingBannerSections(RollForwardErrors errors, RollForwardBannerSessionForm rollForwardBannerSessionForm){
+	public void createMissingBannerSections(RollForwardErrorLogger errors, BannerRollForwardSessionInterface rollForwardBannerSessionForm){
 		Session academicSession = Session.getSessionById(rollForwardBannerSessionForm.getSessionToRollForwardTo());
 		try {
 			TreeSet<SubjectArea> subjectAreas = new TreeSet<SubjectArea>();
