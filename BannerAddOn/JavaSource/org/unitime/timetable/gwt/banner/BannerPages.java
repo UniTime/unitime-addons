@@ -45,6 +45,10 @@ public enum BannerPages {
 		public Widget create() { return new BannerCatalogPage(); }
 		public String name(BannerGwtMessages messages) { return messages.pageBannerCourseCatalog(); }
 		}),
+	bannerRollForward(new PageFactory() {
+		public Widget create() { return new BannerRollForwardSessionPage(); }
+		public String name(BannerGwtMessages messages) { return messages.pageRollForwardBannerSession(); }
+		}),
 	;
 
 	private PageFactory iFactory;

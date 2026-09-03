@@ -26,6 +26,8 @@ import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.form.RollForwardSessionForm;
+import org.unitime.timetable.gwt.shared.BannerRollForwardSessionInterface;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface;
 import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Session;
 
@@ -107,6 +109,25 @@ public class RollForwardBannerSessionForm extends RollForwardSessionForm  {
 	public Object clone() {
 		RollForwardBannerSessionForm form = new RollForwardBannerSessionForm();
 		copyTo(form);
+		return form;
+	}
+	
+	@Override
+	public void copyFromRollForwardSessionInterface(RollForwardSessionInterface form) {
+		super.copyFromRollForwardSessionInterface(form);
+		if (form instanceof BannerRollForwardSessionInterface) {
+			BannerRollForwardSessionInterface bform = (BannerRollForwardSessionInterface)form;
+			setRollForwardBannerSession(bform.getRollForwardBannerSession());
+			setSessionToRollBannerDataForwardFrom(bform.getSessionToRollBannerDataForwardFrom());
+			setCreateMissingBannerSections(bform.getCreateMissingBannerSections());
+		}
+	}
+	
+	public BannerRollForwardSessionInterface toBannerRollForwardSessionInterface() {
+		BannerRollForwardSessionInterface form = toRollForwardSessionInterface(new BannerRollForwardSessionInterface());
+		form.setRollForwardBannerSession(getRollForwardBannerSession());
+		form.setSessionToRollBannerDataForwardFrom(getSessionToRollBannerDataForwardFrom());
+		form.setCreateMissingBannerSections(getCreateMissingBannerSections());
 		return form;
 	}
 
