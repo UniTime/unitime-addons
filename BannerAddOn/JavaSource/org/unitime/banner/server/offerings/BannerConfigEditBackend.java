@@ -206,7 +206,7 @@ public class BannerConfigEditBackend implements GwtRpcImplementation<BannerConfi
 		response.setConfigName(ioc.getCourseNameWithTitle() + (ioc.getInstructionalOffering().hasMultipleConfigurations() ? " [" + ioc.getName() + "]" : ""));
 		for (OfferingConsentType t: OfferingConsentType.getConsentTypeList())
 			response.addConsent(new IdLabel(t.getUniqueId(), t.getLabel(), t.getReference()));
-		for (BannerCampusOverride o: BannerCampusOverride.getBannerCampusOverrideList())
+		for (BannerCampusOverride o: BannerCampusOverride.getBannerCampusOverrideList(bsess.getBannerTermCode()))
 			response.addCampusOverride(new IdLabel(o.getUniqueId(), o.getBannerCampusCode() + " - " + o.getBannerCampusName(), o.isVisible() ? "1" : "0"));
 		for (ItypeDesc i: ItypeDescDAO.getInstance().getSession().createQuery(
 	    		 "select distinct it from ItypeDesc it, BannerConfig bc, SchedulingSubpart ss where bc.uniqueId = :configId and ss.instrOfferingConfig.uniqueId = bc.instrOfferingConfigId and it.itype = ss.itype.itype",

@@ -57,7 +57,19 @@ public class BannerCampusOverride extends BaseBannerCampusOverride {
 	@Transient
     public static List<BannerCampusOverride> getBannerCampusOverrideList() {
 		return BannerCampusOverrideDAO.getInstance().getSession().createQuery(
-				"from BannerCampusOverride order by bannerCampusCode", BannerCampusOverride.class)
+				"from BannerCampusOverride order by order, bannerCampusCode", BannerCampusOverride.class)
+				.list();
+    }
+	
+	@Transient
+    public static List<BannerCampusOverride> getBannerCampusOverrideList(String term) {
+		if (term == null || term.isEmpty()) return getBannerCampusOverrideList();
+		return BannerCampusOverrideDAO.getInstance().getSession().createQuery(
+				"from BannerCampusOverride where " +
+				"(firstBannerTerm is null or firstBannerTerm <= :term) and " +
+				"(lastBannerTerm is null or :term <= lastBannerTerm) " +
+				"order by order, bannerCampusCode", BannerCampusOverride.class)
+				.setParameter("term", term)
 				.list();
     }
 

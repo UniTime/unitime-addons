@@ -76,18 +76,17 @@
 			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.action">
 				<condition>
 					<and>
-						<propertyEquals name="banner.menu.display_new_campus_overrides" value="true" defaultValue="false"/>
+						<propertyEquals name="banner.legacy.bannerCampusOverride" value="true" defaultValue="false"/>
 						<hasPermission name="AcademicSessions"/>
 					</and>
 				</condition>
  			</item>
-			<item name="Banner Campus Overrides" page="bannerCampusOverrides" type="gwt">
-							<parameter name="type">bannerCampusOverride</parameter>
-			
+			<item name="Banner Campus Overrides" page="admin" type="gwt">
+				<parameter name="type">bannerCampusOverride</parameter>
 				<condition>
 					<and>
-						<propertyEquals name="banner.menu.display_new_campus_overrides" value="true" defaultValue="true"/>
-						<hasPermission name="Campuses"/>
+						<propertyEquals name="banner.legacy.bannerCampusOverride" value="false" defaultValue="false"/>
+						<hasPermission name="AcademicSessions"/>
 					</and>
 				</condition>
  			</item>
