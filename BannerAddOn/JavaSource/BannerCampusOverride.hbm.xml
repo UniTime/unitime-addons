@@ -81,21 +81,14 @@
 			name="usedDefaultCalc"
 			column="used_default_calc"
 			type="java.lang.Boolean"
-			not-null="true"
-		/>
-
-		<property
-			name="replaceCampusCode"
-			column="replace_campus_code"
-			type="java.lang.Boolean"
-			not-null="true"
+			not-null="false"
 		/>
 
 		<property
 			name="academicInitiativeRegex"
 			column="acad_init_regex"
 			type="java.lang.String"
-			not-null="true"
+			not-null="false"
 			length="100"
 		/>
 
@@ -103,7 +96,7 @@
 			name="managingDeptCodeRegex"
 			column="mng_dept_code_regex"
 			type="java.lang.String"
-			not-null="true"
+			not-null="false"
 			length="100"
 		/>
 
@@ -111,7 +104,7 @@
 			name="campusCodeRegex"
 			column="campus_code_regex"
 			type="java.lang.String"
-			not-null="true"
+			not-null="false"
 			length="100"
 		/>
 

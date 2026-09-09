@@ -44,7 +44,6 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 	private String iFirstBannerTerm;
 	private String iLastBannerTerm;
 	private Boolean iUsedDefaultCalc;
-	private Boolean iReplaceCampusCode;
 	private String iAcademicInitiativeRegex;
 	private String iManagingDeptCodeRegex;
 	private String iCampusCodeRegex;
@@ -87,27 +86,21 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 	public String getLastBannerTerm() { return iLastBannerTerm; }
 	public void setLastBannerTerm(String lastBannerTerm) { iLastBannerTerm = lastBannerTerm; }
 
-	@Column(name = "used_default_calc", nullable = false)
+	@Column(name = "used_default_calc", nullable = true)
 	public Boolean isUsedDefaultCalc() { return iUsedDefaultCalc; }
 	@Transient
 	public Boolean getUsedDefaultCalc() { return iUsedDefaultCalc; }
 	public void setUsedDefaultCalc(Boolean usedDefaultCalc) { iUsedDefaultCalc = usedDefaultCalc; }
 
-	@Column(name = "replace_campus_code", nullable = false)
-	public Boolean isReplaceCampusCode() { return iReplaceCampusCode; }
-	@Transient
-	public Boolean getReplaceCampusCode() { return iReplaceCampusCode; }
-	public void setReplaceCampusCode(Boolean replaceCampusCode) { iReplaceCampusCode = replaceCampusCode; }
-
-	@Column(name = "acad_init_regex", nullable = false, length = 100)
+	@Column(name = "acad_init_regex", nullable = true, length = 100)
 	public String getAcademicInitiativeRegex() { return iAcademicInitiativeRegex; }
 	public void setAcademicInitiativeRegex(String academicInitiativeRegex) { iAcademicInitiativeRegex = academicInitiativeRegex; }
 
-	@Column(name = "mng_dept_code_regex", nullable = false, length = 100)
+	@Column(name = "mng_dept_code_regex", nullable = true, length = 100)
 	public String getManagingDeptCodeRegex() { return iManagingDeptCodeRegex; }
 	public void setManagingDeptCodeRegex(String managingDeptCodeRegex) { iManagingDeptCodeRegex = managingDeptCodeRegex; }
 
-	@Column(name = "campus_code_regex", nullable = false, length = 100)
+	@Column(name = "campus_code_regex", nullable = true, length = 100)
 	public String getCampusCodeRegex() { return iCampusCodeRegex; }
 	public void setCampusCodeRegex(String campusCodeRegex) { iCampusCodeRegex = campusCodeRegex; }
 
@@ -143,7 +136,6 @@ public abstract class BaseBannerCampusOverride implements Serializable {
 			"\n	LastBannerTerm: " + getLastBannerTerm() +
 			"\n	ManagingDeptCodeRegex: " + getManagingDeptCodeRegex() +
 			"\n	Order: " + getOrder() +
-			"\n	ReplaceCampusCode: " + getReplaceCampusCode() +
 			"\n	UniqueId: " + getUniqueId() +
 			"\n	UsedDefaultCalc: " + getUsedDefaultCalc() +
 			"\n	Visible: " + getVisible() +

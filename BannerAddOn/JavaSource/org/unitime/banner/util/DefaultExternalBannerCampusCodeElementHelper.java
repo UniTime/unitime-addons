@@ -21,38 +21,59 @@
 package org.unitime.banner.util;
 
 import org.unitime.banner.interfaces.ExternalBannerCampusCodeElementHelperInterface;
+import org.unitime.banner.model.BannerCampusOverride;
+import org.unitime.banner.model.BannerConfig;
+import org.unitime.banner.model.BannerCourse;
 import org.unitime.banner.model.BannerSection;
 import org.unitime.banner.model.BannerSession;
+import org.unitime.banner.model.dao.BannerCampusOverrideDAO;
 import org.unitime.timetable.model.Class_;
+import org.unitime.timetable.model.CourseOffering;
+import org.unitime.timetable.model.SubjectArea;
 
 /**
  * 
  * @author says
  *
  */
-public class DefaultExternalBannerCampusCodeElementHelper implements
-		ExternalBannerCampusCodeElementHelperInterface {
-
-
+public class DefaultExternalBannerCampusCodeElementHelper implements ExternalBannerCampusCodeElementHelperInterface {
 	@Override
-	public String getDefaultCampusCode(BannerSection bannerSection, BannerSession bannerSession,
-			Class_ clazz) {
-		String prefix = null;
-		if (bannerSession.isUseSubjectAreaPrefixAsCampus() != null && bannerSession.isUseSubjectAreaPrefixAsCampus()) {
-			String delimiter = (bannerSession.getSubjectAreaPrefixDelimiter() != null && !bannerSession.getSubjectAreaPrefixDelimiter().equals("") ? bannerSession.getSubjectAreaPrefixDelimiter() : " - ");
-			if (bannerSection.getBannerConfig() != null 
-					&& bannerSection.getBannerConfig().getBannerCourse() != null 
-					&& bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null) != null
-				    && bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea() != null 
-				    && bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter) >= 0) {
-				prefix = bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().substring(0, bannerSection.getBannerConfig().getBannerCourse().getCourseOffering(null).getSubjectArea().getSubjectAreaAbbreviation().indexOf(delimiter));				
-			}
+	public String getDefaultCampusCode(BannerSection bannerSection, BannerSession bannerSession, Class_ clazz) {
+		// take default campus from Banner session
+		String defaultCampus = bannerSession.getBannerCampus();
+		// if subject area prefixes are used, take default campus from there
+		if (Boolean.TRUE.equals(bannerSession.isUseSubjectAreaPrefixAsCampus())) {
+			String delimiter = bannerSession.getSubjectAreaPrefixDelimiter();
+			if (delimiter == null || delimiter.isEmpty())
+				delimiter = " - "; // use default delimiter when not set or empty on the Banner session
+			BannerConfig bannerConfig = bannerSection.getBannerConfig();
+			BannerCourse bannerCourse = (bannerConfig == null ? null : bannerConfig.getBannerCourse());
+			CourseOffering course = (bannerCourse == null ? null : bannerCourse.getCourseOffering(null));
+			SubjectArea subject = (course == null ? null : course.getSubjectArea());
+			int idx = (subject == null ? null : subject.getSubjectAreaAbbreviation().indexOf(delimiter));
+			if (idx >= 0)
+				defaultCampus = subject.getSubjectAreaAbbreviation().substring(0, idx);
 		}
-		if (prefix == null) {
-			return(bannerSession.getBannerCampus());
-		} else {
-			return(prefix);
+		// check Banner campus overrides with matching first/last term that are enabled to be used for default calculation
+		for (BannerCampusOverride override: BannerCampusOverrideDAO.getInstance().getSession().createQuery(
+				"from BannerCampusOverride where usedDefaultCalc = true and " +
+				"(firstBannerTerm is null or firstBannerTerm <= :term) and " +
+				"(lastBannerTerm is null or :term <= lastBannerTerm) " +
+				"order by order", BannerCampusOverride.class)
+				.setParameter("term", bannerSession.getBannerTermCode()).setCacheable(true).list()) {
+			if (override.getAcademicInitiativeRegex() != null && !override.getAcademicInitiativeRegex().isEmpty() &&
+					!bannerSession.getSession().getAcademicInitiative().matches(override.getAcademicInitiativeRegex()))
+				continue; // no match on the academic initiative
+			if (override.getManagingDeptCodeRegex() != null && !override.getManagingDeptCodeRegex().isEmpty() &&
+					clazz.getManagingDept() != null &&
+					!clazz.getManagingDept().getDeptCode().matches(override.getManagingDeptCodeRegex()))
+				continue; // no match on the department code
+			if (override.getCampusCodeRegex() != null && !override.getCampusCodeRegex().isEmpty() &&
+					!defaultCampus.matches(override.getCampusCodeRegex()))
+				continue; // no match on the default campus code (from banner session or subject area prefix)
+			// return first matching record
+			return override.getBannerCampusCode();
 		}
+		return defaultCampus;
 	}
-
 }
