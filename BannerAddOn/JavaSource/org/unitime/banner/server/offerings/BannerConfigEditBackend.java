@@ -206,8 +206,12 @@ public class BannerConfigEditBackend implements GwtRpcImplementation<BannerConfi
 		response.setConfigName(ioc.getCourseNameWithTitle() + (ioc.getInstructionalOffering().hasMultipleConfigurations() ? " [" + ioc.getName() + "]" : ""));
 		for (OfferingConsentType t: OfferingConsentType.getConsentTypeList())
 			response.addConsent(new IdLabel(t.getUniqueId(), t.getLabel(), t.getReference()));
-		for (BannerCampusOverride o: BannerCampusOverride.getBannerCampusOverrideList(bsess.getBannerTermCode()))
-			response.addCampusOverride(new IdLabel(o.getUniqueId(), o.getBannerCampusCode() + " - " + o.getBannerCampusName(), o.isVisible() ? "1" : "0"));
+		for (BannerCampusOverride o: BannerCampusOverride.getBannerCampusOverrideList(bsess.getBannerTermCode())) {
+			boolean visible = o.isVisible();
+			if (!o.matchAcademicInitiative(bsess.getSession().getAcademicInitiative()))
+				visible = false; // no match on the academic initiative
+			response.addCampusOverride(new IdLabel(o.getUniqueId(), o.getBannerCampusCode() + " - " + o.getBannerCampusName(), visible ? "1" : "0"));
+		}
 		for (ItypeDesc i: ItypeDescDAO.getInstance().getSession().createQuery(
 	    		 "select distinct it from ItypeDesc it, BannerConfig bc, SchedulingSubpart ss where bc.uniqueId = :configId and ss.instrOfferingConfig.uniqueId = bc.instrOfferingConfigId and it.itype = ss.itype.itype",
 	    		 ItypeDesc.class).setParameter("configId", request.getBannerConfigId()).setCacheable(true).list())

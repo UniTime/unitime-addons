@@ -61,15 +61,11 @@ public class DefaultExternalBannerCampusCodeElementHelper implements ExternalBan
 				"(lastBannerTerm is null or :term <= lastBannerTerm) " +
 				"order by order", BannerCampusOverride.class)
 				.setParameter("term", bannerSession.getBannerTermCode()).setCacheable(true).list()) {
-			if (override.getAcademicInitiativeRegex() != null && !override.getAcademicInitiativeRegex().isEmpty() &&
-					!bannerSession.getSession().getAcademicInitiative().matches(override.getAcademicInitiativeRegex()))
+			if (!override.matchAcademicInitiative(bannerSession.getSession().getAcademicInitiative()))
 				continue; // no match on the academic initiative
-			if (override.getManagingDeptCodeRegex() != null && !override.getManagingDeptCodeRegex().isEmpty() &&
-					clazz.getManagingDept() != null &&
-					!clazz.getManagingDept().getDeptCode().matches(override.getManagingDeptCodeRegex()))
+			if (!override.matchManagingDeptCode(clazz.getManagingDept().getDeptCode()))
 				continue; // no match on the department code
-			if (override.getCampusCodeRegex() != null && !override.getCampusCodeRegex().isEmpty() &&
-					!defaultCampus.matches(override.getCampusCodeRegex()))
+			if (!override.matchCampusCode(defaultCampus))
 				continue; // no match on the default campus code (from banner session or subject area prefix)
 			// return first matching record
 			return override.getBannerCampusCode();
