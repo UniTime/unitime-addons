@@ -18,8 +18,8 @@
  * 
 */
 
-alter table banner_campus_override add first_banner_term varchar2(8 char);
-alter table banner_campus_override add last_banner_term varchar2(8 char);
+alter table banner_campus_override add first_banner_term varchar2(20 char);
+alter table banner_campus_override add last_banner_term varchar2(20 char);
 alter table banner_campus_override add used_default_calc number(1,0);
 alter table banner_campus_override add acad_init_regex varchar2(100 char);
 alter table banner_campus_override add mng_dept_code_regex varchar2(100 char);

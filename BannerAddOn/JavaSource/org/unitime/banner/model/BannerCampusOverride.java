@@ -104,4 +104,40 @@ public class BannerCampusOverride extends BaseBannerCampusOverride {
 				"from BannerCampusOverride where bannerCampusCode = :code", BannerCampusOverride.class)
 				.setParameter("code", bannerCampusCode).uniqueResult();
 	}
+	
+	public boolean matchAcademicInitiative(String academicInitiative) {
+		// always match when empty or not set
+		if (getAcademicInitiativeRegex() == null || getAcademicInitiativeRegex().isEmpty()) return true;
+		// no match on empty academic initiative
+		if (academicInitiative == null || academicInitiative.isEmpty()) return false;
+		// starts with ! -> do not match
+		if (getAcademicInitiativeRegex().startsWith("!"))
+			return !academicInitiative.matches(getAcademicInitiativeRegex().substring(1));
+		// match
+		return academicInitiative.matches(getAcademicInitiativeRegex());
+	}
+	
+	public boolean matchManagingDeptCode(String deptCode) {
+		// always match when empty or not set
+		if (getManagingDeptCodeRegex() == null || getManagingDeptCodeRegex().isEmpty()) return true;
+		// no match on empty department code
+		if (deptCode == null || deptCode.isEmpty()) return false;
+		// starts with ! -> do not match
+		if (getManagingDeptCodeRegex().startsWith("!"))
+			return !deptCode.matches(getManagingDeptCodeRegex().substring(1));
+		// match
+		return deptCode.matches(getManagingDeptCodeRegex());
+	}
+	
+	public boolean matchCampusCode(String matchCampusCode) {
+		// always match when empty or not set
+		if (getCampusCodeRegex() == null || getCampusCodeRegex().isEmpty()) return true;
+		// no match on empty campus code
+		if (matchCampusCode == null || matchCampusCode.isEmpty()) return false;
+		// starts with ! -> do not match
+		if (getCampusCodeRegex().startsWith("!"))
+			return !matchCampusCode.matches(getCampusCodeRegex().substring(1));
+		// match
+		return matchCampusCode.matches(getCampusCodeRegex());
+	}
 }
