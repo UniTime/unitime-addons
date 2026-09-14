@@ -224,4 +224,7 @@ public interface BannerGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Regular expr. matching subject area prefix (campus).")
 	String descRegexCampusCodeToOverride();
+	
+	@DefaultMessage("Banner Term CRN Properties")
+	String pageBannerTermCRNProperties();
 }
