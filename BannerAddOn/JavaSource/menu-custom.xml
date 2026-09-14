@@ -70,7 +70,19 @@
  			</item>
 			<item name="Banner Term CRN Properties" page="bannerTermCrnPropertiesList.action">
 				<condition>
-					<hasPermission name="AcademicSessions"/>
+					<and>
+						<propertyEquals name="banner.legacy.bannerTermCrnProps" value="true" defaultValue="false"/>
+						<hasPermission name="AcademicSessions"/>
+					</and>
+				</condition>
+			</item>
+			<item name="Banner Term CRN Properties" page="admin" type="gwt">
+				<parameter name="type">bannerTermCrnProps</parameter>
+				<condition>
+					<and>
+						<propertyEquals name="banner.legacy.bannerTermCrnProps" value="false" defaultValue="false"/>
+						<hasPermission name="AcademicSessions"/>
+					</and>
 				</condition>
 			</item>
 			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.action">

@@ -96,8 +96,8 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 		if (restrictions != null){
 			for (BannerInstrMethodCohortRestriction restriction: restrictions) {
 				Record r = data.addRecord(restriction.getUniqueId());
-				r.setField(0, restriction.getInstructionalMethod().getUniqueId().toString());
-				r.setField(1, restriction.getCohort().getUniqueId().toString());
+				r.setField(0, restriction.getInstructionalMethod().getUniqueId().toString(), false);
+				r.setField(1, restriction.getCohort().getUniqueId().toString(), false);
 				r.setField(2, restriction.getRestrictionAction());
 				r.setField(3, restriction.getRemoved().toString());
 				r.setDeletable(false);
@@ -145,6 +145,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 		restriction.setRestrictionAction(action);
 		restriction.setRemoved(removed);
 		hibSession.persist(restriction);
+		record.setUniqueId(restriction.getUniqueId());
 		ChangeLog.addChange(hibSession,
 				context,
 				restriction,
@@ -198,7 +199,7 @@ public class BannerInstructionalMethodCohortRestrictions implements AdminTable {
 		if (ToolBox.equals(restriction.getInstructionalMethod().getUniqueId().toString(), record.getField(0)) &&
 				ToolBox.equals(restriction.getCohort().getUniqueId().toString(), record.getField(1)) &&
 				ToolBox.equals(restriction.getRestrictionAction(), action) &&
-				ToolBox.equals(restriction.getRemoved(), record.getField(3))) return;
+				ToolBox.equals(restriction.getRemoved(), "true".equalsIgnoreCase(record.getField(3)))) return;
 		restriction.setRestrictionAction(action);
 		restriction.setRemoved(removed);
 		hibSession.merge(restriction);

@@ -137,7 +137,7 @@ public class BannerSession extends BaseBannerSession {
 
 	@Transient
 	public static List<BannerSession> getAllSessions() {
-		return BannerSessionDAO.getInstance().getSession().createQuery("from BannerSession", BannerSession.class).list();
+		return BannerSessionDAO.getInstance().getSession().createQuery("from BannerSession order by bannerTermCode desc, bannerCampus", BannerSession.class).list();
 	}
 
 	public static BannerSession getBannerSessionById(Long id) {

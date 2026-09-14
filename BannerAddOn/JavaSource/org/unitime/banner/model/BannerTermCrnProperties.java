@@ -84,7 +84,7 @@ public class BannerTermCrnProperties extends BaseBannerTermCrnProperties {
 
 	@Transient
 	public static List<BannerTermCrnProperties> getAllBannerTermCrnProperties() {
-		return BannerTermCrnPropertiesDAO.getInstance().getSession().createQuery("from BannerTermCrnProperties", BannerTermCrnProperties.class).list();
+		return BannerTermCrnPropertiesDAO.getInstance().getSession().createQuery("from BannerTermCrnProperties order by bannerTermCode desc", BannerTermCrnProperties.class).list();
 	}
 	
 	@Transient
