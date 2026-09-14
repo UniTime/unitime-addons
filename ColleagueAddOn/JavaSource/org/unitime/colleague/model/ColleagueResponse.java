@@ -319,8 +319,8 @@ public class ColleagueResponse extends BaseColleagueResponse {
             List<String> subjectAbbvs = null;
             if(searchSubject != null && !searchSubject.isEmpty()) {
             	whereHql += " and upper(rp.subjectCode) = upper(:searchSubject) ";
-            } else {
-            	if (subjects != null && !subjects.isEmpty()) whereHql += " and rp.subjectCode in :subjectAbbvs";
+            } else if (subjects != null && !subjects.isEmpty()) {
+            	whereHql += " and rp.subjectCode in :subjectAbbvs";
             	subjectAbbvs = new ArrayList<String>();
             	for (SubjectArea s: subjects)
             		subjectAbbvs.add(s.getSubjectAreaAbbreviation());
