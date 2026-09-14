@@ -308,10 +308,10 @@ public interface BannerMessages extends Messages {
 	@DefaultMessage("Banner Term Code ({0}) for the BannerSession: {1} does not match the selected Term Code({2})")
 	String errorBannerTermCodeDoesNotMatch(String code, String session, String selected);
 	
-	@DefaultMessage("<b>Note:</b> Do not make changes to this field unless recovering from a failed banner offerings XML load.")
+	@DefaultMessage("<span style='color:#ec0000;'><b>Note:</b> Do not make changes to this field unless recovering from a failed banner offerings XML load.</span>")
 	String noteLoadingOfferings();
 	
-	@DefaultMessage("<b>Note:</b> May contain a regular expression that the student campus code must match.")
+	@DefaultMessage("<span style='color:#ec0000;'><b>Note:</b> May contain a regular expression that the student campus code must match.</span>")
 	String noteStudentCampus();
 	
 	@DefaultMessage("<b>Default:</b> \" - \"")

@@ -65,6 +65,14 @@
 		<menu name="Banner">
 			<item name="Manage Banner Sessions" page="bannerSessionList.action">
 				<condition>
+					<propertyEquals name="banner.legacy.bannerSession" value="true" defaultValue="false"/>
+					<hasPermission name="AcademicSessions"/>
+				</condition>
+ 			</item>
+			<item name="Manage Banner Sessions" page="admin" type="gwt">
+				<parameter name="type">bannerSession</parameter>
+				<condition>
+					<propertyEquals name="banner.legacy.bannerSession" value="false" defaultValue="false"/>
 					<hasPermission name="AcademicSessions"/>
 				</condition>
  			</item>
