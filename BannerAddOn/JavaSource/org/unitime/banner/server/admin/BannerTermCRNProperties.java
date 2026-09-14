@@ -126,6 +126,7 @@ public class BannerTermCRNProperties implements AdminTable {
 			if (!bs.getBannerTermCode().equals(prop.getBannerTermCode()))
 				throw new GwtRpcException(BMSG.errorBannerTermCodeDoesNotMatch(bs.getBannerTermCode(), bs.getLabel(), prop.getBannerTermCode()));
 			prop.addToBannerSessions(BannerSessionDAO.getInstance().get(Long.valueOf(id)));
+			bs.setBannerTermCrnProperties(prop);
 		}
 		prop.setLastCrn(Integer.valueOf(record.getField(2)));
 		prop.setMinCrn(Integer.valueOf(record.getField(3)));

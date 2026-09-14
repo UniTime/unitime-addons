@@ -227,4 +227,10 @@ public interface BannerGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Banner Term CRN Properties")
 	String pageBannerTermCRNProperties();
+	
+	@DefaultMessage("Banner Sessions")
+	String pageBannerSessions();
+	
+	@DefaultMessage("Banner Session")
+	String pageBannerSession();
 }
