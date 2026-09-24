@@ -82,7 +82,7 @@ public abstract class Queue extends BaseQueue {
 	public Document getDocument() {
 		if (getXml() == null) return null;
 		try {
-			return new SAXReader().read(new StringReader(getXml()));
+			return SAXReader.createDefault().read(new StringReader(getXml()));
 		} catch (Exception e) {
 			Debug.error("Failed to parse XML document: " + e.getMessage(), e);
 			return null;

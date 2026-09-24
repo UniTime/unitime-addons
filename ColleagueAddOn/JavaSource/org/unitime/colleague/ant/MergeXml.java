@@ -106,8 +106,7 @@ public class MergeXml extends Task {
     public void execute() throws BuildException {
         try {
             log("Merging "+iTarget+" with "+iSource);
-            SAXReader sax = new SAXReader();
-            sax.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            SAXReader sax = SAXReader.createDefault();
             Document targetDoc = sax.read(new File(iTarget));
             Document sourceDoc = sax.read(new File(iSource));
             

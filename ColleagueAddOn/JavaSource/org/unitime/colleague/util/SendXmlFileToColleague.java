@@ -48,7 +48,7 @@ public class SendXmlFileToColleague {
 	       HibernateUtil.configureHibernate(ApplicationProperties.getProperties());
 
 	       // Load an XML file
-	       Document document = (new SAXReader()).read(new File(args[0]));
+	       Document document = SAXReader.createDefault().read(new File(args[0]));
 	       	        	        	        
 	       QueuedItem qi = new QueuedItem(document);
     	   Document outDocument = qi.sendTestMessage();

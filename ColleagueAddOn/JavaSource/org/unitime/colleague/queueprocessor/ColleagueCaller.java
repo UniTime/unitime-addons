@@ -331,7 +331,7 @@ public abstract class ColleagueCaller {
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(file);
-            document = (new SAXReader()).read(fis);
+            document = SAXReader.createDefault().read(fis);
             renameFileSuccess(file);
         } catch (IOException e) {
             Debug.error("Unable to read file "+file.getName()+", reason:"+e.getMessage(),e);

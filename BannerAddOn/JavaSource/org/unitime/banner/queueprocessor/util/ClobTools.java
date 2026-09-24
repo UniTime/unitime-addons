@@ -45,7 +45,7 @@ public class ClobTools {
 	}
 	
 	public static Document clobToDocument(Clob clob) throws DocumentException, SQLException{
-		SAXReader reader = new SAXReader();
+		SAXReader reader = SAXReader.createDefault();
 		Document document = reader.read(clob.getCharacterStream());
 		return document;
 	}

@@ -124,7 +124,7 @@ public class HttpsConnector {
 //		Reader r = response.getReader();
 		Document d = null;
 //		try {
-//			d = (new SAXReader()).read(r);
+//			d = SAXReader.createDefault().read(r);
 //		} finally {
 //			r.close();
 //			response.release();
@@ -147,7 +147,7 @@ public class HttpsConnector {
 	            sw.flush();
 	            result = sw.toString();
 	            StringReader sr = new StringReader(result);
-	            d = (new SAXReader()).read(sr);
+	            d = SAXReader.createDefault().read(sr);
 	        }			
 			return (d);
 		} finally {
