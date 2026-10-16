@@ -22,39 +22,24 @@
 <unitime-menu>
 	<menu name="Courses">
 		<menu name="Banner">
-			<item name="Message Responses" page="bannerMessageResponses.action">
-				<condition>
-					<and>
-						<propertyEquals name="banner.menu.display_orig_message_responses" value="true" defaultValue="false"/>
-						<hasPermission name="InstructionalOfferings"/>
-					</and>
-				</condition>
-			</item>
 			<item name="Message Responses" page="bannerResponses" type="gwt">
 				<condition>
 					<and>
-						<propertyEquals name="banner.menu.display_new_message_responses" value="true" defaultValue="true"/>
 						<hasPermission name="InstructionalOfferings"/>
 					</and>
-				</condition>
-			</item>
-			<item name="Banner Offerings" page="bannerOfferingSearch.action">
-				<condition>
-					<hasPermission name="InstructionalOfferings"/>
-					<propertyEquals name="banner.legacy.bannerOfferings" value="true" defaultValue="false"/>
 				</condition>
 			</item>
 			<item name="Banner Offerings" page="bannerOfferings" type="gwt">
 				<condition>
 					<hasPermission name="InstructionalOfferings"/>
-					<propertyEquals name="banner.legacy.bannerOfferings" value="false" defaultValue="false"/>
 				</condition>
 			</item>
 		</menu>
 	</menu>
 	<menu name="Administration">
 		<menu name="Other">
-			<item name="Users" page="userEdit.action">
+			<item name="Users" page="admin" type="gwt">
+				<parameter name="type">user</parameter>
 				<!-- Only when LDAP is not configured -->
 				<condition>
 					<propertyEquals name="tmtbl.authenticate.ldap.provider" value="" defaultValue=""/>
@@ -63,54 +48,29 @@
 			</item>
 		</menu>
 		<menu name="Banner">
-			<item name="Manage Banner Sessions" page="bannerSessionList.action">
-				<condition>
-					<propertyEquals name="banner.legacy.bannerSession" value="true" defaultValue="false"/>
-					<hasPermission name="AcademicSessions"/>
-				</condition>
- 			</item>
 			<item name="Manage Banner Sessions" page="admin" type="gwt">
 				<parameter name="type">bannerSession</parameter>
 				<condition>
-					<propertyEquals name="banner.legacy.bannerSession" value="false" defaultValue="false"/>
 					<hasPermission name="AcademicSessions"/>
 				</condition>
  			</item>
-			<item name="Banner Term CRN Properties" page="bannerTermCrnPropertiesList.action">
-				<condition>
-					<and>
-						<propertyEquals name="banner.legacy.bannerTermCrnProps" value="true" defaultValue="false"/>
-						<hasPermission name="AcademicSessions"/>
-					</and>
-				</condition>
-			</item>
 			<item name="Banner Term CRN Properties" page="admin" type="gwt">
 				<parameter name="type">bannerTermCrnProps</parameter>
 				<condition>
 					<and>
-						<propertyEquals name="banner.legacy.bannerTermCrnProps" value="false" defaultValue="false"/>
 						<hasPermission name="AcademicSessions"/>
 					</and>
 				</condition>
 			</item>
-			<item name="Banner Campus Overrides" page="bannerCampusOverrideList.action">
-				<condition>
-					<and>
-						<propertyEquals name="banner.legacy.bannerCampusOverride" value="true" defaultValue="false"/>
-						<hasPermission name="AcademicSessions"/>
-					</and>
-				</condition>
- 			</item>
 			<item name="Banner Campus Overrides" page="admin" type="gwt">
 				<parameter name="type">bannerCampusOverride</parameter>
 				<condition>
 					<and>
-						<propertyEquals name="banner.legacy.bannerCampusOverride" value="false" defaultValue="false"/>
 						<hasPermission name="AcademicSessions"/>
 					</and>
 				</condition>
  			</item>
-			<item name="Roll Forward Banner Session" page="rollForwardBannerSession.action">
+			<item name="Roll Forward Banner Session" page="bannerRollForward" type="gwt">
 				<condition>
 					<hasPermission name="SessionRollForward"/>
 				</condition>
