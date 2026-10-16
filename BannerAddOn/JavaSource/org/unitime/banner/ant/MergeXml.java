@@ -106,7 +106,12 @@ public class MergeXml extends Task {
     public void execute() throws BuildException {
         try {
             log("Merging "+iTarget+" with "+iSource);
-            SAXReader sax = SAXReader.createDefault();
+            SAXReader sax = new SAXReader();
+            try {
+            	sax.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            	sax.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            	sax.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            } catch (Exception e) {}
             Document targetDoc = sax.read(new File(iTarget));
             Document sourceDoc = sax.read(new File(iSource));
             
