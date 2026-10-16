@@ -124,7 +124,7 @@ public class BannerOfferingDetailBackend implements GwtRpcImplementation<BannerO
             	c.add(coordinator.getInstructor().getName(instructorNameFormat) +
             			(coordinator.getResponsibility() == null ?  (coordinator.getPercentShare() != 0 ? " (" + coordinator.getPercentShare() + "%)" : "") :
             				" (" + coordinator.getResponsibility().getLabel() + (coordinator.getPercentShare() > 0 ? ", " + coordinator.getPercentShare() + "%" : "") + ")")
-            			).setUrl("instructorDetail.action?instructorId=" + coordinator.getInstructor().getUniqueId()).setClassName("noFancyLinks");
+            			).setUrl("instructor?instructorId=" + coordinator.getInstructor().getUniqueId()).setClassName("noFancyLinks");
             }
         }
         
