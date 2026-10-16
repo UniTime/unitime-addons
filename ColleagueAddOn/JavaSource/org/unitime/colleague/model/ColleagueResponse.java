@@ -402,7 +402,7 @@ public class ColleagueResponse extends BaseColleagueResponse {
 
             if(searchSubject != null && searchSubject != "") {
             	query.setParameter("searchSubject", searchSubject);
-            } else if (subjectAbbvs != null && !subjectAbbvs.isEmpty()) {
+            } else {
             	query.setParameterList("subjectAbbvs", subjectAbbvs);
             }
             
