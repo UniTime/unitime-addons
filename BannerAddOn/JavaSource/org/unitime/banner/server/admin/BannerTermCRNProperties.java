@@ -59,7 +59,7 @@ public class BannerTermCRNProperties implements AdminTable {
 
 	@Override
 	public PageName name() {
-		return new PageName(BANNER.pageBannerTermCRNProperties());
+		return new PageName(BANNER.pageBannerTermCRNProperties(), BANNER.pageBannerTermCRNProperties());
 	}
 
 	@Override
