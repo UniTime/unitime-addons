@@ -20,6 +20,7 @@
 package org.unitime.timetable.gwt.banner;
 
 import org.unitime.timetable.gwt.client.Client;
+import org.unitime.timetable.gwt.client.page.SolverWarnings;
 import org.unitime.timetable.gwt.client.page.UniTimeNotifications;
 import org.unitime.timetable.gwt.client.page.UniTimePageLabel;
 import org.unitime.timetable.gwt.client.widgets.LoadingWidget;
@@ -51,6 +52,9 @@ public class UniTimeBannerClient extends Client {
 					UniTimePageLabel.getInstance().setPageName(p.name(BANNER_MESSAGES));
 					Window.setTitle("UniTime " + CONSTANTS.version() + "| " + p.name(BANNER_MESSAGES));
 					RootPanel.get("UniTimeGWT:Body").add(p.widget());
+					RootPanel warns = RootPanel.get("UniTimeGWT:SolverWarnings");
+					if (warns != null)
+						warns.add(SolverWarnings.createInstance(SolverWarnings.Type.locks));
 					return;
 				}
 			}

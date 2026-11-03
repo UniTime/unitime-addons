@@ -28,6 +28,7 @@ import org.unitime.localization.messages.BannerMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.gwt.client.ToolBox;
 import org.unitime.timetable.gwt.client.offerings.OfferingsInterface.OfferingConfigInterface;
+import org.unitime.timetable.gwt.client.page.SolverWarnings;
 import org.unitime.timetable.gwt.client.page.UniTimeNavigation;
 import org.unitime.timetable.gwt.client.page.UniTimeNotifications;
 import org.unitime.timetable.gwt.client.tables.TableInterface;
@@ -254,6 +255,7 @@ public class BannerOfferingDetailPage extends Composite {
 				for (String op: iHeader.getOperations())
 					iHeader.setEnabled(op, response.hasOperation(op));
 				UniTimeNavigation.getInstance().refresh();
+				SolverWarnings.refresh(SolverWarnings.Type.locks);
 			}
 		});
 	}
@@ -283,6 +285,7 @@ public class BannerOfferingDetailPage extends Composite {
 	}
 	
 	public static class BannerOfferingConfigInterface extends OfferingConfigInterface {
+		private static final long serialVersionUID = 6396372195384753538L;
 		private Long iBannerConfigId;
 		
 		public Long getBannerConfigId() { return iBannerConfigId; }
