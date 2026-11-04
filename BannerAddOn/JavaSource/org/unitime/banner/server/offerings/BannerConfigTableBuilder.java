@@ -75,6 +75,7 @@ public class BannerConfigTableBuilder extends BannerOfferingTableBuilder {
 	
     private BannerOfferingConfigInterface generateTableForBannerConfig(ClassAssignmentProxy classAssignment, InstrOfferingConfig ioc, BannerCourse bc) {
     	BannerOfferingConfigInterface ret = new BannerOfferingConfigInterface();
+    	ret.setClassName("unitime-InstrOfferingConfigTable");
     	
     	for (BannerConfig bcfg: bc.getBannerConfigs()) {
     		if (bcfg.getInstrOfferingConfigId().equals(ioc.getUniqueId()))
