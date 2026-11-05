@@ -46,6 +46,7 @@ import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.InstructionalOffering;
 import org.unitime.timetable.model.OfferingCoordinator;
 import org.unitime.timetable.model.comparators.OfferingCoordinatorComparator;
+import org.unitime.timetable.model.dao.CourseOfferingDAO;
 import org.unitime.timetable.security.SessionContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.server.courses.OfferingDetailBackend;
@@ -53,6 +54,7 @@ import org.unitime.timetable.solver.ClassAssignmentProxy;
 import org.unitime.timetable.solver.service.AssignmentService;
 import org.unitime.timetable.webutil.BackTracker;
 import org.unitime.timetable.webutil.Navigation;
+import org.unitime.timetable.webutil.BackTracker.BackItem;
 
 @GwtRpcImplements(BannerOfferingDetailRequest.class)
 public class BannerOfferingDetailBackend implements GwtRpcImplementation<BannerOfferingDetailRequest, BannerOfferingDetailResponse>{
@@ -126,10 +128,24 @@ public class BannerOfferingDetailBackend implements GwtRpcImplementation<BannerO
             }
         }
         
-        BannerCourse next = getNext(bc.getUniqueId(), context);
-        response.setNextId(next==null ? null : next.getUniqueId());
-        BannerCourse previous = getPrevious(bc.getUniqueId(), context);
-        response.setPreviousId(previous == null ? null : previous.getUniqueId());
+        BannerCourse next = getNext(bc, context);
+        if (next != null && context.hasPermission(CourseOfferingDAO.getInstance().get(next.getCourseOfferingId()).getInstructionalOffering(), "InstructionalOffering", Right.InstructionalOfferingDetail)) {
+        	response.setNextId(next.getUniqueId());
+        	response.addOperation("next");
+        }
+        BannerCourse previous = getPrevious(bc, context);
+        if (previous != null && context.hasPermission(CourseOfferingDAO.getInstance().get(previous.getCourseOfferingId()).getInstructionalOffering(), "InstructionalOffering", Right.InstructionalOfferingDetail)) {
+        	response.setPreviousId(previous.getUniqueId());
+        	response.addOperation("previous");
+        }
+        BackItem back = BackTracker.getBackItem(context, 2);
+    	if (back != null) {
+    		response.addOperation("back");
+    		response.setBackTitle(back.getTitle());
+    		response.setBackUrl(back.getUrl() +
+    				(back.getUrl().indexOf('?') >= 0 ? "&" : "?") +
+    				"backId=" + io.getUniqueId() + "&backType=InstructionalOffering");
+    	}
 
     	BannerConfigTableBuilder builder = new BannerConfigTableBuilder(context, request.getBackType(), request.getBackId());
     	builder.generateConfigTablesForBannerOffering(
@@ -147,17 +163,17 @@ public class BannerOfferingDetailBackend implements GwtRpcImplementation<BannerO
 		return response;
 	}
 	
-	protected BannerCourse getNext(Long bannerCourseId, SessionContext context) {
-		Long nextId = Navigation.getNext(context, Navigation.sInstructionalOfferingLevel, bannerCourseId);
+	protected BannerCourse getNext(BannerCourse bc, SessionContext context) {
+		Long nextId = Navigation.getNext(context, Navigation.sInstructionalOfferingLevel, bc.getCourseOfferingId());
     	if (nextId != null && nextId >= 0)
-    		return BannerCourseDAO.getInstance().get(nextId);
+    		return BannerCourse.findBannerCourseForCourseOffering(nextId, BannerCourseDAO.getInstance().getSession());
     	return null;
 	}
 	
-	protected BannerCourse getPrevious(Long bannerCourseId, SessionContext context) {
-		Long previousId = Navigation.getPrevious(context, Navigation.sInstructionalOfferingLevel, bannerCourseId);
+	protected BannerCourse getPrevious(BannerCourse bc, SessionContext context) {
+		Long previousId = Navigation.getPrevious(context, Navigation.sInstructionalOfferingLevel, bc.getCourseOfferingId());
     	if (previousId != null && previousId >= 0)
-    		return BannerCourseDAO.getInstance().get(previousId);
+    		return BannerCourse.findBannerCourseForCourseOffering(previousId, BannerCourseDAO.getInstance().getSession());
     	return null;
 	}
 
