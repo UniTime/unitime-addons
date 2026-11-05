@@ -150,8 +150,8 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
             
             while (it.hasNext()){
                 CourseOffering co = it.next();
-                if (navigationOfferingIds != null && !navigationOfferingIds.contains(co.getInstructionalOffering().getUniqueId()))
-                	navigationOfferingIds.add(co.getInstructionalOffering().getUniqueId());
+                if (navigationOfferingIds != null && !navigationOfferingIds.contains(co.getUniqueId()))
+                	navigationOfferingIds.add(co.getUniqueId());
                 this.addBannerCourseRowsToTable(classAssignment, offeredTable, co, subjectAreaId);            	
             }
             
@@ -187,8 +187,8 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
             TableInterface notOfferedTable = this.initTable(getCurrentAcademicSessionId());
             while (it.hasNext()){
             	CourseOffering co = it.next();
-                if (navigationOfferingIds != null && !navigationOfferingIds.contains(co.getInstructionalOffering().getUniqueId()))
-                	navigationOfferingIds.add(co.getInstructionalOffering().getUniqueId());
+                if (navigationOfferingIds != null && !navigationOfferingIds.contains(co.getUniqueId()))
+                	navigationOfferingIds.add(co.getUniqueId());
                 this.addBannerCourseRowsToTable(classAssignment, notOfferedTable, co, subjectAreaId);            	
             }
             notOfferedTable.setAnchor("AN" + subjectAreaId);
