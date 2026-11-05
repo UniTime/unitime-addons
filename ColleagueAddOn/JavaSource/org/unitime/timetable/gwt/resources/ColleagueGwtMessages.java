@@ -19,7 +19,6 @@
 */
 package org.unitime.timetable.gwt.resources;
 
-
 public interface ColleagueGwtMessages extends GwtMessages {
 
 	@DefaultMessage("Colleague Restriction")
@@ -78,7 +77,13 @@ public interface ColleagueGwtMessages extends GwtMessages {
 
 	@DefaultMessage("Loading Offerings File")
 	String fieldLoadingOfferingsFile();
-
-
-
+	
+	@DefaultMessage("Colleague Offerings")
+	String pageColleagueOfferings();
+	
+	@DefaultMessage("Colleague Offering Detail")
+	String pageColleagueOfferingDetail();
+	
+	@DefaultMessage("Section Restrictions")
+	String pageSectionRestrictions();
 }

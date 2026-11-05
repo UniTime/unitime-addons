@@ -186,4 +186,7 @@ public interface ColleagueMessages extends Messages {
 	
 	@DefaultMessage("Number of Messages:")
 	String filterNumberOfMessages();
+	
+	@DefaultMessage("Section")
+	String columnSection();
 }
