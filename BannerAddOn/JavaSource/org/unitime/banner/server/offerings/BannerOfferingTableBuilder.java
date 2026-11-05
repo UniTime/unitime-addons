@@ -214,81 +214,153 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
     
     @Override
     protected void buildTableHeader(TableInterface table, Long sessionId, String durationColName){
-    	LineInterface row = new LineInterface();
-    	LineInterface row2 = new LineInterface();
-    	CellInterface cell = null;
-    	cell = this.headerCell(null, 2, 1);
-    	row.addCell(cell);
-    	cell = this.headerCell(BMSG.colInstrType(), 2, 1);
-		row.addCell(cell);
-    	cell = this.headerCell(BMSG.colSecId(), 2, 1);
-		row.addCell(cell);
-		if (isShowDemand() && sessionHasEnrollments(sessionId)) {
-    		cell = this.headerCell(MSG.columnDemand(), 2, 1);
-    		row.addCell(cell);
-		}
-		cell = this.headerCell(MSG.columnLimit(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(BMSG.colGradable(), 2, 1);
-		row.addCell(cell);
-		if (BannerSection.displayLabHours()){
-			cell = this.headerCell(BMSG.colLabHours(), 2, 1);
+    	if (isSimple()) {
+    		LineInterface row = new LineInterface();
+    		CellInterface cell = null;
+	    	cell = this.headerCell(null);
+	    	row.addCell(cell);
+	    	cell = this.headerCell(BMSG.colInstrType());
 			row.addCell(cell);
-		}
-		cell = this.headerCell(BMSG.colPrint(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(BMSG.colXlst(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(BMSG.colLinkId(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(BMSG.colLinkConn(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(MSG.columnConsent(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(BMSG.colInstrMethod(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(MSG.columnCredit(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(MSG.columnCampus(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(BMSG.colClassLabel(), 2, 1);
-		row.addCell(cell);
-		cell = this.headerCell(MSG.columnDatePattern(), 2, 1);
-		row.addCell(cell);
-		
-		cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, 3);
-    	cell.setClassName("WebTableHeaderFirstRow");
-    	cell.setTextAlignment(Alignment.CENTER);
-		row.addCell(cell);
-		cell = headerCell(MSG.columnAssignedTime(), 1, 1);
-		cell.setNoWrap(true);
-		cell.setClassName("WebTableHeaderSecondRow");
-		row2.addCell(cell);
-		cell = headerCell(MSG.columnAssignedRoom(), 1, 1);
-		cell.setNoWrap(true);
-		cell.setClassName("WebTableHeaderSecondRow");
-		row2.addCell(cell);
-		cell = headerCell(MSG.columnAssignedRoomCapacity(), 1, 1);
-		cell.setNoWrap(true);
-		cell.setClassName("WebTableHeaderSecondRow");
-		row2.addCell(cell);
-		
-		cell = this.headerCell(MSG.columnInstructors(), 2, 1);
-		row.addCell(cell);
-		if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(sessionId)) {
-			cell = this.headerCell(BMSG.colLMSCode(), 2, 1);
+	    	cell = this.headerCell(BMSG.colSecId());
 			row.addCell(cell);
-		}
-     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(sessionId)) {
-     		cell = this.headerCell(BMSG.colRestrictions(), 2, 1);
+			if (isShowDemand() && sessionHasEnrollments(sessionId)) {
+	    		cell = this.headerCell(MSG.columnDemand());
+	    		row.addCell(cell);
+			}
+			cell = this.headerCell(MSG.columnLimit());
 			row.addCell(cell);
-     	}
-		if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
-			cell = this.headerCell(MSG.columnFundingDepartment(), 2, 1);
+			cell = this.headerCell(BMSG.colGradable());
 			row.addCell(cell);
-		}
-    	table.addHeader(row);
-    	table.addHeader(row2);
+			if (BannerSection.displayLabHours()){
+				cell = this.headerCell(BMSG.colLabHours());
+				row.addCell(cell);
+			}
+			cell = this.headerCell(BMSG.colPrint());
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colXlst());
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colLinkId());
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colLinkConn());
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnConsent());
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colInstrMethod());
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnCredit());
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnCampus());
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colClassLabel());
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnDatePattern());
+			row.addCell(cell);
+			
+			cell = headerCell(MSG.columnAssignedTime());
+			cell.setNoWrap(true);
+			cell.setClassName("WebTableHeaderSecondRow");
+			row.addCell(cell);
+			cell = headerCell(MSG.columnAssignedRoom());
+			cell.setNoWrap(true);
+			cell.setClassName("WebTableHeaderSecondRow");
+			row.addCell(cell);
+			cell = headerCell(MSG.columnAssignedRoomCapacity());
+			cell.setNoWrap(true);
+			cell.setClassName("WebTableHeaderSecondRow");
+			row.addCell(cell);
+			
+			cell = this.headerCell(MSG.columnInstructors());
+			row.addCell(cell);
+			if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(sessionId)) {
+				cell = this.headerCell(BMSG.colLMSCode());
+				row.addCell(cell);
+			}
+	     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(sessionId)) {
+	     		cell = this.headerCell(BMSG.colRestrictions());
+				row.addCell(cell);
+	     	}
+			if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
+				cell = this.headerCell(MSG.columnFundingDepartment());
+				row.addCell(cell);
+			}
+	    	table.addHeader(row);
+    	} else {
+	    	LineInterface row = new LineInterface();
+	    	LineInterface row2 = new LineInterface();
+	    	CellInterface cell = null;
+	    	cell = this.headerCell(null, 2, 1);
+	    	row.addCell(cell);
+	    	cell = this.headerCell(BMSG.colInstrType(), 2, 1);
+			row.addCell(cell);
+	    	cell = this.headerCell(BMSG.colSecId(), 2, 1);
+			row.addCell(cell);
+			if (isShowDemand() && sessionHasEnrollments(sessionId)) {
+	    		cell = this.headerCell(MSG.columnDemand(), 2, 1);
+	    		row.addCell(cell);
+			}
+			cell = this.headerCell(MSG.columnLimit(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colGradable(), 2, 1);
+			row.addCell(cell);
+			if (BannerSection.displayLabHours()){
+				cell = this.headerCell(BMSG.colLabHours(), 2, 1);
+				row.addCell(cell);
+			}
+			cell = this.headerCell(BMSG.colPrint(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colXlst(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colLinkId(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colLinkConn(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnConsent(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colInstrMethod(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnCredit(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnCampus(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(BMSG.colClassLabel(), 2, 1);
+			row.addCell(cell);
+			cell = this.headerCell(MSG.columnDatePattern(), 2, 1);
+			row.addCell(cell);
+			
+			cell = headerCell("--------" + MSG.columnTimetable() + "--------", 1, 3);
+	    	cell.setClassName("WebTableHeaderFirstRow");
+	    	cell.setTextAlignment(Alignment.CENTER);
+			row.addCell(cell);
+			cell = headerCell(MSG.columnAssignedTime(), 1, 1);
+			cell.setNoWrap(true);
+			cell.setClassName("WebTableHeaderSecondRow");
+			row2.addCell(cell);
+			cell = headerCell(MSG.columnAssignedRoom(), 1, 1);
+			cell.setNoWrap(true);
+			cell.setClassName("WebTableHeaderSecondRow");
+			row2.addCell(cell);
+			cell = headerCell(MSG.columnAssignedRoomCapacity(), 1, 1);
+			cell.setNoWrap(true);
+			cell.setClassName("WebTableHeaderSecondRow");
+			row2.addCell(cell);
+			
+			cell = this.headerCell(MSG.columnInstructors(), 2, 1);
+			row.addCell(cell);
+			if (LearningManagementSystemInfo.isLmsInfoDefinedForSession(sessionId)) {
+				cell = this.headerCell(BMSG.colLMSCode(), 2, 1);
+				row.addCell(cell);
+			}
+	     	if (BannerLastSentSectionRestriction.areRestrictionsDefinedForTerm(sessionId)) {
+	     		cell = this.headerCell(BMSG.colRestrictions(), 2, 1);
+				row.addCell(cell);
+	     	}
+			if (ApplicationProperty.CoursesFundingDepartmentsEnabled.isTrue()) {
+				cell = this.headerCell(MSG.columnFundingDepartment(), 2, 1);
+				row.addCell(cell);
+			}
+	    	table.addHeader(row);
+	    	table.addHeader(row2);
+    	}
     }
     
     private void addBannerCourseRowsToTable(ClassAssignmentProxy classAssignment, TableInterface table, CourseOffering co, Long subjectAreaId){
@@ -334,7 +406,7 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
     	    if (configName==null || configName.trim().length()==0)
     	        configName = ioc.getUniqueId().toString();
     	    cell = initNormalCell(MSG.labelConfiguration(configName), isEditable);
-    	    cell.setStyle("padding-left: 20 px;");
+    	    cell.setIndent(1);
         	cell.setNoWrap(true);
     	    row.addCell(cell);
     	    cell = initNormalCell(null, false);
@@ -399,10 +471,8 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
 		BannerSection bs = BannerSection.findBannerSectionForClassAndCourseOffering(c, bc.getCourseOffering(hibSession), hibSession);
 		if (bs == null) return;
     	CellInterface cell = initNormalCell(bs.bannerSectionLabel(), isEditable);
-    	if (indentSpaces > 0) {
-    		int pad = indentSpaces * 20;
-    		cell.setStyle("padding-left: " + pad + "px;");
-    	}
+    	if (indentSpaces > 0)
+    		cell.setIndent(indentSpaces);
     	cell.setNoWrap(true);
     	row.addCell(cell);
     	cell = initNormalCell(c.getSchedulingSubpart().getItype().getSis_ref(), isEditable);
@@ -504,14 +574,17 @@ public class BannerOfferingTableBuilder extends InstructionalOfferingTableBuilde
 		cell.addAnchor("A" + bc.getUniqueId());
 		if ("InstructionalOffering".equals(getBackType()) && io.getUniqueId().toString().equals(getBackId()))
 			cell.addAnchor("back");
-		cell.setText(co.getCourseNameWithTitle()).setTitle(co.getCourseNameWithTitle());
+		cell.add(co.getCourseName())
+        		.setTitle(co.getCourseNameWithTitle())
+        		.addStyle("font-weight: bold;")
+        		.setInline(false);
 		TreeSet<CourseOffering> ts = new TreeSet<CourseOffering>(new CourseOfferingComparator());
 		ts.addAll(io.getCourseOfferings());
 		ts.remove(co);
 		for (CourseOffering tempCo: ts) {
 			cell.add(tempCo.getCourseNameWithTitle())
 				.setTitle(tempCo.getCourseNameWithTitle())
-				.addStyle("padding-left: 20 px;")
+				.setIndent(1)
 				.setColor(disabledColor)
 				.setNoWrap(true)
 				.setInline(false);
