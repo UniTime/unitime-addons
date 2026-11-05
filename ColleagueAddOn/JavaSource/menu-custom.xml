@@ -28,8 +28,15 @@
 				</condition>
 			</item>
 			<item name="Colleague Offerings" page="colleagueOfferingSearch.action">
-							<condition>
+				<condition>
 					<hasPermission name="InstructionalOfferings"/>
+					<propertyEquals name="banner.legacy.colleagueOfferings" value="true" defaultValue="false"/>
+				</condition>
+			</item>
+			<item name="Colleague Offerings" page="colleagueOfferings" type="gwt">
+				<condition>
+					<hasPermission name="InstructionalOfferings"/>
+					<propertyEquals name="banner.legacy.colleagueOfferings" value="false" defaultValue="false"/>
 				</condition>
 			</item>
 		</menu>

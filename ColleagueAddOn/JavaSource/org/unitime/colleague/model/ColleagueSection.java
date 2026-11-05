@@ -44,6 +44,10 @@ import org.unitime.colleague.model.base.BaseColleagueSection;
 import org.unitime.colleague.model.dao.ColleagueSectionDAO;
 import org.unitime.colleague.model.dao.ColleagueSuffixDefDAO;
 import org.unitime.commons.Debug;
+import org.unitime.localization.impl.Localization;
+import org.unitime.timetable.gwt.client.tables.TableInterface.CellInterface;
+import org.unitime.timetable.gwt.client.tables.TableInterface.CellInterface.Alignment;
+import org.unitime.timetable.gwt.resources.GwtConstants;
 import org.unitime.timetable.model.Assignment;
 import org.unitime.timetable.model.ClassInstructor;
 import org.unitime.timetable.model.Class_;
@@ -78,6 +82,7 @@ import org.unitime.timetable.util.Constants;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "colleague_section")
 public class ColleagueSection extends BaseColleagueSection {
+	protected static GwtConstants CONSTANTS = Localization.create(GwtConstants.class);
 
 	/**
 	 * 
@@ -710,7 +715,6 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(sb.toString());
 	}
 	
-	@SuppressWarnings("unchecked")
 	public List<ColleagueSection> colleagueSectionsCrosslistedWithThis(){
 		if (!getClasses(null).isEmpty()) {
 			Class_ c = (Class_)getClasses(null).iterator().next();
@@ -1083,7 +1087,7 @@ public class ColleagueSection extends BaseColleagueSection {
     		
         return(sb.toString());
     }
-
+    
     public String buildInstructorHtml(){
     	Session hibSession = ColleagueSectionDAO.getInstance().getSession();
 		TreeMap<DepartmentalInstructor, Integer> instructors = this.findInstructorsWithPercents(hibSession);
@@ -1443,5 +1447,207 @@ public class ColleagueSection extends BaseColleagueSection {
 		return(allClassesCanceled);
 	}
 
+    public CellInterface buildClassLabeCell(ClassAssignmentProxy classAssignment){
+    	CellInterface sb = new CellInterface();
+    	for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+    		sb.add(aClass.getClassLabel()).setInline(false).setNoWrap(true);
+	    	if (classAssignment!=null) {
+	    		AssignmentInfo a = null;
+	    		try {
+	    			a = classAssignment.getAssignment(aClass);
+	    		} catch (Exception e) {
+	    			Debug.error(e);
+	    		}
+	    		if (a!=null) {
+	   				if (a.getRoomLocations().size() > 1){
+	   					for (int i = 1; i < a.getRoomLocations().size() ; i++){
+	   						sb.add("").setInline(true);
+	   					}
+	   				}
+	     		} 	            
+	    	} 
+    	} 
+        return sb;
+    }
 
+	public CellInterface buildDatePatternCell(ClassAssignmentProxy classAssignment){
+    	CellInterface sb = new CellInterface();
+		for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+			DatePattern dp = aClass.effectiveDatePattern();
+			CellInterface datePattern = new CellInterface().setText(dp == null ? "" : dp.getName()).setInline(false).setNoWrap(true);
+			sb.addItem(datePattern);
+	    	if (classAssignment!=null) {
+	    		AssignmentInfo a = null;
+	    		try {
+	    			a = classAssignment.getAssignment(aClass);
+	    		} catch (Exception e) {
+	    			Debug.error(e);
+	    		}
+	    		if (a!=null) {
+	    			if (a.getDatePattern() != null)
+	    				datePattern.setText(a.getDatePattern().getName());
+	    			if (a.getRoomLocations().size() > 1){
+	   					for (int i = 1; i < a.getRoomLocations().size() ; i++)
+	   						sb.add("").setInline(true);
+	    			}
+	     		}   else {
+		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
+		    			boolean firstReqRoomPref = true;
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+							RoomPref rp = (RoomPref) rmPrefIt.next();
+							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
+			    				if (firstReqRoomPref){
+			    					firstReqRoomPref = false;
+			    				} else {
+			    					sb.add("").setInline(true);
+			    				}
+							}
+						}
+		    		}
+		    	}
+	    	} 
+    	}
+		return sb;
+    }
+	
+    public CellInterface buildAssignedTimeCell(ClassAssignmentProxy classAssignment){
+    	CellInterface sb = new CellInterface();
+    	for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+	    	if (classAssignment!=null) {
+	    		AssignmentInfo a = null;
+	    		try {
+	    			a = classAssignment.getAssignment(aClass);
+	    		} catch (Exception e) {
+	    			Debug.error(e);
+	    		}
+	    		if (a!=null) {
+	    			String time = "";
+	   				Enumeration<Integer> e = a.getTimeLocation().getDays();
+	   				while (e.hasMoreElements())
+	   					time += Constants.DAY_NAMES_SHORT[e.nextElement()];
+	   				time += " ";
+	   				time += a.getTimeLocation().getStartTimeHeader(CONSTANTS.useAmPm());
+	   				time += "-";
+	   				time += a.getTimeLocation().getEndTimeHeader(CONSTANTS.useAmPm());
+	   				sb.add(time).setInline(false).setNoWrap(true);
+	   				if (a.getRoomLocations().size() > 1) {
+	   					for (int i = 1; i < a.getRoomLocations().size() ; i++)
+	   						sb.add("").setInline(true);
+	   				}
+	     		}  else {
+		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
+		    			boolean firstReqRoomPref = true;
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+							RoomPref rp = (RoomPref) rmPrefIt.next();
+							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
+			    				if (firstReqRoomPref){
+			    					firstReqRoomPref = false;
+			    				} else {
+			    					sb.add("").setInline(true);
+			    				}
+							}
+						}
+		    		}
+		    	}   		            
+	    	} 
+    	} 
+        return sb;
+    }
+    
+    public CellInterface buildAssignedRoomCell(ClassAssignmentProxy classAssignment) {
+    	CellInterface sb = new CellInterface();
+    	for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+	    	if (classAssignment!=null){
+	    		AssignmentInfo a = null;
+	    		try {
+	    			a= classAssignment.getAssignment(aClass);
+	    		} catch (Exception e) {
+	    			Debug.error(e);
+	    		}
+	    		if (a!=null) {
+					Iterator<Location> it2 = a.getRooms().iterator();
+		    		while (it2.hasNext()){
+		    			Location room = (Location)it2.next();
+		    			sb.add(room.getLabel()).setInline(false).setNoWrap(true);
+		    		}	
+	    		} else {
+		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+							RoomPref rp = (RoomPref) rmPrefIt.next();
+							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
+			    				sb.add(rp.getRoom().getLabel()).setInline(false).setNoWrap(true);
+							}
+						}
+		    		}
+		    	}   	
+	    	} 
+    	}
+    	return sb;
+    }
+    
+    public CellInterface buildAssignedRoomCapacityCell(ClassAssignmentProxy classAssignment) {
+    	CellInterface sb = new CellInterface();
+    	sb.setTextAlignment(Alignment.RIGHT);
+    	for (Class_ aClass : getClasses(Class_DAO.getInstance().getSession())){
+	    	if (classAssignment!=null){
+	    		AssignmentInfo a = null;
+	    		try {
+	    			a= classAssignment.getAssignment(aClass);
+	    		} catch (Exception e) {
+	    			Debug.error(e);
+	    		}
+	    		if (a!=null) {
+		    		Iterator<Location> it2 = a.getRooms().iterator();
+		    		while (it2.hasNext()){
+		    			Location room = (Location)it2.next();
+		    			sb.add(room.getCapacity().toString()).setInline(false).setNoWrap(true);
+		    		}	
+	    		} else {
+		    		if (aClass.getEffectiveTimePreferences().isEmpty()){
+		    			for(@SuppressWarnings("rawtypes")
+						Iterator rmPrefIt = aClass.getEffectiveRoomPreferences().iterator(); rmPrefIt.hasNext();){
+							RoomPref rp = (RoomPref) rmPrefIt.next();
+							if (rp.getPrefLevel().getPrefId().toString().equals(PreferenceLevel.PREF_LEVEL_REQUIRED)){
+								sb.add(rp.getRoom().getCapacity().toString()).setInline(false).setNoWrap(true);
+							}
+						}
+		    		}
+		    	}
+	    	}
+    	}
+    	return sb;
+    }
+    
+    public CellInterface buildInstructorCell(String nameFormat){
+    	Session hibSession = ColleagueSectionDAO.getInstance().getSession();
+		TreeMap<DepartmentalInstructor, Integer> instructors = this.findInstructorsWithPercents(hibSession);
+		InstructionalOffering io = null;
+		try {
+			io = getCourseOffering(hibSession).getInstructionalOffering();			
+		} catch (Exception e) {
+			Debug.error("No instructional offering found for colleague section uniqueId:  " + getUniqueId() + ".");
+			// no instructional offering found no course coordinators to be sent.
+		}
+		CellInterface instructorString = new CellInterface();
+     	if (!instructors.isEmpty()){
+     		String prefix = "";
+     		for (DepartmentalInstructor di : instructors.keySet()){
+     			if (io != null && io.getOfferingCoordinators() != null){
+     				for (OfferingCoordinator oc: io.getOfferingCoordinators()) {
+     					if (oc.getInstructor().equals(di)) {
+     						prefix = "*";
+     						break;
+     					}
+     				}
+     			}
+     			Integer pct = instructors.get(di);
+     			instructorString.add(prefix + di.getName(nameFormat) + " (" + pct.toString() +  "%)").setInline(false).setNoWrap(true);
+     		}
+     	}
+     	return instructorString;
+    }
+    
 }
