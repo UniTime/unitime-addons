@@ -30,5 +30,6 @@
 		<url-pattern>/colleagueOffering</url-pattern>
 		<url-pattern>/sectionRestrictions</url-pattern>
 		<url-pattern>/colleagueRollForward</url-pattern>
+		<url-pattern>/colleagueMessageResponses</url-pattern>
 	</servlet-mapping>
 </web-app>

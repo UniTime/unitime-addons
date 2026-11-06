@@ -22,8 +22,15 @@
 <unitime-menu>
 	<menu name="Courses">
 		<menu name="Colleague">
-			<item name="Message Responses" page="colleagueMessageResponses.do">
-							<condition>
+			<item name="Message Responses" page="colleagueMessageResponses.action">
+				<condition>
+					<propertyEquals name="banner.legacy.colleagueMessageResponses" value="true" defaultValue="false"/>
+					<hasPermission name="InstructionalOfferings"/>
+				</condition>
+			</item>
+			<item name="Message Responses" page="colleagueMessageResponses" type="gwt">
+				<condition>
+					<propertyEquals name="banner.legacy.colleagueMessageResponses" value="false" defaultValue="false"/>
 					<hasPermission name="InstructionalOfferings"/>
 				</condition>
 			</item>
