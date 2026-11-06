@@ -22,28 +22,14 @@
 <unitime-menu>
 	<menu name="Courses">
 		<menu name="Colleague">
-			<item name="Message Responses" page="colleagueMessageResponses.action">
-				<condition>
-					<propertyEquals name="banner.legacy.colleagueMessageResponses" value="true" defaultValue="false"/>
-					<hasPermission name="InstructionalOfferings"/>
-				</condition>
-			</item>
 			<item name="Message Responses" page="colleagueMessageResponses" type="gwt">
 				<condition>
-					<propertyEquals name="banner.legacy.colleagueMessageResponses" value="false" defaultValue="false"/>
 					<hasPermission name="InstructionalOfferings"/>
-				</condition>
-			</item>
-			<item name="Colleague Offerings" page="colleagueOfferingSearch.action">
-				<condition>
-					<hasPermission name="InstructionalOfferings"/>
-					<propertyEquals name="banner.legacy.colleagueOfferings" value="true" defaultValue="false"/>
 				</condition>
 			</item>
 			<item name="Colleague Offerings" page="colleagueOfferings" type="gwt">
 				<condition>
 					<hasPermission name="InstructionalOfferings"/>
-					<propertyEquals name="banner.legacy.colleagueOfferings" value="false" defaultValue="false"/>
 				</condition>
 			</item>
 		</menu>
@@ -65,15 +51,8 @@
 					<hasPermission name="AcademicSessions"/>
 				</condition>
 			</item>
-			<item name="Roll Forward Colleague Session" page="rollForwardColleagueSession.action">
-				<condition>
-					<propertyEquals name="banner.legacy.colleagueRollForward" value="true" defaultValue="false"/>
-					<hasPermission name="SessionRollForward"/>
-				</condition>
-			</item>
 			<item name="Roll Forward Colleague Session" page="colleagueRollForward" type="gwt">
 				<condition>
-					<propertyEquals name="banner.legacy.colleagueRollForward" value="false" defaultValue="false"/>
 					<hasPermission name="SessionRollForward"/>
 				</condition>
 			</item>
