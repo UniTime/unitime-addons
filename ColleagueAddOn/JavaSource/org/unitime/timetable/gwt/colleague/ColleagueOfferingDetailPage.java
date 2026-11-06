@@ -28,6 +28,7 @@ import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.gwt.client.ToolBox;
 import org.unitime.timetable.gwt.client.offerings.OfferingsInterface.OfferingConfigInterface;
+import org.unitime.timetable.gwt.client.page.SolverWarnings;
 import org.unitime.timetable.gwt.client.page.UniTimeNavigation;
 import org.unitime.timetable.gwt.client.page.UniTimeNotifications;
 import org.unitime.timetable.gwt.client.tables.TableInterface;
@@ -143,7 +144,7 @@ public class ColleagueOfferingDetailPage extends Composite {
 		iHeader.addButton("back", BMSG.actionBackToColleagueOfferings(), new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent evt) {
-				ToolBox.open(GWT.getHostPageBaseURL() + "back.action?uri=" + URL.encodeQueryString(iResponse.getBackUrl()) +
+				ToolBox.open(GWT.getHostPageBaseURL() + "back?uri=" + URL.encodeQueryString(iResponse.getBackUrl()) +
 						"&backId=" + iResponse.getOfferingId() + "&backType=InstructionalOffering");
 			}
 		});
@@ -253,6 +254,7 @@ public class ColleagueOfferingDetailPage extends Composite {
 				
 				for (String op: iHeader.getOperations())
 					iHeader.setEnabled(op, response.hasOperation(op));
+				SolverWarnings.refresh(SolverWarnings.Type.locks);
 				UniTimeNavigation.getInstance().refresh();
 			}
 		});
