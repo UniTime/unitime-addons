@@ -89,4 +89,7 @@ public interface ColleagueGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Roll Forward Colleague Session")
 	String pageRollForwardColleagueSession();
+	
+	@DefaultMessage("Colleague Message Responses")
+	String pageColleagueMessageResponses();
 }

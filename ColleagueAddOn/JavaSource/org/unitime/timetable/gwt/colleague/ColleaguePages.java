@@ -40,6 +40,10 @@ public enum ColleaguePages {
 		public Widget create() { return new ColleagueRollForwardSessionPage(); }
 		public String name(ColleagueGwtMessages messages) { return messages.pageRollForwardColleagueSession(); }
 		}),
+	colleagueMessageResponses(new PageFactory() {
+		public Widget create() { return new ColleagueMessageResponsesPage(); }
+		public String name(ColleagueGwtMessages messages) { return messages.pageColleagueMessageResponses(); }
+		}),
 	;
 
 	private PageFactory iFactory;
