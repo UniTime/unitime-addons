@@ -60,6 +60,13 @@
 			</item>
 			<item name="Roll Forward Colleague Session" page="rollForwardColleagueSession.action">
 				<condition>
+					<propertyEquals name="banner.legacy.colleagueRollForward" value="true" defaultValue="false"/>
+					<hasPermission name="SessionRollForward"/>
+				</condition>
+			</item>
+			<item name="Roll Forward Colleague Session" page="colleagueRollForward" type="gwt">
+				<condition>
+					<propertyEquals name="banner.legacy.colleagueRollForward" value="false" defaultValue="false"/>
 					<hasPermission name="SessionRollForward"/>
 				</condition>
 			</item>
