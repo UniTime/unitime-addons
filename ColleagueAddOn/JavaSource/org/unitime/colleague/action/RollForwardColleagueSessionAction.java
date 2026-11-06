@@ -31,7 +31,7 @@ import org.apache.struts2.convention.annotation.Result;
 import org.apache.struts2.tiles.annotation.TilesDefinition;
 import org.apache.struts2.tiles.annotation.TilesPutAttribute;
 import org.unitime.colleague.form.RollForwardColleagueSessionForm;
-import org.unitime.colleague.util.ColleagueSessionRollForward;
+import org.unitime.colleague.server.rollforward.ColleagueRollForwardQueueItem;
 import org.unitime.commons.web.WebTable;
 import org.unitime.commons.web.WebTable.WebTableLine;
 import org.unitime.localization.impl.Localization;
@@ -40,10 +40,8 @@ import org.unitime.localization.messages.CourseMessages;
 import org.unitime.timetable.action.UniTimeAction;
 import org.unitime.timetable.action.RollForwardSessionAction.SessionComparator;
 import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardError;
-import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Session;
 import org.unitime.timetable.model.dao.SessionDAO;
-import org.unitime.timetable.security.UserContext;
 import org.unitime.timetable.security.rights.Right;
 import org.unitime.timetable.util.queue.QueueItem;
 
@@ -82,7 +80,7 @@ public class RollForwardColleagueSessionAction extends UniTimeAction<RollForward
             	getSolverServerService().getQueueProcessor().add(new ColleagueRollForwardQueueItem(
             			SessionDAO.getInstance().get(form.getSessionToRollForwardTo()), 
             			sessionContext.getUser(),
-            			(RollForwardColleagueSessionForm)form.clone()));
+            			form.toColleagueRollForwardSessionInterface()));
             }
         }
 
@@ -130,7 +128,7 @@ public class RollForwardColleagueSessionAction extends UniTimeAction<RollForward
         WebTable.setOrder(sessionContext,"rollForwardColleagueSession.ord",request.getParameter("ord"),1);
 		String log = request.getParameter("log");
 		DateFormat df = new SimpleDateFormat("h:mma");
-		List<QueueItem> queue = getSolverServerService().getQueueProcessor().getItems(null, null, "Colleague Roll Forward");
+		List<QueueItem> queue = getSolverServerService().getQueueProcessor().getItems(null, null, "Roll Forward");
 		if (queue.isEmpty()) return null;
 		WebTable table = new WebTable(9, null, "rollForwardColleagueSession.action?ord=%%",
 				new String[] {
@@ -182,7 +180,7 @@ public class RollForwardColleagueSessionAction extends UniTimeAction<RollForward
 				request.setAttribute("logname", name);
 				request.setAttribute("logid", item.getId().toString());
 				request.setAttribute("log", item.log());
-				((ColleagueRollForwardQueueItem)item).getForm().copyTo(form);
+				form.copyFromRollForwardSessionInterface(((ColleagueRollForwardQueueItem)item).getForm());
 				saveErrors(((ColleagueRollForwardQueueItem)item).getErrors());
 				line.setBgColor("rgb(168,187,225)");
 			}
@@ -195,68 +193,5 @@ public class RollForwardColleagueSessionAction extends UniTimeAction<RollForward
 		if (errors != null)
 			for (RollForwardError e: errors)
 				addFieldError(e.getType(), e.getMessage());
-	}
-
-	
-	private static class ColleagueRollForwardQueueItem extends QueueItem {
-		private static final long serialVersionUID = 1L;
-		private RollForwardColleagueSessionForm iForm;
-		private int iProgress = 0;
-		private RollForwardErrors iErrors = new RollForwardErrors();
-		
-		public ColleagueRollForwardQueueItem(Session session, UserContext owner, RollForwardColleagueSessionForm form) {
-			super(session, owner);
-			iForm = form;
-		}
-		
-		public RollForwardErrors getErrors() {
-			return iErrors;
-		}
-		
-		public RollForwardColleagueSessionForm getForm() {
-			return iForm;
-		}
-		
-		@Override
-		protected void execute() throws Exception {
-		    ColleagueSessionRollForward sessionRollForward = new ColleagueSessionRollForward(this);
-              
-	        Session toAcadSession = Session.getSessionById(iForm.getSessionToRollForwardTo());
-			if (toAcadSession == null) {
-				iErrors.addFieldError("mustSelectSession", MSG.errorRollForwardMissingToSession());
-			}
-			if (iErrors.isEmpty()){
-				iForm.validateSessionToRollForwardTo(iErrors);
-			}
-        	if (iErrors.isEmpty() && iForm.getRollForwardColleagueSession()) {
-				setStatus(CMSG.rollForwardColleagueSessionData() + " ...");
-				sessionRollForward.rollColleagueSessionDataForward(iErrors, iForm);	
-	        }
-	        iProgress++;
-	        if (!iErrors.isEmpty()) {
-	        	setError(new Exception(iErrors.get(0).getMessage()));
-	        } else {
-	        	log(MSG.logAllDone());
-	        }
-		}
-
-		@Override
-		public String name() {
-			List<String> names = new ArrayList<String>();
-        	if (iForm.getRollForwardColleagueSession()) names.add(CMSG.rollForwardColleagueSession());
-        	String name = names.toString().replace("[", "").replace("]", "");
-        	if (name.length() > 50) name = name.substring(0, 47) + "...";
-        	return name;
-		}
-
-		@Override
-		public double progress() {
-			return 100 * iProgress / 1;
-		}
-
-		@Override
-		public String type() {
-			return "Colleague Roll Forward";
-		}
 	}
 }

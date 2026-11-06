@@ -25,6 +25,8 @@ import org.unitime.colleague.model.ColleagueSession;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.form.RollForwardSessionForm;
+import org.unitime.timetable.gwt.shared.ColleagueRollForwardSessionInterface;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface;
 import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
 import org.unitime.timetable.model.Session;
 
@@ -98,5 +100,21 @@ public class RollForwardColleagueSessionForm extends RollForwardSessionForm  {
 		return form;
 	}
 
+	@Override
+	public void copyFromRollForwardSessionInterface(RollForwardSessionInterface form) {
+		super.copyFromRollForwardSessionInterface(form);
+		if (form instanceof ColleagueRollForwardSessionInterface) {
+			ColleagueRollForwardSessionInterface bform = (ColleagueRollForwardSessionInterface)form;
+			setRollForwardColleagueSession(bform.getRollForwardColleagueSession());
+			setSessionToRollColleagueDataForwardFrom(bform.getSessionToRollColleagueDataForwardFrom());
+		}
+	}
+	
+	public ColleagueRollForwardSessionInterface toColleagueRollForwardSessionInterface() {
+		ColleagueRollForwardSessionInterface form = toRollForwardSessionInterface(new ColleagueRollForwardSessionInterface());
+		form.setRollForwardColleagueSession(getRollForwardColleagueSession());
+		form.setSessionToRollColleagueDataForwardFrom(getSessionToRollColleagueDataForwardFrom());
+		return form;
+	}
 	
 }

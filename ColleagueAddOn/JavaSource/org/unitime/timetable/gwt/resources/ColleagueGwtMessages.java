@@ -86,4 +86,7 @@ public interface ColleagueGwtMessages extends GwtMessages {
 	
 	@DefaultMessage("Section Restrictions")
 	String pageSectionRestrictions();
+	
+	@DefaultMessage("Roll Forward Colleague Session")
+	String pageRollForwardColleagueSession();
 }

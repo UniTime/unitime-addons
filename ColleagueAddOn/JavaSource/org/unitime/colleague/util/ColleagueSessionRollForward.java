@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
-import org.unitime.colleague.form.RollForwardColleagueSessionForm;
 import org.unitime.colleague.interfaces.ExternalSessionRollForwardCustomizationInterface;
 import org.unitime.colleague.model.ColleagueRestriction;
 import org.unitime.colleague.model.ColleagueSection;
@@ -40,7 +39,8 @@ import org.unitime.colleague.model.dao.ColleagueSuffixDefDAO;
 import org.unitime.localization.impl.Localization;
 import org.unitime.localization.messages.ColleagueMessages;
 import org.unitime.timetable.ApplicationProperties;
-import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrors;
+import org.unitime.timetable.gwt.shared.ColleagueRollForwardSessionInterface;
+import org.unitime.timetable.gwt.shared.RollForwardSessionInterface.RollForwardErrorLogger;
 import org.unitime.timetable.model.Class_;
 import org.unitime.timetable.model.CourseOffering;
 import org.unitime.timetable.model.Session;
@@ -64,7 +64,7 @@ public class ColleagueSessionRollForward extends SessionRollForward {
 		super(log);
 	}
 	
-	public void rollColleagueSessionDataForward(RollForwardErrors errors, RollForwardColleagueSessionForm rollForwardColleagueSessionForm){
+	public void rollColleagueSessionDataForward(RollForwardErrorLogger errors, ColleagueRollForwardSessionInterface rollForwardColleagueSessionForm){
 		Session toSession = Session.getSessionById(rollForwardColleagueSessionForm.getSessionToRollForwardTo());
 		Session fromSession = Session.getSessionById(rollForwardColleagueSessionForm.getSessionToRollColleagueDataForwardFrom());
 		
