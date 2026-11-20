@@ -226,6 +226,7 @@ public class BannerCampusOverrides implements AdminTable, AdminTable.HasUpDown {
 	}
 	
 	@Override
+	@PreAuthorize("checkPermission('AcademicSessionEdit')")
 	public void move(Record record, boolean up, SessionContext context, Session hibSession) {
 		BannerCampusOverride type = BannerCampusOverrideDAO.getInstance().get(record.getUniqueId(), hibSession);
 		if (type != null) {
