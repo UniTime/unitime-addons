@@ -23,7 +23,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
-<s:form action="bannerSessionEdit">
+<s:form action="bannerSessionEdit"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 <table class="unitime-MainTable">
 	<s:hidden name="form.sessionId" />
 	<TR>

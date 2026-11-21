@@ -59,7 +59,7 @@ import com.google.gwt.user.client.ui.Label;
 public class BannerResponsesPage extends SimpleForm {
 	protected static final  BannerGwtMessages MESSAGES = GWT.create(BannerGwtMessages.class);
 	protected static final BannerGwtConstants CONSTANTS = GWT.create(BannerGwtConstants.class);
-	protected static GwtRpcServiceAsync RPC = GWT.create(GwtRpcService.class);
+	protected static GwtRpcServiceAsync RPC = new org.unitime.timetable.gwt.command.client.XsrfWrapper(GWT.create(GwtRpcService.class));
 
 	private FilterPanel iFilterPanel;
 	private BannerResponsesFilterBox iFilterBox = null;

@@ -26,7 +26,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
-<s:form action="colleagueMessageResponses">
+<s:form action="colleagueMessageResponses"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 <script type="text/javascript" src="scripts/block.js"></script>
 	<script type="text/javascript">blToggleHeader('<loc:message name="filter"/>','dispFilter');blStart('dispFilter');</script>
 	<table class="unitime-MainTable">
