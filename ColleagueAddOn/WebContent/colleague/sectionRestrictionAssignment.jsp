@@ -23,7 +23,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
-<s:form action="sectionRestrictionAssignment">
+<s:form action="sectionRestrictionAssignment"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 <tt:confirm name="confirmUnassignAll"><loc:message name="confirmUnassignAllRestrictions" id="CMSG"/></tt:confirm>
 	<s:hidden name="form.instrOffrConfigId"/>
 	<s:hidden name="form.instrOfferingId"/>

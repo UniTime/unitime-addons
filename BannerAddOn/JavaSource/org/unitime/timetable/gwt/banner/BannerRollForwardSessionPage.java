@@ -60,7 +60,7 @@ public class BannerRollForwardSessionPage extends Composite {
 	protected static CourseMessages MSG = GWT.create(CourseMessages.class);
 	protected static GwtMessages GWT_MSG = GWT.create(GwtMessages.class);
 	protected static BannerMessages BMSG = GWT.create(BannerMessages.class);
-	protected static GwtRpcServiceAsync RPC = GWT.create(GwtRpcService.class);
+	protected static GwtRpcServiceAsync RPC = new org.unitime.timetable.gwt.command.client.XsrfWrapper(GWT.create(GwtRpcService.class));
 	
 	private SimpleForm iPanel;
 	private ReportQueueTable iQueue;

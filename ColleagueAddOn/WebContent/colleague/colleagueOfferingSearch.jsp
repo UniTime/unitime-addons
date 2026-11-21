@@ -22,7 +22,7 @@
 <%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="org.unitime.localization.messages.ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
-<s:form action="colleagueOfferingSearch">
+<s:form action="colleagueOfferingSearch"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 <table class="unitime-Table">
 	<TR>
 		<TH valign="middle"><loc:message name="filterSubject"/></TH>
