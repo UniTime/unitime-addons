@@ -23,7 +23,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
-<s:form name="bannerOfferingModify">
+<s:form name="bannerOfferingModify"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 	<s:hidden name="form.bannerCourseOfferingId"/>	
 	<s:hidden name="form.bannerConfigId"/>	
 	<s:hidden name="form.instrOfferingId"/>	
