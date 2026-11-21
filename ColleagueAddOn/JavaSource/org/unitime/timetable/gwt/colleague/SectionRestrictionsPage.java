@@ -73,7 +73,7 @@ public class SectionRestrictionsPage extends Composite {
 	private static final GwtMessages GMSG = GWT.create(GwtMessages.class);
 	private static final ColleagueMessages CMSG = GWT.create(ColleagueMessages.class);
 	private static final GwtResources RES = GWT.create(GwtResources.class);
-	protected static GwtRpcServiceAsync RPC = GWT.create(GwtRpcService.class);
+	protected static GwtRpcServiceAsync RPC = new org.unitime.timetable.gwt.command.client.XsrfWrapper(GWT.create(GwtRpcService.class));
 	private SimpleForm iPanel;
 	private UniTimeHeaderPanel iHeader, iFooter;
 	private UniTimeTable<SectionInterface> iTable;

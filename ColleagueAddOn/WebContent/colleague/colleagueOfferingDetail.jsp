@@ -24,7 +24,7 @@
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="ColleagueMessages" id="CMSG"><s:set var="cmsg" value="#attr.CMSG"/>
 <table class="unitime-Table">
-	<s:form action="colleagueOfferingDetail">
+	<s:form action="colleagueOfferingDetail"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 		<s:hidden name="form.courseOfferingId"/>	
 		<s:hidden name="form.instrOfferingId"/>	
 		<s:hidden name="form.nextId"/>
@@ -234,7 +234,7 @@
 		</TD>
 	</TR>
 	
-	<s:form action="colleagueOfferingDetail">
+	<s:form action="colleagueOfferingDetail"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 		<s:hidden name="form.courseOfferingId"/>	
 		<s:hidden name="form.instrOfferingId"/>	
 		<s:hidden name="form.nextId"/>
