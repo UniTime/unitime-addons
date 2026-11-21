@@ -24,7 +24,7 @@
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
 <table class="unitime-MainTable">
-	<s:form action="bannerOfferingDetail">
+	<s:form action="bannerOfferingDetail"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 	<s:hidden name="form.bannerCourseOfferingId"/>	
 	<s:hidden name="form.instrOfferingId"/>	
 	<s:hidden name="form.nextId"/>
@@ -234,7 +234,7 @@
 		</TD>
 	</TR>
 	
-	<s:form action="bannerOfferingDetail">
+	<s:form action="bannerOfferingDetail"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 	<s:hidden name="form.bannerCourseOfferingId"/>	
 	<s:hidden name="form.instrOfferingId"/>	
 	<s:hidden name="form.nextId"/>

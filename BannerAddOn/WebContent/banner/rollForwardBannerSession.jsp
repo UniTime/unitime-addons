@@ -22,7 +22,7 @@
 <%@ taglib prefix="loc" uri="http://www.unitime.org/tags-localization" %>
 <loc:bundle name="CourseMessages"><s:set var="msg" value="#attr.MSG"/>
 <loc:bundle name="BannerMessages" id="BMSG"><s:set var="bmsg" value="#attr.BMSG"/>
-<s:form action="rollForwardBannerSession">
+<s:form action="rollForwardBannerSession"><input type='hidden' name='${_csrf.parameterName}' value='${_csrf.token}'/>
 <table class="unitime-MainTable">
 	<s:if test="!fieldErrors.isEmpty()">
 		<TR><TD align="left" class="errorTable">
