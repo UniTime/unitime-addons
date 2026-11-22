@@ -297,6 +297,11 @@
 				<exclude name="classes/**/*.*" />
 			</fileset>
 		</copy>
+		<copy todir="${war.dir}/META-INF" overwrite="Yes" preservelastmodified="Yes">
+			<fileset dir="${unitime.jsp.dir}/META-INF">
+				<include name="**/*.xml" />
+			</fileset>
+		</copy>
 		<copy todir="${war.dir}/WEB-INF/classes" overwrite="Yes" preservelastmodified="Yes">
 			<fileset dir="${build_src.dir}">
 				<include name="custom.properties" />
