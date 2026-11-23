@@ -183,7 +183,7 @@ public class BannerCourseSearchAction extends UniTimeAction<BannerCourseListForm
 	    form.validate(this);
 	    
 	    // Validation fails
-	    if (hasFieldErrors()) {
+	    if (hasFieldErrors(false)) {
 		    form.setCollections(sessionContext, null);
 		    setShowTable(false);
 		    return "showBannerOfferingSearch";
