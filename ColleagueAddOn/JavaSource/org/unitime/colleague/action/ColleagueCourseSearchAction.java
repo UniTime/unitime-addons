@@ -179,7 +179,7 @@ public class ColleagueCourseSearchAction extends UniTimeAction<ColleagueCourseLi
 	    form.validate(this);
 	    
 	    // Validation fails
-	    if (hasFieldErrors()) {
+	    if (hasFieldErrors(false)) {
 		    form.setCollections(sessionContext, null);
 		    setShowTable(false);
 		    return "showColleagueOfferingSearch";
