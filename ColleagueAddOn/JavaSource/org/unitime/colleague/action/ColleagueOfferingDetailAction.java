@@ -278,7 +278,8 @@ public class ColleagueOfferingDetailAction extends UniTimeAction<ColleagueOfferi
 				    		        sessionContext,
 				    		        getPageContext().getOut(),
 				    		        request.getParameter("backType"),
-				    		        request.getParameter("backId"));
+				    		        request.getParameter("backId"),
+				    		        getCsrfToken());
 		return "";
     }
 

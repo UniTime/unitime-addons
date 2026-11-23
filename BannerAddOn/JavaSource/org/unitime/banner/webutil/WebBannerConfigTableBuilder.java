@@ -69,7 +69,8 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
             SessionContext context,
             JspWriter outputStream,
             String backType,
-            String backId){
+            String backId,
+            String _csrf){
     	
     	setBackType(backType);
         setBackId(backId);    	
@@ -107,7 +108,7 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
 	        				outputStream.println("<br><br>");
 	        			} catch (IOException e) {}
 	        		}
-	        		this.htmlTableForBannerOfferingConfig(subpartIds, classAssignment, ioc, bc, context, outputStream);
+	        		this.htmlTableForBannerOfferingConfig(subpartIds, classAssignment, ioc, bc, context, outputStream, _csrf);
 	        	}
 	        }
 			
@@ -121,7 +122,7 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
             InstrOfferingConfig ioc,
             BannerCourse bannerCourse,
             SessionContext context,
-            JspWriter outputStream){
+            JspWriter outputStream, String _csrf){
     	
     	if (CommonValues.Yes.eq(UserProperty.ClassesKeepSort.get(context.getUser()))) {
     		setClassComparator(
@@ -159,7 +160,7 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
 	        }	        
 
     		try {
-    			outputStream.write(this.buttonsTable(ioc, bannerCourse, isEditable, isFullyEditable, isLimitedEditable, isExtManaged));
+    			outputStream.write(this.buttonsTable(ioc, bannerCourse, isEditable, isFullyEditable, isLimitedEditable, isExtManaged, _csrf));
     		} catch (IOException e) {}
        	TableStream configTable = this.initTable(outputStream, context.getUser().getCurrentAcademicSessionId() == null?null: context.getUser().getCurrentAcademicSessionId());
          	this.buildSectionConfigRow(subpartIds, classAssignment, bannerCourse, configTable, ioc, context, false, false);
@@ -167,7 +168,7 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
 	    }
     }
 
-	public String buttonsTable(InstrOfferingConfig ioc, BannerCourse bannerCourse, boolean isEditable, boolean isFullyEditable, boolean isLimitedEditable, boolean isExtManaged){
+	public String buttonsTable(InstrOfferingConfig ioc, BannerCourse bannerCourse, boolean isEditable, boolean isFullyEditable, boolean isLimitedEditable, boolean isExtManaged, String _csrf){
 		StringBuffer btnTable = new StringBuffer("");
 		btnTable.append("<table class='BottomBorder' width='100%'><tr><td width='100%' nowrap>");
 		btnTable.append("<DIV class='WelcomeRowHeadNoLine'>");
@@ -183,6 +184,7 @@ public class WebBannerConfigTableBuilder extends WebBannerCourseListTableBuilder
 	        if ((isEditable || isExtManaged) && ioc.hasClasses()) {
 		        btnTable.append("<td>");
 		        btnTable.append("	<form method='post' action='bannerOfferingModify.action' class='FormWithNoPadding'>");
+		        btnTable.append("		<input type='hidden' name='_csrf' value='" + _csrf + "'/>");
 		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId().toString() + "'>");
 		        btnTable.append("		<input type='hidden' name='bc' value='" + bannerCourse.getUniqueId().toString() + "'>");
 		        btnTable.append("		<input type='submit' name='op' value='" + BMSG.actionEditBannerConfig() + "' title='" + BMSG.titleEditBannerConfig() + "' class='btn'> ");
