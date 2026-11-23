@@ -291,7 +291,8 @@ public class BannerOfferingDetailAction extends UniTimeAction<BannerOfferingDeta
 				    		        sessionContext,
 				    		        getPageContext().getOut(),
 				    		        request.getParameter("backType"),
-				    		        request.getParameter("backId"));
+				    		        request.getParameter("backId"),
+				    		        getCsrfToken());
 		return "";
     }
  }

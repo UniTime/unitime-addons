@@ -61,7 +61,8 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
             SessionContext context,
             JspWriter outputStream,
             String backType,
-            String backId){
+            String backId,
+            String _csrf){
     	
     	setBackType(backType);
         setBackId(backId);    	
@@ -99,7 +100,7 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
 	        				outputStream.println("<br><br>");
 	        			} catch (IOException e) {}
 	        		}
-	        		this.htmlTableForColleagueOfferingConfig(subpartIds, classAssignment, ioc, co, context, outputStream);
+	        		this.htmlTableForColleagueOfferingConfig(subpartIds, classAssignment, ioc, co, context, outputStream, _csrf);
 	        	}
 	        }
 			
@@ -113,7 +114,8 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
             InstrOfferingConfig ioc,
             CourseOffering courseOffering,
             SessionContext context,
-            JspWriter outputStream){
+            JspWriter outputStream,
+            String _csrf){
     	
     	if (CommonValues.Yes.eq(UserProperty.ClassesKeepSort.get(context.getUser()))) {
     		setClassComparator(
@@ -151,7 +153,7 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
 	        }	        
 
     		try {
-    			outputStream.write(this.buttonsTable(ioc, courseOffering, isEditable, isFullyEditable, isLimitedEditable, isExtManaged));
+    			outputStream.write(this.buttonsTable(ioc, courseOffering, isEditable, isFullyEditable, isLimitedEditable, isExtManaged, _csrf));
     		} catch (IOException e) {}
        	TableStream configTable = this.initTable(outputStream, context.getUser().getCurrentAcademicSessionId() == null?null: context.getUser().getCurrentAcademicSessionId());
          	this.buildSectionConfigRow(subpartIds, classAssignment, courseOffering, configTable, ioc, context, false, false);
@@ -159,7 +161,7 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
 	    }
     }
 
-	public String buttonsTable(InstrOfferingConfig ioc, CourseOffering courseOffering, boolean isEditable, boolean isFullyEditable, boolean isLimitedEditable, boolean isExtManaged){
+	public String buttonsTable(InstrOfferingConfig ioc, CourseOffering courseOffering, boolean isEditable, boolean isFullyEditable, boolean isLimitedEditable, boolean isExtManaged, String _csrf){
 		StringBuffer btnTable = new StringBuffer("");
 		btnTable.append("<table class='BottomBorder' width='100%'><tr><td width='100%' nowrap>");
 		btnTable.append("<DIV class='WelcomeRowHeadNoLine'>");
@@ -175,6 +177,7 @@ public class WebColleagueConfigTableBuilder extends WebColleagueCourseListTableB
 	        if ((isEditable || isExtManaged) && ioc.hasClasses()) {
 		        btnTable.append("<td>");
 		        btnTable.append("	<form method='post' action='sectionRestrictionAssignment.action' class='FormWithNoPadding'>");
+		        btnTable.append("		<input type='hidden' name='_csrf' value='" + _csrf + "'/>");
 		        btnTable.append("		<input type='hidden' name='uid' value='" + ioc.getUniqueId() + "'>");
 		        btnTable.append("		<input type='hidden' name='co' value='" + courseOffering.getUniqueId() + "'>");
 		        btnTable.append("		<input type='submit' name='op' value='" + CMSG.actionAssignRestrictions()+"' title='" + CMSG.titleAssignRestrictions() + "' class='btn'> ");
